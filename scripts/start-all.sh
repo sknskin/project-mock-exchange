@@ -81,17 +81,12 @@ command -v node >/dev/null 2>&1 || { echo -e "${RED}Node.js가 필요합니다${
 command -v pnpm >/dev/null 2>&1 || { echo -e "${RED}pnpm이 필요합니다 (npm i -g pnpm)${NC}"; exit 1; }
 command -v docker >/dev/null 2>&1 || { echo -e "${RED}Docker가 필요합니다${NC}"; exit 1; }
 
-# 로컬 PostgreSQL 체크
-if lsof -i :5432 -sTCP:LISTEN 2>/dev/null | grep -q postgres; then
-  echo -e "  ${YELLOW}⚠ 로컬 PostgreSQL이 5432 포트를 사용 중입니다${NC}"
-  echo -e "  ${YELLOW}  Docker PostgreSQL과 충돌할 수 있습니다${NC}"
-  read -p "  로컬 PostgreSQL을 중지할까요? (y/N) " -n 1 -r
-  echo ""
-  if [[ $REPLY =~ ^[Yy]$ ]]; then
-    brew services stop postgresql@16 2>/dev/null || true
-    echo -e "  ${GREEN}✓${NC} 로컬 PostgreSQL 중지됨"
-    sleep 2
-  fi
+# 로컬 PostgreSQL 체크 (Docker가 아닌 로컬 postgres 프로세스만 감지)
+if lsof -i :5432 -sTCP:LISTEN 2>/dev/null | grep -v docker | grep -q postgres; then
+  echo -e "  ${YELLOW}⚠ 로컬 PostgreSQL이 5432 포트를 사용 중 → 자동 중지합니다${NC}"
+  brew services stop postgresql@16 2>/dev/null || true
+  sleep 2
+  echo -e "  ${GREEN}✓${NC} 로컬 PostgreSQL 중지됨 (종료 후 brew services start postgresql@16 으로 복구)"
 fi
 
 echo -e "  ${GREEN}✓${NC} Node.js $(node -v)"
@@ -174,14 +169,19 @@ fi
 echo ""
 echo -e "${YELLOW}[6/7] DB 마이그레이션...${NC}"
 
+set +e
 for svc in user-auth market-data order-engine portfolio; do
   if [ -f "backend/services/$svc/prisma/schema.prisma" ]; then
     cd "backend/services/$svc"
-    npx prisma db push --skip-generate 2>/dev/null
+    if npx prisma db push --skip-generate --accept-data-loss 2>&1 | tail -1; then
+      echo -e "  ${GREEN}✓${NC} $svc"
+    else
+      echo -e "  ${YELLOW}⚠${NC} $svc (이미 최신이거나 경고 발생)"
+    fi
     cd "$ROOT_DIR"
-    echo -e "  ${GREEN}✓${NC} $svc"
   fi
 done
+set -e
 
 # ─── 7. 서비스 시작 ───
 echo ""
@@ -214,11 +214,28 @@ echo -e "  로그 확인: tail -f logs/{서비스명}.log"
 echo -e "  종료: ${RED}Ctrl+C${NC}"
 echo ""
 
-# 프론트엔드는 포그라운드로 실행 (Ctrl+C로 전체 종료 가능)
-cd frontend
-npx next dev --port 4000 2>&1 | while IFS= read -r line; do
-  echo -e "  ${CYAN}[frontend]${NC} $line"
-done
+# 프론트엔드도 백그라운드로 실행
+cd "$ROOT_DIR/frontend"
+npx next dev --port 4000 >> "$ROOT_DIR/logs/frontend.log" 2>&1 &
+FRONTEND_PID=$!
+PIDS+=($FRONTEND_PID)
+NAMES+=("frontend")
 
-# 여기 도달하면 프론트엔드가 종료된 것
-cleanup
+echo ""
+echo "  프론트엔드 준비 대기 중..."
+wait_for_port 4000 "frontend" 30
+
+echo ""
+echo -e "${CYAN}=========================================${NC}"
+echo -e "${CYAN}  준비 완료!${NC}"
+echo -e "${CYAN}=========================================${NC}"
+echo ""
+echo -e "  ${GREEN}브라우저에서 열기:${NC}  http://localhost:4000"
+echo ""
+echo -e "  로그 확인:  tail -f logs/frontend.log"
+echo -e "              tail -f logs/api-gateway.log"
+echo -e "  종료:       ${RED}Ctrl+C${NC}"
+echo ""
+
+# 모든 서비스가 백그라운드이므로 wait로 대기
+wait
