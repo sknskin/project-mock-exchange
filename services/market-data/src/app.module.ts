@@ -1,0 +1,33 @@
+import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { CqrsModule } from '@nestjs/cqrs';
+import { ScheduleModule } from '@nestjs/schedule';
+import { TerminusModule } from '@nestjs/terminus';
+import { PrismaModule } from './infrastructure/persistence/prisma.module';
+import { PriceEngineService } from './domain/services/price-engine.service';
+import { PriceCacheService } from './infrastructure/redis/price-cache.service';
+import { PriceProducerService } from './infrastructure/kafka/price-producer.service';
+import { MarketDataService } from './application/services/market-data.service';
+import { MarketController } from './presentation/controllers/market.controller';
+import { HealthController } from './health/health.controller';
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: ['../../.env', '.env'],
+    }),
+    CqrsModule.forRoot(),
+    ScheduleModule.forRoot(),
+    TerminusModule,
+    PrismaModule,
+  ],
+  controllers: [MarketController, HealthController],
+  providers: [
+    PriceEngineService,
+    PriceCacheService,
+    PriceProducerService,
+    MarketDataService,
+  ],
+})
+export class AppModule {}
