@@ -1,5 +1,8 @@
 # Mock Exchange — Production-Grade Architecture Design
 
+> 실시간 모의 주식/암호화폐 거래 플랫폼의 전체 아키텍처 설계 문서입니다.
+> 한글 버전은 [ARCHITECTURE_SUMMARY_KR.md](./ARCHITECTURE_SUMMARY_KR.md)를 참고하세요.
+
 > Real-time mock stock/crypto trading platform with chat, notification, and AI features.
 > Designed for 1,000+ concurrent traders, horizontal scalability, and Kubernetes deployment.
 
