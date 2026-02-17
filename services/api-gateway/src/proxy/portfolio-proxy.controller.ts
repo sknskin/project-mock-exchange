@@ -62,6 +62,30 @@ export class PortfolioProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  @Get('valuation')
+  async getValuation(@Req() req: Request, @Res() res: Response) {
+    const userId = (req as any).user?.userId;
+    const result = await this.proxyService.forward('portfolio', {
+      method: 'GET',
+      url: '/portfolio/valuation',
+      headers: { 'x-user-id': userId },
+    });
+    return res.status(result.status).json(result.data);
+  }
+
+  @Get('leaderboard')
+  async getLeaderboard(
+    @Query('limit') limit: string,
+    @Res() res: Response,
+  ) {
+    const result = await this.proxyService.forward('portfolio', {
+      method: 'GET',
+      url: '/portfolio/leaderboard',
+      params: { limit },
+    });
+    return res.status(result.status).json(result.data);
+  }
+
   @Get('transactions')
   async getTransactions(
     @Query('limit') limit: string,

@@ -62,6 +62,28 @@ export class PortfolioController {
   }
 
   /**
+   * Get portfolio valuation with real-time P&L.
+   * GET /portfolio/valuation
+   */
+  @Get('valuation')
+  async getValuation(@Headers('x-user-id') userId: string) {
+    this.validateUserId(userId);
+    const valuation = await this.balanceService.getPortfolioValuation(userId);
+    return { success: true, data: valuation };
+  }
+
+  /**
+   * Get leaderboard of top portfolios.
+   * GET /portfolio/leaderboard?limit=20
+   */
+  @Get('leaderboard')
+  async getLeaderboard(@Query('limit') limit?: string) {
+    const parsedLimit = limit ? parseInt(limit, 10) : 20;
+    const leaderboard = await this.balanceService.getLeaderboard(parsedLimit);
+    return { success: true, data: leaderboard };
+  }
+
+  /**
    * Get transaction history.
    * GET /portfolio/transactions?limit=50&offset=0
    */

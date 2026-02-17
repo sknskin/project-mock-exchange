@@ -544,6 +544,9 @@ importers:
       '@prisma/client':
         specifier: ^6.3.0
         version: 6.19.2(prisma@6.19.2(typescript@5.9.3))(typescript@5.9.3)
+      axios:
+        specifier: ^1.7.0
+        version: 1.13.5
       class-transformer:
         specifier: ^0.5.1
         version: 0.5.1

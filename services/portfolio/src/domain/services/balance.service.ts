@@ -4,8 +4,10 @@ import {
   BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../infrastructure/persistence/prisma/prisma.service';
 import Decimal from 'decimal.js';
+import axios from 'axios';
 
 export interface BalanceInfo {
   userId: string;
@@ -29,11 +31,37 @@ export interface ReservationResult {
   reservedCash: string;
 }
 
+export interface HoldingWithPnL extends HoldingInfo {
+  currentPrice: string;
+  marketValue: string;
+  unrealizedPnL: string;
+  unrealizedPnLPercent: string;
+}
+
+export interface PortfolioValuation {
+  balance: BalanceInfo;
+  holdings: HoldingWithPnL[];
+  totalCost: string;
+  totalMarketValue: string;
+  totalUnrealizedPnL: string;
+  totalUnrealizedPnLPercent: string;
+  totalPortfolioValue: string;
+}
+
 @Injectable()
 export class BalanceService {
   private readonly logger = new Logger(BalanceService.name);
+  private readonly marketDataUrl: string;
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly config: ConfigService,
+  ) {
+    this.marketDataUrl = this.config.get<string>(
+      'MARKET_DATA_URL',
+      'http://localhost:3003',
+    );
+  }
 
   /**
    * Ensure an account exists for the given user, creating one if not found.
@@ -496,6 +524,142 @@ export class BalanceService {
       totalHoldingsCost: totalHoldingsValue.toFixed(8),
       totalPortfolioValue: totalPortfolioValue.toFixed(8),
     };
+  }
+
+  /**
+   * Get portfolio valuation with real-time P&L using market prices.
+   */
+  async getPortfolioValuation(userId: string): Promise<PortfolioValuation> {
+    const [balance, holdings] = await Promise.all([
+      this.getBalance(userId),
+      this.getHoldings(userId),
+    ]);
+
+    // Fetch current market prices for all held symbols
+    const symbols = holdings.map((h) => h.symbol);
+    const priceMap = await this.fetchMarketPrices(symbols);
+
+    let totalCost = new Decimal(0);
+    let totalMarketValue = new Decimal(0);
+
+    const holdingsWithPnL: HoldingWithPnL[] = holdings.map((h) => {
+      const qty = new Decimal(h.quantity);
+      const cost = new Decimal(h.totalCost);
+      const currentPrice = priceMap.get(h.symbol) || new Decimal(h.avgCostBasis);
+      const marketValue = qty.mul(currentPrice);
+      const unrealizedPnL = marketValue.minus(cost);
+      const unrealizedPnLPercent = cost.gt(0)
+        ? unrealizedPnL.div(cost).mul(100)
+        : new Decimal(0);
+
+      totalCost = totalCost.plus(cost);
+      totalMarketValue = totalMarketValue.plus(marketValue);
+
+      return {
+        ...h,
+        currentPrice: currentPrice.toFixed(8),
+        marketValue: marketValue.toFixed(8),
+        unrealizedPnL: unrealizedPnL.toFixed(8),
+        unrealizedPnLPercent: unrealizedPnLPercent.toFixed(2),
+      };
+    });
+
+    const totalUnrealizedPnL = totalMarketValue.minus(totalCost);
+    const totalUnrealizedPnLPercent = totalCost.gt(0)
+      ? totalUnrealizedPnL.div(totalCost).mul(100)
+      : new Decimal(0);
+
+    const cashTotal = new Decimal(balance.availableCash).plus(
+      new Decimal(balance.reservedCash),
+    );
+    const totalPortfolioValue = cashTotal.plus(totalMarketValue);
+
+    return {
+      balance,
+      holdings: holdingsWithPnL,
+      totalCost: totalCost.toFixed(8),
+      totalMarketValue: totalMarketValue.toFixed(8),
+      totalUnrealizedPnL: totalUnrealizedPnL.toFixed(8),
+      totalUnrealizedPnLPercent: totalUnrealizedPnLPercent.toFixed(2),
+      totalPortfolioValue: totalPortfolioValue.toFixed(8),
+    };
+  }
+
+  /**
+   * Get leaderboard: top portfolios ranked by total value.
+   */
+  async getLeaderboard(limit = 20): Promise<
+    {
+      rank: number;
+      userId: string;
+      totalCash: string;
+      totalPortfolioValue: string;
+    }[]
+  > {
+    const accounts = await this.prisma.account.findMany({
+      orderBy: { availableCash: 'desc' },
+      take: limit * 2, // fetch more to account for holdings
+    });
+
+    const results: { userId: string; totalValue: Decimal }[] = [];
+
+    for (const account of accounts) {
+      const holdings = await this.prisma.holding.findMany({
+        where: { userId: account.userId },
+      });
+
+      const holdingSymbols = holdings.map((h) => h.symbol);
+      const priceMap = await this.fetchMarketPrices(holdingSymbols);
+
+      let holdingsValue = new Decimal(0);
+      for (const h of holdings) {
+        const qty = new Decimal(h.quantity.toString());
+        const price = priceMap.get(h.symbol) || new Decimal(h.avgCostBasis.toString());
+        holdingsValue = holdingsValue.plus(qty.mul(price));
+      }
+
+      const cashTotal = new Decimal(account.availableCash.toString()).plus(
+        new Decimal(account.reservedCash.toString()),
+      );
+
+      results.push({
+        userId: account.userId,
+        totalValue: cashTotal.plus(holdingsValue),
+      });
+    }
+
+    results.sort((a, b) => b.totalValue.minus(a.totalValue).toNumber());
+
+    return results.slice(0, limit).map((r, i) => ({
+      rank: i + 1,
+      userId: r.userId,
+      totalCash: r.totalValue.toFixed(8),
+      totalPortfolioValue: r.totalValue.toFixed(8),
+    }));
+  }
+
+  private async fetchMarketPrices(
+    symbols: string[],
+  ): Promise<Map<string, Decimal>> {
+    const priceMap = new Map<string, Decimal>();
+    if (symbols.length === 0) return priceMap;
+
+    try {
+      const response = await axios.get(`${this.marketDataUrl}/market/prices`, {
+        timeout: 5000,
+      });
+      if (response.data?.success && Array.isArray(response.data?.data)) {
+        for (const tick of response.data.data) {
+          if (symbols.includes(tick.symbol)) {
+            priceMap.set(tick.symbol, new Decimal(tick.price));
+          }
+        }
+      }
+    } catch (err) {
+      this.logger.warn(`Failed to fetch market prices: ${err}`);
+    }
+
+    return priceMap;
   }
 
   private toBalanceInfo(account: {
