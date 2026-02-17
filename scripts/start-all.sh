@@ -237,5 +237,14 @@ echo -e "              tail -f logs/api-gateway.log"
 echo -e "  종료:       ${RED}Ctrl+C${NC}"
 echo ""
 
-# 모든 서비스가 백그라운드이므로 wait로 대기
-wait
+# 모든 서비스가 백그라운드이므로 무한 대기 (Ctrl+C로 종료)
+while true; do
+  sleep 60
+
+  # 서비스 생존 체크
+  for i in "${!PIDS[@]}"; do
+    if ! kill -0 "${PIDS[$i]}" 2>/dev/null; then
+      echo -e "  ${RED}✗ ${NAMES[$i]} (PID ${PIDS[$i]}) 가 종료되었습니다. logs/${NAMES[$i]}.log 확인${NC}"
+    fi
+  done
+done
