@@ -53,18 +53,18 @@ docker compose ps
 # Generate Prisma clients and run migrations
 echo ""
 echo "[5/6] Setting up databases..."
-for dir in services/*/; do
+for dir in backend/services/*/; do
   if [ -f "$dir/prisma/schema.prisma" ]; then
     service_name=$(basename "$dir")
     echo "  Generating Prisma client for $service_name..."
-    cd "$dir" && npx prisma generate && cd ../..
+    cd "$dir" && npx prisma generate && cd ../../..
   fi
 done
 
 # Build shared packages
 echo ""
 echo "[6/6] Building shared packages..."
-pnpm turbo run build --filter='./packages/*'
+pnpm turbo run build --filter='./backend/packages/*'
 
 echo ""
 echo "========================================="
@@ -82,7 +82,7 @@ echo "       docker compose exec kafka /opt/kafka/bin/kafka-topics.sh --create .
 echo "       OR: bash infrastructure/docker/kafka/create-topics.sh"
 echo ""
 echo "    2. Run database migrations:"
-echo "       cd services/user-auth && pnpm db:migrate"
+echo "       cd backend/services/user-auth && pnpm db:migrate"
 echo ""
 echo "    3. Start services in dev mode:"
 echo "       pnpm dev"

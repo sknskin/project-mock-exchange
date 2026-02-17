@@ -41,6 +41,8 @@ pnpm-debug.log*
 # Prisma
 services/*/prisma/migrations/*/migration_lock.toml
 services/*/src/generated/
+backend/services/*/generated/
+**/generated/prisma/
 
 # Docker volumes
 infrastructure/docker/postgres/data/
