@@ -1,5 +1,5 @@
 {
-  "name": "mock-exchange",
+  "name": "project-mock-exchange",
   "version": "0.1.0",
   "private": true,
   "description": "Production-grade real-time mock stock/crypto trading platform",
