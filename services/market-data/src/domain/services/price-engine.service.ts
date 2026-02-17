@@ -23,9 +23,14 @@ export class PriceEngineService {
   private low24h: Map<string, number> = new Map();
   private volumes: Map<string, number> = new Map();
 
+  // Volatility events: temporarily spike volatility for dramatic price action
+  private volatilityMultipliers: Map<string, { multiplier: number; expiresAt: number }> = new Map();
+
   private readonly TICK_INTERVAL_MS = 1000; // 1 second ticks
   private readonly SECONDS_PER_YEAR = 365.25 * 24 * 3600;
   private readonly DRIFT = 0.0; // neutral drift for mock trading
+  private readonly VOLATILITY_EVENT_PROBABILITY = 0.002; // ~0.2% chance per tick per asset
+  private readonly VOLATILITY_EVENT_DURATION_MS = 30000; // 30 seconds
 
   initializeAsset(config: AssetConfig): void {
     this.prices.set(config.symbol, config.basePrice);
@@ -37,10 +42,40 @@ export class PriceEngineService {
   }
 
   /**
+   * Trigger a volatility event for a symbol (2-4x normal volatility for 30s).
+   */
+  triggerVolatilityEvent(symbol: string): void {
+    const multiplier = 2 + Math.random() * 2; // 2x-4x
+    this.volatilityMultipliers.set(symbol, {
+      multiplier,
+      expiresAt: Date.now() + this.VOLATILITY_EVENT_DURATION_MS,
+    });
+    this.logger.warn(`Volatility event triggered for ${symbol}: ${multiplier.toFixed(1)}x for ${this.VOLATILITY_EVENT_DURATION_MS / 1000}s`);
+  }
+
+  private getEffectiveVolatility(config: AssetConfig): number {
+    const event = this.volatilityMultipliers.get(config.symbol);
+    if (event && Date.now() < event.expiresAt) {
+      return config.volatility * event.multiplier;
+    }
+    if (event) {
+      this.volatilityMultipliers.delete(config.symbol);
+    }
+    return config.volatility;
+  }
+
+  /**
    * Generate next price tick using GBM model.
    */
   generateTick(config: AssetConfig): PriceTick {
     const currentPrice = this.prices.get(config.symbol) || config.basePrice;
+
+    // Random volatility events
+    if (Math.random() < this.VOLATILITY_EVENT_PROBABILITY && !this.volatilityMultipliers.has(config.symbol)) {
+      this.triggerVolatilityEvent(config.symbol);
+    }
+
+    const effectiveVolatility = this.getEffectiveVolatility(config);
 
     // Time step in years
     const dt = this.TICK_INTERVAL_MS / 1000 / this.SECONDS_PER_YEAR;
@@ -49,7 +84,7 @@ export class PriceEngineService {
     const dW = this.gaussianRandom() * Math.sqrt(dt);
 
     // GBM: dS = μ*S*dt + σ*S*dW
-    const dS = this.DRIFT * currentPrice * dt + config.volatility * currentPrice * dW;
+    const dS = this.DRIFT * currentPrice * dt + effectiveVolatility * currentPrice * dW;
 
     // New price (enforce minimum of 0.0001)
     let newPrice = Math.max(currentPrice + dS, 0.0001);
@@ -62,8 +97,12 @@ export class PriceEngineService {
     const bid = this.roundPrice(newPrice - halfSpread);
     const ask = this.roundPrice(newPrice + halfSpread);
 
-    // Simulate volume (random, proportional to volatility and price movement)
-    const volumeDelta = Math.abs(dS / currentPrice) * (1000 + Math.random() * 5000);
+    // Simulate volume: base volume + volatility-driven spikes + random noise
+    const baseVolume = config.basePrice > 100 ? 500 : 10000; // higher-priced assets trade fewer units
+    const volatilityFactor = effectiveVolatility / config.volatility; // spikes during volatility events
+    const movementFactor = Math.abs(dS / currentPrice) * 50;
+    const randomNoise = 0.5 + Math.random();
+    const volumeDelta = (baseVolume * movementFactor + baseVolume * 0.1 * randomNoise) * volatilityFactor;
     const currentVolume = (this.volumes.get(config.symbol) || 0) + volumeDelta;
     this.volumes.set(config.symbol, currentVolume);
 
