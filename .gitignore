@@ -1,0 +1,53 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+
+# Environment
+.env
+.env.local
+.env.*.local
+docker-compose.override.yml
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Turbo
+.turbo/
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Prisma
+services/*/prisma/migrations/*/migration_lock.toml
+services/*/src/generated/
+
+# Docker volumes
+infrastructure/docker/postgres/data/
+infrastructure/docker/redis/data/
+infrastructure/docker/kafka/data/
+
+# Secrets
+*.pem
+*.key
+credentials.json

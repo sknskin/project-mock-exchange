@@ -1,0 +1,49 @@
+{
+  "name": "mock-exchange",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Production-grade real-time mock stock/crypto trading platform",
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "lint:fix": "turbo run lint:fix",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "test": "turbo run test",
+    "test:cov": "turbo run test:cov",
+    "typecheck": "turbo run typecheck",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "docker:infra": "docker compose up -d postgres redis kafka",
+    "docker:all": "docker compose --profile all up -d",
+    "docker:down": "docker compose down",
+    "docker:reset": "docker compose down -v",
+    "db:migrate": "turbo run db:migrate",
+    "db:seed": "tsx scripts/seed.ts",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.0",
+    "eslint": "^9.19.0",
+    "husky": "^9.1.0",
+    "lint-staged": "^15.4.0",
+    "prettier": "^3.4.0",
+    "turbo": "^2.4.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  },
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yaml,yml}": [
+      "prettier --write"
+    ]
+  }
+}

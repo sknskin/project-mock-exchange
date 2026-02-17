@@ -1,0 +1,188 @@
+version: '3.9'
+
+services:
+  # ===========================================
+  # Infrastructure
+  # ===========================================
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: mex-postgres
+    restart: unless-stopped
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: mockexchange
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infrastructure/docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mex-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: mex-redis
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mex-network
+
+  kafka:
+    image: apache/kafka:3.7.0
+    container_name: mex-kafka
+    restart: unless-stopped
+    ports:
+      - '9092:9092'
+      - '9093:9093'
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_LOG_RETENTION_HOURS: 168
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
+      CLUSTER_ID: 'mock-exchange-kafka-cluster-01'
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: ['CMD-SHELL', '/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 > /dev/null 2>&1']
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+    networks:
+      - mex-network
+
+  # ===========================================
+  # Development Tools
+  # ===========================================
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: mex-kafka-ui
+    restart: unless-stopped
+    ports:
+      - '8080:8080'
+    environment:
+      KAFKA_CLUSTERS_0_NAME: mock-exchange
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+    depends_on:
+      kafka:
+        condition: service_healthy
+    profiles:
+      - tools
+    networks:
+      - mex-network
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: mex-pgadmin
+    restart: unless-stopped
+    ports:
+      - '5050:80'
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@mockexchange.dev
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles:
+      - tools
+    networks:
+      - mex-network
+
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: mex-redis-commander
+    restart: unless-stopped
+    ports:
+      - '8081:8081'
+    environment:
+      REDIS_HOSTS: local:redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    profiles:
+      - tools
+    networks:
+      - mex-network
+
+  # ===========================================
+  # Monitoring (optional)
+  # ===========================================
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: mex-prometheus
+    restart: unless-stopped
+    ports:
+      - '9090:9090'
+    volumes:
+      - ./infrastructure/docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    profiles:
+      - monitoring
+    networks:
+      - mex-network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: mex-grafana
+    restart: unless-stopped
+    ports:
+      - '3100:3000'
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_SECURITY_ADMIN_USER: admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+    profiles:
+      - monitoring
+    networks:
+      - mex-network
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: mex-jaeger
+    restart: unless-stopped
+    ports:
+      - '16686:16686'
+      - '4318:4318'
+    environment:
+      COLLECTOR_OTLP_ENABLED: 'true'
+    profiles:
+      - monitoring
+    networks:
+      - mex-network
+
+volumes:
+  postgres_data:
+  redis_data:
+  kafka_data:
+  grafana_data:
+
+networks:
+  mex-network:
+    driver: bridge
