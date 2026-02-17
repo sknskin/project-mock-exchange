@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Delete,
   Body,
   Param,
@@ -25,6 +26,23 @@ export class OrderProxyController {
     const result = await this.proxyService.forward('order-engine', {
       method: 'POST',
       url: '/orders',
+      data: body,
+      headers: { 'x-user-id': userId },
+    });
+    return res.status(result.status).json(result.data);
+  }
+
+  @Patch(':orderId')
+  async modifyOrder(
+    @Param('orderId') orderId: string,
+    @Body() body: unknown,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    const userId = (req as any).user?.userId;
+    const result = await this.proxyService.forward('order-engine', {
+      method: 'PATCH',
+      url: `/orders/${orderId}`,
       data: body,
       headers: { 'x-user-id': userId },
     });

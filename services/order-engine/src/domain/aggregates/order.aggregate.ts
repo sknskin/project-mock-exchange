@@ -89,6 +89,24 @@ export class OrderAggregate extends AggregateRoot {
     }
   }
 
+  modify(newPrice: string, newQuantity: string): void {
+    if (this._status !== 'PENDING' && this._status !== 'PARTIAL') {
+      throw new Error(`Cannot modify order in status ${this._status}`);
+    }
+    if (this._type !== 'LIMIT') {
+      throw new Error('Only limit orders can be modified');
+    }
+
+    this.raise(ORDER_EVENT_TYPES.ORDER_MODIFIED, {
+      orderId: this._orderId,
+      userId: this._userId,
+      previousPrice: this._price?.toString() || null,
+      newPrice,
+      previousQuantity: this._remainingQuantity.toString(),
+      newQuantity,
+    });
+  }
+
   cancel(reason: string): void {
     if (this._status === 'FILLED' || this._status === 'CANCELLED') {
       throw new Error(`Cannot cancel order in status ${this._status}`);
@@ -126,6 +144,12 @@ export class OrderAggregate extends AggregateRoot {
 
   protected onFilled(_data: Record<string, unknown>): void {
     this._status = 'FILLED';
+  }
+
+  protected onModified(data: Record<string, unknown>): void {
+    this._price = new Decimal(data.newPrice as string);
+    this._remainingQuantity = new Decimal(data.newQuantity as string);
+    this._quantity = this._filledQuantity.plus(this._remainingQuantity);
   }
 
   protected onCancelled(_data: Record<string, unknown>): void {

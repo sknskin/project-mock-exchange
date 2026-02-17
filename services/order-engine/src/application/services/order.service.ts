@@ -120,21 +120,39 @@ export class OrderService {
     // 7. Project to read model
     await this.projectOrderPlaced(orderId, params, executionPrice);
 
-    // 8. For market orders, execute immediately
+    // 8. For market orders, execute immediately. For limit orders, try crossing first.
     let fills: MatchResult[] = [];
     if (params.type === 'MARKET') {
       fills = await this.executeMarketOrder(order, orderId, params, marketPrice, correlationId);
     } else {
-      // Add limit order to order book
-      this.matchingEngine.addToOrderBook({
+      // Try crossing the book first
+      const crossResult = this.matchingEngine.matchLimitOrder({
         orderId,
         userId: params.userId,
         symbol: params.symbol,
         side: params.side,
-        price: executionPrice,
-        remainingQuantity: quantity,
-        timestamp: Date.now(),
+        limitPrice: executionPrice,
+        quantity,
       });
+
+      if (crossResult.fills.length > 0) {
+        fills = await this.processLimitCrossingFills(
+          orderId, params, crossResult.fills, correlationId,
+        );
+      }
+
+      // Add unfilled remainder to order book
+      if (crossResult.remainingQuantity.gt(0)) {
+        this.matchingEngine.addToOrderBook({
+          orderId,
+          userId: params.userId,
+          symbol: params.symbol,
+          side: params.side,
+          price: executionPrice,
+          remainingQuantity: crossResult.remainingQuantity,
+          timestamp: Date.now(),
+        });
+      }
     }
 
     const finalOrder = await this.prisma.orderRead.findUnique({
@@ -233,7 +251,127 @@ export class OrderService {
     return this.matchingEngine.getOrderBookDepth(symbol);
   }
 
+  async modifyOrder(
+    orderId: string,
+    userId: string,
+    newPrice: string,
+    newQuantity: string,
+  ): Promise<{ orderId: string; status: string }> {
+    const streamId = OrderAggregate.streamId(orderId);
+    const events = await this.eventStore.readStream(streamId);
+
+    if (events.length === 0) {
+      throw new BadRequestException(`Order ${orderId} not found`);
+    }
+
+    const order = new OrderAggregate();
+    order.loadFromHistory(events);
+
+    if (order.userId !== userId) {
+      throw new BadRequestException("Cannot modify another user's order");
+    }
+
+    order.modify(newPrice, newQuantity);
+
+    const correlationId = generateCorrelationId();
+    for (const event of order.uncommittedEvents) {
+      await this.eventStore.appendEvent(
+        {
+          streamId,
+          expectedVersion: order.version,
+          eventType: event.eventType,
+          eventData: event.eventData,
+          metadata: { correlationId, userId },
+          eventId: generateEventId(),
+        },
+        {
+          topic: KAFKA_TOPICS.ORDERS_EVENTS,
+          partitionKey: orderId,
+        },
+      );
+    }
+    order.clearUncommittedEvents();
+
+    // Update read model
+    await this.prisma.orderRead.update({
+      where: { orderId },
+      data: {
+        price: newPrice,
+        remainingQuantity: newQuantity,
+        quantity: order.quantity.toString(),
+        updatedAt: new Date(),
+      },
+    });
+
+    // Update in order book (removes and re-inserts, losing time priority)
+    this.matchingEngine.modifyOrderInBook({
+      orderId,
+      userId,
+      symbol: order.symbol,
+      side: order.side,
+      newPrice: new Decimal(newPrice),
+      newQuantity: new Decimal(newQuantity),
+    });
+
+    return { orderId, status: order.status };
+  }
+
   // ---- Private helpers ----
+
+  private async processLimitCrossingFills(
+    orderId: string,
+    params: PlaceOrderParams,
+    fills: MatchResult[],
+    correlationId: string,
+  ): Promise<MatchResult[]> {
+    const streamId = OrderAggregate.streamId(orderId);
+    const events = await this.eventStore.readStream(streamId);
+    const aggregate = new OrderAggregate();
+    aggregate.loadFromHistory(events);
+
+    for (const fill of fills) {
+      aggregate.match(
+        fill.matchedQuantity,
+        fill.matchedPrice,
+        fill.tradeId,
+        fill.buyOrderId === orderId ? fill.sellOrderId : fill.buyOrderId,
+      );
+
+      for (const event of aggregate.uncommittedEvents) {
+        await this.eventStore.appendEvent(
+          {
+            streamId,
+            expectedVersion: aggregate.version - aggregate.uncommittedEvents.length + aggregate.uncommittedEvents.indexOf(event),
+            eventType: event.eventType,
+            eventData: event.eventData,
+            metadata: { correlationId, userId: params.userId },
+            eventId: generateEventId(),
+          },
+          {
+            topic: KAFKA_TOPICS.ORDERS_EVENTS,
+            partitionKey: orderId,
+          },
+        );
+      }
+      aggregate.clearUncommittedEvents();
+
+      await this.projectTrade(fill);
+      await this.settleTrade(fill);
+    }
+
+    // Update order read model
+    await this.prisma.orderRead.update({
+      where: { orderId },
+      data: {
+        filledQuantity: aggregate.filledQuantity?.toString() || '0',
+        remainingQuantity: aggregate.remainingQuantity?.toString() || '0',
+        status: aggregate.status,
+        updatedAt: new Date(),
+      },
+    });
+
+    return fills;
+  }
 
   private async executeMarketOrder(
     _order: OrderAggregate,

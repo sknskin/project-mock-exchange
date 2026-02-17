@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Delete,
   Body,
   Param,
@@ -11,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { OrderService } from '../../application/services/order.service';
 import { PlaceOrderRequestDto } from '../dto/place-order.dto';
+import { ModifyOrderRequestDto } from '../dto/modify-order.dto';
 
 @Controller('orders')
 export class OrderController {
@@ -37,6 +39,22 @@ export class OrderController {
       idempotencyKey: dto.idempotencyKey,
     });
 
+    return { success: true, data: result };
+  }
+
+  @Patch(':orderId')
+  async modifyOrder(
+    @Headers('x-user-id') userId: string,
+    @Param('orderId') orderId: string,
+    @Body() dto: ModifyOrderRequestDto,
+  ) {
+    this.validateUserId(userId);
+    const result = await this.orderService.modifyOrder(
+      orderId,
+      userId,
+      dto.price,
+      dto.quantity,
+    );
     return { success: true, data: result };
   }
 

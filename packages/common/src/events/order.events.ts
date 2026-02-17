@@ -8,6 +8,7 @@ export const ORDER_EVENT_TYPES = {
   ORDER_CANCELLED: 'com.mockexchange.order.cancelled',
   ORDER_REJECTED: 'com.mockexchange.order.rejected',
   ORDER_EXPIRED: 'com.mockexchange.order.expired',
+  ORDER_MODIFIED: 'com.mockexchange.order.modified',
 } as const;
 
 export interface OrderPlacedData {
@@ -49,4 +50,13 @@ export interface OrderRejectedData {
   userId: string;
   reason: string;
   idempotencyKey: string;
+}
+
+export interface OrderModifiedData {
+  orderId: string;
+  userId: string;
+  previousPrice: string | null;
+  newPrice: string;
+  previousQuantity: string;
+  newQuantity: string;
 }

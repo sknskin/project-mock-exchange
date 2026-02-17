@@ -149,6 +149,102 @@ export class MatchingEngineService {
     return matches;
   }
 
+  /**
+   * Match a new limit order against the opposite side of the book.
+   * BUY limit: matches against asks where ask price <= limit price (price-time priority).
+   * SELL limit: matches against bids where bid price >= limit price.
+   * Returns fills if crossing occurs. Unfilled portion goes into the book.
+   */
+  matchLimitOrder(params: {
+    orderId: string;
+    userId: string;
+    symbol: string;
+    side: 'BUY' | 'SELL';
+    limitPrice: Decimal;
+    quantity: Decimal;
+  }): { fills: MatchResult[]; remainingQuantity: Decimal } {
+    const { orderId, userId, symbol, side, limitPrice, quantity } = params;
+    const fills: MatchResult[] = [];
+    let remainingQty = quantity;
+
+    const counterBook = side === 'BUY' ? this.asks : this.bids;
+    const entries = counterBook.get(symbol) || [];
+    const toRemove: string[] = [];
+
+    for (const entry of entries) {
+      if (remainingQty.isZero()) break;
+
+      // Check crossing condition
+      if (side === 'BUY' && entry.price.gt(limitPrice)) break; // asks sorted asc, no more matches
+      if (side === 'SELL' && entry.price.lt(limitPrice)) break; // bids sorted desc, no more matches
+
+      const matchQty = Decimal.min(remainingQty, entry.remainingQuantity);
+      const matchPrice = entry.price; // price-time priority: execute at resting order's price
+
+      const tradeId = generateTradeId();
+      fills.push({
+        tradeId,
+        buyOrderId: side === 'BUY' ? orderId : entry.orderId,
+        sellOrderId: side === 'SELL' ? orderId : entry.orderId,
+        buyerId: side === 'BUY' ? userId : entry.userId,
+        sellerId: side === 'SELL' ? userId : entry.userId,
+        symbol,
+        matchedQuantity: matchQty.toString(),
+        matchedPrice: matchPrice.toString(),
+      });
+
+      entry.remainingQuantity = entry.remainingQuantity.minus(matchQty);
+      remainingQty = remainingQty.minus(matchQty);
+
+      if (entry.remainingQuantity.isZero()) {
+        toRemove.push(entry.orderId);
+      }
+    }
+
+    // Remove fully filled resting orders
+    if (toRemove.length > 0) {
+      counterBook.set(
+        symbol,
+        entries.filter((e) => !toRemove.includes(e.orderId)),
+      );
+    }
+
+    if (fills.length > 0) {
+      this.logger.log(
+        `Limit ${side} order ${orderId} crossed book: ${fills.length} fills for ${symbol}`,
+      );
+    }
+
+    return { fills, remainingQuantity: remainingQty };
+  }
+
+  /**
+   * Update a resting limit order's price and/or quantity.
+   * Removes the old entry and re-inserts with new parameters (loses time priority).
+   */
+  modifyOrderInBook(params: {
+    orderId: string;
+    userId: string;
+    symbol: string;
+    side: 'BUY' | 'SELL';
+    newPrice: Decimal;
+    newQuantity: Decimal;
+  }): void {
+    this.removeFromOrderBook(params.orderId, params.symbol, params.side);
+    this.addToOrderBook({
+      orderId: params.orderId,
+      userId: params.userId,
+      symbol: params.symbol,
+      side: params.side,
+      price: params.newPrice,
+      remainingQuantity: params.newQuantity,
+      timestamp: Date.now(), // new timestamp = loses priority
+    });
+    this.logger.log(
+      `Modified order ${params.orderId} in book: price=${params.newPrice}, qty=${params.newQuantity}`,
+    );
+  }
+
   getOrderBookDepth(symbol: string): { bids: { price: string; quantity: string }[]; asks: { price: string; quantity: string }[] } {
     const bidEntries = this.bids.get(symbol) || [];
     const askEntries = this.asks.get(symbol) || [];
