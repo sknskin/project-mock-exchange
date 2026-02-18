@@ -39,25 +39,25 @@ export default function BottomSheet({
   return (
     <div className="fixed inset-0 z-50">
       <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/50"
         onClick={onClose}
       />
       <div
         className={cn(
-          'absolute bottom-0 left-0 right-0 bg-bg-secondary rounded-t-2xl',
+          'absolute bottom-0 left-0 right-0 bg-bg-elevated rounded-t-2xl',
           'max-h-[85vh] overflow-y-auto',
           'animate-slide-up',
         )}
       >
         <div className="flex justify-center pt-3 pb-1">
-          <div className="w-10 h-1 bg-bg-tertiary rounded-full" />
+          <div className="w-9 h-[4px] bg-bg-tertiary rounded-full" />
         </div>
         {title && (
-          <div className="px-5 py-3 border-b border-border">
-            <h3 className="text-lg font-semibold text-text-primary">{title}</h3>
+          <div className="px-6 py-3">
+            <h3 className="text-[18px] font-bold text-text-primary">{title}</h3>
           </div>
         )}
-        <div className="p-5">{children}</div>
+        <div className="px-6 pb-8 pt-2">{children}</div>
       </div>
       <style jsx>{`
         @keyframes slide-up {
@@ -69,7 +69,7 @@ export default function BottomSheet({
           }
         }
         .animate-slide-up {
-          animation: slide-up 0.3s ease-out;
+          animation: slide-up 0.25s ease-out;
         }
       `}</style>
     </div>

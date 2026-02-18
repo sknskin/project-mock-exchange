@@ -16,21 +16,21 @@ export default function Input({
   return (
     <div className="w-full">
       {label && (
-        <label className="block text-sm text-text-secondary mb-2">
+        <label className="block text-[13px] text-text-secondary font-semibold mb-2">
           {label}
         </label>
       )}
       <input
         className={cn(
-          'w-full px-4 py-3.5 bg-bg-tertiary border border-border rounded-xl text-text-primary placeholder-text-tertiary',
-          'focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent',
-          'transition-colors duration-200 text-base',
-          error && 'border-danger focus:border-danger focus:ring-danger',
+          'w-full px-4 py-3 bg-bg-secondary border border-border rounded-xl text-text-primary placeholder-text-quaternary',
+          'focus:outline-none focus:ring-1 focus:ring-accent/30 focus:border-accent/30',
+          'transition-all duration-150 text-[15px] font-medium',
+          error && 'ring-1 ring-danger/30 border-danger/30',
           className,
         )}
         {...props}
       />
-      {error && <p className="mt-1.5 text-sm text-danger">{error}</p>}
+      {error && <p className="mt-1.5 text-[13px] text-danger">{error}</p>}
     </div>
   );
 }
