@@ -1,31 +1,15 @@
+/**
+ * @file 푸터 컴포넌트
+ * @description 브랜드, 연락처, 기술 스택 마키, 저작권을 보여주는 푸터
+ *
+ * @file Footer Component
+ * @description Footer with brand, contacts, tech stack marquee, and copyright
+ */
 'use client';
 
 import { useCallback, useState } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
-
-interface TechItem {
-  name: string;
-  icon: string;
-}
-
-const techItems: TechItem[] = [
-  { name: 'Next.js', icon: 'https://cdn.simpleicons.org/nextdotjs/white' },
-  { name: 'React', icon: 'https://cdn.simpleicons.org/react/61DAFB' },
-  { name: 'TypeScript', icon: 'https://cdn.simpleicons.org/typescript/3178C6' },
-  { name: 'Tailwind CSS', icon: 'https://cdn.simpleicons.org/tailwindcss/06B6D4' },
-  { name: 'Zustand', icon: 'https://cdn.simpleicons.org/react/FFD43B' },
-  { name: 'TanStack Query', icon: 'https://cdn.simpleicons.org/reactquery/FF4154' },
-  { name: 'Socket.IO', icon: 'https://cdn.simpleicons.org/socketdotio/white' },
-  { name: 'NestJS', icon: 'https://cdn.simpleicons.org/nestjs/E0234E' },
-  { name: 'Prisma', icon: 'https://cdn.simpleicons.org/prisma/white' },
-  { name: 'PostgreSQL', icon: 'https://cdn.simpleicons.org/postgresql/4169E1' },
-  { name: 'Redis', icon: 'https://cdn.simpleicons.org/redis/FF4438' },
-  { name: 'Apache Kafka', icon: 'https://cdn.simpleicons.org/apachekafka/white' },
-  { name: 'Docker', icon: 'https://cdn.simpleicons.org/docker/2496ED' },
-  { name: 'Turborepo', icon: 'https://cdn.simpleicons.org/turborepo/white' },
-  { name: 'pnpm', icon: 'https://cdn.simpleicons.org/pnpm/F69220' },
-  { name: 'WebSocket', icon: 'https://cdn.simpleicons.org/websocket/white' },
-];
+import { techItems } from '@/lib/constants';
 
 const tripledItems = [...techItems, ...techItems, ...techItems];
 

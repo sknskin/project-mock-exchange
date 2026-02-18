@@ -1,9 +1,17 @@
+/**
+ * @file 국제화 (i18n)
+ * @description 한국어/영어 번역 키와 번역 함수를 정의합니다
+ *
+ * @file Internationalization (i18n)
+ * @description Defines Korean/English translation keys and translation function
+ */
 export type Locale = 'ko' | 'en';
 
 const translations = {
   ko: {
     // Header
     'nav.home': '홈',
+    'nav.dashboard': '대시보드',
     'nav.portfolio': '내 투자',
     'nav.orders': '주문내역',
     'nav.leaderboard': '리더보드',
@@ -65,6 +73,34 @@ const translations = {
 
     // ScrollTop
     'scrollTop': '맨 위로',
+
+    // Modal
+    'modal.close': '닫기',
+
+    // Landing Page
+    'landing.title': 'VirtuEx',
+    'landing.subtitle': '실시간 모의 주식/암호화폐 거래 플랫폼',
+    'landing.description': '마이크로서비스 아키텍처 기반의 프로덕션급 모의 거래 시스템입니다. 실시간 시세, 주문 매칭 엔진, 포트폴리오 관리를 경험해보세요.',
+    'landing.cta': '대시보드로 이동',
+    'landing.techStack': '기술 스택',
+    'landing.overview': '프로젝트 개요',
+    'landing.overviewDesc': '이벤트 소싱, CQRS, Saga 패턴을 적용한 8개 마이크로서비스 기반 모의 거래 플랫폼',
+    'landing.docs': '관련 문서',
+    'landing.docsDesc': '프로젝트를 이해하고 로컬에서 실행하기 위한 가이드와 API 문서',
+    'landing.localRun': '로컬 실행 가이드',
+    'landing.localRunDesc': 'Docker + pnpm 기반 로컬 환경 구축 및 실행 방법',
+    'landing.projectSpec': '프로젝트 기획서',
+    'landing.projectSpecDesc': '아키텍처, 이벤트 흐름, CQRS, Saga 등 전체 설계 문서',
+    'landing.swaggerDocs': 'API 문서',
+    'landing.swaggerDocsDesc': 'Swagger UI로 확인하는 전체 REST API 명세',
+    'landing.features.microservice': '마이크로서비스',
+    'landing.features.microserviceDesc': '8개 독립 서비스, Database per Service 패턴',
+    'landing.features.websocket': '실시간 WebSocket',
+    'landing.features.websocketDesc': 'Socket.IO + Redis PubSub 기반 실시간 시세 스트리밍',
+    'landing.features.kafka': 'Kafka 이벤트 버스',
+    'landing.features.kafkaDesc': '이벤트 소싱 + Outbox 패턴으로 서비스 간 비동기 통신',
+    'landing.features.matching': '주문 매칭 엔진',
+    'landing.features.matchingDesc': 'CQRS + Saga 패턴 기반 시장가/지정가 주문 매칭',
 
     // Auth - Login
     'auth.login.title': '로그인',
@@ -139,6 +175,7 @@ const translations = {
   en: {
     // Header
     'nav.home': 'Home',
+    'nav.dashboard': 'Dashboard',
     'nav.portfolio': 'Portfolio',
     'nav.orders': 'Orders',
     'nav.leaderboard': 'Leaderboard',
@@ -200,6 +237,34 @@ const translations = {
 
     // ScrollTop
     'scrollTop': 'Back to top',
+
+    // Modal
+    'modal.close': 'Close',
+
+    // Landing Page
+    'landing.title': 'VirtuEx',
+    'landing.subtitle': 'Real-time Mock Stock & Crypto Trading Platform',
+    'landing.description': 'A production-grade mock trading system built on microservices architecture. Experience real-time quotes, order matching engine, and portfolio management.',
+    'landing.cta': 'Go to Dashboard',
+    'landing.techStack': 'Tech Stack',
+    'landing.overview': 'Project Overview',
+    'landing.overviewDesc': 'A mock trading platform powered by 8 microservices with Event Sourcing, CQRS, and Saga patterns',
+    'landing.docs': 'Documentation',
+    'landing.docsDesc': 'Guides and API docs to understand and run the project locally',
+    'landing.localRun': 'Local Run Guide',
+    'landing.localRunDesc': 'How to set up and run services locally with Docker + pnpm',
+    'landing.projectSpec': 'Project Spec',
+    'landing.projectSpecDesc': 'Full architecture design: event flows, CQRS, Saga, and more',
+    'landing.swaggerDocs': 'API Docs',
+    'landing.swaggerDocsDesc': 'Browse all REST API endpoints via Swagger UI',
+    'landing.features.microservice': 'Microservices',
+    'landing.features.microserviceDesc': '8 independent services with Database per Service pattern',
+    'landing.features.websocket': 'Real-time WebSocket',
+    'landing.features.websocketDesc': 'Live price streaming via Socket.IO + Redis PubSub',
+    'landing.features.kafka': 'Kafka Event Bus',
+    'landing.features.kafkaDesc': 'Async inter-service communication with Event Sourcing + Outbox pattern',
+    'landing.features.matching': 'Order Matching Engine',
+    'landing.features.matchingDesc': 'Market/limit order matching with CQRS + Saga pattern',
 
     // Auth - Login
     'auth.login.title': 'Login',

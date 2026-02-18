@@ -1,3 +1,10 @@
+/**
+ * @file 헤더 컴포넌트
+ * @description 로고, 네비게이션, 로그인/로그아웃, 모바일 메뉴를 포함하는 헤더
+ *
+ * @file Header Component
+ * @description Header with logo, navigation, auth actions, and mobile menu
+ */
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -15,7 +22,7 @@ export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navItems = [
-    { href: '/', label: t('nav.home') },
+    { href: '/dashboard', label: t('nav.dashboard') },
     { href: '/portfolio', label: t('nav.portfolio') },
     { href: '/orders', label: t('nav.orders') },
     { href: '/leaderboard', label: t('nav.leaderboard') },

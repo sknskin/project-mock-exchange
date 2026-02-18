@@ -1,17 +1,24 @@
+/**
+ * @file 하단 네비게이션
+ * @description 모바일 화면에서 보여지는 하단 탭 네비게이션
+ *
+ * @file Bottom Navigation
+ * @description Bottom tab navigation visible on mobile screens
+ */
 'use client';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/format';
-import { Home, Briefcase, Star, Menu } from 'lucide-react';
+import { LayoutDashboard, Briefcase, Star, Menu } from 'lucide-react';
 
 export default function BottomNav() {
   const pathname = usePathname();
   const { t } = useTranslation();
 
   const tabs = [
-    { href: '/', label: t('nav.home'), icon: Home },
+    { href: '/dashboard', label: t('nav.dashboard'), icon: LayoutDashboard },
     { href: '/portfolio', label: t('nav.portfolio'), icon: Briefcase },
     { href: '/leaderboard', label: t('nav.leaderboard'), icon: Star },
     { href: '/orders', label: t('nav.more'), icon: Menu },
@@ -21,10 +28,7 @@ export default function BottomNav() {
     <nav className="fixed bottom-0 left-0 right-0 z-40 bg-bg-primary/95 backdrop-blur-md border-t border-border md:hidden safe-bottom">
       <div className="flex items-center justify-around h-[52px]">
         {tabs.map((tab) => {
-          const isActive =
-            tab.href === '/'
-              ? pathname === '/'
-              : pathname.startsWith(tab.href);
+          const isActive = pathname.startsWith(tab.href);
           const Icon = tab.icon;
 
           return (
