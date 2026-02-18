@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/format';
-import { Home, Star, Briefcase, Menu } from 'lucide-react';
+import { Home, Briefcase, Star, Menu } from 'lucide-react';
 
 const tabs = [
   { href: '/', label: '홈', icon: Home },
@@ -16,8 +16,8 @@ export default function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-bg-primary/95 backdrop-blur-xl border-t border-border md:hidden">
-      <div className="flex items-center justify-around h-14">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-bg-primary border-t border-border md:hidden">
+      <div className="flex items-center justify-around h-[52px]">
         {tabs.map((tab) => {
           const isActive =
             tab.href === '/'
@@ -30,13 +30,13 @@ export default function BottomNav() {
               key={tab.href}
               href={tab.href}
               className={cn(
-                'flex flex-col items-center gap-0.5 py-1 px-3 min-w-[64px]',
+                'flex flex-col items-center gap-0.5 py-1 px-4',
                 'transition-colors',
-                isActive ? 'text-accent' : 'text-text-tertiary',
+                isActive ? 'text-text-primary' : 'text-text-quaternary',
               )}
             >
-              <Icon className="w-5 h-5" />
-              <span className="text-[10px] font-medium">{tab.label}</span>
+              <Icon className="w-[22px] h-[22px]" strokeWidth={isActive ? 2.2 : 1.6} />
+              <span className="text-[10px] font-semibold">{tab.label}</span>
             </Link>
           );
         })}

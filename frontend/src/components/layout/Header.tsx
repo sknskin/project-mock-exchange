@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth';
 import { cn } from '@/lib/format';
-import { TrendingUp, LogOut } from 'lucide-react';
+import { LogOut, Search } from 'lucide-react';
 
 const navItems = [
   { href: '/', label: '홈' },
@@ -18,12 +18,11 @@ export default function Header() {
   const { isAuthenticated, user, logout } = useAuthStore();
 
   return (
-    <header className="sticky top-0 z-40 bg-bg-primary/80 backdrop-blur-xl border-b border-border">
-      <div className="max-w-screen-xl mx-auto px-4 h-14 flex items-center justify-between">
-        <div className="flex items-center gap-6">
-          <Link href="/" className="flex items-center gap-2">
-            <TrendingUp className="w-6 h-6 text-accent" />
-            <span className="font-bold text-lg text-text-primary hidden sm:block">
+    <header className="sticky top-0 z-40 bg-bg-primary border-b border-border">
+      <div className="max-w-[1280px] mx-auto px-6 h-[56px] flex items-center justify-between">
+        <div className="flex items-center gap-8">
+          <Link href="/" className="flex items-center">
+            <span className="font-extrabold text-[18px] text-text-primary tracking-tight">
               MockX
             </span>
           </Link>
@@ -34,10 +33,10 @@ export default function Header() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'px-3 py-2 text-sm font-medium rounded-lg transition-colors',
+                  'px-3 py-1.5 text-[15px] font-semibold transition-colors',
                   pathname === item.href
-                    ? 'text-text-primary bg-bg-tertiary'
-                    : 'text-text-secondary hover:text-text-primary hover:bg-bg-secondary',
+                    ? 'text-text-primary'
+                    : 'text-text-tertiary hover:text-text-secondary',
                 )}
               >
                 {item.label}
@@ -47,14 +46,23 @@ export default function Header() {
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Search hint - Toss style */}
+          <div className="hidden md:flex items-center gap-2 text-text-quaternary">
+            <Search className="w-4 h-4" />
+            <span className="text-[13px]">
+              <kbd className="px-1.5 py-0.5 text-[11px] border border-border rounded text-text-tertiary font-mono">/</kbd>
+              {' '}를 눌러 검색하세요
+            </span>
+          </div>
+
           {isAuthenticated ? (
             <>
-              <span className="text-sm text-text-secondary hidden sm:block">
+              <span className="text-[13px] text-text-secondary font-medium hidden sm:block">
                 {user?.username}
               </span>
               <button
                 onClick={logout}
-                className="p-2 text-text-secondary hover:text-text-primary transition-colors"
+                className="p-2 text-text-tertiary hover:text-text-secondary transition-colors rounded-lg hover:bg-bg-secondary"
               >
                 <LogOut className="w-4 h-4" />
               </button>
@@ -62,7 +70,7 @@ export default function Header() {
           ) : (
             <Link
               href="/login"
-              className="px-4 py-2 text-sm font-medium text-white bg-accent rounded-lg hover:bg-blue-600 transition-colors"
+              className="px-4 py-1.5 text-[13px] font-bold text-white bg-accent rounded-full hover:opacity-90 transition-opacity"
             >
               로그인
             </Link>
