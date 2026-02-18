@@ -24,6 +24,16 @@ export class MarketProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  @Get('prices/period-changes')
+  async getPeriodChanges(@Query('period') period: string, @Res() res: Response) {
+    const result = await this.proxyService.forward('market-data', {
+      method: 'GET',
+      url: '/market/prices/period-changes',
+      params: { period },
+    });
+    return res.status(result.status).json(result.data);
+  }
+
   @Get('prices/:symbol')
   async getPrice(@Param('symbol') symbol: string, @Res() res: Response) {
     const result = await this.proxyService.forward('market-data', {

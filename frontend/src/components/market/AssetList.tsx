@@ -8,17 +8,18 @@ import { cn } from '@/lib/format';
 
 interface AssetListProps {
   assets: Asset[];
+  period: string;
+  onPeriodChange: (period: string) => void;
 }
 
 const PAGE_SIZE = 50;
 
 type SortKey = 'volume' | 'amount_desc' | 'change_desc' | 'change_asc';
 
-export default function AssetList({ assets }: AssetListProps) {
+export default function AssetList({ assets, period, onPeriodChange }: AssetListProps) {
   const { t } = useTranslation();
   const [category, setCategory] = useState('all');
   const [sort, setSort] = useState<SortKey>('volume');
-  const [period, setPeriod] = useState('realtime');
   const [page, setPage] = useState(1);
 
   const categoryTabs = [
@@ -125,7 +126,7 @@ export default function AssetList({ assets }: AssetListProps) {
           {periodOptions.map((opt) => (
             <button
               key={opt.key}
-              onClick={() => setPeriod(opt.key)}
+              onClick={() => onPeriodChange(opt.key)}
               className={cn(
                 'h-[32px] px-2.5 text-[13px] font-medium transition-colors whitespace-nowrap rounded-lg',
                 period === opt.key ? pillActive : pillInactive,

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
-import { useMarketPrices, useAssets } from '@/hooks/useMarket';
+import { useMarketPrices, useAssets, usePeriodChanges } from '@/hooks/useMarket';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { useTranslation } from '@/hooks/useTranslation';
 import AssetList from '@/components/market/AssetList';
@@ -18,6 +18,9 @@ export default function HomePage() {
   const [search] = useState('');
   const [livePrices, setLivePrices] = useState<Record<string, PriceUpdate>>({});
   const [activeMainTab, setActiveMainTab] = useState('realtime');
+  const [period, setPeriod] = useState('realtime');
+
+  const { data: periodChanges } = usePeriodChanges(period);
 
   const mainTabs = [
     { key: 'realtime', label: t('market.realtimeChart') },
@@ -47,18 +50,40 @@ export default function HomePage() {
   }, []);
   useWebSocket(symbols, handlePriceUpdate);
 
+  // Build period change map
+  const periodChangeMap = useMemo(() => {
+    const map: Record<string, { changePercent: number; changeAmount: number }> = {};
+    if (periodChanges) {
+      for (const pc of periodChanges) {
+        map[pc.symbol] = { changePercent: pc.changePercent, changeAmount: pc.changeAmount };
+      }
+    }
+    return map;
+  }, [periodChanges]);
+
   const displayAssets = useMemo(() => {
     let result = assets.map((asset) => {
       const live = livePrices[asset.symbol];
-      if (live) return { ...asset, currentPrice: live.price, price: live.price, changePercent: live.changePercent ?? asset.changePercent, changeAmount: live.changeAmount ?? asset.changeAmount };
-      return asset;
+      let display = live
+        ? { ...asset, currentPrice: live.price, price: live.price, changePercent: live.changePercent ?? asset.changePercent, changeAmount: live.changeAmount ?? asset.changeAmount }
+        : asset;
+
+      // Override with period-specific change data when not realtime
+      if (period !== 'realtime') {
+        const pc = periodChangeMap[asset.symbol];
+        if (pc) {
+          display = { ...display, changePercent: pc.changePercent, changeAmount: pc.changeAmount };
+        }
+      }
+
+      return display;
     });
     if (search.trim()) {
       const q = search.toLowerCase();
       result = result.filter((a) => a.symbol.toLowerCase().includes(q) || (a.name ?? '').toLowerCase().includes(q));
     }
     return result;
-  }, [assets, livePrices, search]);
+  }, [assets, livePrices, search, period, periodChangeMap]);
 
   return (
     <div>
@@ -90,7 +115,15 @@ export default function HomePage() {
         ))}
       </div>
 
-      {pricesLoading ? <AssetListSkeleton /> : <AssetList assets={displayAssets} />}
+      {pricesLoading ? (
+        <AssetListSkeleton />
+      ) : (
+        <AssetList
+          assets={displayAssets}
+          period={period}
+          onPeriodChange={setPeriod}
+        />
+      )}
     </div>
   );
 }

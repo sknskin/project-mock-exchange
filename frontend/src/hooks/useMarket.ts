@@ -67,6 +67,29 @@ export function useOrderBook(symbol: string) {
   });
 }
 
+export interface PeriodChange {
+  symbol: string;
+  currentPrice: number;
+  basePrice: number;
+  changeAmount: number;
+  changePercent: number;
+}
+
+export function usePeriodChanges(period: string) {
+  return useQuery<PeriodChange[]>({
+    queryKey: ['market', 'period-changes', period],
+    queryFn: async () => {
+      const { data } = await api.get('/api/market/prices/period-changes', {
+        params: { period },
+      });
+      return data.data ?? data;
+    },
+    enabled: period !== 'realtime',
+    staleTime: 30000,
+    refetchInterval: 30000,
+  });
+}
+
 export function useRecentTrades(symbol: string) {
   return useQuery<Trade[]>({
     queryKey: ['market', 'trades', symbol],

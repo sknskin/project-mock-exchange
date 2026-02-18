@@ -17,6 +17,12 @@ export class MarketController {
     return { success: true, data: prices };
   }
 
+  @Get('prices/period-changes')
+  async getPeriodChanges(@Query('period') period: string) {
+    const changes = await this.marketDataService.getPeriodChanges(period);
+    return { success: true, data: changes };
+  }
+
   @Get('prices/:symbol')
   async getPrice(@Param('symbol') symbol: string) {
     const price = await this.marketDataService.getPrice(symbol);

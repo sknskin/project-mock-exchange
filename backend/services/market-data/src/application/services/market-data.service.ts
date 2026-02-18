@@ -145,6 +145,85 @@ export class MarketDataService implements OnModuleInit {
     });
   }
 
+  async getPeriodChanges(period: string) {
+    const periodMs: Record<string, number> = {
+      '1d': 24 * 60 * 60 * 1000,
+      '1w': 7 * 24 * 60 * 60 * 1000,
+      '1m': 30 * 24 * 60 * 60 * 1000,
+      '3m': 90 * 24 * 60 * 60 * 1000,
+      '6m': 180 * 24 * 60 * 60 * 1000,
+      '1y': 365 * 24 * 60 * 60 * 1000,
+    };
+
+    const ms = periodMs[period];
+    if (!ms) {
+      return [];
+    }
+
+    const startTime = new Date(Date.now() - ms);
+
+    // Get current prices
+    const currentPrices = await this.getLatestPrices();
+    if (currentPrices.length === 0) return [];
+
+    // Get base prices from price_history near the period start for each symbol
+    // Using raw query for DISTINCT ON performance
+    try {
+      const baseRows: Array<{ symbol: string; price: string }> = await this.prisma.$queryRaw`
+        SELECT DISTINCT ON (symbol) symbol, price::text
+        FROM price_history
+        WHERE timestamp >= ${startTime}
+        ORDER BY symbol, timestamp ASC
+      `;
+
+      const baseMap = new Map<string, number>();
+      for (const row of baseRows) {
+        baseMap.set(row.symbol, parseFloat(row.price));
+      }
+
+      // If no history for some symbols, fallback to asset basePrice
+      const assetBasePrices = new Map<string, number>();
+      for (const asset of this.assets) {
+        assetBasePrices.set(asset.symbol, asset.basePrice);
+      }
+
+      return currentPrices.map((tick) => {
+        const base = baseMap.get(tick.symbol) ?? assetBasePrices.get(tick.symbol) ?? tick.price;
+        const changeAmount = tick.price - base;
+        const changePercent = base !== 0 ? (changeAmount / base) * 100 : 0;
+
+        return {
+          symbol: tick.symbol,
+          currentPrice: tick.price,
+          basePrice: base,
+          changeAmount,
+          changePercent,
+        };
+      });
+    } catch (error) {
+      this.logger.error('Failed to get period changes', error);
+      // Fallback: use asset basePrice
+      const assetBasePrices = new Map<string, number>();
+      for (const asset of this.assets) {
+        assetBasePrices.set(asset.symbol, asset.basePrice);
+      }
+
+      return currentPrices.map((tick) => {
+        const base = assetBasePrices.get(tick.symbol) ?? tick.price;
+        const changeAmount = tick.price - base;
+        const changePercent = base !== 0 ? (changeAmount / base) * 100 : 0;
+
+        return {
+          symbol: tick.symbol,
+          currentPrice: tick.price,
+          basePrice: base,
+          changeAmount,
+          changePercent,
+        };
+      });
+    }
+  }
+
   async getCandlesticks(symbol: string, interval: string, limit = 100) {
     return this.prisma.candlestick.findMany({
       where: { symbol, interval },
