@@ -10,7 +10,7 @@ interface AssetListProps {
   assets: Asset[];
 }
 
-const PAGE_SIZE = 30;
+const PAGE_SIZE = 50;
 
 type SortKey = 'volume' | 'amount_desc' | 'change_desc' | 'change_asc';
 

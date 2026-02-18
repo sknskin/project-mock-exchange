@@ -91,11 +91,10 @@ export class MarketDataService implements OnModuleInit {
     for (const asset of this.assets) {
       const tick = this.priceEngine.generateTick(asset);
       ticks.push(tick);
-
-      // Update Redis cache + publish to PubSub
-      await this.priceCache.setPrice(tick);
-      await this.priceCache.publishPrice(tick);
     }
+
+    // Batch SET + PUBLISH via Redis pipeline (2N ops in 1 round-trip)
+    await this.priceCache.setPricesBatch(ticks);
 
     // Publish to Kafka in background (non-blocking)
     for (const tick of ticks) {

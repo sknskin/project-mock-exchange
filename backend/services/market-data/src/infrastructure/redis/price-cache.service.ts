@@ -51,4 +51,21 @@ export class PriceCacheService implements OnModuleDestroy {
       JSON.stringify(tick),
     );
   }
+
+  /**
+   * Batch SET + PUBLISH using Redis pipeline.
+   * Reduces 2N sequential calls to 1 pipelined batch.
+   */
+  async setPricesBatch(ticks: PriceTick[]): Promise<void> {
+    if (ticks.length === 0) return;
+
+    const pipeline = this.redis.pipeline();
+    for (const tick of ticks) {
+      const key = `market:price:${tick.symbol}`;
+      const json = JSON.stringify(tick);
+      pipeline.set(key, json, 'EX', 10);
+      pipeline.publish(`prices:${tick.symbol}`, json);
+    }
+    await pipeline.exec();
+  }
 }
