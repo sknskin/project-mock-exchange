@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import AssetListItem from './AssetListItem';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { Asset } from '@/types';
@@ -44,15 +44,35 @@ export default function AssetList({ assets }: AssetListProps) {
     { key: '1y', label: t('filter.1y') },
   ];
 
+  // Stable sort: only re-sort when user changes sort/category, NOT on every price tick.
+  // This prevents layout shifts (scroll jumping) during live price updates.
+  const sortedOrderRef = useRef<string[]>([]);
+  const lastSortKeyRef = useRef({ category: 'all', sort: 'volume' as SortKey });
+
   const filtered = useMemo(() => {
-    let result = category === 'all' ? assets : assets.filter((a) => a.type === category);
-    switch (sort) {
-      case 'volume': result = [...result].sort((a, b) => (b.volume ?? 0) - (a.volume ?? 0)); break;
-      case 'change_desc': result = [...result].sort((a, b) => b.changePercent - a.changePercent); break;
-      case 'change_asc': result = [...result].sort((a, b) => a.changePercent - b.changePercent); break;
-      case 'amount_desc': result = [...result].sort((a, b) => (b.currentPrice * (b.volume ?? 0)) - (a.currentPrice * (a.volume ?? 0))); break;
+    const assetMap = new Map(assets.map((a) => [a.symbol, a]));
+
+    const needsResort =
+      sortedOrderRef.current.length === 0 ||
+      lastSortKeyRef.current.category !== category ||
+      lastSortKeyRef.current.sort !== sort;
+
+    if (needsResort) {
+      let result = category === 'all' ? [...assets] : assets.filter((a) => a.type === category);
+      const tiebreak = (a: Asset, b: Asset) => a.symbol.localeCompare(b.symbol);
+      switch (sort) {
+        case 'volume': result.sort((a, b) => ((b.volume ?? 0) - (a.volume ?? 0)) || tiebreak(a, b)); break;
+        case 'change_desc': result.sort((a, b) => (b.changePercent - a.changePercent) || tiebreak(a, b)); break;
+        case 'change_asc': result.sort((a, b) => (a.changePercent - b.changePercent) || tiebreak(a, b)); break;
+        case 'amount_desc': result.sort((a, b) => ((b.currentPrice * (b.volume ?? 0)) - (a.currentPrice * (a.volume ?? 0))) || tiebreak(a, b)); break;
+      }
+      sortedOrderRef.current = result.map((a) => a.symbol);
+      lastSortKeyRef.current = { category, sort };
     }
-    return result;
+
+    return sortedOrderRef.current
+      .map((sym) => assetMap.get(sym))
+      .filter((a): a is Asset => a != null);
   }, [assets, category, sort]);
 
   const paged = useMemo(() => filtered.slice(0, page * PAGE_SIZE), [filtered, page]);
