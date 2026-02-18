@@ -63,14 +63,14 @@ export default function HomePage() {
         <MarketTicker assets={displayAssets} />
       )}
 
-      {/* Section tabs - simple text with underline */}
-      <div className="flex items-end gap-6 px-5 sm:px-6 pt-6 border-b border-border">
+      {/* Section tabs */}
+      <div className="flex items-end gap-8 px-5 sm:px-6 pt-7 border-b border-border">
         {mainTabs.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveMainTab(tab.key)}
             className={cn(
-              'pb-3 text-[16px] font-bold transition-colors relative',
+              'pb-3.5 text-[16px] font-bold transition-colors relative',
               activeMainTab === tab.key
                 ? 'text-text-primary'
                 : 'text-text-quaternary hover:text-text-tertiary',
@@ -78,7 +78,7 @@ export default function HomePage() {
           >
             {tab.label}
             {activeMainTab === tab.key && (
-              <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-text-primary" />
+              <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-accent rounded-full" />
             )}
           </button>
         ))}

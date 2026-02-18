@@ -22,15 +22,15 @@ export default function Tabs({
 }: TabsProps) {
   if (variant === 'pill') {
     return (
-      <div className="flex gap-2">
+      <div className="flex gap-2.5">
         {tabs.map((tab) => (
           <button
             key={tab.key}
             onClick={() => onChange(tab.key)}
             className={cn(
-              'h-8 px-3.5 text-[13px] font-medium rounded-full border transition-colors',
+              'h-9 px-4 text-[13px] font-semibold rounded-full border transition-colors',
               activeTab === tab.key
-                ? 'border-text-primary text-text-primary bg-text-primary/[0.07]'
+                ? 'border-accent text-accent bg-accent/[0.08]'
                 : 'border-border text-text-quaternary hover:text-text-tertiary hover:border-text-quaternary',
             )}
           >
@@ -48,7 +48,7 @@ export default function Tabs({
           key={tab.key}
           onClick={() => onChange(tab.key)}
           className={cn(
-            'flex-1 py-3 text-[14px] font-bold transition-colors relative',
+            'flex-1 py-3.5 text-[14px] font-bold transition-colors relative',
             activeTab === tab.key
               ? 'text-text-primary'
               : 'text-text-quaternary hover:text-text-tertiary',
@@ -56,7 +56,7 @@ export default function Tabs({
         >
           {tab.label}
           {activeTab === tab.key && (
-            <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[calc(100%-24px)] h-[2px] bg-text-primary" />
+            <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[calc(100%-24px)] h-[2px] bg-accent rounded-full" />
           )}
         </button>
       ))}

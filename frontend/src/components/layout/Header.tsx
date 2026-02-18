@@ -28,15 +28,15 @@ export default function Header() {
   return (
     <>
       <header className="sticky top-0 z-40 bg-bg-primary border-b border-border">
-        <div className="max-w-[1280px] mx-auto px-5 sm:px-6 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-7">
+        <div className="max-w-[1280px] mx-auto px-5 sm:px-6 lg:px-8 h-[56px] flex items-center justify-between">
+          <div className="flex items-center gap-9">
             <Link href="/" className="flex items-center">
-              <span className="font-extrabold text-[18px] text-text-primary tracking-tight">
+              <span className="font-extrabold text-[19px] text-text-primary tracking-tight">
                 MockX
               </span>
             </Link>
 
-            <nav className="hidden md:flex items-center gap-5">
+            <nav className="hidden md:flex items-center gap-7">
               {navItems.map((item) => (
                 <Link
                   key={item.href}
@@ -54,7 +54,7 @@ export default function Header() {
             </nav>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             <div className="hidden lg:flex items-center gap-2 text-text-quaternary">
               <Search className="w-4 h-4" />
               <span className="text-[13px]">
@@ -78,7 +78,7 @@ export default function Header() {
             ) : (
               <Link
                 href="/login"
-                className="hidden md:inline-flex h-9 px-5 items-center text-[14px] font-bold text-white bg-[#333339] rounded-lg hover:bg-[#3E3E45] transition-colors"
+                className="hidden md:inline-flex h-9 px-5 items-center text-[14px] font-bold text-white bg-accent rounded-lg hover:bg-accent/85 transition-colors"
               >
                 로그인
               </Link>
@@ -134,7 +134,7 @@ export default function Header() {
                   </button>
                 </div>
               ) : (
-                <Link href="/login" className="flex items-center justify-center w-full py-3 text-[14px] font-bold text-white bg-[#333339] rounded-lg">
+                <Link href="/login" className="flex items-center justify-center w-full py-3 text-[14px] font-bold text-white bg-accent rounded-lg">
                   로그인
                 </Link>
               )}

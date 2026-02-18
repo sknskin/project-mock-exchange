@@ -20,18 +20,18 @@ export default function Button({
   const base = 'inline-flex items-center justify-center font-bold transition-colors disabled:opacity-35 disabled:cursor-not-allowed';
 
   const variants = {
-    primary: 'bg-accent text-white rounded-lg hover:bg-accent/90',
+    primary: 'bg-accent text-white rounded-lg hover:bg-accent/85',
     secondary: 'bg-bg-secondary text-text-primary rounded-lg hover:bg-bg-tertiary',
-    danger: 'bg-danger text-white rounded-lg hover:bg-danger/90',
-    buy: 'bg-rise text-white rounded-lg hover:bg-rise/90',
-    sell: 'bg-fall text-white rounded-lg hover:bg-fall/90',
+    danger: 'bg-danger text-white rounded-lg hover:bg-danger/85',
+    buy: 'bg-rise text-white rounded-lg hover:bg-rise/85',
+    sell: 'bg-fall text-white rounded-lg hover:bg-fall/85',
     ghost: 'bg-transparent text-text-tertiary rounded-lg hover:text-text-secondary hover:bg-bg-secondary',
   };
 
   const sizes = {
-    sm: 'h-8 px-3 text-[13px]',
-    md: 'h-10 px-4 text-[14px]',
-    lg: 'h-12 px-5 text-[15px]',
+    sm: 'h-9 px-4 text-[13px]',
+    md: 'h-11 px-5 text-[14px]',
+    lg: 'h-[52px] px-6 text-[15px]',
   };
 
   return (

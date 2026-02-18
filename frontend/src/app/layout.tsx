@@ -3,6 +3,7 @@ import './globals.css';
 import QueryProvider from '@/components/layout/QueryProvider';
 import Header from '@/components/layout/Header';
 import BottomNav from '@/components/layout/BottomNav';
+import FloatingActions from '@/components/layout/FloatingActions';
 
 export const metadata: Metadata = {
   title: 'MockX - 모의투자',
@@ -22,10 +23,11 @@ export default function RootLayout({
       <body className="bg-bg-primary text-text-primary min-h-screen">
         <QueryProvider>
           <Header />
-          <main className="pb-16 md:pb-0 max-w-[1280px] mx-auto">
+          <main className="pb-16 md:pb-0 max-w-[1280px] mx-auto lg:px-6 xl:px-8">
             {children}
           </main>
           <BottomNav />
+          <FloatingActions />
         </QueryProvider>
       </body>
     </html>

@@ -22,8 +22,31 @@ export function formatPercent(percent: number): string {
 }
 
 export function formatAmount(amount: number): string {
-  const sign = amount >= 0 ? '+' : '';
-  return `${sign}${formatPrice(amount)}`;
+  const sign = amount >= 0 ? '+' : '-';
+  const abs = Math.abs(amount);
+  if (abs >= 1000) {
+    return sign + abs.toLocaleString('ko-KR', { maximumFractionDigits: 0 });
+  }
+  if (abs >= 1) {
+    return sign + abs.toLocaleString('ko-KR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  if (abs >= 0.01) {
+    return sign + abs.toFixed(4);
+  }
+  return sign + abs.toFixed(6);
+}
+
+export function formatCompactPrice(price: number): string {
+  if (price >= 10000) {
+    return price.toLocaleString('ko-KR', { maximumFractionDigits: 0 });
+  }
+  if (price >= 1) {
+    return price.toLocaleString('ko-KR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  if (price >= 0.01) {
+    return price.toFixed(4);
+  }
+  return price.toFixed(6);
 }
 
 export function formatCurrency(value: number): string {
