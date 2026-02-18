@@ -10,7 +10,7 @@ interface TransactionListProps {
 export default function TransactionList({ orders }: TransactionListProps) {
   if (orders.length === 0) {
     return (
-      <div className="py-16 text-center text-text-secondary text-sm">
+      <div className="py-20 text-center text-text-quaternary text-[14px]">
         거래 내역이 없습니다
       </div>
     );
@@ -19,12 +19,12 @@ export default function TransactionList({ orders }: TransactionListProps) {
   return (
     <div className="divide-y divide-border">
       {orders.map((order) => (
-        <div key={order.id} className="px-5 py-3.5">
+        <div key={order.id} className="px-6 py-3.5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span
                 className={cn(
-                  'text-xs font-medium px-1.5 py-0.5 rounded',
+                  'text-[12px] font-bold px-1.5 py-0.5 rounded-md',
                   order.side === 'BUY'
                     ? 'bg-rise/10 text-rise'
                     : 'bg-fall/10 text-fall',
@@ -32,16 +32,16 @@ export default function TransactionList({ orders }: TransactionListProps) {
               >
                 {order.side === 'BUY' ? '매수' : '매도'}
               </span>
-              <span className="text-sm font-medium text-text-primary">
+              <span className="text-[14px] font-semibold text-text-primary">
                 {order.symbol}
               </span>
             </div>
             <span
               className={cn(
-                'text-xs px-2 py-0.5 rounded-full',
+                'text-[12px] font-semibold px-2 py-0.5 rounded-full',
                 order.status === 'FILLED' && 'bg-success/10 text-success',
                 order.status === 'PENDING' && 'bg-warning/10 text-warning',
-                order.status === 'CANCELLED' && 'bg-bg-tertiary text-text-tertiary',
+                order.status === 'CANCELLED' && 'bg-bg-tertiary text-text-quaternary',
                 order.status === 'PARTIALLY_FILLED' && 'bg-accent/10 text-accent',
               )}
             >
@@ -55,11 +55,11 @@ export default function TransactionList({ orders }: TransactionListProps) {
             </span>
           </div>
           <div className="flex items-center justify-between mt-1.5">
-            <span className="text-xs text-text-secondary">
+            <span className="text-[12px] text-text-quaternary">
               {formatQuantity(order.quantity)}개 ·{' '}
               {order.price ? formatPrice(order.price) : '시장가'}
             </span>
-            <span className="text-xs text-text-tertiary">
+            <span className="text-[12px] text-text-quaternary">
               {formatDate(order.createdAt)}
             </span>
           </div>
