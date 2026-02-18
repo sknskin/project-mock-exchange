@@ -55,7 +55,7 @@ export default function OrderForm({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <Tabs
         tabs={typeTabs}
         activeTab={orderType}
@@ -81,9 +81,9 @@ export default function OrderForm({
         placeholder="주문 수량"
       />
 
-      <div className="flex justify-between py-2 text-sm">
-        <span className="text-text-secondary">예상 금액</span>
-        <span className="text-text-primary tabular-nums">
+      <div className="flex justify-between py-3 text-[14px]">
+        <span className="text-text-tertiary">예상 금액</span>
+        <span className="text-text-primary font-bold tabular-nums">
           {formatPrice(estimatedTotal)} 원
         </span>
       </div>
