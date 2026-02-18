@@ -25,7 +25,7 @@ export default function OrdersPage() {
   return (
     <AuthGuard>
       <div>
-        <div className="px-4 sm:px-6 py-5">
+        <div className="px-4 sm:px-6 py-6">
           <h1 className="text-[20px] font-extrabold text-text-primary">주문 내역</h1>
         </div>
 
@@ -38,25 +38,25 @@ export default function OrdersPage() {
           />
         </div>
 
-        <div className="mt-4">
+        <div className="mt-5">
           {isLoading ? (
             <div className="space-y-3 px-4 sm:px-6">
               {Array.from({ length: 5 }).map((_, i) => (
-                <Skeleton key={i} className="w-full h-16" />
+                <Skeleton key={i} className="w-full h-16 rounded-xl" />
               ))}
             </div>
           ) : statusFilter === 'PENDING' ? (
-            <div className="divide-y divide-border">
+            <div className="divide-y divide-border/40">
               {orders?.map((order) => (
                 <div key={order.id} className="px-4 sm:px-6 py-3.5">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2.5">
                       <span
                         className={cn(
-                          'text-[12px] font-bold px-1.5 py-0.5 rounded-md',
+                          'text-[12px] font-bold px-2 py-1 rounded-lg',
                           order.side === 'BUY'
-                            ? 'bg-rise/10 text-rise'
-                            : 'bg-fall/10 text-fall',
+                            ? 'bg-rise/12 text-rise'
+                            : 'bg-fall/12 text-fall',
                         )}
                       >
                         {order.side === 'BUY' ? '매수' : '매도'}
@@ -74,7 +74,7 @@ export default function OrdersPage() {
                       취소
                     </Button>
                   </div>
-                  <div className="flex items-center justify-between mt-1.5">
+                  <div className="flex items-center justify-between mt-2">
                     <span className="text-[12px] text-text-quaternary">
                       {formatQuantity(order.quantity)}개 ·{' '}
                       {order.price ? formatPrice(order.price) : '시장가'}
@@ -86,7 +86,7 @@ export default function OrdersPage() {
                 </div>
               ))}
               {(!orders || orders.length === 0) && (
-                <div className="py-20 text-center text-text-quaternary text-[14px]">
+                <div className="py-24 text-center text-text-quaternary text-[14px]">
                   대기중인 주문이 없습니다
                 </div>
               )}

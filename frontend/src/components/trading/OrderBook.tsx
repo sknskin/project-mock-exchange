@@ -15,7 +15,7 @@ export default function OrderBook({ orderBook }: OrderBookProps) {
 
   return (
     <div className="px-4 sm:px-6">
-      <div className="flex text-[12px] text-text-quaternary py-2 font-medium">
+      <div className="flex text-[12px] text-text-quaternary py-2.5 font-medium">
         <span className="flex-1">가격</span>
         <span className="flex-1 text-right">수량</span>
       </div>
@@ -23,9 +23,9 @@ export default function OrderBook({ orderBook }: OrderBookProps) {
       {/* Asks (sell orders) */}
       <div className="space-y-px py-1">
         {[...orderBook.asks].reverse().slice(0, 8).map((ask, i) => (
-          <div key={`ask-${i}`} className="relative flex items-center py-[6px] rounded">
+          <div key={`ask-${i}`} className="relative flex items-center py-[7px] rounded-lg">
             <div
-              className="absolute right-0 top-0 bottom-0 bg-fall/[0.08] rounded"
+              className="absolute right-0 top-0 bottom-0 bg-fall/[0.06] rounded-lg"
               style={{ width: `${(ask.total / maxTotal) * 100}%` }}
             />
             <span className="flex-1 text-[14px] tabular-nums text-fall font-medium relative z-10">
@@ -39,7 +39,7 @@ export default function OrderBook({ orderBook }: OrderBookProps) {
       </div>
 
       {/* Spread */}
-      <div className="py-3 text-center">
+      <div className="py-3.5 text-center">
         <span className="text-[12px] text-text-quaternary font-medium">
           스프레드{' '}
           <span className="text-text-secondary font-semibold">
@@ -51,9 +51,9 @@ export default function OrderBook({ orderBook }: OrderBookProps) {
       {/* Bids (buy orders) */}
       <div className="space-y-px py-1">
         {orderBook.bids.slice(0, 8).map((bid, i) => (
-          <div key={`bid-${i}`} className="relative flex items-center py-[6px] rounded">
+          <div key={`bid-${i}`} className="relative flex items-center py-[7px] rounded-lg">
             <div
-              className="absolute right-0 top-0 bottom-0 bg-rise/[0.08] rounded"
+              className="absolute right-0 top-0 bottom-0 bg-rise/[0.06] rounded-lg"
               style={{ width: `${(bid.total / maxTotal) * 100}%` }}
             />
             <span className="flex-1 text-[14px] tabular-nums text-rise font-medium relative z-10">

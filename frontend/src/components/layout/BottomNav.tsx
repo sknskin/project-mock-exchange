@@ -16,7 +16,7 @@ export default function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-bg-primary border-t border-border md:hidden safe-bottom">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-bg-primary/95 backdrop-blur-md border-t border-border md:hidden safe-bottom">
       <div className="flex items-center justify-around h-[52px]">
         {tabs.map((tab) => {
           const isActive =
@@ -31,7 +31,7 @@ export default function BottomNav() {
               href={tab.href}
               className={cn(
                 'flex flex-col items-center gap-0.5 py-1 px-4',
-                'transition-colors',
+                'transition-colors active:scale-95',
                 isActive ? 'text-text-primary' : 'text-text-quaternary',
               )}
             >

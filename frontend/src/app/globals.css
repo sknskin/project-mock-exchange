@@ -10,7 +10,7 @@
   --color-text-secondary: #8B95A1;
   --color-text-tertiary: #6B7683;
   --color-text-quaternary: #4E5968;
-  --color-border: rgba(255, 255, 255, 0.06);
+  --color-border: rgba(255, 255, 255, 0.08);
   --color-rise: #F04452;
   --color-fall: #3182F6;
   --color-accent: #3182F6;
@@ -40,7 +40,7 @@ body {
   letter-spacing: -0.02em;
 }
 
-/* Scrollbar styling */
+/* Thin scrollbar */
 ::-webkit-scrollbar {
   width: 4px;
 }
@@ -54,7 +54,7 @@ body {
   border-radius: 2px;
 }
 
-/* Number font variant for tabular numbers */
+/* Tabular numbers */
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
@@ -68,7 +68,12 @@ body {
   display: none;
 }
 
-/* Safe area for iOS devices */
+/* iOS safe area */
 .safe-bottom {
   padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Selection color */
+::selection {
+  background: rgba(49, 130, 246, 0.3);
 }

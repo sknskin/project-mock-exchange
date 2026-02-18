@@ -47,7 +47,7 @@ export default function PortfolioPage() {
               cashBalance={portfolio.cashBalance}
             />
 
-            <div className="px-4 sm:px-6 mb-5">
+            <div className="px-4 sm:px-6 mb-6">
               <Button
                 variant="secondary"
                 fullWidth
@@ -57,7 +57,7 @@ export default function PortfolioPage() {
               </Button>
             </div>
 
-            <div className="border-t border-border">
+            <div className="border-t border-border/60">
               <div className="px-4 sm:px-6 py-4">
                 <h2 className="text-[14px] font-bold text-text-secondary">
                   보유 자산 ({portfolio.holdings.length})
@@ -65,11 +65,13 @@ export default function PortfolioPage() {
               </div>
 
               {portfolio.holdings.length > 0 ? (
-                portfolio.holdings.map((holding) => (
-                  <HoldingCard key={holding.symbol} holding={holding} />
-                ))
+                <div className="divide-y divide-border/40">
+                  {portfolio.holdings.map((holding) => (
+                    <HoldingCard key={holding.symbol} holding={holding} />
+                  ))}
+                </div>
               ) : (
-                <div className="py-20 text-center text-text-quaternary text-[14px]">
+                <div className="py-24 text-center text-text-quaternary text-[14px]">
                   보유한 자산이 없습니다
                 </div>
               )}
@@ -96,7 +98,7 @@ export default function PortfolioPage() {
                 <button
                   key={amount}
                   onClick={() => setDepositAmount(amount.toString())}
-                  className="flex-1 py-2.5 text-[13px] font-bold bg-bg-secondary text-text-secondary rounded-lg hover:bg-bg-tertiary transition-colors"
+                  className="flex-1 h-10 text-[13px] font-bold bg-bg-secondary text-text-secondary rounded-xl hover:bg-bg-tertiary active:bg-bg-tertiary transition-colors border border-border/30"
                 >
                   {(amount / 10000).toFixed(0)}만
                 </button>

@@ -22,14 +22,14 @@ export default function OrderSheet({
 
   return (
     <BottomSheet isOpen={isOpen} onClose={onClose} title={`${symbol} 주문`}>
-      <div className="flex gap-2 mb-5">
+      <div className="flex gap-2.5 mb-6">
         <button
           onClick={() => setSide('BUY')}
           className={cn(
-            'flex-1 py-3 text-[14px] font-bold rounded-xl transition-all duration-150',
+            'flex-1 h-11 text-[14px] font-bold rounded-xl transition-all duration-150 active:scale-[0.98]',
             side === 'BUY'
               ? 'bg-rise text-white'
-              : 'bg-bg-secondary text-text-quaternary',
+              : 'bg-bg-secondary text-text-quaternary border border-border/30',
           )}
         >
           매수
@@ -37,10 +37,10 @@ export default function OrderSheet({
         <button
           onClick={() => setSide('SELL')}
           className={cn(
-            'flex-1 py-3 text-[14px] font-bold rounded-xl transition-all duration-150',
+            'flex-1 h-11 text-[14px] font-bold rounded-xl transition-all duration-150 active:scale-[0.98]',
             side === 'SELL'
               ? 'bg-fall text-white'
-              : 'bg-bg-secondary text-text-quaternary',
+              : 'bg-bg-secondary text-text-quaternary border border-border/30',
           )}
         >
           매도

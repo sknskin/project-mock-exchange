@@ -22,10 +22,10 @@ export default function Input({
       )}
       <input
         className={cn(
-          'w-full px-4 py-3 bg-bg-secondary border border-border rounded-xl text-text-primary placeholder-text-quaternary',
-          'focus:outline-none focus:ring-1 focus:ring-accent/30 focus:border-accent/30',
+          'w-full h-12 px-4 bg-bg-secondary border border-border/60 rounded-xl text-text-primary placeholder-text-quaternary',
+          'focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent/40',
           'transition-all duration-150 text-[15px] font-medium',
-          error && 'ring-1 ring-danger/30 border-danger/30',
+          error && 'ring-2 ring-danger/20 border-danger/40',
           className,
         )}
         {...props}

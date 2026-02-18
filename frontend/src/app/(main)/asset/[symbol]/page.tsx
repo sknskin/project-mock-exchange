@@ -50,7 +50,7 @@ export default function AssetDetailPage({
     <div className="pb-24">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 sm:px-6 py-4">
-        <Link href="/" className="text-text-tertiary hover:text-text-secondary transition-colors p-1 -ml-1">
+        <Link href="/" className="p-1.5 -ml-1.5 text-text-tertiary hover:text-text-primary transition-colors rounded-lg hover:bg-bg-secondary/60">
           <ArrowLeft className="w-5 h-5" strokeWidth={2} />
         </Link>
         <div>
@@ -64,11 +64,12 @@ export default function AssetDetailPage({
       {/* Price */}
       <div className="px-4 sm:px-6 pb-5">
         <div className="text-[28px] sm:text-[32px] font-extrabold tabular-nums text-text-primary leading-tight">
-          {formatPrice(currentPrice)}원
+          {formatPrice(currentPrice)}
+          <span className="text-[16px] text-text-tertiary ml-1">원</span>
         </div>
         <div
           className={cn(
-            'text-[14px] font-bold tabular-nums mt-1',
+            'text-[14px] font-bold tabular-nums mt-1.5',
             isRise && 'text-rise',
             isFall && 'text-fall',
             !isRise && !isFall && 'text-text-quaternary',
@@ -98,7 +99,7 @@ export default function AssetDetailPage({
 
           {activeTab === 'trades' && (
             <div className="px-4 sm:px-6">
-              <div className="flex text-[12px] text-text-quaternary py-2 font-medium">
+              <div className="flex text-[12px] text-text-quaternary py-2.5 font-medium">
                 <span className="flex-1">가격</span>
                 <span className="flex-1 text-center">수량</span>
                 <span className="flex-1 text-right">시간</span>
@@ -106,7 +107,7 @@ export default function AssetDetailPage({
               {trades?.map((trade) => (
                 <div
                   key={trade.id}
-                  className="flex items-center py-[6px] text-[14px]"
+                  className="flex items-center py-2 text-[14px]"
                 >
                   <span
                     className={cn(
@@ -144,7 +145,7 @@ export default function AssetDetailPage({
               ].map((item) => (
                 <div
                   key={item.label}
-                  className="flex justify-between py-3.5 border-b border-border"
+                  className="flex justify-between py-3.5 border-b border-border/50"
                 >
                   <span className="text-[14px] text-text-tertiary">
                     {item.label}
@@ -160,16 +161,16 @@ export default function AssetDetailPage({
       </div>
 
       {/* Bottom action buttons */}
-      <div className="fixed bottom-[52px] md:bottom-0 left-0 right-0 bg-bg-primary border-t border-border px-4 sm:px-6 py-3 flex gap-2.5 max-w-[1280px] mx-auto safe-bottom">
+      <div className="fixed bottom-[52px] md:bottom-0 left-0 right-0 bg-bg-primary/95 backdrop-blur-md border-t border-border px-4 sm:px-6 py-3 flex gap-3 max-w-[1280px] mx-auto safe-bottom">
         <button
           onClick={() => setOrderSheetOpen(true)}
-          className="flex-1 py-3.5 bg-rise text-white font-bold rounded-xl active:opacity-80 hover:opacity-90 transition-opacity text-[15px]"
+          className="flex-1 h-12 bg-rise text-white font-bold rounded-xl active:scale-[0.98] hover:brightness-110 transition-all text-[15px]"
         >
           매수
         </button>
         <button
           onClick={() => setOrderSheetOpen(true)}
-          className="flex-1 py-3.5 bg-fall text-white font-bold rounded-xl active:opacity-80 hover:opacity-90 transition-opacity text-[15px]"
+          className="flex-1 h-12 bg-fall text-white font-bold rounded-xl active:scale-[0.98] hover:brightness-110 transition-all text-[15px]"
         >
           매도
         </button>

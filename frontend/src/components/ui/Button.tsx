@@ -18,23 +18,23 @@ export default function Button({
   ...props
 }: ButtonProps) {
   const baseStyles =
-    'inline-flex items-center justify-center font-bold transition-all duration-150 disabled:opacity-35 disabled:cursor-not-allowed';
+    'inline-flex items-center justify-center font-bold transition-all duration-150 disabled:opacity-35 disabled:cursor-not-allowed active:scale-[0.98]';
 
   const variants = {
-    primary: 'bg-accent text-white rounded-xl hover:opacity-90 active:opacity-80',
+    primary: 'bg-accent text-white rounded-xl hover:brightness-110 active:brightness-90',
     secondary:
-      'bg-bg-secondary text-text-primary rounded-xl hover:bg-bg-tertiary active:bg-bg-tertiary',
-    danger: 'bg-danger text-white rounded-xl hover:opacity-90 active:opacity-80',
-    buy: 'bg-rise text-white rounded-xl hover:opacity-90 active:opacity-80',
-    sell: 'bg-fall text-white rounded-xl hover:opacity-90 active:opacity-80',
+      'bg-bg-secondary text-text-primary rounded-xl hover:bg-bg-tertiary active:bg-bg-tertiary border border-border/50',
+    danger: 'bg-danger text-white rounded-xl hover:brightness-110 active:brightness-90',
+    buy: 'bg-rise text-white rounded-xl hover:brightness-110 active:brightness-90',
+    sell: 'bg-fall text-white rounded-xl hover:brightness-110 active:brightness-90',
     ghost:
       'bg-transparent text-text-tertiary rounded-lg hover:text-text-secondary hover:bg-bg-secondary',
   };
 
   const sizes = {
-    sm: 'px-3 py-1.5 text-[13px]',
-    md: 'px-5 py-2.5 text-[14px]',
-    lg: 'px-6 py-3.5 text-[16px]',
+    sm: 'h-8 px-3.5 text-[13px]',
+    md: 'h-10 px-5 text-[14px]',
+    lg: 'h-12 px-6 text-[15px]',
   };
 
   return (

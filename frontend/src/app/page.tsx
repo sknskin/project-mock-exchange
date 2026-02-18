@@ -11,7 +11,7 @@ import type { Asset, AssetInfo, PriceUpdate } from '@/types';
 
 const mainTabs = [
   { key: 'realtime', label: '실시간 차트' },
-  { key: 'popular', label: '지금 뜨는 카테고리' },
+  { key: 'popular', label: '인기 종목' },
   { key: 'trending', label: '투자자 동향' },
 ];
 
@@ -90,13 +90,13 @@ export default function HomePage() {
       )}
 
       {/* Main section tabs */}
-      <div className="flex items-end gap-0.5 px-4 sm:px-6 pt-6 border-b border-border overflow-x-auto scrollbar-hide">
+      <div className="flex items-end px-4 sm:px-6 pt-5 border-b border-border/60 overflow-x-auto scrollbar-hide">
         {mainTabs.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveMainTab(tab.key)}
             className={cn(
-              'px-3 sm:px-4 text-[16px] font-extrabold transition-colors pb-3 relative shrink-0',
+              'px-4 pb-3.5 text-[15px] font-bold transition-colors relative shrink-0',
               activeMainTab === tab.key
                 ? 'text-text-primary'
                 : 'text-text-quaternary hover:text-text-tertiary',
@@ -104,7 +104,7 @@ export default function HomePage() {
           >
             {tab.label}
             {activeMainTab === tab.key && (
-              <span className="absolute bottom-0 left-1 right-1 h-[3px] bg-text-primary rounded-full" />
+              <span className="absolute bottom-0 left-2 right-2 h-[2.5px] bg-text-primary rounded-full" />
             )}
           </button>
         ))}

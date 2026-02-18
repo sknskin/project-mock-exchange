@@ -45,15 +45,15 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center px-5">
-      <div className="w-full max-w-sm">
+      <div className="w-full max-w-[360px]">
         <div className="text-center mb-10">
-          <h1 className="text-[24px] font-extrabold text-text-primary">회원가입</h1>
-          <p className="text-[14px] text-text-tertiary mt-2 font-medium">
+          <h1 className="text-[26px] font-extrabold text-text-primary">회원가입</h1>
+          <p className="text-[14px] text-text-tertiary mt-2.5 font-medium leading-relaxed">
             모의투자를 시작해보세요
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-3">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <Input
             type="text"
             placeholder="사용자 이름"
@@ -81,7 +81,7 @@ export default function RegisterPage() {
             <p className="text-[13px] text-danger text-center py-1">{error}</p>
           )}
 
-          <div className="pt-2">
+          <div className="pt-3">
             <Button
               type="submit"
               size="lg"
@@ -97,7 +97,7 @@ export default function RegisterPage() {
           이미 계정이 있으신가요?{' '}
           <Link
             href="/login"
-            className="text-accent font-bold"
+            className="text-accent font-bold hover:underline"
           >
             로그인
           </Link>

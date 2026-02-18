@@ -10,8 +10,8 @@ interface HoldingCardProps {
 
 function getSymbolColor(symbol: string): string {
   const colors = [
-    'bg-blue-600', 'bg-emerald-600', 'bg-purple-600', 'bg-orange-600',
-    'bg-pink-600', 'bg-cyan-600', 'bg-yellow-600', 'bg-indigo-600',
+    'bg-blue-500', 'bg-emerald-500', 'bg-violet-500', 'bg-orange-500',
+    'bg-pink-500', 'bg-cyan-500', 'bg-amber-500', 'bg-indigo-500',
   ];
   let hash = 0;
   for (let i = 0; i < symbol.length; i++) {
@@ -26,11 +26,11 @@ export default function HoldingCard({ holding }: HoldingCardProps) {
   return (
     <Link
       href={`/asset/${holding.symbol}`}
-      className="flex items-center justify-between px-4 sm:px-6 py-3.5 hover:bg-bg-secondary/50 active:bg-bg-secondary/30 transition-colors"
+      className="flex items-center justify-between px-4 sm:px-6 py-3.5 hover:bg-bg-secondary/40 active:bg-bg-secondary/60 transition-colors"
     >
       <div className="flex items-center gap-3">
         <div className={cn(
-          'w-9 h-9 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0',
+          'w-9 h-9 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0 ring-1 ring-white/10',
           getSymbolColor(holding.symbol),
         )}>
           {holding.symbol.slice(0, 2)}
