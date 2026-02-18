@@ -4,17 +4,24 @@ import { useState, useMemo, useCallback } from 'react';
 import { useMarketPrices, useAssets } from '@/hooks/useMarket';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import AssetList from '@/components/market/AssetList';
-import SearchBar from '@/components/market/SearchBar';
+import MarketTicker from '@/components/market/MarketTicker';
 import { AssetListSkeleton } from '@/components/ui/Skeleton';
+import { cn } from '@/lib/format';
 import type { Asset, AssetInfo, PriceUpdate } from '@/types';
+
+const mainTabs = [
+  { key: 'realtime', label: '실시간 차트' },
+  { key: 'popular', label: '지금 뜨는 카테고리' },
+  { key: 'trending', label: '투자자 동향' },
+];
 
 export default function HomePage() {
   const { data: rawPrices, isLoading: pricesLoading } = useMarketPrices();
   const { data: assetInfos } = useAssets();
-  const [search, setSearch] = useState('');
+  const [search] = useState('');
   const [livePrices, setLivePrices] = useState<Record<string, PriceUpdate>>({});
+  const [activeMainTab, setActiveMainTab] = useState('realtime');
 
-  // Build asset info lookup
   const assetMap = useMemo(() => {
     const map: Record<string, AssetInfo> = {};
     if (assetInfos) {
@@ -25,7 +32,6 @@ export default function HomePage() {
     return map;
   }, [assetInfos]);
 
-  // Normalize prices into Asset format
   const assets = useMemo(() => {
     if (!rawPrices) return [];
     return (rawPrices as any[]).map((p): Asset => {
@@ -78,7 +84,33 @@ export default function HomePage() {
 
   return (
     <div>
-      <SearchBar value={search} onChange={setSearch} />
+      {/* Market Ticker */}
+      {!pricesLoading && displayAssets.length > 0 && (
+        <MarketTicker assets={displayAssets} />
+      )}
+
+      {/* Main section tabs - larger, bolder like Toss */}
+      <div className="flex items-center gap-5 px-6 pt-6 border-b border-border">
+        {mainTabs.map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveMainTab(tab.key)}
+            className={cn(
+              'text-[15px] font-bold transition-colors pb-3 relative',
+              activeMainTab === tab.key
+                ? 'text-text-primary'
+                : 'text-text-quaternary hover:text-text-tertiary',
+            )}
+          >
+            {tab.label}
+            {activeMainTab === tab.key && (
+              <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-text-primary rounded-full" />
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* Asset List */}
       {pricesLoading ? (
         <AssetListSkeleton />
       ) : (

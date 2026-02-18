@@ -25,11 +25,11 @@ export default function OrdersPage() {
   return (
     <AuthGuard>
       <div>
-        <div className="px-5 py-4">
-          <h1 className="text-xl font-bold text-text-primary">주문 내역</h1>
+        <div className="px-6 py-5">
+          <h1 className="text-[20px] font-extrabold text-text-primary">주문 내역</h1>
         </div>
 
-        <div className="px-5">
+        <div className="px-6">
           <Tabs
             tabs={statusTabs}
             activeTab={statusFilter}
@@ -40,21 +40,20 @@ export default function OrdersPage() {
 
         <div className="mt-4">
           {isLoading ? (
-            <div className="space-y-3 px-5">
+            <div className="space-y-3 px-6">
               {Array.from({ length: 5 }).map((_, i) => (
                 <Skeleton key={i} className="w-full h-16" />
               ))}
             </div>
           ) : statusFilter === 'PENDING' ? (
-            /* Pending orders with cancel button */
             <div className="divide-y divide-border">
               {orders?.map((order) => (
-                <div key={order.id} className="px-5 py-3.5">
+                <div key={order.id} className="px-6 py-3.5">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span
                         className={cn(
-                          'text-xs font-medium px-1.5 py-0.5 rounded',
+                          'text-[12px] font-bold px-1.5 py-0.5 rounded-md',
                           order.side === 'BUY'
                             ? 'bg-rise/10 text-rise'
                             : 'bg-fall/10 text-fall',
@@ -62,7 +61,7 @@ export default function OrdersPage() {
                       >
                         {order.side === 'BUY' ? '매수' : '매도'}
                       </span>
-                      <span className="text-sm font-medium text-text-primary">
+                      <span className="text-[14px] font-semibold text-text-primary">
                         {order.symbol}
                       </span>
                     </div>
@@ -76,18 +75,18 @@ export default function OrdersPage() {
                     </Button>
                   </div>
                   <div className="flex items-center justify-between mt-1.5">
-                    <span className="text-xs text-text-secondary">
+                    <span className="text-[12px] text-text-quaternary">
                       {formatQuantity(order.quantity)}개 ·{' '}
                       {order.price ? formatPrice(order.price) : '시장가'}
                     </span>
-                    <span className="text-xs text-text-tertiary">
+                    <span className="text-[12px] text-text-quaternary">
                       {formatDate(order.createdAt)}
                     </span>
                   </div>
                 </div>
               ))}
               {(!orders || orders.length === 0) && (
-                <div className="py-16 text-center text-text-secondary text-sm">
+                <div className="py-20 text-center text-text-quaternary text-[14px]">
                   대기중인 주문이 없습니다
                 </div>
               )}

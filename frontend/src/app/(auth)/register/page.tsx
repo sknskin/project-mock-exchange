@@ -24,13 +24,11 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      // Register
       await api.post('/api/auth/register', {
         username,
         email,
         password,
       });
-      // Auto-login after registration
       const { data: loginResp } = await api.post<AuthResponse>(
         '/api/auth/login',
         { email, password },
@@ -48,14 +46,14 @@ export default function RegisterPage() {
   return (
     <div className="min-h-[80vh] flex items-center justify-center px-5">
       <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-text-primary">회원가입</h1>
-          <p className="text-sm text-text-secondary mt-2">
+        <div className="text-center mb-10">
+          <h1 className="text-[24px] font-extrabold text-text-primary">회원가입</h1>
+          <p className="text-[14px] text-text-tertiary mt-2 font-medium">
             모의투자를 시작해보세요
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3">
           <Input
             type="text"
             placeholder="사용자 이름"
@@ -80,24 +78,26 @@ export default function RegisterPage() {
           />
 
           {error && (
-            <p className="text-sm text-danger text-center">{error}</p>
+            <p className="text-[13px] text-danger text-center py-1">{error}</p>
           )}
 
-          <Button
-            type="submit"
-            size="lg"
-            fullWidth
-            disabled={loading || !username || !email || !password}
-          >
-            {loading ? '가입 중...' : '가입하기'}
-          </Button>
+          <div className="pt-2">
+            <Button
+              type="submit"
+              size="lg"
+              fullWidth
+              disabled={loading || !username || !email || !password}
+            >
+              {loading ? '가입 중...' : '가입하기'}
+            </Button>
+          </div>
         </form>
 
-        <p className="text-center text-sm text-text-secondary mt-6">
+        <p className="text-center text-[14px] text-text-tertiary mt-8">
           이미 계정이 있으신가요?{' '}
           <Link
             href="/login"
-            className="text-accent hover:underline font-medium"
+            className="text-accent font-bold"
           >
             로그인
           </Link>

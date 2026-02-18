@@ -47,46 +47,39 @@ export default function AssetDetailPage({
   const isFall = changePercent < 0;
 
   return (
-    <div className="pb-20">
+    <div className="pb-24">
       {/* Header */}
-      <div className="flex items-center gap-3 px-5 py-4">
-        <Link href="/" className="text-text-secondary hover:text-text-primary">
-          <ArrowLeft className="w-5 h-5" />
+      <div className="flex items-center gap-3 px-6 py-4">
+        <Link href="/" className="text-text-tertiary hover:text-text-secondary transition-colors">
+          <ArrowLeft className="w-5 h-5" strokeWidth={2} />
         </Link>
         <div>
-          <h1 className="text-lg font-bold text-text-primary">
+          <h1 className="text-[17px] font-bold text-text-primary leading-tight">
             {asset?.name ?? symbol}
           </h1>
-          <span className="text-xs text-text-secondary">{symbol}</span>
+          <span className="text-[12px] text-text-quaternary">{symbol}</span>
         </div>
       </div>
 
       {/* Price */}
-      <div className="px-5 pb-4">
-        <div
-          className={cn(
-            'text-3xl font-bold tabular-nums',
-            isRise && 'text-rise',
-            isFall && 'text-fall',
-            !isRise && !isFall && 'text-text-primary',
-          )}
-        >
-          {formatPrice(currentPrice)}
+      <div className="px-6 pb-5">
+        <div className="text-[32px] font-extrabold tabular-nums text-text-primary leading-tight">
+          {formatPrice(currentPrice)}원
         </div>
         <div
           className={cn(
-            'text-sm tabular-nums mt-1',
+            'text-[14px] font-bold tabular-nums mt-1',
             isRise && 'text-rise',
             isFall && 'text-fall',
-            !isRise && !isFall && 'text-text-secondary',
+            !isRise && !isFall && 'text-text-quaternary',
           )}
         >
-          {formatPercent(changePercent)}
+          {isRise && '+'}{formatPercent(changePercent)}
         </div>
       </div>
 
       {/* Chart */}
-      <div className="px-2">
+      <div className="px-1">
         {chartLoading || !candlesticks ? (
           <ChartSkeleton />
         ) : (
@@ -95,17 +88,17 @@ export default function AssetDetailPage({
       </div>
 
       {/* Tabs */}
-      <div className="mt-4">
+      <div className="mt-5">
         <Tabs tabs={detailTabs} activeTab={activeTab} onChange={setActiveTab} />
 
-        <div className="mt-2">
+        <div className="mt-3">
           {activeTab === 'orderbook' && orderBook && (
             <OrderBookComponent orderBook={orderBook} />
           )}
 
           {activeTab === 'trades' && (
-            <div className="px-4">
-              <div className="flex text-xs text-text-tertiary py-2 border-b border-border">
+            <div className="px-6">
+              <div className="flex text-[12px] text-text-quaternary py-2 font-medium">
                 <span className="flex-1">가격</span>
                 <span className="flex-1 text-center">수량</span>
                 <span className="flex-1 text-right">시간</span>
@@ -113,11 +106,11 @@ export default function AssetDetailPage({
               {trades?.map((trade) => (
                 <div
                   key={trade.id}
-                  className="flex items-center py-1.5 text-sm"
+                  className="flex items-center py-[6px] text-[14px]"
                 >
                   <span
                     className={cn(
-                      'flex-1 tabular-nums',
+                      'flex-1 tabular-nums font-medium',
                       trade.side === 'BUY' ? 'text-rise' : 'text-fall',
                     )}
                   >
@@ -126,13 +119,13 @@ export default function AssetDetailPage({
                   <span className="flex-1 text-center tabular-nums text-text-secondary">
                     {formatQuantity(trade.quantity)}
                   </span>
-                  <span className="flex-1 text-right text-xs text-text-tertiary">
+                  <span className="flex-1 text-right text-[12px] text-text-quaternary">
                     {formatTime(trade.timestamp)}
                   </span>
                 </div>
               ))}
               {(!trades || trades.length === 0) && (
-                <div className="py-12 text-center text-text-secondary text-sm">
+                <div className="py-16 text-center text-text-quaternary text-[14px]">
                   체결 내역이 없습니다
                 </div>
               )}
@@ -140,7 +133,7 @@ export default function AssetDetailPage({
           )}
 
           {activeTab === 'info' && asset && (
-            <div className="px-5 space-y-3 py-2">
+            <div className="px-6 py-2">
               {[
                 { label: '현재가', value: formatPrice(asset.price ?? 0) },
                 { label: '매수호가', value: formatPrice(asset.bid ?? 0) },
@@ -151,12 +144,12 @@ export default function AssetDetailPage({
               ].map((item) => (
                 <div
                   key={item.label}
-                  className="flex justify-between py-2 border-b border-border"
+                  className="flex justify-between py-3.5 border-b border-border"
                 >
-                  <span className="text-sm text-text-secondary">
+                  <span className="text-[14px] text-text-tertiary">
                     {item.label}
                   </span>
-                  <span className="text-sm text-text-primary tabular-nums">
+                  <span className="text-[14px] text-text-primary font-semibold tabular-nums">
                     {item.value}
                   </span>
                 </div>
@@ -167,16 +160,16 @@ export default function AssetDetailPage({
       </div>
 
       {/* Bottom action buttons */}
-      <div className="fixed bottom-14 md:bottom-0 left-0 right-0 bg-bg-primary border-t border-border p-4 flex gap-3 max-w-screen-xl mx-auto">
+      <div className="fixed bottom-[52px] md:bottom-0 left-0 right-0 bg-bg-primary border-t border-border px-6 py-3 flex gap-2.5 max-w-[1280px] mx-auto">
         <button
           onClick={() => setOrderSheetOpen(true)}
-          className="flex-1 py-3 bg-rise text-white font-semibold rounded-xl hover:opacity-90 transition-opacity"
+          className="flex-1 py-3.5 bg-rise text-white font-bold rounded-xl hover:opacity-90 transition-opacity text-[15px]"
         >
           매수
         </button>
         <button
           onClick={() => setOrderSheetOpen(true)}
-          className="flex-1 py-3 bg-fall text-white font-semibold rounded-xl hover:opacity-90 transition-opacity"
+          className="flex-1 py-3.5 bg-fall text-white font-bold rounded-xl hover:opacity-90 transition-opacity text-[15px]"
         >
           매도
         </button>

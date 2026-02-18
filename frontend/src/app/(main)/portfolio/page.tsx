@@ -33,10 +33,10 @@ export default function PortfolioPage() {
     <AuthGuard>
       <div>
         {isLoading || !portfolio ? (
-          <div className="px-5 py-6 space-y-4">
-            <Skeleton className="w-20 h-4" />
-            <Skeleton className="w-40 h-8" />
-            <Skeleton className="w-32 h-5" />
+          <div className="px-6 py-7 space-y-4">
+            <Skeleton className="w-16 h-3" />
+            <Skeleton className="w-44 h-9" />
+            <Skeleton className="w-28 h-5" />
           </div>
         ) : (
           <>
@@ -47,7 +47,7 @@ export default function PortfolioPage() {
               cashBalance={portfolio.cashBalance}
             />
 
-            <div className="px-5 mb-4">
+            <div className="px-6 mb-5">
               <Button
                 variant="secondary"
                 fullWidth
@@ -58,8 +58,8 @@ export default function PortfolioPage() {
             </div>
 
             <div className="border-t border-border">
-              <div className="px-5 py-3">
-                <h2 className="text-sm font-medium text-text-secondary">
+              <div className="px-6 py-4">
+                <h2 className="text-[14px] font-bold text-text-secondary">
                   보유 자산 ({portfolio.holdings.length})
                 </h2>
               </div>
@@ -69,7 +69,7 @@ export default function PortfolioPage() {
                   <HoldingCard key={holding.symbol} holding={holding} />
                 ))
               ) : (
-                <div className="py-16 text-center text-text-secondary text-sm">
+                <div className="py-20 text-center text-text-quaternary text-[14px]">
                   보유한 자산이 없습니다
                 </div>
               )}
@@ -82,7 +82,7 @@ export default function PortfolioPage() {
           onClose={() => setDepositOpen(false)}
           title="입금"
         >
-          <div className="space-y-4">
+          <div className="space-y-5">
             <Input
               label="입금 금액 (원)"
               type="number"
@@ -96,7 +96,7 @@ export default function PortfolioPage() {
                 <button
                   key={amount}
                   onClick={() => setDepositAmount(amount.toString())}
-                  className="flex-1 py-2 text-xs bg-bg-tertiary text-text-secondary rounded-lg hover:bg-border transition-colors"
+                  className="flex-1 py-2.5 text-[13px] font-bold bg-bg-secondary text-text-secondary rounded-lg hover:bg-bg-tertiary transition-colors"
                 >
                   {(amount / 10000).toFixed(0)}만
                 </button>

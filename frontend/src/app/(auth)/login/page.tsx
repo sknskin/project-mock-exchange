@@ -40,14 +40,14 @@ export default function LoginPage() {
   return (
     <div className="min-h-[80vh] flex items-center justify-center px-5">
       <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-text-primary">로그인</h1>
-          <p className="text-sm text-text-secondary mt-2">
+        <div className="text-center mb-10">
+          <h1 className="text-[24px] font-extrabold text-text-primary">로그인</h1>
+          <p className="text-[14px] text-text-tertiary mt-2 font-medium">
             MockX 모의투자에 오신 걸 환영합니다
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3">
           <Input
             type="email"
             placeholder="이메일"
@@ -64,24 +64,26 @@ export default function LoginPage() {
           />
 
           {error && (
-            <p className="text-sm text-danger text-center">{error}</p>
+            <p className="text-[13px] text-danger text-center py-1">{error}</p>
           )}
 
-          <Button
-            type="submit"
-            size="lg"
-            fullWidth
-            disabled={loading || !email || !password}
-          >
-            {loading ? '로그인 중...' : '로그인'}
-          </Button>
+          <div className="pt-2">
+            <Button
+              type="submit"
+              size="lg"
+              fullWidth
+              disabled={loading || !email || !password}
+            >
+              {loading ? '로그인 중...' : '로그인'}
+            </Button>
+          </div>
         </form>
 
-        <p className="text-center text-sm text-text-secondary mt-6">
+        <p className="text-center text-[14px] text-text-tertiary mt-8">
           계정이 없으신가요?{' '}
           <Link
             href="/register"
-            className="text-accent hover:underline font-medium"
+            className="text-accent font-bold"
           >
             회원가입
           </Link>
