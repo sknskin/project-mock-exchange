@@ -33,7 +33,7 @@ export default function PortfolioPage() {
     <AuthGuard>
       <div>
         {isLoading || !portfolio ? (
-          <div className="px-4 sm:px-6 py-7 space-y-4">
+          <div className="py-7 space-y-4">
             <Skeleton className="w-16 h-3" />
             <Skeleton className="w-44 h-9" />
             <Skeleton className="w-28 h-5" />
@@ -47,7 +47,7 @@ export default function PortfolioPage() {
               cashBalance={portfolio.cashBalance}
             />
 
-            <div className="px-4 sm:px-6 mb-6">
+            <div className="mb-6">
               <Button
                 variant="secondary"
                 fullWidth
@@ -58,7 +58,7 @@ export default function PortfolioPage() {
             </div>
 
             <div className="border-t border-border/60">
-              <div className="px-4 sm:px-6 py-4">
+              <div className="py-4">
                 <h2 className="text-[14px] font-bold text-text-secondary">
                   보유 자산 ({portfolio.holdings.length})
                 </h2>

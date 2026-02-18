@@ -49,7 +49,7 @@ export default function AssetDetailPage({
   return (
     <div className="pb-24">
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 sm:px-6 py-4">
+      <div className="flex items-center gap-3 py-4">
         <Link href="/" className="p-1.5 -ml-1.5 text-text-tertiary hover:text-text-primary transition-colors rounded-lg hover:bg-bg-secondary/60">
           <ArrowLeft className="w-5 h-5" strokeWidth={2} />
         </Link>
@@ -62,7 +62,7 @@ export default function AssetDetailPage({
       </div>
 
       {/* Price */}
-      <div className="px-4 sm:px-6 pb-5">
+      <div className="pb-5">
         <div className="text-[28px] sm:text-[32px] font-extrabold tabular-nums text-text-primary leading-tight">
           {formatPrice(currentPrice)}
           <span className="text-[16px] text-text-tertiary ml-1">원</span>
@@ -98,7 +98,7 @@ export default function AssetDetailPage({
           )}
 
           {activeTab === 'trades' && (
-            <div className="px-4 sm:px-6">
+            <div className="">
               <div className="flex text-[12px] text-text-quaternary py-2.5 font-medium">
                 <span className="flex-1">가격</span>
                 <span className="flex-1 text-center">수량</span>
@@ -134,7 +134,7 @@ export default function AssetDetailPage({
           )}
 
           {activeTab === 'info' && asset && (
-            <div className="px-4 sm:px-6 py-2">
+            <div className="py-2">
               {[
                 { label: '현재가', value: formatPrice(asset.price ?? 0) },
                 { label: '매수호가', value: formatPrice(asset.bid ?? 0) },
@@ -161,7 +161,7 @@ export default function AssetDetailPage({
       </div>
 
       {/* Bottom action buttons */}
-      <div className="fixed bottom-[52px] md:bottom-0 left-0 right-0 bg-bg-primary/95 backdrop-blur-md border-t border-border px-4 sm:px-6 py-3 flex gap-3 max-w-[1280px] mx-auto safe-bottom">
+      <div className="fixed bottom-[52px] md:bottom-0 left-0 right-0 bg-bg-primary/95 backdrop-blur-md border-t border-border px-5 sm:px-8 lg:px-10 py-3 flex gap-3 max-w-[1080px] mx-auto safe-bottom">
         <button
           onClick={() => setOrderSheetOpen(true)}
           className="flex-1 h-12 bg-rise text-white font-bold rounded-lg hover:bg-rise/90 transition-colors text-[15px]"

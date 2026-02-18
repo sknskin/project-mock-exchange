@@ -27,22 +27,22 @@ export default function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 bg-bg-primary border-b border-border">
-        <div className="max-w-[1280px] mx-auto px-5 sm:px-6 lg:px-8 h-[56px] flex items-center justify-between">
-          <div className="flex items-center gap-9">
+      <header className="sticky top-0 z-40 bg-bg-primary/95 backdrop-blur-md border-b border-border">
+        <div className="max-w-[1080px] mx-auto px-5 sm:px-8 lg:px-10 h-[60px] flex items-center justify-between">
+          <div className="flex items-center gap-10">
             <Link href="/" className="flex items-center">
-              <span className="font-extrabold text-[19px] text-text-primary tracking-tight">
+              <span className="font-extrabold text-[20px] text-text-primary tracking-tight">
                 MockX
               </span>
             </Link>
 
-            <nav className="hidden md:flex items-center gap-7">
+            <nav className="hidden md:flex items-center gap-8">
               {navItems.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    'text-[15px] font-medium transition-colors',
+                    'text-[15px] font-medium transition-colors py-1',
                     pathname === item.href
                       ? 'text-text-primary'
                       : 'text-text-tertiary hover:text-text-primary',
@@ -54,8 +54,8 @@ export default function Header() {
             </nav>
           </div>
 
-          <div className="flex items-center gap-4">
-            <div className="hidden lg:flex items-center gap-2 text-text-quaternary">
+          <div className="flex items-center gap-5">
+            <div className="hidden lg:flex items-center gap-2.5 text-text-quaternary">
               <Search className="w-4 h-4" />
               <span className="text-[13px]">
                 <kbd className="px-1.5 py-0.5 text-[11px] border border-border rounded text-text-tertiary font-mono">/</kbd>
@@ -70,7 +70,7 @@ export default function Header() {
                 </span>
                 <button
                   onClick={logout}
-                  className="p-2 text-text-tertiary hover:text-text-primary transition-colors"
+                  className="p-2.5 text-text-tertiary hover:text-text-primary transition-colors rounded-lg hover:bg-bg-secondary"
                 >
                   <LogOut className="w-[18px] h-[18px]" />
                 </button>
@@ -78,7 +78,7 @@ export default function Header() {
             ) : (
               <Link
                 href="/login"
-                className="hidden md:inline-flex h-9 px-5 items-center text-[14px] font-bold text-white bg-accent rounded-lg hover:bg-accent/85 transition-colors"
+                className="hidden md:inline-flex h-10 px-6 items-center text-[14px] font-bold text-white bg-accent rounded-lg hover:bg-accent/85 transition-colors"
               >
                 로그인
               </Link>
@@ -86,7 +86,7 @@ export default function Header() {
 
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 text-text-secondary hover:text-text-primary transition-colors"
+              className="md:hidden p-2.5 text-text-secondary hover:text-text-primary transition-colors"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
@@ -98,19 +98,19 @@ export default function Header() {
         <div className="fixed inset-0 z-50 md:hidden">
           <div className="absolute inset-0 bg-black/60" onClick={() => setMobileMenuOpen(false)} />
           <div className="absolute top-0 right-0 w-[280px] h-full bg-bg-primary border-l border-border animate-slide-in-right">
-            <div className="flex items-center justify-between px-5 h-14 border-b border-border">
-              <span className="text-[15px] font-bold text-text-primary">메뉴</span>
+            <div className="flex items-center justify-between px-6 h-[60px] border-b border-border">
+              <span className="text-[16px] font-bold text-text-primary">메뉴</span>
               <button onClick={() => setMobileMenuOpen(false)} className="p-2 text-text-tertiary">
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <nav className="px-3 py-4 space-y-0.5">
+            <nav className="px-4 py-5 space-y-1">
               {navItems.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    'flex items-center px-4 py-3 text-[15px] font-medium rounded-lg transition-colors',
+                    'flex items-center px-4 py-3.5 text-[15px] font-medium rounded-xl transition-colors',
                     pathname === item.href
                       ? 'text-text-primary bg-bg-secondary'
                       : 'text-text-tertiary hover:text-text-primary',
@@ -120,21 +120,21 @@ export default function Header() {
                 </Link>
               ))}
             </nav>
-            <div className="px-5 pt-4 mt-2 border-t border-border">
+            <div className="px-6 pt-4 mt-2 border-t border-border">
               {isAuthenticated ? (
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <div className="text-[14px] text-text-secondary">
                     <span className="text-text-primary font-bold">{user?.username}</span> 님
                   </div>
                   <button
                     onClick={() => { logout(); setMobileMenuOpen(false); }}
-                    className="flex items-center gap-2 w-full px-4 py-3 text-[14px] font-medium text-text-tertiary bg-bg-secondary rounded-lg"
+                    className="flex items-center gap-2.5 w-full px-4 py-3.5 text-[14px] font-medium text-text-tertiary bg-bg-secondary rounded-xl"
                   >
                     <LogOut className="w-4 h-4" /> 로그아웃
                   </button>
                 </div>
               ) : (
-                <Link href="/login" className="flex items-center justify-center w-full py-3 text-[14px] font-bold text-white bg-accent rounded-lg">
+                <Link href="/login" className="flex items-center justify-center w-full h-12 text-[14px] font-bold text-white bg-accent rounded-xl">
                   로그인
                 </Link>
               )}

@@ -16,13 +16,13 @@ export default function LeaderboardPage() {
 
   return (
     <div>
-      <div className="px-4 sm:px-6 py-6 flex items-center gap-2.5">
+      <div className="py-6 flex items-center gap-2.5">
         <Trophy className="w-5 h-5 text-yellow-400" />
         <h1 className="text-[20px] font-extrabold text-text-primary">리더보드</h1>
       </div>
 
       {/* Table header */}
-      <div className="flex items-center px-4 sm:px-6 py-2.5 text-[11px] text-text-quaternary font-medium border-b border-border/80">
+      <div className="flex items-center py-2.5 text-[11px] text-text-quaternary font-medium border-b border-border/80">
         <span className="w-10 sm:w-12 text-center shrink-0">순위</span>
         <span className="flex-1 pl-2 min-w-0">사용자</span>
         <span className="w-24 sm:w-36 text-right shrink-0">총 자산</span>
@@ -30,7 +30,7 @@ export default function LeaderboardPage() {
       </div>
 
       {isLoading ? (
-        <div className="space-y-1 px-4 sm:px-6 pt-2">
+        <div className="space-y-1 pt-2">
           {Array.from({ length: 10 }).map((_, i) => (
             <Skeleton key={i} className="w-full h-14 rounded-xl" />
           ))}
@@ -45,7 +45,7 @@ export default function LeaderboardPage() {
               <div
                 key={entry.userId}
                 className={cn(
-                  'flex items-center px-4 sm:px-6 py-3.5',
+                  'flex items-center py-3.5',
                   isTop3 && 'bg-bg-secondary/20',
                 )}
               >

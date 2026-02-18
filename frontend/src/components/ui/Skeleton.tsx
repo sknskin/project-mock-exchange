@@ -21,7 +21,7 @@ export function AssetListSkeleton() {
   return (
     <div className="pt-4">
       {Array.from({ length: 10 }).map((_, i) => (
-        <div key={i} className="flex items-center px-4 sm:px-6 py-3.5">
+        <div key={i} className="flex items-center py-3.5">
           <Skeleton className="w-4 h-4 rounded-full mr-2" />
           <Skeleton className="w-7 h-4 shrink-0" />
           <div className="flex items-center gap-3 flex-1 pl-2.5">

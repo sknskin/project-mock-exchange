@@ -25,11 +25,11 @@ export default function OrdersPage() {
   return (
     <AuthGuard>
       <div>
-        <div className="px-4 sm:px-6 py-6">
+        <div className="py-6">
           <h1 className="text-[20px] font-extrabold text-text-primary">주문 내역</h1>
         </div>
 
-        <div className="px-4 sm:px-6">
+        <div>
           <Tabs
             tabs={statusTabs}
             activeTab={statusFilter}
@@ -40,7 +40,7 @@ export default function OrdersPage() {
 
         <div className="mt-5">
           {isLoading ? (
-            <div className="space-y-3 px-4 sm:px-6">
+            <div className="space-y-3">
               {Array.from({ length: 5 }).map((_, i) => (
                 <Skeleton key={i} className="w-full h-16 rounded-xl" />
               ))}
@@ -48,7 +48,7 @@ export default function OrdersPage() {
           ) : statusFilter === 'PENDING' ? (
             <div className="divide-y divide-border/40">
               {orders?.map((order) => (
-                <div key={order.id} className="px-4 sm:px-6 py-3.5">
+                <div key={order.id} className="py-3.5">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
                       <span
