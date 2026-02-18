@@ -13,21 +13,21 @@ export default function MarketTicker({ assets }: MarketTickerProps) {
   if (topAssets.length === 0) return null;
 
   return (
-    <div className="border-b border-border/60">
-      <div className="px-4 sm:px-6 py-4 flex gap-6 sm:gap-8 lg:gap-12 overflow-x-auto scrollbar-hide">
+    <div className="bg-bg-secondary/30 border-b border-border/40">
+      <div className="px-4 sm:px-6 py-4 flex gap-4 sm:gap-6 lg:gap-10 overflow-x-auto scrollbar-hide">
         {topAssets.map((asset) => {
           const isRise = asset.changePercent > 0;
           const isFall = asset.changePercent < 0;
 
           return (
-            <div key={asset.symbol} className="shrink-0">
+            <div key={asset.symbol} className="shrink-0 min-w-[140px]">
               <div className="text-[12px] text-text-tertiary font-medium mb-1.5">
                 {asset.name ?? asset.symbol}
               </div>
-              <div className="flex items-baseline gap-2">
-                <span className="text-[17px] font-bold text-text-primary tabular-nums">
-                  {formatPrice(asset.currentPrice)}
-                </span>
+              <div className="text-[17px] font-bold text-text-primary tabular-nums">
+                {formatPrice(asset.currentPrice)}
+              </div>
+              <div className="flex items-center gap-1.5 mt-1">
                 <span
                   className={cn(
                     'text-[12px] font-semibold tabular-nums',
@@ -37,7 +37,16 @@ export default function MarketTicker({ assets }: MarketTickerProps) {
                   )}
                 >
                   {formatAmount(asset.changeAmount)}
-                  <span className="ml-0.5 opacity-70">({formatPercent(asset.changePercent)})</span>
+                </span>
+                <span
+                  className={cn(
+                    'text-[11px] font-semibold tabular-nums px-1.5 py-0.5 rounded',
+                    isRise && 'bg-rise/10 text-rise',
+                    isFall && 'bg-fall/10 text-fall',
+                    !isRise && !isFall && 'bg-bg-tertiary text-text-quaternary',
+                  )}
+                >
+                  {formatPercent(asset.changePercent)}
                 </span>
               </div>
             </div>

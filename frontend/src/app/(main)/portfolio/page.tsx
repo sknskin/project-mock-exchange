@@ -98,7 +98,7 @@ export default function PortfolioPage() {
                 <button
                   key={amount}
                   onClick={() => setDepositAmount(amount.toString())}
-                  className="flex-1 h-10 text-[13px] font-bold bg-bg-secondary text-text-secondary rounded-xl hover:bg-bg-tertiary active:bg-bg-tertiary transition-colors border border-border/30"
+                  className="flex-1 h-10 text-[13px] font-bold bg-bg-secondary text-text-secondary rounded-xl hover:bg-bg-tertiary active:scale-[0.97] transition-all border border-white/[0.04]"
                 >
                   {(amount / 10000).toFixed(0)}만
                 </button>

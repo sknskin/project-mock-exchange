@@ -42,16 +42,16 @@ export default function Header() {
               </span>
             </Link>
 
-            <nav className="hidden md:flex items-center gap-1">
+            <nav className="hidden md:flex items-center bg-bg-secondary/50 rounded-xl p-1 gap-0.5">
               {navItems.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    'px-3.5 py-2 text-[14px] font-semibold rounded-lg transition-colors',
+                    'px-4 py-1.5 text-[13px] font-semibold rounded-lg transition-all duration-200',
                     pathname === item.href
-                      ? 'text-text-primary bg-bg-secondary/60'
-                      : 'text-text-tertiary hover:text-text-primary hover:bg-bg-secondary/40',
+                      ? 'text-text-primary bg-bg-tertiary shadow-sm'
+                      : 'text-text-tertiary hover:text-text-secondary',
                   )}
                 >
                   {item.label}
@@ -86,7 +86,7 @@ export default function Header() {
             ) : (
               <Link
                 href="/login"
-                className="hidden md:inline-flex px-5 py-2 text-[13px] font-bold text-white bg-accent rounded-full hover:brightness-110 transition-all"
+                className="hidden md:inline-flex h-9 px-5 items-center text-[13px] font-bold text-white bg-accent rounded-xl shadow-[0_2px_8px_rgba(49,130,246,0.3)] hover:shadow-[0_4px_12px_rgba(49,130,246,0.4)] hover:brightness-110 transition-all"
               >
                 로그인
               </Link>

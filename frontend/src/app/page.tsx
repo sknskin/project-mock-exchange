@@ -90,24 +90,23 @@ export default function HomePage() {
       )}
 
       {/* Main section tabs */}
-      <div className="flex items-end px-4 sm:px-6 pt-5 border-b border-border/60 overflow-x-auto scrollbar-hide">
-        {mainTabs.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveMainTab(tab.key)}
-            className={cn(
-              'px-4 pb-3.5 text-[15px] font-bold transition-colors relative shrink-0',
-              activeMainTab === tab.key
-                ? 'text-text-primary'
-                : 'text-text-quaternary hover:text-text-tertiary',
-            )}
-          >
-            {tab.label}
-            {activeMainTab === tab.key && (
-              <span className="absolute bottom-0 left-2 right-2 h-[2.5px] bg-text-primary rounded-full" />
-            )}
-          </button>
-        ))}
+      <div className="px-4 sm:px-6 pt-4 overflow-x-auto scrollbar-hide">
+        <div className="flex items-center bg-bg-secondary rounded-xl p-1 w-fit">
+          {mainTabs.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveMainTab(tab.key)}
+              className={cn(
+                'h-9 px-5 text-[14px] font-bold transition-all duration-200 rounded-lg shrink-0',
+                activeMainTab === tab.key
+                  ? 'bg-bg-tertiary text-text-primary shadow-sm'
+                  : 'text-text-quaternary hover:text-text-tertiary',
+              )}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Asset List */}
