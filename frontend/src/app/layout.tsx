@@ -8,7 +8,7 @@ import Footer from '@/components/layout/Footer';
 import ThemeProvider from '@/components/layout/ThemeProvider';
 
 export const metadata: Metadata = {
-  title: 'MockX - 모의투자',
+  title: 'VirtuEx - 모의투자',
   description: '실시간 모의 주식/암호화폐 거래 플랫폼',
 };
 

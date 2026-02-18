@@ -58,7 +58,7 @@ const translations = {
     // Footer
     'footer.techStack': '기술 스택',
     'footer.description': '실시간 모의 주식/암호화폐 거래 플랫폼',
-    'footer.rights': '© 2026 MockX. 교육 목적으로 제작되었습니다.',
+    'footer.rights': '© 2026 VirtuEx. 교육 목적으로 제작되었습니다.',
 
     // ScrollTop
     'scrollTop': '맨 위로',
@@ -120,7 +120,7 @@ const translations = {
     // Footer
     'footer.techStack': 'Tech Stack',
     'footer.description': 'Real-time mock stock & crypto trading platform',
-    'footer.rights': '© 2026 MockX. Built for educational purposes.',
+    'footer.rights': '© 2026 VirtuEx. Built for educational purposes.',
 
     // ScrollTop
     'scrollTop': 'Back to top',

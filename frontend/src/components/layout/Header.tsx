@@ -34,7 +34,7 @@ export default function Header() {
           <div className="flex items-center gap-10">
             <Link href="/" className="flex items-center">
               <span className="font-extrabold text-[20px] text-text-primary tracking-tight">
-                MockX
+                VirtuEx
               </span>
             </Link>
 

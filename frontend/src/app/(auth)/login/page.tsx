@@ -43,7 +43,7 @@ export default function LoginPage() {
         <div className="text-center mb-10">
           <h1 className="text-[26px] font-extrabold text-text-primary">로그인</h1>
           <p className="text-[14px] text-text-tertiary mt-2.5 font-medium leading-relaxed">
-            MockX 모의투자에 오신 걸 환영합니다
+            VirtuEx 모의투자에 오신 걸 환영합니다
           </p>
         </div>
 

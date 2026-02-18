@@ -24,7 +24,7 @@ export const useSettingsStore = create<SettingsState>()(
       toggleLocale: () => set({ locale: get().locale === 'ko' ? 'en' : 'ko' }),
     }),
     {
-      name: 'mockx-settings',
+      name: 'virtuex-settings',
       partialize: (state) => ({
         theme: state.theme,
         locale: state.locale,
