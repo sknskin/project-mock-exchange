@@ -17,37 +17,35 @@ export default function PriceDisplay({
   const isFall = changePercent < 0;
 
   const priceSize = {
-    sm: 'text-sm',
-    md: 'text-base',
-    lg: 'text-2xl',
+    sm: 'text-[15px]',
+    md: 'text-[16px]',
+    lg: 'text-[28px]',
   };
 
   const changeSize = {
-    sm: 'text-xs',
-    md: 'text-sm',
-    lg: 'text-base',
+    sm: 'text-[12px]',
+    md: 'text-[13px]',
+    lg: 'text-[15px]',
   };
 
   return (
     <div className="text-right">
       <div
         className={cn(
-          'font-semibold tabular-nums',
+          'font-bold tabular-nums',
           priceSize[size],
-          isRise && 'text-rise',
-          isFall && 'text-fall',
-          !isRise && !isFall && 'text-text-primary',
+          'text-text-primary',
         )}
       >
         {formatPrice(price)}
       </div>
       <div
         className={cn(
-          'tabular-nums',
+          'tabular-nums mt-0.5 font-semibold',
           changeSize[size],
           isRise && 'text-rise',
           isFall && 'text-fall',
-          !isRise && !isFall && 'text-text-secondary',
+          !isRise && !isFall && 'text-text-quaternary',
         )}
       >
         {formatPercent(changePercent)}

@@ -2,8 +2,8 @@
 
 import { useState, useMemo } from 'react';
 import AssetListItem from './AssetListItem';
-import Tabs from '@/components/ui/Tabs';
 import type { Asset } from '@/types';
+import { cn } from '@/lib/format';
 
 interface AssetListProps {
   assets: Asset[];
@@ -15,25 +15,123 @@ const categoryTabs = [
   { key: 'STOCK', label: '주식' },
 ];
 
+const sortOptions = [
+  { key: 'volume', label: '거래량' },
+  { key: 'change_desc', label: '급상승' },
+  { key: 'change_asc', label: '급하락' },
+];
+
+const periodOptions = [
+  { key: 'realtime', label: '실시간' },
+  { key: '1d', label: '1일' },
+  { key: '1w', label: '1주일' },
+  { key: '1m', label: '1개월' },
+  { key: '3m', label: '3개월' },
+  { key: '6m', label: '6개월' },
+  { key: '1y', label: '1년' },
+];
+
+type SortKey = 'volume' | 'change_desc' | 'change_asc';
+
 export default function AssetList({ assets }: AssetListProps) {
   const [category, setCategory] = useState('all');
+  const [sort, setSort] = useState<SortKey>('volume');
+  const [period, setPeriod] = useState('realtime');
 
   const filtered = useMemo(() => {
-    if (category === 'all') return assets;
-    return assets.filter((a) => a.type === category);
-  }, [assets, category]);
+    let result = category === 'all' ? assets : assets.filter((a) => a.type === category);
+
+    switch (sort) {
+      case 'volume':
+        result = [...result].sort((a, b) => (b.volume ?? 0) - (a.volume ?? 0));
+        break;
+      case 'change_desc':
+        result = [...result].sort((a, b) => b.changePercent - a.changePercent);
+        break;
+      case 'change_asc':
+        result = [...result].sort((a, b) => a.changePercent - b.changePercent);
+        break;
+    }
+
+    return result;
+  }, [assets, category, sort]);
+
+  const now = new Date();
+  const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
 
   return (
     <div>
-      <div className="px-5 pt-2 pb-1">
-        <Tabs tabs={categoryTabs} activeTab={category} onChange={setCategory} variant="pill" />
+      {/* Filter row 1: Category + Sort */}
+      <div className="px-6 pt-3 pb-2 flex items-center gap-1.5 overflow-x-auto">
+        {categoryTabs.map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setCategory(tab.key)}
+            className={cn(
+              'px-3 py-[6px] text-[13px] font-semibold rounded-md transition-colors shrink-0',
+              category === tab.key
+                ? 'bg-text-primary text-bg-primary'
+                : 'text-text-tertiary hover:text-text-secondary',
+            )}
+          >
+            {tab.label}
+          </button>
+        ))}
+
+        <div className="w-px h-4 bg-border mx-0.5 shrink-0" />
+
+        {sortOptions.map((opt) => (
+          <button
+            key={opt.key}
+            onClick={() => setSort(opt.key as SortKey)}
+            className={cn(
+              'px-3 py-[6px] text-[13px] font-semibold rounded-md transition-colors shrink-0',
+              sort === opt.key
+                ? 'bg-bg-tertiary text-text-primary'
+                : 'text-text-quaternary hover:text-text-tertiary',
+            )}
+          >
+            {opt.label}
+          </button>
+        ))}
       </div>
-      <div className="mt-2">
-        {filtered.map((asset) => (
-          <AssetListItem key={asset.symbol} asset={asset} />
+
+      {/* Filter row 2: Period */}
+      <div className="px-6 pb-3 flex items-center gap-1 overflow-x-auto">
+        {periodOptions.map((opt) => (
+          <button
+            key={opt.key}
+            onClick={() => setPeriod(opt.key)}
+            className={cn(
+              'px-2.5 py-[5px] text-[12px] font-semibold rounded-md transition-colors shrink-0',
+              period === opt.key
+                ? 'bg-bg-tertiary text-text-primary'
+                : 'text-text-quaternary hover:text-text-tertiary',
+            )}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Table header */}
+      <div className="flex items-center px-6 py-2 text-[12px] text-text-quaternary font-medium border-b border-border">
+        <span className="w-7 ml-[30px] text-center">순위</span>
+        <span className="flex-1 pl-3">
+          종목명 · 오늘 {timeStr} 기준
+        </span>
+        <span className="w-[120px] text-right">현재가</span>
+        <span className="w-[100px] text-right">등락률</span>
+        <span className="w-[100px] text-right hidden md:block">거래대금 순</span>
+      </div>
+
+      {/* Asset rows */}
+      <div>
+        {filtered.map((asset, index) => (
+          <AssetListItem key={asset.symbol} asset={asset} rank={index + 1} />
         ))}
         {filtered.length === 0 && (
-          <div className="py-16 text-center text-text-secondary text-sm">
+          <div className="py-20 text-center text-text-tertiary text-[14px]">
             종목이 없습니다
           </div>
         )}
