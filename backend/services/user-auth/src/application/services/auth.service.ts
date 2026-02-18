@@ -2,6 +2,7 @@ import {
   Injectable,
   UnauthorizedException,
   ConflictException,
+  BadRequestException,
   Logger,
   Inject,
 } from '@nestjs/common';
@@ -15,6 +16,8 @@ import {
   IUserRepository,
 } from '../../domain/repositories/user.repository.interface';
 import { UserEntity } from '../../domain/entities/user.entity';
+import { ResidentNumber } from '../../domain/value-objects/resident-number.vo';
+import { SmsVerificationService } from './sms-verification.service';
 import { PrismaService } from '../../infrastructure/persistence/prisma/prisma.service';
 
 @Injectable()
@@ -28,9 +31,32 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly prisma: PrismaService,
+    private readonly smsVerificationService: SmsVerificationService,
   ) {}
 
-  async register(email: string, username: string, password: string): Promise<UserDto> {
+  async register(params: {
+    email: string;
+    username: string;
+    password: string;
+    passwordConfirm: string;
+    name: string;
+    phone: string;
+    residentNumber: string;
+    address: string;
+    addressDetail: string;
+    zipCode: string;
+  }): Promise<UserDto> {
+    const { email, username, password, passwordConfirm, name, phone, residentNumber, address, addressDetail, zipCode } = params;
+
+    if (password !== passwordConfirm) {
+      throw new BadRequestException('Passwords do not match');
+    }
+
+    const phoneVerified = await this.smsVerificationService.isPhoneVerified(phone);
+    if (!phoneVerified) {
+      throw new BadRequestException('Phone number not verified');
+    }
+
     const existingEmail = await this.userRepository.findByEmail(email);
     if (existingEmail) {
       throw new ConflictException('Email already registered');
@@ -41,12 +67,33 @@ export class AuthService {
       throw new ConflictException('Username already taken');
     }
 
+    const existingPhone = await this.userRepository.findByPhone(phone);
+    if (existingPhone) {
+      throw new ConflictException('Phone number already registered');
+    }
+
+    // Encrypt resident number
+    const rrn = ResidentNumber.from(residentNumber);
+    const rrnValidation = rrn.validate();
+    if (!rrnValidation.valid) {
+      throw new BadRequestException(`Invalid resident number: ${rrnValidation.message}`);
+    }
+
+    const rrnSecret = this.configService.get('JWT_SECRET', 'dev-jwt-secret');
+    const encryptedRrn = rrn.encrypt(rrnSecret);
+
     const passwordHash = await bcrypt.hash(password, this.SALT_ROUNDS);
     const user = UserEntity.create({
       id: '',
       email,
       username,
       passwordHash,
+      name,
+      phone,
+      encryptedRrn,
+      address,
+      addressDetail,
+      zipCode,
     });
 
     const created = await this.userRepository.create(user);
@@ -56,10 +103,13 @@ export class AuthService {
   }
 
   async login(
-    email: string,
+    identifier: string,
     password: string,
   ): Promise<{ user: UserDto; tokens: AuthTokensDto; refreshToken: string }> {
-    const user = await this.userRepository.findByEmail(email);
+    let user = await this.userRepository.findByEmail(identifier);
+    if (!user) {
+      user = await this.userRepository.findByUsername(identifier);
+    }
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
@@ -110,10 +160,16 @@ export class AuthService {
       stored.user.email,
       stored.user.username,
       stored.user.passwordHash,
+      stored.user.name,
       stored.user.role as JwtPayload['role'],
       stored.user.isActive,
       stored.user.createdAt,
       stored.user.updatedAt,
+      stored.user.phone,
+      stored.user.encryptedRrn,
+      stored.user.address,
+      stored.user.addressDetail,
+      stored.user.zipCode,
     );
 
     const tokens = await this.generateTokens(user);
@@ -187,6 +243,20 @@ export class AuthService {
         return value * 86400;
       default:
         return 900;
+    }
+  }
+
+  async checkDuplicate(field: string, value: string): Promise<boolean> {
+    if (!value) return false;
+    switch (field) {
+      case 'email':
+        return !!(await this.userRepository.findByEmail(value));
+      case 'username':
+        return !!(await this.userRepository.findByUsername(value));
+      case 'phone':
+        return !!(await this.userRepository.findByPhone(value));
+      default:
+        return false;
     }
   }
 

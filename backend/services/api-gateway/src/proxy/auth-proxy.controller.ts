@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Req, Res, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
+import { Controller, Post, Get, Body, Req, Res, Query, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { ProxyService } from './proxy.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -74,6 +74,42 @@ export class AuthProxyController {
       headers: {
         Authorization: req.headers.authorization || '',
       },
+    });
+    return res.status(result.status).json(result.data);
+  }
+
+  @Post('sms/send')
+  @HttpCode(HttpStatus.OK)
+  async sendSmsCode(@Body() body: unknown, @Res() res: Response) {
+    const result = await this.proxyService.forward('user-auth', {
+      method: 'POST',
+      url: '/auth/sms/send',
+      data: body,
+    });
+    return res.status(result.status).json(result.data);
+  }
+
+  @Post('sms/verify')
+  @HttpCode(HttpStatus.OK)
+  async verifySmsCode(@Body() body: unknown, @Res() res: Response) {
+    const result = await this.proxyService.forward('user-auth', {
+      method: 'POST',
+      url: '/auth/sms/verify',
+      data: body,
+    });
+    return res.status(result.status).json(result.data);
+  }
+
+  @Get('check-duplicate')
+  async checkDuplicate(
+    @Query('field') field: string,
+    @Query('value') value: string,
+    @Res() res: Response,
+  ) {
+    const result = await this.proxyService.forward('user-auth', {
+      method: 'GET',
+      url: '/auth/check-duplicate',
+      params: { field, value },
     });
     return res.status(result.status).json(result.data);
   }

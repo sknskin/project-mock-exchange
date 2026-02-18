@@ -3,6 +3,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from './services/auth.service';
+import { SmsVerificationService } from './services/sms-verification.service';
 import { AuthController } from '../presentation/controllers/auth.controller';
 import { JwtStrategy } from '../infrastructure/config/jwt.strategy';
 import { UserRepository } from '../infrastructure/persistence/prisma/user.repository';
@@ -24,12 +25,13 @@ import { USER_REPOSITORY } from '../domain/repositories/user.repository.interfac
   controllers: [AuthController],
   providers: [
     AuthService,
+    SmsVerificationService,
     JwtStrategy,
     {
       provide: USER_REPOSITORY,
       useClass: UserRepository,
     },
   ],
-  exports: [AuthService],
+  exports: [AuthService, SmsVerificationService],
 })
 export class AuthModule {}
