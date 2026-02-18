@@ -62,21 +62,21 @@ export default function Footer() {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   const copyToClipboard = useCallback(async (text: string, e: React.MouseEvent) => {
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     try {
       await navigator.clipboard.writeText(text);
-      const id = ++toastId;
-      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-      setToasts((prev) => [
-        ...prev,
-        { id, text: 'Copied!', x: rect.right + 8, y: rect.top + rect.height / 2 },
-      ]);
-      setTimeout(() => {
-        setToasts((prev) => prev.filter((t) => t.id !== id));
-      }, 1500);
     } catch {
-      // clipboard API not available
+      return;
     }
-  }, []);
+    const id = ++toastId;
+    setToasts((prev) => [
+      ...prev,
+      { id, text: t('toast.copied'), x: rect.right + 8, y: rect.top + rect.height / 2 },
+    ]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((toast) => toast.id !== id));
+    }, 1500);
+  }, [t]);
 
   return (
     <footer className="border-t border-border mt-12 md:mt-20">
