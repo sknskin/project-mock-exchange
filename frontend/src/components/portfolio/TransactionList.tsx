@@ -19,7 +19,7 @@ export default function TransactionList({ orders }: TransactionListProps) {
   return (
     <div className="divide-y divide-border">
       {orders.map((order) => (
-        <div key={order.id} className="px-6 py-3.5">
+        <div key={order.id} className="px-4 sm:px-6 py-3.5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span

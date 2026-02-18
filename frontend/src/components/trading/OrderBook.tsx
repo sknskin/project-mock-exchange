@@ -14,7 +14,7 @@ export default function OrderBook({ orderBook }: OrderBookProps) {
   );
 
   return (
-    <div className="px-6">
+    <div className="px-4 sm:px-6">
       <div className="flex text-[12px] text-text-quaternary py-2 font-medium">
         <span className="flex-1">가격</span>
         <span className="flex-1 text-right">수량</span>

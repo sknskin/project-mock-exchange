@@ -14,7 +14,7 @@ export default function MarketTicker({ assets }: MarketTickerProps) {
 
   return (
     <div className="border-b border-border">
-      <div className="px-6 py-4 flex gap-10 overflow-x-auto scrollbar-hide">
+      <div className="px-4 sm:px-6 py-3 sm:py-4 flex gap-6 sm:gap-10 overflow-x-auto scrollbar-hide">
         {topAssets.map((asset) => {
           const isRise = asset.changePercent > 0;
           const isFall = asset.changePercent < 0;

@@ -62,7 +62,7 @@ export default function AssetList({ assets }: AssetListProps) {
   return (
     <div>
       {/* Filter row 1: Category + Sort */}
-      <div className="px-6 pt-3 pb-2 flex items-center gap-1.5 overflow-x-auto">
+      <div className="px-4 sm:px-6 pt-3 pb-2 flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
         {categoryTabs.map((tab) => (
           <button
             key={tab.key}
@@ -97,7 +97,7 @@ export default function AssetList({ assets }: AssetListProps) {
       </div>
 
       {/* Filter row 2: Period */}
-      <div className="px-6 pb-3 flex items-center gap-1 overflow-x-auto">
+      <div className="px-4 sm:px-6 pb-3 flex items-center gap-1 overflow-x-auto scrollbar-hide">
         {periodOptions.map((opt) => (
           <button
             key={opt.key}
@@ -115,14 +115,14 @@ export default function AssetList({ assets }: AssetListProps) {
       </div>
 
       {/* Table header */}
-      <div className="flex items-center px-6 py-2 text-[12px] text-text-quaternary font-medium border-b border-border">
-        <span className="w-7 ml-[30px] text-center">순위</span>
-        <span className="flex-1 pl-3">
+      <div className="flex items-center px-4 sm:px-6 py-2 text-[11px] sm:text-[12px] text-text-quaternary font-medium border-b border-border">
+        <span className="w-6 sm:w-7 ml-[26px] sm:ml-[30px] text-center shrink-0">순위</span>
+        <span className="flex-1 pl-2 sm:pl-3 truncate">
           종목명 · 오늘 {timeStr} 기준
         </span>
-        <span className="w-[120px] text-right">현재가</span>
-        <span className="w-[100px] text-right">등락률</span>
-        <span className="w-[100px] text-right hidden md:block">거래대금 순</span>
+        <span className="w-auto sm:w-[120px] text-right shrink-0 pl-2">현재가</span>
+        <span className="w-[72px] sm:w-[100px] text-right shrink-0">등락률</span>
+        <span className="w-[100px] text-right hidden md:block shrink-0">거래대금 순</span>
       </div>
 
       {/* Asset rows */}

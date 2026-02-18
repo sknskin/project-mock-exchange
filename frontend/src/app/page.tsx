@@ -90,13 +90,13 @@ export default function HomePage() {
       )}
 
       {/* Main section tabs - larger, bolder like Toss */}
-      <div className="flex items-center gap-5 px-6 pt-6 border-b border-border">
+      <div className="flex items-center gap-4 sm:gap-5 px-4 sm:px-6 pt-5 sm:pt-6 border-b border-border overflow-x-auto scrollbar-hide">
         {mainTabs.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveMainTab(tab.key)}
             className={cn(
-              'text-[15px] font-bold transition-colors pb-3 relative',
+              'text-[14px] sm:text-[15px] font-bold transition-colors pb-3 relative shrink-0',
               activeMainTab === tab.key
                 ? 'text-text-primary'
                 : 'text-text-quaternary hover:text-text-tertiary',

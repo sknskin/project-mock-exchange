@@ -19,7 +19,7 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-40 bg-bg-primary border-b border-border">
-      <div className="max-w-[1280px] mx-auto px-6 h-[56px] flex items-center justify-between">
+      <div className="max-w-[1280px] mx-auto px-4 sm:px-6 h-[52px] sm:h-[56px] flex items-center justify-between">
         <div className="flex items-center gap-8">
           <Link href="/" className="flex items-center">
             <span className="font-extrabold text-[18px] text-text-primary tracking-tight">

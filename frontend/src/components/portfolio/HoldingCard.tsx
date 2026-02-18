@@ -26,7 +26,7 @@ export default function HoldingCard({ holding }: HoldingCardProps) {
   return (
     <Link
       href={`/asset/${holding.symbol}`}
-      className="flex items-center justify-between px-6 py-3.5 hover:bg-bg-secondary/50 transition-colors"
+      className="flex items-center justify-between px-4 sm:px-6 py-3.5 hover:bg-bg-secondary/50 active:bg-bg-secondary/30 transition-colors"
     >
       <div className="flex items-center gap-3">
         <div className={cn(

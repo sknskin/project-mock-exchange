@@ -18,9 +18,9 @@ export default function BalanceCard({
   const isPositive = totalPnl >= 0;
 
   return (
-    <div className="px-6 py-7">
+    <div className="px-4 sm:px-6 py-6 sm:py-7">
       <div className="text-[13px] text-text-tertiary font-medium mb-1.5">총 자산</div>
-      <div className="text-[32px] font-extrabold text-text-primary tabular-nums leading-tight">
+      <div className="text-[26px] sm:text-[32px] font-extrabold text-text-primary tabular-nums leading-tight">
         {formatCurrency(totalValue)}
       </div>
       <div className="flex items-center gap-2 mt-2">
