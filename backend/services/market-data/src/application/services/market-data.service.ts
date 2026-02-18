@@ -10,6 +10,7 @@ import { AssetConfig, DEFAULT_ASSETS, PriceTick } from '../../domain/entities/as
 export class MarketDataService implements OnModuleInit {
   private readonly logger = new Logger(MarketDataService.name);
   private assets: AssetConfig[] = [];
+  private assetSymbols = new Set<string>();
   private tickCount = 0;
 
   constructor(
@@ -37,8 +38,46 @@ export class MarketDataService implements OnModuleInit {
       });
       this.priceEngine.initializeAsset(asset);
       this.assets.push(asset);
+      this.assetSymbols.add(asset.symbol);
     }
     this.logger.log(`Seeded ${this.assets.length} assets`);
+  }
+
+  /**
+   * Refresh assets from DB every 5 minutes.
+   * Picks up newly added assets without requiring a service restart.
+   */
+  @Interval(300_000)
+  async refreshAssetsFromDb() {
+    try {
+      const dbAssets = await this.prisma.asset.findMany({
+        where: { isActive: true },
+      });
+
+      let newCount = 0;
+      for (const dbAsset of dbAssets) {
+        if (!this.assetSymbols.has(dbAsset.symbol)) {
+          const config: AssetConfig = {
+            symbol: dbAsset.symbol,
+            name: dbAsset.name,
+            assetType: dbAsset.assetType as AssetConfig['assetType'],
+            basePrice: Number(dbAsset.basePrice),
+            volatility: 0.5,
+            spreadBps: 15,
+          };
+          this.priceEngine.initializeAsset(config);
+          this.assets.push(config);
+          this.assetSymbols.add(dbAsset.symbol);
+          newCount++;
+        }
+      }
+
+      if (newCount > 0) {
+        this.logger.log(`Loaded ${newCount} new assets from DB (total: ${this.assets.length})`);
+      }
+    } catch (error) {
+      this.logger.error('Failed to refresh assets from DB', error);
+    }
   }
 
   /**
@@ -56,9 +95,11 @@ export class MarketDataService implements OnModuleInit {
       // Update Redis cache + publish to PubSub
       await this.priceCache.setPrice(tick);
       await this.priceCache.publishPrice(tick);
+    }
 
-      // Publish to Kafka (for downstream consumers)
-      await this.priceProducer.publishPriceUpdate(tick);
+    // Publish to Kafka in background (non-blocking)
+    for (const tick of ticks) {
+      this.priceProducer.publishPriceUpdate(tick).catch(() => {});
     }
 
     // Persist to DB every 10 ticks (10 seconds) to reduce write pressure
@@ -159,7 +200,7 @@ export class MarketDataService implements OnModuleInit {
           },
           update: {
             closePrice: tick.price,
-            highPrice: { set: tick.high24h }, // simplified; ideally track per-candle
+            highPrice: { set: tick.high24h },
             lowPrice: { set: tick.low24h },
             volume: tick.volume,
           },
