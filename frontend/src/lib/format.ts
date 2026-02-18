@@ -60,6 +60,16 @@ export function formatDate(dateString: string): string {
   });
 }
 
+export function formatVolume(volume: number): string {
+  if (volume >= 1_0000_0000) {
+    return (volume / 1_0000_0000).toFixed(1) + '억';
+  }
+  if (volume >= 1_0000) {
+    return (volume / 1_0000).toFixed(0) + '만';
+  }
+  return volume.toLocaleString('ko-KR', { maximumFractionDigits: 0 });
+}
+
 export function cn(...classes: (string | boolean | undefined | null)[]): string {
   return classes.filter(Boolean).join(' ');
 }

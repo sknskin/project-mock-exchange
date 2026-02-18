@@ -1,19 +1,22 @@
 @import 'tailwindcss';
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css');
 
 @theme {
-  --color-bg-primary: #0D1117;
-  --color-bg-secondary: #161B22;
-  --color-bg-tertiary: #21262D;
-  --color-text-primary: #F0F6FC;
-  --color-text-secondary: #8B949E;
-  --color-text-tertiary: #6E7681;
-  --color-border: #30363D;
-  --color-rise: #FF3B30;
-  --color-fall: #007AFF;
-  --color-accent: #3B82F6;
-  --color-success: #10B981;
-  --color-warning: #F59E0B;
-  --color-danger: #EF4444;
+  --color-bg-primary: #17171C;
+  --color-bg-secondary: #1E1E24;
+  --color-bg-tertiary: #2A2A32;
+  --color-bg-elevated: #25252D;
+  --color-text-primary: #ECECEC;
+  --color-text-secondary: #8B95A1;
+  --color-text-tertiary: #6B7683;
+  --color-text-quaternary: #4E5968;
+  --color-border: rgba(255, 255, 255, 0.06);
+  --color-rise: #F04452;
+  --color-fall: #3182F6;
+  --color-accent: #3182F6;
+  --color-success: #00BFA5;
+  --color-warning: #FF8A00;
+  --color-danger: #F04452;
 }
 
 * {
@@ -28,24 +31,27 @@ body {
   overflow-x: hidden;
   background-color: var(--color-bg-primary);
   color: var(--color-text-primary);
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-    sans-serif;
+  font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont,
+    system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo',
+    'Noto Sans KR', 'Malgun Gothic', 'Apple Color Emoji', 'Segoe UI Emoji',
+    'Segoe UI Symbol', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.02em;
 }
 
 /* Scrollbar styling */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--color-bg-primary);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
   background: var(--color-bg-tertiary);
-  border-radius: 3px;
+  border-radius: 2px;
 }
 
 /* Number font variant for tabular numbers */

@@ -19,7 +19,7 @@ export default function RootLayout({
       <body className="bg-bg-primary text-text-primary min-h-screen">
         <QueryProvider>
           <Header />
-          <main className="pb-16 md:pb-0 max-w-screen-xl mx-auto">
+          <main className="pb-16 md:pb-0 max-w-[1280px] mx-auto">
             {children}
           </main>
           <BottomNav />
