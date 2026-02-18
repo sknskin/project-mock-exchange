@@ -2,18 +2,20 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/format';
 import { Home, Briefcase, Star, Menu } from 'lucide-react';
 
-const tabs = [
-  { href: '/', label: '홈', icon: Home },
-  { href: '/portfolio', label: '내 투자', icon: Briefcase },
-  { href: '/leaderboard', label: '리더보드', icon: Star },
-  { href: '/orders', label: '더보기', icon: Menu },
-];
-
 export default function BottomNav() {
   const pathname = usePathname();
+  const { t } = useTranslation();
+
+  const tabs = [
+    { href: '/', label: t('nav.home'), icon: Home },
+    { href: '/portfolio', label: t('nav.portfolio'), icon: Briefcase },
+    { href: '/leaderboard', label: t('nav.leaderboard'), icon: Star },
+    { href: '/orders', label: t('nav.more'), icon: Menu },
+  ];
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 bg-bg-primary/95 backdrop-blur-md border-t border-border md:hidden safe-bottom">

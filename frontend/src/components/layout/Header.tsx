@@ -4,20 +4,22 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth';
+import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/format';
 import { LogOut, Search, Menu, X } from 'lucide-react';
-
-const navItems = [
-  { href: '/', label: '홈' },
-  { href: '/portfolio', label: '내 투자' },
-  { href: '/orders', label: '주문내역' },
-  { href: '/leaderboard', label: '리더보드' },
-];
 
 export default function Header() {
   const pathname = usePathname();
   const { isAuthenticated, user, logout } = useAuthStore();
+  const { t } = useTranslation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const navItems = [
+    { href: '/', label: t('nav.home') },
+    { href: '/portfolio', label: t('nav.portfolio') },
+    { href: '/orders', label: t('nav.orders') },
+    { href: '/leaderboard', label: t('nav.leaderboard') },
+  ];
 
   useEffect(() => { setMobileMenuOpen(false); }, [pathname]);
   useEffect(() => {
@@ -59,7 +61,7 @@ export default function Header() {
               <Search className="w-4 h-4" />
               <span className="text-[13px]">
                 <kbd className="px-1.5 py-0.5 text-[11px] border border-border rounded text-text-tertiary font-mono">/</kbd>
-                {' '}를 눌러 검색하세요
+                {t('nav.search')}
               </span>
             </div>
 
@@ -80,7 +82,7 @@ export default function Header() {
                 href="/login"
                 className="hidden md:inline-flex h-10 px-6 items-center text-[14px] font-bold text-white bg-accent rounded-lg hover:bg-accent/85 transition-colors"
               >
-                로그인
+                {t('nav.login')}
               </Link>
             )}
 
@@ -99,7 +101,7 @@ export default function Header() {
           <div className="absolute inset-0 bg-black/60" onClick={() => setMobileMenuOpen(false)} />
           <div className="absolute top-0 right-0 w-[280px] h-full bg-bg-primary border-l border-border animate-slide-in-right">
             <div className="flex items-center justify-between px-6 h-[60px] border-b border-border">
-              <span className="text-[16px] font-bold text-text-primary">메뉴</span>
+              <span className="text-[16px] font-bold text-text-primary">{t('nav.menu')}</span>
               <button onClick={() => setMobileMenuOpen(false)} className="p-2 text-text-tertiary">
                 <X className="w-5 h-5" />
               </button>
@@ -124,18 +126,18 @@ export default function Header() {
               {isAuthenticated ? (
                 <div className="space-y-4">
                   <div className="text-[14px] text-text-secondary">
-                    <span className="text-text-primary font-bold">{user?.username}</span> 님
+                    <span className="text-text-primary font-bold">{user?.username}</span>
                   </div>
                   <button
                     onClick={() => { logout(); setMobileMenuOpen(false); }}
                     className="flex items-center gap-2.5 w-full px-4 py-3.5 text-[14px] font-medium text-text-tertiary bg-bg-secondary rounded-xl"
                   >
-                    <LogOut className="w-4 h-4" /> 로그아웃
+                    <LogOut className="w-4 h-4" /> {t('nav.logout')}
                   </button>
                 </div>
               ) : (
                 <Link href="/login" className="flex items-center justify-center w-full h-12 text-[14px] font-bold text-white bg-accent rounded-xl">
-                  로그인
+                  {t('nav.login')}
                 </Link>
               )}
             </div>

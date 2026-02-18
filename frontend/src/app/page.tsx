@@ -3,24 +3,26 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useMarketPrices, useAssets } from '@/hooks/useMarket';
 import { useWebSocket } from '@/hooks/useWebSocket';
+import { useTranslation } from '@/hooks/useTranslation';
 import AssetList from '@/components/market/AssetList';
 import MarketTicker from '@/components/market/MarketTicker';
 import { AssetListSkeleton } from '@/components/ui/Skeleton';
 import { cn } from '@/lib/format';
 import type { Asset, AssetInfo, PriceUpdate } from '@/types';
 
-const mainTabs = [
-  { key: 'realtime', label: '실시간 차트' },
-  { key: 'popular', label: '지금 뜨는 카테고리' },
-  { key: 'trending', label: '투자자 동향' },
-];
-
 export default function HomePage() {
   const { data: rawPrices, isLoading: pricesLoading } = useMarketPrices();
   const { data: assetInfos } = useAssets();
+  const { t } = useTranslation();
   const [search] = useState('');
   const [livePrices, setLivePrices] = useState<Record<string, PriceUpdate>>({});
   const [activeMainTab, setActiveMainTab] = useState('realtime');
+
+  const mainTabs = [
+    { key: 'realtime', label: t('market.realtimeChart') },
+    { key: 'popular', label: t('market.popular') },
+    { key: 'trending', label: t('market.trending') },
+  ];
 
   const assetMap = useMemo(() => {
     const map: Record<string, AssetInfo> = {};
@@ -64,13 +66,13 @@ export default function HomePage() {
       )}
 
       {/* Section tabs */}
-      <div className="flex items-end gap-8 pt-8 pb-0 border-b border-border">
+      <div className="flex items-end gap-7 pt-7 pb-0 border-b border-border">
         {mainTabs.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveMainTab(tab.key)}
             className={cn(
-              'pb-4 text-[16px] font-bold transition-colors relative',
+              'pb-3.5 text-[15px] font-bold transition-colors relative',
               activeMainTab === tab.key
                 ? 'text-text-primary'
                 : 'text-text-quaternary hover:text-text-tertiary',
