@@ -1,3 +1,10 @@
+/**
+ * @file 주소 검색 컴포넌트
+ * @description 다음 우편번호 API를 사용한 주소 검색 컴포넌트
+ *
+ * @file Address Search Component
+ * @description Address search component using Daum Postcode API
+ */
 'use client';
 
 import { useCallback, useRef, useState, useEffect } from 'react';

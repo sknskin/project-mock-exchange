@@ -1,3 +1,10 @@
+/**
+ * @file Portfolio 루트 모듈
+ * @description 잔고 관리, 보유 자산, 거래 내역 모듈을 통합합니다
+ *
+ * @file Portfolio Root Module
+ * @description Integrates balance management, holdings, and transaction modules
+ */
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { CqrsModule } from '@nestjs/cqrs';

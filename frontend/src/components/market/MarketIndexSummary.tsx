@@ -1,3 +1,10 @@
+/**
+ * @file 마켓 인덱스 요약
+ * @description 전체 시장의 등락 비율과 주요 지표를 요약합니다
+ *
+ * @file Market Index Summary
+ * @description Summarizes overall market rise/fall ratio and key indicators
+ */
 'use client';
 
 import { useMemo, useRef, useEffect } from 'react';

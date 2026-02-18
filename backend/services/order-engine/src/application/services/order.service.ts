@@ -1,3 +1,10 @@
+/**
+ * @file 주문 애플리케이션 서비스
+ * @description 주문 생성, 수정, 취소 및 조회 유스케이스를 처리합니다
+ *
+ * @file Order Application Service
+ * @description Handles order placement, modification, cancellation, and query use cases
+ */
 import {
   Injectable,
   Logger,

@@ -1,3 +1,10 @@
+/**
+ * @file 인증 애플리케이션 모듈
+ * @description JWT, Passport, Auth Service를 구성하는 인증 모듈
+ *
+ * @file Auth Application Module
+ * @description Configures JWT, Passport, and Auth Service for authentication
+ */
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';

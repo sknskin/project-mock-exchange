@@ -1,3 +1,10 @@
+/**
+ * @file 시장 데이터 애플리케이션 서비스
+ * @description 가격 조회, 캔들스틱, 기간별 등락률 등 시장 데이터 유스케이스를 처리합니다
+ *
+ * @file Market Data Application Service
+ * @description Handles market data use cases: price queries, candlesticks, period changes
+ */
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Interval } from '@nestjs/schedule';
 import { PriceEngineService } from '../../domain/services/price-engine.service';

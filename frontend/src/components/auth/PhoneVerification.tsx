@@ -1,3 +1,10 @@
+/**
+ * @file 전화번호 인증 컴포넌트
+ * @description SMS 인증번호 발송 및 확인 플로우를 처리합니다
+ *
+ * @file Phone Verification Component
+ * @description Handles SMS verification code sending and confirmation flow
+ */
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';

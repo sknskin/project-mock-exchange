@@ -1,3 +1,10 @@
+/**
+ * @file 시장 데이터 컨트롤러
+ * @description 시세, 자산 목록, 캔들스틱 등 시장 데이터 API 엔드포인트를 처리합니다
+ *
+ * @file Market Data Controller
+ * @description Handles market data API endpoints: prices, assets, candlesticks
+ */
 import { Controller, Get, Param, Query } from '@nestjs/common';
 import { MarketDataService } from '../../application/services/market-data.service';
 

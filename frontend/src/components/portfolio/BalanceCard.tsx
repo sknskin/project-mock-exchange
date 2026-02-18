@@ -1,3 +1,10 @@
+/**
+ * @file 잔고 카드 컴포넌트
+ * @description 현재 사용자의 가용 잔고와 총 자산을 표시합니다
+ *
+ * @file Balance Card Component
+ * @description Displays user available balance and total assets
+ */
 'use client';
 
 import { cn, formatCurrency, formatPercent } from '@/lib/format';

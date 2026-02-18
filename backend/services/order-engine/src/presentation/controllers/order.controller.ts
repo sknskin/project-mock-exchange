@@ -1,3 +1,10 @@
+/**
+ * @file 주문 컨트롤러
+ * @description 주문 생성, 수정, 취소, 조회 API 엔드포인트를 처리합니다
+ *
+ * @file Order Controller
+ * @description Handles order CRUD API endpoints: create, modify, cancel, query
+ */
 import {
   Controller,
   Get,

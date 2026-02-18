@@ -1,3 +1,10 @@
+/**
+ * @file 인증 서비스
+ * @description 회원가입, 로그인, 토큰 갱신, 로그아웃 비즈니스 로직을 처리합니다
+ *
+ * @file Auth Service
+ * @description Handles registration, login, token refresh, and logout business logic
+ */
 import {
   Injectable,
   UnauthorizedException,

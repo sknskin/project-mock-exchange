@@ -1,3 +1,10 @@
+/**
+ * @file 가격 WebSocket 게이트웨이
+ * @description Socket.IO 기반 실시간 가격 스트리밍 게이트웨이
+ *
+ * @file Price WebSocket Gateway
+ * @description Socket.IO-based real-time price streaming gateway
+ */
 import {
   WebSocketGateway,
   WebSocketServer,

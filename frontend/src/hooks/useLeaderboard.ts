@@ -1,3 +1,10 @@
+/**
+ * @file 리더보드 훅
+ * @description TanStack Query로 수익률 기준 상위 사용자 랭킹을 조회합니다
+ *
+ * @file Leaderboard Hook
+ * @description Fetches top user rankings by return rate via TanStack Query
+ */
 'use client';
 
 import { useQuery } from '@tanstack/react-query';

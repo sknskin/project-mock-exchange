@@ -1,3 +1,10 @@
+/**
+ * @file 잔고 도메인 서비스
+ * @description 사용자 잔고의 예약, 해제, 정산 비즈니스 로직을 처리합니다
+ *
+ * @file Balance Domain Service
+ * @description Handles balance reservation, release, and settlement business logic
+ */
 import {
   Injectable,
   Logger,

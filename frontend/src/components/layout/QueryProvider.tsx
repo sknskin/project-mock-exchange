@@ -1,3 +1,10 @@
+/**
+ * @file TanStack Query Provider
+ * @description QueryClient를 생성하고 QueryClientProvider로 감싸는 래퍼
+ *
+ * @file TanStack Query Provider
+ * @description Wrapper creating QueryClient and providing QueryClientProvider
+ */
 'use client';
 
 import { useState } from 'react';

@@ -1,3 +1,10 @@
+/**
+ * @file 프론트엔드 타입 정의
+ * @description Asset, PriceUpdate, Order 등 프론트엔드 공통 타입
+ *
+ * @file Frontend Type Definitions
+ * @description Common frontend types: Asset, PriceUpdate, Order, etc.
+ */
 export interface User {
   id: string;
   email: string;

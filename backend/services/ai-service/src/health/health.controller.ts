@@ -1,3 +1,10 @@
+/**
+ * @file AI Service 헬스 체크 컨트롤러
+ * @description AI Service의 헬스 체크 엔드포인트를 제공합니다
+ *
+ * @file AI Service Health Controller
+ * @description Provides health check endpoints for AI service
+ */
 import { Controller, Get } from '@nestjs/common';
 import {
   HealthCheck,

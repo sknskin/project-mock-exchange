@@ -1,3 +1,10 @@
+/**
+ * @file 주문 폼 컴포넌트
+ * @description 시장가/지정가 매수/매도 주문을 입력하는 폼
+ *
+ * @file Order Form Component
+ * @description Form for entering market/limit buy/sell orders
+ */
 'use client';
 
 import { useState } from 'react';

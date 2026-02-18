@@ -1,3 +1,10 @@
+/**
+ * @file 유효성 피드백 컴포넌트
+ * @description 입력 필드의 유효성 검증 상태를 시각적으로 표시합니다
+ *
+ * @file Validation Feedback Component
+ * @description Visually displays input field validation status
+ */
 'use client';
 
 import { useTranslation } from '@/hooks/useTranslation';

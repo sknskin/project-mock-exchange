@@ -1,3 +1,10 @@
+/**
+ * @file 입력 컴포넌트
+ * @description 라벨, 에러 메시지, 아이콘을 지원하는 공통 입력 필드
+ *
+ * @file Input Component
+ * @description Common input field with label, error message, and icon support
+ */
 'use client';
 
 import { cn } from '@/lib/format';

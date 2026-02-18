@@ -1,3 +1,10 @@
+/**
+ * @file Market Data 헬스 체크 컨트롤러
+ * @description Market Data 서비스의 헬스 체크 엔드포인트를 제공합니다
+ *
+ * @file Market Data Health Controller
+ * @description Provides health check endpoints for Market Data service
+ */
 import { Controller, Get } from '@nestjs/common';
 import {
   HealthCheck,

@@ -1,3 +1,10 @@
+/**
+ * @file 캔들스틱 차트 컴포넌트
+ * @description lightweight-charts 기반 OHLCV 캔들스틱 차트
+ *
+ * @file Candlestick Chart Component
+ * @description OHLCV candlestick chart based on lightweight-charts
+ */
 'use client';
 
 import { useEffect, useRef } from 'react';

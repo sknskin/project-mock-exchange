@@ -1,3 +1,10 @@
+/**
+ * @file 주문 이벤트
+ * @description 주문 생성, 매칭, 취소 등 주문 관련 도메인 이벤트 정의
+ *
+ * @file Order Events
+ * @description Order domain events: placed, matched, cancelled, etc.
+ */
 import { OrderSide, OrderStatus, OrderType } from '../constants';
 
 export const ORDER_EVENT_TYPES = {

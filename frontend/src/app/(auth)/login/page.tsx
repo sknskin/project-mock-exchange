@@ -1,3 +1,10 @@
+/**
+ * @file 로그인 페이지
+ * @description 이메일/아이디와 비밀번호로 로그인하는 페이지
+ *
+ * @file Login Page
+ * @description Login page with email/username and password authentication
+ */
 'use client';
 
 import { useState } from 'react';

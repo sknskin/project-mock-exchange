@@ -1,3 +1,10 @@
+/**
+ * @file User Auth 루트 모듈
+ * @description Auth, Prisma, Redis 모듈을 통합하는 루트 모듈
+ *
+ * @file User Auth Root Module
+ * @description Root module integrating Auth, Prisma, and Redis modules
+ */
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { CqrsModule } from '@nestjs/cqrs';

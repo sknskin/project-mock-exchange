@@ -1,3 +1,10 @@
+/**
+ * @file 회원가입 페이지
+ * @description 사용자 정보를 입력하여 회원가입하는 페이지
+ *
+ * @file Register Page
+ * @description Registration page for new user account creation
+ */
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';

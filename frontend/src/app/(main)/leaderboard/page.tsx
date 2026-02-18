@@ -1,3 +1,10 @@
+/**
+ * @file 리더보드 페이지
+ * @description 수익률 기준 상위 사용자 랭킹을 보여주는 페이지
+ *
+ * @file Leaderboard Page
+ * @description Page showing top user rankings by return rate
+ */
 'use client';
 
 import { useLeaderboard } from '@/hooks/useLeaderboard';

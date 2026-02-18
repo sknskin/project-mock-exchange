@@ -1,3 +1,10 @@
+/**
+ * @file 스켈레톤 컴포넌트
+ * @description 로딩 상태를 표시하는 스켈레톤 UI 컴포넌트
+ *
+ * @file Skeleton Component
+ * @description Skeleton UI component for displaying loading states
+ */
 'use client';
 
 import { cn } from '@/lib/format';

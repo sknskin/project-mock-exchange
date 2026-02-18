@@ -1,3 +1,10 @@
+/**
+ * @file 내부 API 컨트롤러
+ * @description 다른 마이크로서비스에서 호출하는 내부 포트폴리오 API
+ *
+ * @file Internal API Controller
+ * @description Internal portfolio API called by other microservices
+ */
 import {
   Controller,
   Post,

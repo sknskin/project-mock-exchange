@@ -1,3 +1,10 @@
+/**
+ * @file 가격 구독 서비스
+ * @description Redis PubSub으로 실시간 가격 업데이트를 구독하여 WebSocket으로 전달합니다
+ *
+ * @file Price Subscriber Service
+ * @description Subscribes to real-time price updates via Redis PubSub and forwards to WebSocket
+ */
 import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';

@@ -1,3 +1,10 @@
+/**
+ * @file 보유 자산 카드
+ * @description 보유 종목의 수량, 평균 매입가, 수익률을 표시합니다
+ *
+ * @file Holding Card Component
+ * @description Displays holding quantity, average cost, and return rate
+ */
 'use client';
 
 import Link from 'next/link';

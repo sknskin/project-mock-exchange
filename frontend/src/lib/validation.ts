@@ -1,3 +1,10 @@
+/**
+ * @file 유효성 검증 유틸리티
+ * @description 이메일, 비밀번호, 전화번호 등의 유효성 검증 함수
+ *
+ * @file Validation Utilities
+ * @description Validation functions for email, password, phone number, etc.
+ */
 export interface ValidationRule {
   key: string;
   passed: boolean;

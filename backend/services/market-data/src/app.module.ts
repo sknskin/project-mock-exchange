@@ -1,3 +1,10 @@
+/**
+ * @file Market Data 루트 모듈
+ * @description 가격 엔진, 캐시, Kafka 프로듀서 등을 통합하는 루트 모듈
+ *
+ * @file Market Data Root Module
+ * @description Root module integrating price engine, cache, and Kafka producer
+ */
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { CqrsModule } from '@nestjs/cqrs';

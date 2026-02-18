@@ -1,3 +1,10 @@
+/**
+ * @file 가격 캐시 서비스
+ * @description Redis에 최신 가격을 캐싱하고 PubSub으로 실시간 가격을 발행합니다
+ *
+ * @file Price Cache Service
+ * @description Caches latest prices in Redis and publishes real-time prices via PubSub
+ */
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';

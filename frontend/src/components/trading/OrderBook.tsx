@@ -1,3 +1,10 @@
+/**
+ * @file 호가창 컴포넌트
+ * @description 매수/매도 주문 호가와 수량을 시각적으로 표시합니다
+ *
+ * @file Order Book Component
+ * @description Visually displays bid/ask order prices and quantities
+ */
 'use client';
 
 import { cn, formatPrice, formatQuantity } from '@/lib/format';

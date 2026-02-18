@@ -1,3 +1,10 @@
+/**
+ * @file 인증 컨트롤러
+ * @description 회원가입, 로그인, 토큰 갱신 등 인증 API 엔드포인트를 처리합니다
+ *
+ * @file Auth Controller
+ * @description Handles authentication API endpoints: register, login, token refresh, etc.
+ */
 import {
   Controller,
   Post,

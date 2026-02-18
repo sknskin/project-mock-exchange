@@ -1,3 +1,10 @@
+/**
+ * @file Order Engine 서비스 엔트리포인트
+ * @description 주문 매칭 엔진 마이크로서비스를 시작합니다
+ *
+ * @file Order Engine Service Entry Point
+ * @description Bootstraps the order matching engine microservice
+ */
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { AppModule } from './app.module';

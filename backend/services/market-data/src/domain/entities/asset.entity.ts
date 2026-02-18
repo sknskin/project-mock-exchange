@@ -1,3 +1,10 @@
+/**
+ * @file 자산 도메인 엔티티
+ * @description 거래 가능한 자산(종목)의 메타데이터를 표현합니다
+ *
+ * @file Asset Domain Entity
+ * @description Represents metadata of tradeable assets
+ */
 import { AssetType } from '@mock-exchange/common';
 
 export interface PriceTick {

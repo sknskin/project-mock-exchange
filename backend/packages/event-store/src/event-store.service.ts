@@ -1,3 +1,10 @@
+/**
+ * @file Event Store 서비스
+ * @description 이벤트 저장, 스트림 읽기, 스냅샷 관리, Outbox 처리를 담당합니다
+ *
+ * @file Event Store Service
+ * @description Handles event persistence, stream reading, snapshot management, and outbox
+ */
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { Pool, PoolConfig } from 'pg';
 import {

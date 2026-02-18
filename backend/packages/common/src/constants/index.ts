@@ -1,3 +1,10 @@
+/**
+ * @file 공통 상수
+ * @description 서비스 이름, Kafka 토픽 등 마이크로서비스 공통 상수
+ *
+ * @file Common Constants
+ * @description Shared constants: service names, Kafka topics, etc.
+ */
 // Kafka Topics
 export const KAFKA_TOPICS = {
   MARKET_PRICES_UPDATED: 'market.prices.updated',

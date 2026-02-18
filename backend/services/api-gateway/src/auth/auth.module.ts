@@ -1,3 +1,10 @@
+/**
+ * @file 인증 모듈
+ * @description JWT 전략, 가드, 데코레이터를 제공하는 인증 모듈
+ *
+ * @file Auth Module
+ * @description Provides JWT strategy, guard, and decorator for authentication
+ */
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';

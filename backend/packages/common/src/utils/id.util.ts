@@ -1,3 +1,10 @@
+/**
+ * @file ID 생성 유틸리티
+ * @description UUID 등 고유 식별자를 생성하는 유틸리티
+ *
+ * @file ID Generation Utility
+ * @description Utility for generating unique identifiers (UUID, etc.)
+ */
 import { randomBytes } from 'crypto';
 
 const ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';

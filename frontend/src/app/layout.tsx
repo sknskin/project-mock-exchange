@@ -1,3 +1,10 @@
+/**
+ * @file 루트 레이아웃
+ * @description Header, Footer, BottomNav, 테마 등을 포함하는 전역 레이아웃
+ *
+ * @file Root Layout
+ * @description Global layout including Header, Footer, BottomNav, and theme
+ */
 import type { Metadata } from 'next';
 import './globals.css';
 import QueryProvider from '@/components/layout/QueryProvider';

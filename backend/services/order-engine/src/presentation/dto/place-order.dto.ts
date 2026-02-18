@@ -1,3 +1,10 @@
+/**
+ * @file 주문 생성 DTO
+ * @description 주문 생성 요청의 유효성을 검증하는 Data Transfer Object
+ *
+ * @file Place Order DTO
+ * @description Data Transfer Object for validating order placement requests
+ */
 import { IsString, IsEnum, IsOptional, IsNotEmpty, Matches } from 'class-validator';
 
 export class PlaceOrderRequestDto {

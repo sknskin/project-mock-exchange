@@ -1,3 +1,10 @@
+/**
+ * @file Market Data 서비스 엔트리포인트
+ * @description 시장 데이터 마이크로서비스를 시작합니다
+ *
+ * @file Market Data Service Entry Point
+ * @description Bootstraps the market data microservice
+ */
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { AppModule } from './app.module';

@@ -1,3 +1,10 @@
+/**
+ * @file 포트폴리오 훅
+ * @description TanStack Query로 잔고, 보유 자산, 거래 내역을 조회합니다
+ *
+ * @file Portfolio Hook
+ * @description Fetches balance, holdings, and transactions via TanStack Query
+ */
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';

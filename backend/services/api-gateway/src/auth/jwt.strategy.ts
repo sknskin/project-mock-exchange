@@ -1,3 +1,10 @@
+/**
+ * @file JWT 전략
+ * @description Passport JWT 전략으로 Bearer 토큰을 검증하고 페이로드를 추출합니다
+ *
+ * @file JWT Strategy
+ * @description Passport JWT strategy that validates Bearer tokens and extracts payload
+ */
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';

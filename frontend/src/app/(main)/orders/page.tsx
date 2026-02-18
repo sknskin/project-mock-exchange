@@ -1,3 +1,10 @@
+/**
+ * @file 주문 내역 페이지
+ * @description 현재 사용자의 주문 목록과 체결 내역을 보여주는 페이지
+ *
+ * @file Orders Page
+ * @description Page showing user order list and trade history
+ */
 'use client';
 
 import { useState } from 'react';

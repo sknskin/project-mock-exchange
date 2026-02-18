@@ -1,3 +1,10 @@
+/**
+ * @file API 클라이언트
+ * @description Axios 인스턴스 + 토큰 인터셉터 + 자동 갱신 로직
+ *
+ * @file API Client
+ * @description Axios instance with token interceptor and auto-refresh logic
+ */
 import axios from 'axios';
 import { useAuthStore } from '@/stores/auth';
 

@@ -1,3 +1,10 @@
+/**
+ * @file 주민등록번호 입력 컴포넌트
+ * @description 앞자리/뒷자리 분리 입력과 마스킹 처리를 제공합니다
+ *
+ * @file Resident Number Input Component
+ * @description Provides split front/back digit input with masking
+ */
 'use client';
 
 import { useRef } from 'react';

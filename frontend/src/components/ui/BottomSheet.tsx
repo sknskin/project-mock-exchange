@@ -1,3 +1,10 @@
+/**
+ * @file 바텀시트 컴포넌트
+ * @description 터치 드래그로 닫을 수 있는 모바일 바텀시트
+ *
+ * @file Bottom Sheet Component
+ * @description Mobile bottom sheet dismissible by touch drag
+ */
 'use client';
 
 import { useEffect, useCallback } from 'react';

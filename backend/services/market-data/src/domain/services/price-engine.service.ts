@@ -1,3 +1,10 @@
+/**
+ * @file 가격 시뮬레이션 엔진
+ * @description 기하 브라운 운동(GBM) 기반으로 자산 가격을 시뮬레이션합니다
+ *
+ * @file Price Simulation Engine
+ * @description Simulates asset prices using Geometric Brownian Motion (GBM)
+ */
 import { Injectable, Logger } from '@nestjs/common';
 import { AssetConfig, PriceTick } from '../entities/asset.entity';
 

@@ -1,3 +1,10 @@
+/**
+ * @file 중복 확인 훅
+ * @description 이메일, 아이디 등의 중복 여부를 디바운스로 확인합니다
+ *
+ * @file Duplicate Check Hook
+ * @description Checks duplication of email/username with debounce
+ */
 'use client';
 
 import { useState, useEffect, useRef } from 'react';

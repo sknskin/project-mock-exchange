@@ -1,3 +1,10 @@
+/**
+ * @file WebSocket 훅
+ * @description Socket.IO로 실시간 가격 업데이트를 구독합니다
+ *
+ * @file WebSocket Hook
+ * @description Subscribes to real-time price updates via Socket.IO
+ */
 'use client';
 
 import { useEffect, useRef, useCallback } from 'react';

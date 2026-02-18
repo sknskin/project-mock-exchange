@@ -1,3 +1,10 @@
+/**
+ * @file 주문 시트 컴포넌트
+ * @description 모바일에서 바텀시트로 주문 폼을 보여주는 컴포넌트
+ *
+ * @file Order Sheet Component
+ * @description Bottom sheet showing order form on mobile devices
+ */
 'use client';
 
 import { useState } from 'react';

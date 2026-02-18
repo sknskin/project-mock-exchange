@@ -1,3 +1,10 @@
+/**
+ * @file Event Store 인터페이스
+ * @description 이벤트, 스냅샷, 구독 등 Event Store 핵심 타입 정의
+ *
+ * @file Event Store Interface
+ * @description Core type definitions: events, snapshots, subscriptions
+ */
 export interface StoredEvent {
   globalPosition: number;
   streamId: string;

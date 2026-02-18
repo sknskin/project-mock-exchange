@@ -1,3 +1,10 @@
+/**
+ * @file 프록시 서비스
+ * @description Axios를 사용하여 내부 마이크로서비스로 HTTP 요청을 전달합니다
+ *
+ * @file Proxy Service
+ * @description Forwards HTTP requests to internal microservices using Axios
+ */
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';

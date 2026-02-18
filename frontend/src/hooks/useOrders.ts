@@ -1,3 +1,10 @@
+/**
+ * @file 주문 훅
+ * @description TanStack Query로 주문 목록, 체결 내역을 조회하고 주문을 실행합니다
+ *
+ * @file Orders Hook
+ * @description Fetches orders, trade history, and executes orders via TanStack Query
+ */
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';

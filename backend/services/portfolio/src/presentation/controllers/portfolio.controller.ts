@@ -1,3 +1,10 @@
+/**
+ * @file 포트폴리오 컨트롤러
+ * @description 잔고, 보유 자산, 입금, 리더보드 등 포트폴리오 API 엔드포인트를 처리합니다
+ *
+ * @file Portfolio Controller
+ * @description Handles portfolio API endpoints: balance, holdings, deposit, leaderboard
+ */
 import {
   Controller,
   Get,

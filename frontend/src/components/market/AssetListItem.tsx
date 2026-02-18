@@ -1,3 +1,10 @@
+/**
+ * @file 자산 목록 아이템
+ * @description 개별 종목의 이름, 현재가, 등락률을 표시하는 리스트 아이템
+ *
+ * @file Asset List Item
+ * @description List item displaying asset name, current price, and change rate
+ */
 'use client';
 
 import Link from 'next/link';

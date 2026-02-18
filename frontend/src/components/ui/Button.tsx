@@ -1,3 +1,10 @@
+/**
+ * @file 버튼 컴포넌트
+ * @description 다양한 변형(primary, secondary, ghost)을 지원하는 공통 버튼
+ *
+ * @file Button Component
+ * @description Common button with variants: primary, secondary, ghost
+ */
 'use client';
 
 import { cn } from '@/lib/format';

@@ -1,3 +1,10 @@
+/**
+ * @file 종목 상세 페이지
+ * @description 개별 종목의 차트, 호가창, 주문 폼을 보여주는 상세 페이지
+ *
+ * @file Asset Detail Page
+ * @description Detail page showing chart, order book, and order form for an asset
+ */
 'use client';
 
 import { useState, useCallback, use } from 'react';

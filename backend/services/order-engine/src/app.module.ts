@@ -1,3 +1,10 @@
+/**
+ * @file Order Engine 루트 모듈
+ * @description 주문 처리, 매칭 엔진, 이벤트 스토어를 통합하는 루트 모듈
+ *
+ * @file Order Engine Root Module
+ * @description Root module integrating order processing, matching engine, and event store
+ */
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { CqrsModule } from '@nestjs/cqrs';

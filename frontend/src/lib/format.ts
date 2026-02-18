@@ -1,3 +1,10 @@
+/**
+ * @file 포맷 유틸리티
+ * @description 숫자, 가격, 퍼센트 등의 포맷 함수와 cn 유틸리티
+ *
+ * @file Format Utilities
+ * @description Number, price, percent formatting functions and cn utility
+ */
 export function formatPrice(price: number): string {
   if (price >= 1_000_000) {
     return price.toLocaleString('ko-KR', {

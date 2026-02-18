@@ -1,3 +1,10 @@
+/**
+ * @file 거래 내역 리스트
+ * @description 입출금, 매수/매도 거래 내역을 시간순으로 표시합니다
+ *
+ * @file Transaction List Component
+ * @description Displays deposit/withdrawal and trade transactions chronologically
+ */
 'use client';
 
 import { cn, formatPrice, formatQuantity, formatDate } from '@/lib/format';

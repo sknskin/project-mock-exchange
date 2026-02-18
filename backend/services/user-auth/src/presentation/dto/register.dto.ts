@@ -1,3 +1,10 @@
+/**
+ * @file 회원가입 DTO
+ * @description 회원가입 요청의 유효성을 검증하는 Data Transfer Object
+ *
+ * @file Register DTO
+ * @description Data Transfer Object for validating registration requests
+ */
 import { IsEmail, IsString, MinLength, MaxLength, Matches } from 'class-validator';
 
 export class RegisterRequestDto {

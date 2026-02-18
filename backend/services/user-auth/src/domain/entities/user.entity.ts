@@ -1,3 +1,10 @@
+/**
+ * @file 사용자 도메인 엔티티
+ * @description 사용자 정보를 표현하는 도메인 엔티티
+ *
+ * @file User Domain Entity
+ * @description Domain entity representing user information
+ */
 import { UserRole } from '@mock-exchange/common';
 
 export class UserEntity {

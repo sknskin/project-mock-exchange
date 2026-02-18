@@ -1,3 +1,10 @@
+/**
+ * @file 가격 표시 컴포넌트
+ * @description 가격과 등락률을 색상 구분하여 표시합니다
+ *
+ * @file Price Display Component
+ * @description Displays price and change rate with color-coded indicators
+ */
 'use client';
 
 import { cn, formatPrice, formatPercent } from '@/lib/format';

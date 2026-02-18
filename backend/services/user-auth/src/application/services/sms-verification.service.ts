@@ -1,3 +1,10 @@
+/**
+ * @file SMS 인증 서비스
+ * @description Redis 기반 SMS 인증번호 발송 및 검증 로직을 처리합니다
+ *
+ * @file SMS Verification Service
+ * @description Handles SMS verification code sending and validation using Redis
+ */
 import { Injectable, Logger, Inject, BadRequestException } from '@nestjs/common';
 import Redis from 'ioredis';
 import { REDIS_CLIENT } from '../../infrastructure/redis/redis.module';

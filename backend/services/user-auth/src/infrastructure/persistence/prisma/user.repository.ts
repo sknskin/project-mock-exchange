@@ -1,3 +1,10 @@
+/**
+ * @file 사용자 리포지토리 구현체
+ * @description Prisma를 사용한 사용자 리포지토리 구현체 (어댑터)
+ *
+ * @file User Repository Implementation
+ * @description Prisma-based user repository implementation (adapter)
+ */
 import { Injectable } from '@nestjs/common';
 import { UserRole } from '@mock-exchange/common';
 import { IUserRepository } from '../../../domain/repositories/user.repository.interface';

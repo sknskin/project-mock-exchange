@@ -1,3 +1,10 @@
+/**
+ * @file 자산 목록 컴포넌트
+ * @description 필터, 정렬 기능이 있는 전체 종목 리스트
+ *
+ * @file Asset List Component
+ * @description Full asset list with filter and sort functionality
+ */
 'use client';
 
 import { useState, useMemo, useRef } from 'react';

@@ -1,3 +1,10 @@
+/**
+ * @file 주문 애그리거트
+ * @description 이벤트 소싱 기반 주문 애그리거트 (상태 전이 + 도메인 이벤트 발행)
+ *
+ * @file Order Aggregate
+ * @description Event-sourced order aggregate with state transitions and domain events
+ */
 import { AggregateRoot } from '@mock-exchange/event-store';
 import { ORDER_EVENT_TYPES } from '@mock-exchange/common';
 import Decimal from 'decimal.js';

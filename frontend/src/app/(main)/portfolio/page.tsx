@@ -1,3 +1,10 @@
+/**
+ * @file 포트폴리오 페이지
+ * @description 잔고, 보유 자산, 거래 내역을 보여주는 포트폴리오 페이지
+ *
+ * @file Portfolio Page
+ * @description Portfolio page showing balance, holdings, and transactions
+ */
 'use client';
 
 import { useState } from 'react';

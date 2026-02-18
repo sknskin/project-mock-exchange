@@ -1,3 +1,10 @@
+/**
+ * @file 플로팅 액션 버튼
+ * @description 스크롤 맨 위로, 설정 등의 플로팅 액션 버튼
+ *
+ * @file Floating Action Buttons
+ * @description Floating action buttons for scroll-to-top, settings, etc.
+ */
 'use client';
 
 import { useState, useEffect, useRef } from 'react';

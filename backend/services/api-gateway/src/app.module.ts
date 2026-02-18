@@ -1,3 +1,10 @@
+/**
+ * @file API Gateway 루트 모듈
+ * @description Auth, Proxy, Health, WebSocket Gateway 모듈을 통합합니다
+ *
+ * @file API Gateway Root Module
+ * @description Integrates Auth, Proxy, Health, and WebSocket Gateway modules
+ */
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';

@@ -1,3 +1,10 @@
+/**
+ * @file 마켓 데이터 훅
+ * @description TanStack Query로 시세, 자산 목록, 기간별 등락률을 조회합니다
+ *
+ * @file Market Data Hook
+ * @description Fetches prices, assets, and period changes via TanStack Query
+ */
 'use client';
 
 import { useQuery } from '@tanstack/react-query';

@@ -1,3 +1,10 @@
+/**
+ * @file 인증 상태 스토어
+ * @description Zustand으로 관리하는 인증 상태 (로그인, 로그아웃, 토큰)
+ *
+ * @file Auth State Store
+ * @description Zustand store managing auth state: login, logout, tokens
+ */
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { User } from '@/types';

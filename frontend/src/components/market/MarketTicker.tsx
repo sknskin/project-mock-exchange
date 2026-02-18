@@ -1,3 +1,10 @@
+/**
+ * @file 마켓 티커
+ * @description 주요 종목의 실시간 가격을 보여주는 가로 스크롤 티커
+ *
+ * @file Market Ticker
+ * @description Horizontal scrolling ticker showing real-time prices of major assets
+ */
 'use client';
 
 import { cn, formatCompactPrice, formatPercent } from '@/lib/format';

@@ -1,3 +1,10 @@
+/**
+ * @file 주문 매칭 엔진
+ * @description 시장가/지정가 주문을 매칭하는 핵심 매칭 알고리즘
+ *
+ * @file Order Matching Engine
+ * @description Core matching algorithm for market and limit orders
+ */
 import { Injectable, Logger } from '@nestjs/common';
 import Decimal from 'decimal.js';
 import { generateTradeId } from '@mock-exchange/common';

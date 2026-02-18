@@ -1,3 +1,10 @@
+/**
+ * @file CloudEvents 유틸리티
+ * @description CloudEvents 규격 이벤트를 생성하는 팩토리 유틸리티
+ *
+ * @file CloudEvents Utility
+ * @description Factory utility for creating CloudEvents-compliant events
+ */
 import { CloudEvent, EventMetadata } from '../interfaces';
 import { generateEventId, generateCorrelationId } from './id.util';
 

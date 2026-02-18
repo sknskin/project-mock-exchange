@@ -1,3 +1,10 @@
+/**
+ * @file 애그리거트 루트 기본 클래스
+ * @description 이벤트 소싱 기반 애그리거트의 기본 클래스 (이벤트 적용/수집)
+ *
+ * @file Aggregate Root Base Class
+ * @description Base class for event-sourced aggregates with event apply/collect
+ */
 import { StoredEvent } from './interfaces/event-store.interface';
 
 export interface DomainEvent {

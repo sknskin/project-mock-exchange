@@ -1,3 +1,10 @@
+/**
+ * @file Portfolio 서비스 엔트리포인트
+ * @description 포트폴리오 마이크로서비스를 시작합니다
+ *
+ * @file Portfolio Service Entry Point
+ * @description Bootstraps the portfolio microservice
+ */
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { AppModule } from './app.module';

@@ -1,3 +1,10 @@
+/**
+ * @file 주민등록번호 값 객체
+ * @description 주민등록번호의 유효성 검증과 마스킹 처리를 담당합니다
+ *
+ * @file Resident Number Value Object
+ * @description Handles validation and masking of resident registration numbers
+ */
 import { createCipheriv, createDecipheriv, scryptSync, randomBytes } from 'crypto';
 
 const ALGORITHM = 'aes-256-gcm';

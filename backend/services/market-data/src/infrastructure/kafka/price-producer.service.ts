@@ -1,3 +1,10 @@
+/**
+ * @file Kafka 가격 프로듀서
+ * @description 가격 업데이트 이벤트를 Kafka 토픽으로 발행합니다
+ *
+ * @file Kafka Price Producer
+ * @description Publishes price update events to Kafka topics
+ */
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Kafka, Producer } from 'kafkajs';

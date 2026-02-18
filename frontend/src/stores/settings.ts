@@ -1,3 +1,10 @@
+/**
+ * @file 설정 스토어
+ * @description Zustand persist로 관리하는 테마, 언어 설정
+ *
+ * @file Settings Store
+ * @description Zustand persisted store for theme and language settings
+ */
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Locale } from '@/lib/i18n';

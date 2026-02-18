@@ -1,3 +1,10 @@
+/**
+ * @file 종목 검색바
+ * @description 키보드 단축키(/)를 지원하는 종목 검색 컴포넌트
+ *
+ * @file Search Bar
+ * @description Asset search component with keyboard shortcut (/) support
+ */
 'use client';
 
 import { Search } from 'lucide-react';

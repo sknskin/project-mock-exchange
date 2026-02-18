@@ -1,3 +1,10 @@
+/**
+ * @file 탭 컴포넌트
+ * @description 가로 스크롤 가능한 탭 네비게이션 컴포넌트
+ *
+ * @file Tabs Component
+ * @description Horizontally scrollable tab navigation component
+ */
 'use client';
 
 import { cn } from '@/lib/format';
