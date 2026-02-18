@@ -89,14 +89,14 @@ export default function HomePage() {
         <MarketTicker assets={displayAssets} />
       )}
 
-      {/* Main section tabs - larger, bolder like Toss */}
-      <div className="flex items-center gap-4 sm:gap-5 px-4 sm:px-6 pt-5 sm:pt-6 border-b border-border overflow-x-auto scrollbar-hide">
+      {/* Main section tabs */}
+      <div className="flex items-end gap-0.5 px-4 sm:px-6 pt-6 border-b border-border overflow-x-auto scrollbar-hide">
         {mainTabs.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveMainTab(tab.key)}
             className={cn(
-              'text-[14px] sm:text-[15px] font-bold transition-colors pb-3 relative shrink-0',
+              'px-3 sm:px-4 text-[16px] font-extrabold transition-colors pb-3 relative shrink-0',
               activeMainTab === tab.key
                 ? 'text-text-primary'
                 : 'text-text-quaternary hover:text-text-tertiary',
@@ -104,7 +104,7 @@ export default function HomePage() {
           >
             {tab.label}
             {activeMainTab === tab.key && (
-              <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-text-primary rounded-full" />
+              <span className="absolute bottom-0 left-1 right-1 h-[3px] bg-text-primary rounded-full" />
             )}
           </button>
         ))}

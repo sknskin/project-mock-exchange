@@ -62,13 +62,13 @@ export default function AssetList({ assets }: AssetListProps) {
   return (
     <div>
       {/* Filter row 1: Category + Sort */}
-      <div className="px-4 sm:px-6 pt-3 pb-2 flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
+      <div className="px-4 sm:px-6 pt-5 pb-2 flex items-center gap-2 overflow-x-auto scrollbar-hide">
         {categoryTabs.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setCategory(tab.key)}
             className={cn(
-              'px-3 py-[6px] text-[13px] font-semibold rounded-md transition-colors shrink-0',
+              'h-9 px-4 text-[14px] font-bold rounded-full transition-colors shrink-0',
               category === tab.key
                 ? 'bg-text-primary text-bg-primary'
                 : 'text-text-tertiary hover:text-text-secondary',
@@ -78,14 +78,14 @@ export default function AssetList({ assets }: AssetListProps) {
           </button>
         ))}
 
-        <div className="w-px h-4 bg-border mx-0.5 shrink-0" />
+        <div className="w-px h-5 bg-text-quaternary/30 mx-1 shrink-0" />
 
         {sortOptions.map((opt) => (
           <button
             key={opt.key}
             onClick={() => setSort(opt.key as SortKey)}
             className={cn(
-              'px-3 py-[6px] text-[13px] font-semibold rounded-md transition-colors shrink-0',
+              'h-9 px-4 text-[14px] font-semibold rounded-full transition-colors shrink-0',
               sort === opt.key
                 ? 'bg-bg-tertiary text-text-primary'
                 : 'text-text-quaternary hover:text-text-tertiary',
@@ -97,13 +97,13 @@ export default function AssetList({ assets }: AssetListProps) {
       </div>
 
       {/* Filter row 2: Period */}
-      <div className="px-4 sm:px-6 pb-3 flex items-center gap-1 overflow-x-auto scrollbar-hide">
+      <div className="px-4 sm:px-6 pb-4 flex items-center gap-1 overflow-x-auto scrollbar-hide">
         {periodOptions.map((opt) => (
           <button
             key={opt.key}
             onClick={() => setPeriod(opt.key)}
             className={cn(
-              'px-2.5 py-[5px] text-[12px] font-semibold rounded-md transition-colors shrink-0',
+              'h-8 px-3.5 text-[13px] font-semibold rounded-full transition-colors shrink-0',
               period === opt.key
                 ? 'bg-bg-tertiary text-text-primary'
                 : 'text-text-quaternary hover:text-text-tertiary',
