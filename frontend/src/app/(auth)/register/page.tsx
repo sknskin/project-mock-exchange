@@ -1,25 +1,85 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
+import ValidationFeedback from '@/components/ui/ValidationFeedback';
+import PhoneVerification from '@/components/auth/PhoneVerification';
+import ResidentNumberInput from '@/components/auth/ResidentNumberInput';
+import AddressSearch from '@/components/auth/AddressSearch';
 import { useAuthStore } from '@/stores/auth';
+import { useTranslation } from '@/hooks/useTranslation';
+import { useDuplicateCheck } from '@/hooks/useDuplicateCheck';
+import {
+  validatePassword,
+  validatePasswordMatch,
+  validateEmail,
+  validateUsername,
+  validateResidentNumber,
+} from '@/lib/validation';
 import api from '@/lib/api';
 import type { AuthResponse } from '@/types';
 
 export default function RegisterPage() {
   const router = useRouter();
   const login = useAuthStore((s) => s.login);
+  const { t } = useTranslation();
+
+  // Form fields
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [passwordConfirm, setPasswordConfirm] = useState('');
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [phoneVerified, setPhoneVerified] = useState(false);
+  const [rrnFront, setRrnFront] = useState('');
+  const [rrnBack, setRrnBack] = useState('');
+  const [address, setAddress] = useState('');
+  const [addressDetail, setAddressDetail] = useState('');
+  const [zipCode, setZipCode] = useState('');
+
+  // UI state
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Duplicate checks
+  const usernameStatus = useDuplicateCheck('username', username, 3);
+  const emailStatus = useDuplicateCheck('email', email, 5);
+  const phoneStatus = useDuplicateCheck('phone', phone, 10);
+
+  // Validations
+  const usernameValidation = useMemo(() => validateUsername(username), [username]);
+  const emailValid = useMemo(() => validateEmail(email), [email]);
+  const passwordRules = useMemo(() => validatePassword(password), [password]);
+  const passwordMatch = useMemo(() => validatePasswordMatch(password, passwordConfirm), [password, passwordConfirm]);
+  const rrnValid = useMemo(() => validateResidentNumber(rrnFront, rrnBack), [rrnFront, rrnBack]);
+
+  const allPasswordRulesPassed = passwordRules.every((r) => r.passed);
+
+  const canSubmit =
+    username.length >= 3 &&
+    usernameValidation.format &&
+    usernameValidation.length &&
+    usernameStatus === 'available' &&
+    emailValid &&
+    emailStatus === 'available' &&
+    allPasswordRulesPassed &&
+    passwordMatch &&
+    name.trim().length > 0 &&
+    rrnValid &&
+    phoneVerified &&
+    phoneStatus !== 'taken' &&
+    address.length > 0 &&
+    addressDetail.trim().length > 0 &&
+    zipCode.length > 0;
+
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canSubmit) return;
+
     setError('');
     setLoading(true);
 
@@ -28,54 +88,192 @@ export default function RegisterPage() {
         username,
         email,
         password,
+        passwordConfirm,
+        name: name.trim(),
+        phone,
+        residentNumber: rrnFront + rrnBack,
+        address,
+        addressDetail: addressDetail.trim(),
+        zipCode,
       });
+
+      // Auto-login after registration
       const { data: loginResp } = await api.post<AuthResponse>(
         '/api/auth/login',
-        { email, password },
+        { identifier: email, password },
       );
       const payload = loginResp.data ?? loginResp;
       login(payload.user, payload.accessToken);
       router.push('/');
-    } catch {
-      setError('회원가입에 실패했습니다. 다시 시도해주세요.');
+    } catch (err: unknown) {
+      const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      setError(message || t('auth.register.error'));
     } finally {
       setLoading(false);
+    }
+  }, [canSubmit, username, email, password, passwordConfirm, name, phone, rrnFront, rrnBack, address, addressDetail, zipCode, login, router, t]);
+
+  const getDuplicateMessage = (status: string): string | undefined => {
+    switch (status) {
+      case 'checking': return t('validation.duplicate.checking');
+      case 'taken': return t('validation.duplicate.taken');
+      case 'available': return undefined;
+      default: return undefined;
+    }
+  };
+
+  const getDuplicateColor = (status: string): string => {
+    switch (status) {
+      case 'taken': return 'text-danger';
+      case 'available': return 'text-rise';
+      default: return 'text-text-quaternary';
     }
   };
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center px-5">
-      <div className="w-full max-w-[360px]">
+    <div className="min-h-[80vh] flex items-center justify-center px-5 py-10">
+      <div className="w-full max-w-[400px]">
         <div className="text-center mb-10">
-          <h1 className="text-[26px] font-extrabold text-text-primary">회원가입</h1>
+          <h1 className="text-[26px] font-extrabold text-text-primary">{t('auth.register.title')}</h1>
           <p className="text-[14px] text-text-tertiary mt-2.5 font-medium leading-relaxed">
-            모의투자를 시작해보세요
+            {t('auth.register.subtitle')}
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <Input
-            type="text"
-            placeholder="사용자 이름"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-          />
-          <Input
-            type="email"
-            placeholder="이메일"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-          <Input
-            type="password"
-            placeholder="비밀번호"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            minLength={8}
-          />
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Username */}
+          <div>
+            <label className="block text-[13px] text-text-secondary font-semibold mb-2">
+              {t('auth.register.username')} <span className="text-danger">*</span>
+            </label>
+            <Input
+              type="text"
+              placeholder={t('auth.register.usernamePlaceholder')}
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              error={username.length > 0 && (!usernameValidation.format || !usernameValidation.length)
+                ? t('validation.username.format')
+                : undefined}
+              required
+            />
+            {username.length >= 3 && usernameStatus !== 'idle' && (
+              <p className={`mt-1 text-[12px] font-medium ${getDuplicateColor(usernameStatus)}`}>
+                {usernameStatus === 'available' ? t('validation.duplicate.available') : getDuplicateMessage(usernameStatus)}
+              </p>
+            )}
+          </div>
+
+          {/* Email */}
+          <div>
+            <label className="block text-[13px] text-text-secondary font-semibold mb-2">
+              {t('auth.register.email')} <span className="text-danger">*</span>
+            </label>
+            <Input
+              type="email"
+              placeholder={t('auth.register.emailPlaceholder')}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              error={email.length > 0 && !emailValid ? t('validation.email.format') : undefined}
+              required
+            />
+            {email.length >= 5 && emailValid && emailStatus !== 'idle' && (
+              <p className={`mt-1 text-[12px] font-medium ${getDuplicateColor(emailStatus)}`}>
+                {emailStatus === 'available' ? t('validation.duplicate.available') : getDuplicateMessage(emailStatus)}
+              </p>
+            )}
+          </div>
+
+          {/* Password */}
+          <div>
+            <label className="block text-[13px] text-text-secondary font-semibold mb-2">
+              {t('auth.register.password')} <span className="text-danger">*</span>
+            </label>
+            <Input
+              type="password"
+              placeholder={t('auth.register.passwordPlaceholder')}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            <ValidationFeedback rules={passwordRules} show={password.length > 0} />
+          </div>
+
+          {/* Password Confirm */}
+          <div>
+            <label className="block text-[13px] text-text-secondary font-semibold mb-2">
+              {t('auth.register.passwordConfirm')} <span className="text-danger">*</span>
+            </label>
+            <Input
+              type="password"
+              placeholder={t('auth.register.passwordConfirmPlaceholder')}
+              value={passwordConfirm}
+              onChange={(e) => setPasswordConfirm(e.target.value)}
+              error={passwordConfirm.length > 0 && !passwordMatch ? t('validation.passwordConfirm.match') : undefined}
+              required
+            />
+            {passwordConfirm.length > 0 && passwordMatch && (
+              <p className="mt-1 text-[12px] font-medium text-rise">{t('validation.passwordConfirm.ok')}</p>
+            )}
+          </div>
+
+          {/* Name (성명) */}
+          <div>
+            <label className="block text-[13px] text-text-secondary font-semibold mb-2">
+              {t('auth.register.name')} <span className="text-danger">*</span>
+            </label>
+            <Input
+              type="text"
+              placeholder={t('auth.register.namePlaceholder')}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+            />
+          </div>
+
+          {/* Resident Number (주민등록번호) */}
+          <div>
+            <label className="block text-[13px] text-text-secondary font-semibold mb-2">
+              {t('auth.register.residentNumber')} <span className="text-danger">*</span>
+            </label>
+            <ResidentNumberInput
+              front={rrnFront}
+              back={rrnBack}
+              onFrontChange={setRrnFront}
+              onBackChange={setRrnBack}
+              error={rrnFront.length === 6 && rrnBack.length === 7 && !rrnValid
+                ? t('validation.residentNumber.format')
+                : undefined}
+            />
+          </div>
+
+          {/* Phone (전화번호) */}
+          <div>
+            <label className="block text-[13px] text-text-secondary font-semibold mb-2">
+              {t('auth.register.phone')} <span className="text-danger">*</span>
+            </label>
+            <PhoneVerification
+              phone={phone}
+              onPhoneChange={setPhone}
+              onVerified={() => setPhoneVerified(true)}
+              verified={phoneVerified}
+              error={phone.length >= 10 && phoneStatus === 'taken' ? t('validation.duplicate.taken') : undefined}
+            />
+          </div>
+
+          {/* Address (주소) */}
+          <div>
+            <label className="block text-[13px] text-text-secondary font-semibold mb-2">
+              {t('auth.register.address')} <span className="text-danger">*</span>
+            </label>
+            <AddressSearch
+              address={address}
+              addressDetail={addressDetail}
+              zipCode={zipCode}
+              onAddressChange={(addr, zip) => { setAddress(addr); setZipCode(zip); }}
+              onAddressDetailChange={setAddressDetail}
+              addressDetailError={address.length > 0 && addressDetail.trim().length === 0 ? t('validation.required') : undefined}
+            />
+          </div>
 
           {error && (
             <p className="text-[13px] text-danger text-center py-1">{error}</p>
@@ -86,20 +284,20 @@ export default function RegisterPage() {
               type="submit"
               size="lg"
               fullWidth
-              disabled={loading || !username || !email || !password}
+              disabled={loading || !canSubmit}
             >
-              {loading ? '가입 중...' : '가입하기'}
+              {loading ? t('auth.register.loading') : t('auth.register.submit')}
             </Button>
           </div>
         </form>
 
         <p className="text-center text-[14px] text-text-tertiary mt-8">
-          이미 계정이 있으신가요?{' '}
+          {t('auth.register.hasAccount')}{' '}
           <Link
             href="/login"
             className="text-accent font-bold hover:underline"
           >
-            로그인
+            {t('auth.register.login')}
           </Link>
         </p>
       </div>
