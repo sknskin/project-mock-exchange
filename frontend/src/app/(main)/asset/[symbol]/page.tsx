@@ -164,13 +164,13 @@ export default function AssetDetailPage({
       <div className="fixed bottom-[52px] md:bottom-0 left-0 right-0 bg-bg-primary/95 backdrop-blur-md border-t border-border px-4 sm:px-6 py-3 flex gap-3 max-w-[1280px] mx-auto safe-bottom">
         <button
           onClick={() => setOrderSheetOpen(true)}
-          className="flex-1 h-12 bg-rise text-white font-bold rounded-xl active:scale-[0.98] hover:brightness-110 transition-all text-[15px]"
+          className="flex-1 h-12 bg-rise text-white font-bold rounded-lg hover:bg-rise/90 transition-colors text-[15px]"
         >
           매수
         </button>
         <button
           onClick={() => setOrderSheetOpen(true)}
-          className="flex-1 h-12 bg-fall text-white font-bold rounded-xl active:scale-[0.98] hover:brightness-110 transition-all text-[15px]"
+          className="flex-1 h-12 bg-fall text-white font-bold rounded-lg hover:bg-fall/90 transition-colors text-[15px]"
         >
           매도
         </button>

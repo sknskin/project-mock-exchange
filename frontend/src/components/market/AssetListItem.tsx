@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Heart } from 'lucide-react';
-import { cn, formatPrice, formatPercent, formatAmount, formatVolume } from '@/lib/format';
+import { cn, formatPrice, formatPercent, formatVolume } from '@/lib/format';
 import type { Asset } from '@/types';
 
 interface AssetListItemProps {
@@ -27,73 +27,50 @@ export default function AssetListItem({ asset, rank }: AssetListItemProps) {
   const isRise = asset.changePercent > 0;
   const isFall = asset.changePercent < 0;
   const isExtreme = Math.abs(asset.changePercent) >= 5;
-  const bgColor = getSymbolColor(asset.symbol);
 
   return (
     <Link
       href={`/asset/${asset.symbol}`}
-      className="flex items-center px-4 sm:px-6 py-3.5 hover:bg-bg-secondary/40 active:bg-bg-secondary/60 transition-colors group"
+      className="flex items-center px-5 sm:px-6 h-[52px] hover:bg-white/[0.02] transition-colors"
     >
-      {/* Favorite */}
+      {/* Heart */}
       <button
-        className="mr-2 text-text-quaternary/60 hover:text-text-tertiary group-hover:text-text-quaternary transition-colors"
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-        }}
+        className="text-text-quaternary/40 hover:text-text-tertiary transition-colors"
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
       >
-        <Heart className="w-4 h-4" strokeWidth={1.5} />
+        <Heart className="w-[18px] h-[18px]" strokeWidth={1.5} />
       </button>
 
       {/* Rank */}
-      <span className="w-7 text-center text-[13px] text-text-quaternary tabular-nums font-semibold shrink-0">
+      <span className="w-7 text-center text-[14px] text-text-quaternary tabular-nums ml-1 shrink-0">
         {rank}
       </span>
 
-      {/* Symbol icon + Name + Symbol */}
-      <div className="flex items-center gap-3 flex-1 pl-2.5 min-w-0">
+      {/* Icon + Name */}
+      <div className="flex items-center gap-3 flex-1 pl-3 min-w-0">
         <div className={cn(
-          'w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0 ring-1 ring-white/10',
-          bgColor,
+          'w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0',
+          getSymbolColor(asset.symbol),
         )}>
           {asset.symbol.slice(0, 2)}
         </div>
-        <div className="min-w-0">
-          <div className="font-semibold text-text-primary text-[14px] leading-tight truncate">
-            {asset.name}
-          </div>
-          <div className="text-[11px] text-text-quaternary mt-0.5 leading-none">
-            {asset.symbol}
-          </div>
-        </div>
+        <span className="font-medium text-text-primary text-[15px] truncate">
+          {asset.name}
+        </span>
       </div>
 
       {/* Price */}
-      <div className="text-right shrink-0 pl-3 min-w-[100px] sm:min-w-[130px]">
-        <div className="text-[14px] font-semibold text-text-primary tabular-nums leading-tight">
-          {formatPrice(asset.currentPrice)}
-          <span className="text-[11px] text-text-quaternary ml-0.5">원</span>
-        </div>
-        {/* Change amount - below price */}
-        <div
-          className={cn(
-            'text-[11px] tabular-nums mt-0.5 leading-none font-medium',
-            isRise && 'text-rise',
-            isFall && 'text-fall',
-            !isRise && !isFall && 'text-text-quaternary',
-          )}
-        >
-          {formatAmount(asset.changeAmount)}
-        </div>
-      </div>
+      <span className="w-[130px] text-right text-[15px] font-medium text-text-primary tabular-nums shrink-0">
+        {formatPrice(asset.currentPrice)}원
+      </span>
 
       {/* Change percent */}
-      <div className="w-[76px] sm:w-[88px] flex justify-end shrink-0 pl-2">
+      <div className="w-[90px] flex justify-end shrink-0">
         {isExtreme ? (
           <span
             className={cn(
-              'text-[13px] font-bold tabular-nums px-2.5 py-1 rounded-lg',
-              isRise ? 'bg-rise/12 text-rise' : 'bg-fall/12 text-fall',
+              'text-[14px] font-medium tabular-nums px-2 py-0.5 rounded',
+              isRise ? 'bg-rise/10 text-rise' : 'bg-fall/10 text-fall',
             )}
           >
             {formatPercent(asset.changePercent)}
@@ -101,7 +78,7 @@ export default function AssetListItem({ asset, rank }: AssetListItemProps) {
         ) : (
           <span
             className={cn(
-              'text-[13px] font-semibold tabular-nums',
+              'text-[14px] font-medium tabular-nums',
               isRise && 'text-rise',
               isFall && 'text-fall',
               !isRise && !isFall && 'text-text-quaternary',
@@ -113,7 +90,7 @@ export default function AssetListItem({ asset, rank }: AssetListItemProps) {
       </div>
 
       {/* Volume */}
-      <span className="w-[88px] text-right text-[13px] text-text-quaternary tabular-nums hidden md:block shrink-0 pl-2">
+      <span className="w-[100px] text-right text-[14px] text-text-tertiary tabular-nums hidden md:block shrink-0">
         {formatVolume(asset.volume ?? 0)}
       </span>
     </Link>

@@ -16,7 +16,7 @@ const categoryTabs = [
 ];
 
 const sortOptions = [
-  { key: 'volume', label: '거래량순' },
+  { key: 'volume', label: '거래량' },
   { key: 'change_desc', label: '급상승' },
   { key: 'change_asc', label: '급하락' },
 ];
@@ -24,7 +24,7 @@ const sortOptions = [
 const periodOptions = [
   { key: 'realtime', label: '실시간' },
   { key: '1d', label: '1일' },
-  { key: '1w', label: '1주' },
+  { key: '1w', label: '1주일' },
   { key: '1m', label: '1개월' },
   { key: '3m', label: '3개월' },
   { key: '6m', label: '6개월' },
@@ -40,19 +40,11 @@ export default function AssetList({ assets }: AssetListProps) {
 
   const filtered = useMemo(() => {
     let result = category === 'all' ? assets : assets.filter((a) => a.type === category);
-
     switch (sort) {
-      case 'volume':
-        result = [...result].sort((a, b) => (b.volume ?? 0) - (a.volume ?? 0));
-        break;
-      case 'change_desc':
-        result = [...result].sort((a, b) => b.changePercent - a.changePercent);
-        break;
-      case 'change_asc':
-        result = [...result].sort((a, b) => a.changePercent - b.changePercent);
-        break;
+      case 'volume': result = [...result].sort((a, b) => (b.volume ?? 0) - (a.volume ?? 0)); break;
+      case 'change_desc': result = [...result].sort((a, b) => b.changePercent - a.changePercent); break;
+      case 'change_asc': result = [...result].sort((a, b) => a.changePercent - b.changePercent); break;
     }
-
     return result;
   }, [assets, category, sort]);
 
@@ -61,77 +53,74 @@ export default function AssetList({ assets }: AssetListProps) {
 
   return (
     <div>
-      {/* Filter row 1: Category + Sort */}
-      <div className="px-4 sm:px-6 pt-5 pb-3 flex items-center gap-2 overflow-x-auto scrollbar-hide">
-        <div className="flex items-center bg-bg-secondary rounded-xl p-1 shrink-0">
-          {categoryTabs.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setCategory(tab.key)}
-              className={cn(
-                'h-8 px-4 text-[13px] font-bold rounded-lg transition-all duration-200 shrink-0',
-                category === tab.key
-                  ? 'bg-text-primary text-bg-primary shadow-sm'
-                  : 'text-text-tertiary hover:text-text-secondary',
-              )}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+      {/* Filters */}
+      <div className="px-5 sm:px-6 pt-5 pb-1 flex items-center gap-2 overflow-x-auto scrollbar-hide">
+        {/* Category: outlined chips */}
+        {categoryTabs.map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setCategory(tab.key)}
+            className={cn(
+              'h-8 px-3.5 text-[13px] font-medium rounded-full border transition-colors shrink-0',
+              category === tab.key
+                ? 'border-text-primary text-text-primary bg-text-primary/[0.07]'
+                : 'border-border text-text-tertiary hover:text-text-secondary hover:border-text-quaternary',
+            )}
+          >
+            {tab.label}
+          </button>
+        ))}
 
-        <div className="w-px h-5 bg-text-quaternary/15 mx-1 shrink-0" />
+        {/* Sort: plain text style */}
+        {sortOptions.map((opt) => (
+          <button
+            key={opt.key}
+            onClick={() => setSort(opt.key as SortKey)}
+            className={cn(
+              'h-8 px-2.5 text-[13px] font-medium transition-colors shrink-0',
+              sort === opt.key
+                ? 'text-text-primary font-bold'
+                : 'text-text-quaternary hover:text-text-tertiary',
+            )}
+          >
+            {opt.label}
+          </button>
+        ))}
 
-        <div className="flex items-center gap-1.5 shrink-0">
-          {sortOptions.map((opt) => (
-            <button
-              key={opt.key}
-              onClick={() => setSort(opt.key as SortKey)}
-              className={cn(
-                'h-8 px-3.5 text-[13px] font-semibold rounded-lg transition-all duration-200 shrink-0',
-                sort === opt.key
-                  ? 'bg-bg-tertiary text-text-primary border border-white/[0.08]'
-                  : 'bg-bg-secondary/80 text-text-quaternary hover:text-text-tertiary border border-transparent',
-              )}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Filter row 2: Period */}
-      <div className="px-4 sm:px-6 pb-4 flex items-center overflow-x-auto scrollbar-hide">
-        <div className="flex items-center bg-bg-secondary/60 rounded-xl p-1 gap-0.5">
+        {/* Period: plain text with underline for active */}
+        <div className="flex items-center gap-1 ml-1 shrink-0">
           {periodOptions.map((opt) => (
             <button
               key={opt.key}
               onClick={() => setPeriod(opt.key)}
               className={cn(
-                'h-7 px-3 text-[12px] font-semibold rounded-lg transition-all duration-200 shrink-0',
+                'h-8 px-2 text-[13px] font-medium transition-colors relative shrink-0',
                 period === opt.key
-                  ? 'bg-bg-tertiary text-text-primary shadow-sm'
+                  ? 'text-text-primary font-bold'
                   : 'text-text-quaternary hover:text-text-tertiary',
               )}
             >
               {opt.label}
+              {period === opt.key && (
+                <span className="absolute bottom-0.5 left-1 right-1 h-[1.5px] bg-text-primary rounded-full" />
+              )}
             </button>
           ))}
         </div>
       </div>
 
       {/* Table header */}
-      <div className="flex items-center px-4 sm:px-6 py-2.5 text-[11px] text-text-quaternary font-medium bg-bg-secondary/30 border-y border-border/50">
+      <div className="flex items-center px-5 sm:px-6 pt-4 pb-2.5 text-[12px] text-text-quaternary font-medium">
         <span className="w-7 ml-6 text-center shrink-0">순위</span>
-        <span className="flex-1 pl-2.5">
-          종목명 · {timeStr} 기준
+        <span className="flex-1 pl-3">
+          종목명 · 오늘 {timeStr} 기준
         </span>
-        <span className="min-w-[100px] sm:min-w-[130px] text-right shrink-0 pl-3">현재가</span>
-        <span className="w-[76px] sm:w-[88px] text-right shrink-0 pl-2">등락률</span>
-        <span className="w-[88px] text-right hidden md:block shrink-0 pl-2">거래대금</span>
+        <span className="w-[130px] text-right shrink-0">현재가</span>
+        <span className="w-[90px] text-right shrink-0">등락률</span>
+        <span className="w-[100px] text-right hidden md:block shrink-0">거래대금 순</span>
       </div>
 
-      {/* Asset rows */}
+      {/* Asset rows — no dividers, just spacing */}
       <div>
         {filtered.map((asset, index) => (
           <AssetListItem key={asset.symbol} asset={asset} rank={index + 1} />
