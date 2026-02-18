@@ -6,13 +6,15 @@ import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { useAuthStore } from '@/stores/auth';
+import { useTranslation } from '@/hooks/useTranslation';
 import api from '@/lib/api';
 import type { AuthResponse } from '@/types';
 
 export default function LoginPage() {
   const router = useRouter();
   const login = useAuthStore((s) => s.login);
-  const [email, setEmail] = useState('');
+  const { t } = useTranslation();
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -24,14 +26,14 @@ export default function LoginPage() {
 
     try {
       const { data: resp } = await api.post<AuthResponse>('/api/auth/login', {
-        email,
+        identifier,
         password,
       });
       const payload = resp.data ?? resp;
       login(payload.user, payload.accessToken);
       router.push('/');
     } catch {
-      setError('이메일 또는 비밀번호가 올바르지 않습니다.');
+      setError(t('auth.login.error'));
     } finally {
       setLoading(false);
     }
@@ -41,23 +43,23 @@ export default function LoginPage() {
     <div className="min-h-[80vh] flex items-center justify-center px-5">
       <div className="w-full max-w-[360px]">
         <div className="text-center mb-10">
-          <h1 className="text-[26px] font-extrabold text-text-primary">로그인</h1>
+          <h1 className="text-[26px] font-extrabold text-text-primary">{t('auth.login.title')}</h1>
           <p className="text-[14px] text-text-tertiary mt-2.5 font-medium leading-relaxed">
-            VirtuEx 모의투자에 오신 걸 환영합니다
+            {t('auth.login.subtitle')}
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
-            type="email"
-            placeholder="이메일"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            type="text"
+            placeholder={t('auth.login.identifier')}
+            value={identifier}
+            onChange={(e) => setIdentifier(e.target.value)}
             required
           />
           <Input
             type="password"
-            placeholder="비밀번호"
+            placeholder={t('auth.login.password')}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
@@ -72,20 +74,20 @@ export default function LoginPage() {
               type="submit"
               size="lg"
               fullWidth
-              disabled={loading || !email || !password}
+              disabled={loading || !identifier || !password}
             >
-              {loading ? '로그인 중...' : '로그인'}
+              {loading ? t('auth.login.loading') : t('auth.login.submit')}
             </Button>
           </div>
         </form>
 
         <p className="text-center text-[14px] text-text-tertiary mt-8">
-          계정이 없으신가요?{' '}
+          {t('auth.login.noAccount')}{' '}
           <Link
             href="/register"
             className="text-accent font-bold hover:underline"
           >
-            회원가입
+            {t('auth.login.register')}
           </Link>
         </p>
       </div>
