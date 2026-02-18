@@ -5,6 +5,7 @@ import { useMarketPrices, useAssets } from '@/hooks/useMarket';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { useTranslation } from '@/hooks/useTranslation';
 import AssetList from '@/components/market/AssetList';
+import MarketIndexSummary from '@/components/market/MarketIndexSummary';
 import MarketTicker from '@/components/market/MarketTicker';
 import { AssetListSkeleton } from '@/components/ui/Skeleton';
 import { cn } from '@/lib/format';
@@ -62,7 +63,10 @@ export default function HomePage() {
   return (
     <div>
       {!pricesLoading && displayAssets.length > 0 && (
-        <MarketTicker assets={displayAssets} />
+        <>
+          <MarketIndexSummary assets={displayAssets} />
+          <MarketTicker assets={displayAssets} />
+        </>
       )}
 
       {/* Section tabs */}

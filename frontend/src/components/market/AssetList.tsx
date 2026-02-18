@@ -12,7 +12,7 @@ interface AssetListProps {
 
 const PAGE_SIZE = 30;
 
-type SortKey = 'volume' | 'change_desc' | 'change_asc' | 'amount_desc' | 'amount_low';
+type SortKey = 'volume' | 'amount_desc' | 'change_desc' | 'change_asc';
 
 export default function AssetList({ assets }: AssetListProps) {
   const { t } = useTranslation();
@@ -29,10 +29,9 @@ export default function AssetList({ assets }: AssetListProps) {
 
   const sortOptions: { key: SortKey; label: string }[] = [
     { key: 'volume', label: t('filter.volume') },
+    { key: 'amount_desc', label: t('filter.amount') },
     { key: 'change_desc', label: t('filter.riseTop') },
     { key: 'change_asc', label: t('filter.fallTop') },
-    { key: 'amount_desc', label: t('filter.amountHigh') },
-    { key: 'amount_low', label: t('filter.amountLow') },
   ];
 
   const periodOptions = [
@@ -52,7 +51,6 @@ export default function AssetList({ assets }: AssetListProps) {
       case 'change_desc': result = [...result].sort((a, b) => b.changePercent - a.changePercent); break;
       case 'change_asc': result = [...result].sort((a, b) => a.changePercent - b.changePercent); break;
       case 'amount_desc': result = [...result].sort((a, b) => (b.currentPrice * (b.volume ?? 0)) - (a.currentPrice * (a.volume ?? 0))); break;
-      case 'amount_low': result = [...result].sort((a, b) => (a.currentPrice * (a.volume ?? 0)) - (b.currentPrice * (b.volume ?? 0))); break;
     }
     return result;
   }, [assets, category, sort]);
