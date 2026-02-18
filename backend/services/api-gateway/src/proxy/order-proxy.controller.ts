@@ -1,3 +1,10 @@
+/**
+ * @file 주문 프록시 컨트롤러
+ * @description API Gateway에서 Order Engine으로 주문 요청을 프록시합니다
+ *
+ * @file Order Proxy Controller
+ * @description Proxies order requests from API Gateway to Order Engine service
+ */
 import {
   Controller,
   Get,
@@ -11,16 +18,23 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { Request, Response } from 'express';
 import { ProxyService } from './proxy.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
+@ApiTags('Orders')
+@ApiBearerAuth()
 @Controller('api/orders')
 @UseGuards(JwtAuthGuard)
 export class OrderProxyController {
   constructor(private readonly proxyService: ProxyService) {}
 
   @Post()
+  @ApiOperation({ summary: '주문 생성', description: '시장가/지정가 주문을 생성합니다' })
+  @ApiResponse({ status: 201, description: '주문 접수 성공' })
+  @ApiResponse({ status: 400, description: '유효성 검사 실패' })
+  @ApiResponse({ status: 401, description: '인증 필요' })
   async placeOrder(@Body() body: unknown, @Req() req: Request, @Res() res: Response) {
     const userId = (req as any).user?.id;
     const result = await this.proxyService.forward('order-engine', {
@@ -33,6 +47,10 @@ export class OrderProxyController {
   }
 
   @Patch(':orderId')
+  @ApiOperation({ summary: '주문 수정', description: '미체결 주문의 가격 또는 수량을 수정합니다' })
+  @ApiParam({ name: 'orderId', description: '주문 ID' })
+  @ApiResponse({ status: 200, description: '주문 수정 성공' })
+  @ApiResponse({ status: 404, description: '주문 없음' })
   async modifyOrder(
     @Param('orderId') orderId: string,
     @Body() body: unknown,
@@ -50,6 +68,10 @@ export class OrderProxyController {
   }
 
   @Delete(':orderId')
+  @ApiOperation({ summary: '주문 취소', description: '미체결 주문을 취소합니다' })
+  @ApiParam({ name: 'orderId', description: '주문 ID' })
+  @ApiResponse({ status: 200, description: '주문 취소 성공' })
+  @ApiResponse({ status: 404, description: '주문 없음' })
   async cancelOrder(@Param('orderId') orderId: string, @Req() req: Request, @Res() res: Response) {
     const userId = (req as any).user?.id;
     const result = await this.proxyService.forward('order-engine', {
@@ -61,6 +83,10 @@ export class OrderProxyController {
   }
 
   @Get(':orderId')
+  @ApiOperation({ summary: '주문 상세 조회', description: '특정 주문의 상세 정보를 반환합니다' })
+  @ApiParam({ name: 'orderId', description: '주문 ID' })
+  @ApiResponse({ status: 200, description: '주문 상세 반환' })
+  @ApiResponse({ status: 404, description: '주문 없음' })
   async getOrder(@Param('orderId') orderId: string, @Req() req: Request, @Res() res: Response) {
     const userId = (req as any).user?.id;
     const result = await this.proxyService.forward('order-engine', {
@@ -72,6 +98,10 @@ export class OrderProxyController {
   }
 
   @Get()
+  @ApiOperation({ summary: '내 주문 목록 조회', description: '현재 사용자의 주문 목록을 반환합니다' })
+  @ApiQuery({ name: 'limit', required: false, description: '조회 개수' })
+  @ApiQuery({ name: 'offset', required: false, description: '오프셋' })
+  @ApiResponse({ status: 200, description: '주문 목록 반환' })
   async getUserOrders(
     @Query('limit') limit: string,
     @Query('offset') offset: string,
@@ -89,6 +119,10 @@ export class OrderProxyController {
   }
 
   @Get('trades/history')
+  @ApiOperation({ summary: '체결 내역 조회', description: '현재 사용자의 체결 내역을 반환합니다' })
+  @ApiQuery({ name: 'limit', required: false, description: '조회 개수' })
+  @ApiQuery({ name: 'offset', required: false, description: '오프셋' })
+  @ApiResponse({ status: 200, description: '체결 내역 반환' })
   async getUserTrades(
     @Query('limit') limit: string,
     @Query('offset') offset: string,
@@ -106,6 +140,9 @@ export class OrderProxyController {
   }
 
   @Get('book/:symbol')
+  @ApiOperation({ summary: '호가창 조회', description: '특정 자산의 호가창(주문서)을 반환합니다' })
+  @ApiParam({ name: 'symbol', description: '자산 심볼 (예: BTC-USD)' })
+  @ApiResponse({ status: 200, description: '호가창 데이터 반환' })
   async getOrderBook(@Param('symbol') symbol: string, @Res() res: Response) {
     const result = await this.proxyService.forward('order-engine', {
       method: 'GET',
