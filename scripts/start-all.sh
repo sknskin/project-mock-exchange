@@ -74,6 +74,17 @@ echo -e "${CYAN}  Mock Exchange - 전체 서비스 실행${NC}"
 echo -e "${CYAN}=========================================${NC}"
 echo ""
 
+# ─── 0. 기존 서비스 정리 ───
+SERVICE_PORTS="3000 3001 3002 3003 3007 4000"
+EXISTING_PIDS=$(lsof -ti :$(echo $SERVICE_PORTS | tr ' ' ',') 2>/dev/null || true)
+if [ -n "$EXISTING_PIDS" ]; then
+  echo -e "${YELLOW}[0] 기존 서비스 프로세스 종료 중...${NC}"
+  echo "$EXISTING_PIDS" | xargs kill -9 2>/dev/null || true
+  sleep 1
+  echo -e "  ${GREEN}✓${NC} 기존 프로세스 종료 완료 (포트: $SERVICE_PORTS)"
+  echo ""
+fi
+
 # ─── 1. 사전 체크 ───
 echo -e "${YELLOW}[1/7] 사전 체크...${NC}"
 

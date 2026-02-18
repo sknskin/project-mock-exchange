@@ -27,6 +27,7 @@ bash scripts/start-all.sh
 
 이 스크립트는 다음을 순서대로 자동 처리합니다:
 
+0. **기존 서비스 자동 종료** (포트 3000~3003, 3007, 4000에 실행 중인 프로세스 감지 시 자동 kill)
 1. 사전 체크 (Node.js, pnpm, Docker 설치 확인)
 2. 로컬 PostgreSQL 충돌 감지 시 자동 중지
 3. `.env` 로드 (없으면 `.env.example`에서 자동 복사)
@@ -35,6 +36,8 @@ bash scripts/start-all.sh
 6. 빌드 (`pnpm install` + `turbo build`, 이미 빌드된 경우 스킵)
 7. DB 마이그레이션 (Prisma db push)
 8. 백엔드 5개 서비스 + 프론트엔드 동시 실행
+
+> 이미 서비스가 실행 중이더라도 스크립트가 자동으로 종료 후 재시작하므로 별도 정리 없이 바로 실행 가능합니다.
 
 > **종료**: `Ctrl+C`를 누르면 모든 서비스가 자동으로 정리됩니다.
 > 로그 확인: `tail -f logs/{서비스명}.log`
