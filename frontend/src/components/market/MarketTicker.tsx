@@ -1,6 +1,7 @@
 'use client';
 
-import { cn, formatPrice, formatPercent } from '@/lib/format';
+import { cn, formatCompactPrice, formatPercent } from '@/lib/format';
+import { useTranslation } from '@/hooks/useTranslation';
 import type { Asset } from '@/types';
 
 interface MarketTickerProps {
@@ -8,8 +9,11 @@ interface MarketTickerProps {
 }
 
 export default function MarketTicker({ assets }: MarketTickerProps) {
+  const { t } = useTranslation();
   const topAssets = assets.slice(0, 5);
   if (topAssets.length === 0) return null;
+
+  const unit = t('market.unit');
 
   return (
     <div className="border-b border-border">
@@ -25,7 +29,8 @@ export default function MarketTicker({ assets }: MarketTickerProps) {
               </div>
               <div className="flex items-baseline gap-2.5">
                 <span className="text-[16px] font-bold text-text-primary tabular-nums">
-                  {formatPrice(asset.currentPrice)}
+                  {formatCompactPrice(asset.currentPrice)}
+                  {unit && <span className="text-[13px] text-text-tertiary ml-0.5">{unit}</span>}
                 </span>
                 <span
                   className={cn(

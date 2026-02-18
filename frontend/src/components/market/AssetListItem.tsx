@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { Heart } from 'lucide-react';
 import { cn, formatCompactPrice, formatPercent, formatAmount, formatVolume } from '@/lib/format';
 import type { Asset } from '@/types';
 
@@ -31,17 +30,17 @@ export default function AssetListItem({ asset, rank }: AssetListItemProps) {
   return (
     <Link
       href={`/asset/${asset.symbol}`}
-      className="flex items-center h-[60px] hover:bg-white/[0.02] transition-colors rounded-lg -mx-2 px-2"
+      className="flex items-center h-[56px] hover:bg-white/[0.03] transition-colors rounded-lg -mx-3 px-3"
     >
       {/* Rank */}
-      <span className="w-[52px] text-center text-[14px] text-text-quaternary tabular-nums shrink-0">
+      <span className="w-6 sm:w-8 text-center text-[13px] text-text-quaternary tabular-nums shrink-0 mr-2 sm:mr-3">
         {rank}
       </span>
 
       {/* Icon + Name + Symbol */}
-      <div className="flex items-center gap-3 flex-1 min-w-0">
+      <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 w-[120px] sm:w-[180px] lg:w-[200px] shrink-0">
         <div className={cn(
-          'w-10 h-10 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0',
+          'w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0',
           getSymbolColor(asset.symbol),
         )}>
           {asset.symbol.slice(0, 2)}
@@ -56,15 +55,18 @@ export default function AssetListItem({ asset, rank }: AssetListItemProps) {
         </div>
       </div>
 
+      {/* Spacer */}
+      <div className="flex-1 min-w-2" />
+
       {/* Price */}
-      <span className="w-[100px] text-right text-[14px] font-medium text-text-primary tabular-nums shrink-0">
-        {formatCompactPrice(asset.currentPrice)}원
+      <span className="w-[88px] sm:w-[100px] lg:w-[120px] text-right text-[14px] font-semibold text-text-primary tabular-nums shrink-0">
+        {formatCompactPrice(asset.currentPrice)}
       </span>
 
       {/* Change amount */}
       <span
         className={cn(
-          'w-[90px] text-right text-[13px] font-medium tabular-nums hidden sm:block shrink-0',
+          'w-[90px] lg:w-[100px] text-right text-[13px] font-medium tabular-nums hidden sm:block shrink-0',
           isRise && 'text-rise',
           isFall && 'text-fall',
           !isRise && !isFall && 'text-text-quaternary',
@@ -74,7 +76,7 @@ export default function AssetListItem({ asset, rank }: AssetListItemProps) {
       </span>
 
       {/* Change percent */}
-      <div className="w-[72px] flex justify-end shrink-0">
+      <div className="w-[62px] sm:w-[72px] lg:w-[84px] flex justify-end shrink-0">
         {isExtreme ? (
           <span
             className={cn(
@@ -98,8 +100,18 @@ export default function AssetListItem({ asset, rank }: AssetListItemProps) {
         )}
       </div>
 
+      {/* 24h High */}
+      <span className="w-[90px] text-right text-[13px] text-text-secondary tabular-nums hidden xl:block shrink-0">
+        {formatCompactPrice(asset.high24h ?? 0)}
+      </span>
+
+      {/* 24h Low */}
+      <span className="w-[90px] text-right text-[13px] text-text-secondary tabular-nums hidden xl:block shrink-0">
+        {formatCompactPrice(asset.low24h ?? 0)}
+      </span>
+
       {/* Volume */}
-      <span className="w-[80px] text-right text-[13px] text-text-tertiary tabular-nums hidden md:block shrink-0">
+      <span className="w-[80px] lg:w-[90px] text-right text-[13px] text-text-tertiary tabular-nums hidden md:block shrink-0">
         {formatVolume(asset.volume ?? 0)}
       </span>
     </Link>
