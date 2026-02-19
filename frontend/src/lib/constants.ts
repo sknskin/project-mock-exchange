@@ -11,20 +11,20 @@ export interface TechItem {
 }
 
 export const techItems: TechItem[] = [
-  { name: 'Next.js', icon: 'https://cdn.simpleicons.org/nextdotjs/white' },
+  { name: 'Next.js', icon: 'https://cdn.simpleicons.org/nextdotjs/FFFFFF' },
   { name: 'React', icon: 'https://cdn.simpleicons.org/react/61DAFB' },
   { name: 'TypeScript', icon: 'https://cdn.simpleicons.org/typescript/3178C6' },
   { name: 'Tailwind CSS', icon: 'https://cdn.simpleicons.org/tailwindcss/06B6D4' },
   { name: 'Zustand', icon: 'https://cdn.simpleicons.org/react/FFD43B' },
   { name: 'TanStack Query', icon: 'https://cdn.simpleicons.org/reactquery/FF4154' },
-  { name: 'Socket.IO', icon: 'https://cdn.simpleicons.org/socketdotio/white' },
+  { name: 'Socket.IO', icon: 'https://cdn.simpleicons.org/socketdotio/FFFFFF' },
   { name: 'NestJS', icon: 'https://cdn.simpleicons.org/nestjs/E0234E' },
-  { name: 'Prisma', icon: 'https://cdn.simpleicons.org/prisma/white' },
+  { name: 'Prisma', icon: 'https://cdn.simpleicons.org/prisma/FFFFFF' },
   { name: 'PostgreSQL', icon: 'https://cdn.simpleicons.org/postgresql/4169E1' },
   { name: 'Redis', icon: 'https://cdn.simpleicons.org/redis/FF4438' },
-  { name: 'Apache Kafka', icon: 'https://cdn.simpleicons.org/apachekafka/white' },
+  { name: 'Apache Kafka', icon: 'https://cdn.simpleicons.org/apachekafka/FFFFFF' },
   { name: 'Docker', icon: 'https://cdn.simpleicons.org/docker/2496ED' },
-  { name: 'Turborepo', icon: 'https://cdn.simpleicons.org/turborepo/white' },
+  { name: 'Turborepo', icon: 'https://cdn.simpleicons.org/turborepo/FFFFFF' },
   { name: 'pnpm', icon: 'https://cdn.simpleicons.org/pnpm/F69220' },
-  { name: 'WebSocket', icon: 'https://cdn.simpleicons.org/websocket/white' },
+  { name: 'WebSocket', icon: 'https://cdn.simpleicons.org/websocket/FFFFFF' },
 ];
