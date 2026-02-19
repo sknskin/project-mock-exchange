@@ -61,7 +61,7 @@ export class OrderService {
     status: string;
     fills: MatchResult[];
   }> {
-    // 1. Idempotency check
+    // 1. 멱등성 검사 / Idempotency check
     const existing = await this.prisma.orderRead.findUnique({
       where: { idempotencyKey: params.idempotencyKey },
     });
@@ -69,13 +69,13 @@ export class OrderService {
       return { orderId: existing.orderId, status: existing.status, fills: [] };
     }
 
-    // 2. Validate symbol and get current price
+    // 2. 심볼 유효성 검증 및 현재가 조회 / Validate symbol and get current price
     const marketPrice = await this.getMarketPrice(params.symbol);
     if (!marketPrice) {
       throw new BadRequestException(`Symbol ${params.symbol} not found or price unavailable`);
     }
 
-    // 3. Determine execution price
+    // 3. 체결 가격 결정 / Determine execution price
     const executionPrice =
       params.type === 'MARKET'
         ? marketPrice
@@ -84,12 +84,12 @@ export class OrderService {
     const quantity = new Decimal(params.quantity);
     const totalCost = executionPrice.mul(quantity);
 
-    // 4. For BUY orders, reserve funds in portfolio service
+    // 4. 매수 주문 시 자금 예약 / For BUY orders, reserve funds in portfolio service
     if (params.side === 'BUY') {
       await this.reserveFunds(params.userId, totalCost.toString(), 'pending');
     }
 
-    // 5. Create Order Aggregate and raise ORDER_PLACED event
+    // 5. 주문 애그리거트 생성 및 ORDER_PLACED 이벤트 발행 / Create Order Aggregate and raise ORDER_PLACED event
     const orderId = generateOrderId();
     const order = OrderAggregate.place({
       orderId,
@@ -102,7 +102,7 @@ export class OrderService {
       idempotencyKey: params.idempotencyKey,
     });
 
-    // 6. Persist events to event store
+    // 6. 이벤트 스토어에 이벤트 저장 / Persist events to event store
     const streamId = OrderAggregate.streamId(orderId);
     const correlationId = generateCorrelationId();
 
@@ -124,15 +124,15 @@ export class OrderService {
     }
     order.clearUncommittedEvents();
 
-    // 7. Project to read model
+    // 7. 읽기 모델에 투영 / Project to read model
     await this.projectOrderPlaced(orderId, params, executionPrice);
 
-    // 8. For market orders, execute immediately. For limit orders, try crossing first.
+    // 8. 시장가 주문은 즉시 체결, 지정가 주문은 교차 시도 / For market orders, execute immediately. For limit orders, try crossing first.
     let fills: MatchResult[] = [];
     if (params.type === 'MARKET') {
       fills = await this.executeMarketOrder(order, orderId, params, marketPrice, correlationId);
     } else {
-      // Try crossing the book first
+      // 먼저 오더북 교차 시도 / Try crossing the book first
       const crossResult = this.matchingEngine.matchLimitOrder({
         orderId,
         userId: params.userId,
@@ -148,7 +148,7 @@ export class OrderService {
         );
       }
 
-      // Add unfilled remainder to order book
+      // 미체결 잔량을 오더북에 추가 / Add unfilled remainder to order book
       if (crossResult.remainingQuantity.gt(0)) {
         this.matchingEngine.addToOrderBook({
           orderId,
@@ -208,7 +208,7 @@ export class OrderService {
     }
     order.clearUncommittedEvents();
 
-    // Update read model
+    // 읽기 모델 갱신 / Update read model
     await this.prisma.orderRead.update({
       where: { orderId },
       data: {
@@ -217,7 +217,7 @@ export class OrderService {
       },
     });
 
-    // Release reserved funds for BUY orders
+    // 매수 주문의 예약 자금 해제 / Release reserved funds for BUY orders
     if (order.side === 'BUY' && order.remainingQuantity) {
       const price = order.price || new Decimal(0);
       const unfilledCost = order.remainingQuantity.mul(price);
@@ -226,7 +226,7 @@ export class OrderService {
       }
     }
 
-    // Remove from order book
+    // 오더북에서 제거 / Remove from order book
     this.matchingEngine.removeFromOrderBook(orderId, order.symbol, order.side);
   }
 
@@ -299,7 +299,7 @@ export class OrderService {
     }
     order.clearUncommittedEvents();
 
-    // Update read model
+    // 읽기 모델 갱신 / Update read model
     await this.prisma.orderRead.update({
       where: { orderId },
       data: {
@@ -310,7 +310,7 @@ export class OrderService {
       },
     });
 
-    // Update in order book (removes and re-inserts, losing time priority)
+    // 오더북 갱신 (제거 후 재삽입, 시간 우선순위 상실) / Update in order book (removes and re-inserts, losing time priority)
     this.matchingEngine.modifyOrderInBook({
       orderId,
       userId,
@@ -323,7 +323,7 @@ export class OrderService {
     return { orderId, status: order.status };
   }
 
-  // ---- Private helpers ----
+  // ---- 비공개 헬퍼 메서드 / Private helpers ----
 
   private async processLimitCrossingFills(
     orderId: string,
@@ -366,7 +366,7 @@ export class OrderService {
       await this.settleTrade(fill);
     }
 
-    // Update order read model
+    // 주문 읽기 모델 갱신 / Update order read model
     await this.prisma.orderRead.update({
       where: { orderId },
       data: {
@@ -396,7 +396,7 @@ export class OrderService {
       marketPrice,
     });
 
-    // Reload aggregate from event store to apply matches
+    // 이벤트 스토어에서 애그리거트 재로드 / Reload aggregate from event store to apply matches
     const streamId = OrderAggregate.streamId(orderId);
     const events = await this.eventStore.readStream(streamId);
     const aggregate = new OrderAggregate();
@@ -410,7 +410,7 @@ export class OrderService {
         fill.buyOrderId === orderId ? fill.sellOrderId : fill.buyOrderId,
       );
 
-      // Persist match events
+      // 매칭 이벤트 저장 / Persist match events
       for (const event of aggregate.uncommittedEvents) {
         await this.eventStore.appendEvent(
           {
@@ -429,14 +429,14 @@ export class OrderService {
       }
       aggregate.clearUncommittedEvents();
 
-      // Project trade to read model
+      // 체결 내역을 읽기 모델에 투영 / Project trade to read model
       await this.projectTrade(fill);
 
-      // Settle in portfolio service
+      // 포트폴리오 서비스에서 정산 / Settle in portfolio service
       await this.settleTrade(fill);
     }
 
-    // Update order read model with final state
+    // 최종 상태로 주문 읽기 모델 갱신 / Update order read model with final state
     await this.prisma.orderRead.update({
       where: { orderId },
       data: {
@@ -502,7 +502,7 @@ export class OrderService {
 
   private async settleTrade(fill: MatchResult): Promise<void> {
     try {
-      // Settle buyer side
+      // 매수자 정산 / Settle buyer side
       if (fill.buyerId !== 'MARKET_MAKER') {
         await axios.post(
           `${this.portfolioUrl}/portfolio/internal/settle-buy`,
@@ -516,7 +516,7 @@ export class OrderService {
         );
       }
 
-      // Settle seller side
+      // 매도자 정산 / Settle seller side
       if (fill.sellerId !== 'MARKET_MAKER') {
         await axios.post(
           `${this.portfolioUrl}/portfolio/internal/settle-sell`,

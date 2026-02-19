@@ -85,12 +85,12 @@ export class OrderAggregate extends AggregateRoot {
       counterpartyOrderId,
     });
 
-    // If fully filled
+    // 전량 체결 시 / If fully filled
     if (this._remainingQuantity.isZero()) {
       this.raise(ORDER_EVENT_TYPES.ORDER_FILLED, {
         orderId: this._orderId,
         totalFilledQuantity: this._filledQuantity.toString(),
-        averagePrice: matchedPrice, // simplified; real impl would track weighted avg
+        averagePrice: matchedPrice, // 단순화; 실제 구현은 가중 평균 추적 / simplified; real impl would track weighted avg
         status: 'FILLED',
       });
     }
@@ -127,7 +127,7 @@ export class OrderAggregate extends AggregateRoot {
     });
   }
 
-  // Event handlers (convention: on{EventShortName})
+  // 이벤트 핸들러 (컨벤션: on{이벤트명}) / Event handlers (convention: on{EventShortName})
   protected onPlaced(data: Record<string, unknown>): void {
     this._orderId = data.orderId as string;
     this._userId = data.userId as string;
