@@ -79,7 +79,7 @@ export class AuthService {
       throw new ConflictException('Phone number already registered');
     }
 
-    // Encrypt resident number
+    // 주민등록번호 암호화 / Encrypt resident number
     const rrn = ResidentNumber.from(residentNumber);
     const rrnValidation = rrn.validate();
     if (!rrnValidation.valid) {
@@ -159,7 +159,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid or expired refresh token');
     }
 
-    // Rotate refresh token
+    // 리프레시 토큰 갱신 / Rotate refresh token
     await this.prisma.refreshToken.delete({ where: { id: stored.id } });
 
     const user = new UserEntity(
@@ -236,7 +236,7 @@ export class AuthService {
 
   private parseExpiry(expiry: string): number {
     const match = expiry.match(/^(\d+)([smhd])$/);
-    if (!match) return 900; // default 15min
+    if (!match) return 900; // 기본값 15분 / default 15min
     const value = parseInt(match[1], 10);
     const unit = match[2];
     switch (unit) {

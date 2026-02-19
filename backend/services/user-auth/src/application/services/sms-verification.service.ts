@@ -12,8 +12,8 @@ import { REDIS_CLIENT } from '../../infrastructure/redis/redis.module';
 @Injectable()
 export class SmsVerificationService {
   private readonly logger = new Logger(SmsVerificationService.name);
-  private readonly CODE_TTL = 180; // 3 minutes
-  private readonly VERIFIED_TTL = 600; // 10 minutes
+  private readonly CODE_TTL = 180; // 3분 / 3 minutes
+  private readonly VERIFIED_TTL = 600; // 10분 / 10 minutes
 
   constructor(
     @Inject(REDIS_CLIENT) private readonly redis: Redis,
@@ -25,7 +25,7 @@ export class SmsVerificationService {
 
     await this.redis.set(key, code, 'EX', this.CODE_TTL);
 
-    // Mock: log code to console instead of sending real SMS
+    // 모의: 실제 SMS 대신 콘솔에 인증코드 출력 / Mock: log code to console instead of sending real SMS
     this.logger.log(`[MOCK SMS] Verification code for ${phone}: ${code}`);
   }
 
@@ -41,7 +41,7 @@ export class SmsVerificationService {
       throw new BadRequestException('Invalid verification code');
     }
 
-    // Mark phone as verified
+    // 전화번호 인증 완료 처리 / Mark phone as verified
     await this.redis.del(key);
     await this.redis.set(`sms:verified:${phone}`, '1', 'EX', this.VERIFIED_TTL);
 

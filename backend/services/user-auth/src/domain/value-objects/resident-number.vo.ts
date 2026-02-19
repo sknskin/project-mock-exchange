@@ -45,7 +45,7 @@ export class ResidentNumber {
     encrypted += cipher.final('hex');
     const authTag = cipher.getAuthTag();
 
-    // Format: iv:authTag:encrypted
+    // 형식: iv:authTag:암호화된값 / Format: iv:authTag:encrypted
     return `${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted}`;
   }
 
@@ -64,7 +64,7 @@ export class ResidentNumber {
   }
 
   mask(): string {
-    // YYMMDD-N******
+    // YYMMDD-N****** (마스킹 형식)
     const front = this.raw.slice(0, 6);
     const genderDigit = this.raw[6];
     return `${front}-${genderDigit}******`;
