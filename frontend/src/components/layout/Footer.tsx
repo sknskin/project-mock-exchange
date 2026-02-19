@@ -10,6 +10,7 @@
 import { useCallback, useState } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { techItems } from '@/lib/constants';
+import VirtuExLogo from '@/components/ui/VirtuExLogo';
 
 const tripledItems = [...techItems, ...techItems, ...techItems];
 
@@ -68,9 +69,12 @@ export default function Footer() {
         {/* Top: Brand + Description + Contact */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div className="flex items-center gap-4">
-            <span className="font-extrabold text-[18px] text-text-primary tracking-tight shrink-0">
-              VirtuEx
-            </span>
+            <div className="flex items-center gap-2 shrink-0">
+              <VirtuExLogo size={20} />
+              <span className="font-extrabold text-[18px] text-text-primary tracking-tight">
+                VirtuEx
+              </span>
+            </div>
             <span className="text-[13px] text-text-tertiary">
               — {t('footer.description')}
             </span>

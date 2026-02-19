@@ -13,6 +13,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { techItems } from '@/lib/constants';
 import ContentModal from '@/components/ui/ContentModal';
 import { ArrowRight, Boxes, Radio, MessageSquare, Cpu, Terminal, FileText, Globe } from 'lucide-react';
+import VirtuExLogo from '@/components/ui/VirtuExLogo';
 
 const tripledItems = [...techItems, ...techItems, ...techItems];
 
@@ -69,10 +70,11 @@ export default function LandingPage() {
     <div className="py-8 md:py-16">
       {/* Hero Section */}
       <section className="text-center py-12 md:py-20">
-        <h1 className="text-[36px] md:text-[52px] font-extrabold text-text-primary tracking-tight leading-tight">
+        <h1 className="flex items-center justify-center gap-3 md:gap-4 text-[36px] md:text-[52px] font-extrabold text-text-primary tracking-tight leading-tight">
+          <VirtuExLogo size={64} className="shrink-0" />
           {t('landing.title')}
         </h1>
-        <p className="mt-3 text-[18px] md:text-[22px] font-bold text-accent">
+        <p className="mt-6 text-[18px] md:text-[22px] font-bold text-accent">
           {t('landing.subtitle')}
         </p>
         <p className="mt-5 text-[14px] md:text-[16px] text-text-secondary max-w-[560px] mx-auto leading-relaxed">

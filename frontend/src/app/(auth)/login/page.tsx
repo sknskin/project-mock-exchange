@@ -14,6 +14,7 @@ import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { useAuthStore } from '@/stores/auth';
 import { useTranslation } from '@/hooks/useTranslation';
+import VirtuExLogo from '@/components/ui/VirtuExLogo';
 import api from '@/lib/api';
 import type { AuthResponse } from '@/types';
 
@@ -50,6 +51,9 @@ export default function LoginPage() {
     <div className="min-h-[80vh] flex items-center justify-center px-5">
       <div className="w-full max-w-[360px]">
         <div className="text-center mb-10">
+          <div className="flex justify-center mb-5">
+            <VirtuExLogo size={48} />
+          </div>
           <h1 className="text-[26px] font-extrabold text-text-primary">{t('auth.login.title')}</h1>
           <p className="text-[14px] text-text-tertiary mt-2.5 font-medium leading-relaxed">
             {t('auth.login.subtitle')}

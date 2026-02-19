@@ -14,6 +14,7 @@ import { useAuthStore } from '@/stores/auth';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/format';
 import { LogOut, Search, Menu, X } from 'lucide-react';
+import VirtuExLogo from '@/components/ui/VirtuExLogo';
 
 export default function Header() {
   const pathname = usePathname();
@@ -39,7 +40,8 @@ export default function Header() {
       <header className="sticky top-0 z-40 bg-bg-primary/95 backdrop-blur-md border-b border-border">
         <div className="max-w-[1080px] mx-auto px-5 sm:px-8 lg:px-10 h-[60px] flex items-center justify-between">
           <div className="flex items-center gap-10">
-            <Link href="/" className="flex items-center">
+            <Link href="/" className="flex items-center gap-2">
+              <VirtuExLogo size={24} />
               <span className="font-extrabold text-[20px] text-text-primary tracking-tight">
                 VirtuEx
               </span>
