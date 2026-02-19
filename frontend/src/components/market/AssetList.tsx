@@ -7,11 +7,13 @@
  */
 'use client';
 
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import AssetListItem from './AssetListItem';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { Asset } from '@/types';
 import { cn } from '@/lib/format';
+
+const ROW_HEIGHT = 56;
 
 interface AssetListProps {
   assets: Asset[];
@@ -52,18 +54,25 @@ export default function AssetList({ assets, period, onPeriodChange }: AssetListP
     { key: '1y', label: t('filter.1y') },
   ];
 
-  // Stable sort: only re-sort when user changes sort/category, NOT on every price tick.
-  // This prevents layout shifts (scroll jumping) during live price updates.
+  // Throttled sort: re-sort at most every 3s on live ticks, immediate on filter change.
+  // FLIP animation handles smooth rank transitions.
   const sortedOrderRef = useRef<string[]>([]);
   const lastSortKeyRef = useRef({ category: 'all', sort: 'volume' as SortKey });
+  const lastSortTimeRef = useRef(0);
+  const SORT_THROTTLE_MS = 3000;
 
   const filtered = useMemo(() => {
     const assetMap = new Map(assets.map((a) => [a.symbol, a]));
+    const now = Date.now();
+
+    const filterChanged =
+      lastSortKeyRef.current.category !== category ||
+      lastSortKeyRef.current.sort !== sort;
 
     const needsResort =
       sortedOrderRef.current.length === 0 ||
-      lastSortKeyRef.current.category !== category ||
-      lastSortKeyRef.current.sort !== sort;
+      filterChanged ||
+      now - lastSortTimeRef.current >= SORT_THROTTLE_MS;
 
     if (needsResort) {
       let result = category === 'all' ? [...assets] : assets.filter((a) => a.type === category);
@@ -76,6 +85,7 @@ export default function AssetList({ assets, period, onPeriodChange }: AssetListP
       }
       sortedOrderRef.current = result.map((a) => a.symbol);
       lastSortKeyRef.current = { category, sort };
+      lastSortTimeRef.current = now;
     }
 
     return sortedOrderRef.current
@@ -85,6 +95,39 @@ export default function AssetList({ assets, period, onPeriodChange }: AssetListP
 
   const paged = useMemo(() => filtered.slice(0, page * PAGE_SIZE), [filtered, page]);
   const hasMore = paged.length < filtered.length;
+
+  // FLIP animation for rank changes
+  const prevOrderRef = useRef<Map<string, number>>(new Map());
+  const rowElsRef = useRef<Map<string, HTMLDivElement>>(new Map());
+
+  const setRowRef = useCallback((symbol: string, el: HTMLDivElement | null) => {
+    if (el) rowElsRef.current.set(symbol, el);
+  }, []);
+
+  useEffect(() => {
+    const prev = prevOrderRef.current;
+    if (prev.size > 0) {
+      paged.forEach((asset, i) => {
+        const prevIndex = prev.get(asset.symbol);
+        if (prevIndex !== undefined && prevIndex !== i) {
+          const el = rowElsRef.current.get(asset.symbol);
+          if (!el) return;
+          const delta = (prevIndex - i) * ROW_HEIGHT;
+          el.style.transition = 'none';
+          el.style.transform = `translateY(${delta}px)`;
+          el.style.zIndex = '1';
+          // force reflow
+          el.offsetHeight;
+          el.style.transition = 'transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+          el.style.transform = 'translateY(0)';
+          el.style.zIndex = '';
+        }
+      });
+    }
+    const next = new Map<string, number>();
+    paged.forEach((asset, i) => next.set(asset.symbol, i));
+    prevOrderRef.current = next;
+  }, [paged]);
 
   const now = new Date();
   const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
@@ -166,7 +209,9 @@ export default function AssetList({ assets, period, onPeriodChange }: AssetListP
       {/* Asset rows */}
       <div>
         {paged.map((asset, index) => (
-          <AssetListItem key={asset.symbol} asset={asset} rank={index + 1} />
+          <div key={asset.symbol} ref={(el) => setRowRef(asset.symbol, el)}>
+            <AssetListItem asset={asset} rank={index + 1} />
+          </div>
         ))}
         {filtered.length === 0 && (
           <div className="py-24 text-center text-text-quaternary text-[14px]">
