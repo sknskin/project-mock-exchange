@@ -47,7 +47,7 @@ export default function FloatingActions() {
 
   return (
     <div className="fixed bottom-[72px] md:bottom-8 right-5 sm:right-8 z-50 flex flex-col items-end gap-2.5">
-      {/* Settings Panel */}
+      {/* 설정 패널 / Settings Panel */}
       {showSettings && (
         <div
           ref={panelRef}
@@ -66,7 +66,7 @@ export default function FloatingActions() {
           </div>
 
           <div className="p-3 space-y-1.5">
-            {/* Theme Toggle */}
+            {/* 테마 전환 / Theme Toggle */}
             <button
               onClick={toggleTheme}
               className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl hover:bg-bg-secondary transition-colors"
@@ -81,7 +81,7 @@ export default function FloatingActions() {
               </span>
             </button>
 
-            {/* Language Toggle */}
+            {/* 언어 전환 / Language Toggle */}
             <button
               onClick={toggleLocale}
               className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl hover:bg-bg-secondary transition-colors"

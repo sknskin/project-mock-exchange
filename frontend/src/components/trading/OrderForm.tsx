@@ -57,7 +57,7 @@ export default function OrderForm({
       setQuantity('');
       onSuccess?.();
     } catch {
-      // Error handled by query client
+      // 에러는 쿼리 클라이언트에서 처리 / Error handled by query client
     }
   };
 

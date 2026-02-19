@@ -34,7 +34,7 @@ export default function RegisterPage() {
   const login = useAuthStore((s) => s.login);
   const { t } = useTranslation();
 
-  // Form fields
+  // 폼 필드 / Form fields
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -48,16 +48,16 @@ export default function RegisterPage() {
   const [addressDetail, setAddressDetail] = useState('');
   const [zipCode, setZipCode] = useState('');
 
-  // UI state
+  // UI 상태 / UI state
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Duplicate checks
+  // 중복 확인 / Duplicate checks
   const usernameStatus = useDuplicateCheck('username', username, 3);
   const emailStatus = useDuplicateCheck('email', email, 5);
   const phoneStatus = useDuplicateCheck('phone', phone, 10);
 
-  // Validations
+  // 유효성 검사 / Validations
   const usernameValidation = useMemo(() => validateUsername(username), [username]);
   const emailValid = useMemo(() => validateEmail(email), [email]);
   const passwordRules = useMemo(() => validatePassword(password), [password]);
@@ -104,7 +104,7 @@ export default function RegisterPage() {
         zipCode,
       });
 
-      // Auto-login after registration
+      // 가입 후 자동 로그인 / Auto-login after registration
       const { data: loginResp } = await api.post<AuthResponse>(
         '/api/auth/login',
         { identifier: email, password },
@@ -148,7 +148,7 @@ export default function RegisterPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Username */}
+          {/* 사용자명 / Username */}
           <div>
             <label className="block text-[13px] text-text-secondary font-semibold mb-2">
               {t('auth.register.username')} <span className="text-danger">*</span>
@@ -170,7 +170,7 @@ export default function RegisterPage() {
             )}
           </div>
 
-          {/* Email */}
+          {/* 이메일 / Email */}
           <div>
             <label className="block text-[13px] text-text-secondary font-semibold mb-2">
               {t('auth.register.email')} <span className="text-danger">*</span>
@@ -190,7 +190,7 @@ export default function RegisterPage() {
             )}
           </div>
 
-          {/* Password */}
+          {/* 비밀번호 / Password */}
           <div>
             <label className="block text-[13px] text-text-secondary font-semibold mb-2">
               {t('auth.register.password')} <span className="text-danger">*</span>
@@ -205,7 +205,7 @@ export default function RegisterPage() {
             <ValidationFeedback rules={passwordRules} show={password.length > 0} />
           </div>
 
-          {/* Password Confirm */}
+          {/* 비밀번호 확인 / Password Confirm */}
           <div>
             <label className="block text-[13px] text-text-secondary font-semibold mb-2">
               {t('auth.register.passwordConfirm')} <span className="text-danger">*</span>
@@ -223,7 +223,7 @@ export default function RegisterPage() {
             )}
           </div>
 
-          {/* Name (성명) */}
+          {/* 성명 / Name */}
           <div>
             <label className="block text-[13px] text-text-secondary font-semibold mb-2">
               {t('auth.register.name')} <span className="text-danger">*</span>
@@ -237,7 +237,7 @@ export default function RegisterPage() {
             />
           </div>
 
-          {/* Resident Number (주민등록번호) */}
+          {/* 주민등록번호 / Resident Number */}
           <div>
             <label className="block text-[13px] text-text-secondary font-semibold mb-2">
               {t('auth.register.residentNumber')} <span className="text-danger">*</span>
@@ -253,7 +253,7 @@ export default function RegisterPage() {
             />
           </div>
 
-          {/* Phone (전화번호) */}
+          {/* 전화번호 / Phone */}
           <div>
             <label className="block text-[13px] text-text-secondary font-semibold mb-2">
               {t('auth.register.phone')} <span className="text-danger">*</span>
@@ -267,7 +267,7 @@ export default function RegisterPage() {
             />
           </div>
 
-          {/* Address (주소) */}
+          {/* 주소 / Address */}
           <div>
             <label className="block text-[13px] text-text-secondary font-semibold mb-2">
               {t('auth.register.address')} <span className="text-danger">*</span>

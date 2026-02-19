@@ -27,7 +27,7 @@ export default function OrderBook({ orderBook }: OrderBookProps) {
         <span className="flex-1 text-right">수량</span>
       </div>
 
-      {/* Asks (sell orders) */}
+      {/* 매도 호가 / Asks (sell orders) */}
       <div className="space-y-px py-1">
         {[...orderBook.asks].reverse().slice(0, 8).map((ask, i) => (
           <div key={`ask-${i}`} className="relative flex items-center py-[7px] rounded-lg">
@@ -45,7 +45,7 @@ export default function OrderBook({ orderBook }: OrderBookProps) {
         ))}
       </div>
 
-      {/* Spread */}
+      {/* 스프레드 / Spread */}
       <div className="py-3.5 text-center">
         <span className="text-[12px] text-text-quaternary font-medium">
           스프레드{' '}
@@ -55,7 +55,7 @@ export default function OrderBook({ orderBook }: OrderBookProps) {
         </span>
       </div>
 
-      {/* Bids (buy orders) */}
+      {/* 매수 호가 / Bids (buy orders) */}
       <div className="space-y-px py-1">
         {orderBook.bids.slice(0, 8).map((bid, i) => (
           <div key={`bid-${i}`} className="relative flex items-center py-[7px] rounded-lg">

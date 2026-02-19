@@ -68,7 +68,7 @@ export default function LandingPage() {
 
   return (
     <div className="py-8 md:py-16">
-      {/* Hero Section */}
+      {/* 히어로 섹션 / Hero Section */}
       <section className="text-center py-12 md:py-20">
         <h1 className="flex items-center justify-center gap-3 md:gap-4 text-[36px] md:text-[52px] font-extrabold text-text-primary tracking-tight leading-tight">
           <VirtuExLogo size={64} className="shrink-0" />
@@ -91,7 +91,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Tech Stack Marquee */}
+      {/* 기술 스택 마키 / Tech Stack Marquee */}
       <section className="py-8">
         <h2 className="text-[13px] font-bold text-text-quaternary text-center uppercase tracking-wider mb-6">
           {t('landing.techStack')}
@@ -122,7 +122,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Project Overview */}
+      {/* 프로젝트 개요 / Project Overview */}
       <section className="py-10 md:py-14">
         <div className="text-center mb-10">
           <h2 className="text-[22px] md:text-[28px] font-extrabold text-text-primary">
@@ -151,7 +151,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Documentation */}
+      {/* 문서 / Documentation */}
       <section className="py-10 md:py-14">
         <div className="text-center mb-10">
           <h2 className="text-[22px] md:text-[28px] font-extrabold text-text-primary">
@@ -200,7 +200,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Content Modal */}
+      {/* 콘텐츠 모달 / Content Modal */}
       <ContentModal
         isOpen={modal.isOpen}
         onClose={() => setModal((prev) => ({ ...prev, isOpen: false }))}

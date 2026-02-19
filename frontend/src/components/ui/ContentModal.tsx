@@ -48,7 +48,7 @@ export default function ContentModal({ isOpen, onClose, title, content, type }: 
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm cursor-pointer" onClick={onClose} />
 
       <div className="relative w-full h-full md:h-auto md:max-w-[960px] md:max-h-[85vh] bg-bg-primary md:rounded-2xl border border-border flex flex-col overflow-hidden shadow-2xl">
-        {/* Header */}
+        {/* 헤더 / Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border shrink-0">
           <h2 className="text-[17px] font-bold text-text-primary">{title}</h2>
           <button
@@ -59,7 +59,7 @@ export default function ContentModal({ isOpen, onClose, title, content, type }: 
           </button>
         </div>
 
-        {/* Content */}
+        {/* 콘텐츠 / Content */}
         <div className="flex-1 overflow-y-auto p-6">
           {type === 'markdown' ? (
             <div className="markdown-content">
@@ -74,7 +74,7 @@ export default function ContentModal({ isOpen, onClose, title, content, type }: 
           )}
         </div>
 
-        {/* Footer */}
+        {/* 푸터 / Footer */}
         <div className="flex justify-center px-6 py-4 border-t border-border shrink-0">
           <button
             onClick={onClose}

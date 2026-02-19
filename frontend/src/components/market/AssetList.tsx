@@ -54,6 +54,8 @@ export default function AssetList({ assets, period, onPeriodChange }: AssetListP
     { key: '1y', label: t('filter.1y') },
   ];
 
+  // 쓰로틀 정렬: 실시간 틱 시 최대 3초마다 재정렬, 필터 변경 시 즉시 정렬
+  // FLIP 애니메이션으로 순위 전환을 부드럽게 처리
   // Throttled sort: re-sort at most every 3s on live ticks, immediate on filter change.
   // FLIP animation handles smooth rank transitions.
   const sortedOrderRef = useRef<string[]>([]);
@@ -96,7 +98,7 @@ export default function AssetList({ assets, period, onPeriodChange }: AssetListP
   const paged = useMemo(() => filtered.slice(0, page * PAGE_SIZE), [filtered, page]);
   const hasMore = paged.length < filtered.length;
 
-  // FLIP animation for rank changes
+  // 순위 변동 FLIP 애니메이션 / FLIP animation for rank changes
   const prevOrderRef = useRef<Map<string, number>>(new Map());
   const rowElsRef = useRef<Map<string, HTMLDivElement>>(new Map());
 
@@ -116,7 +118,7 @@ export default function AssetList({ assets, period, onPeriodChange }: AssetListP
           el.style.transition = 'none';
           el.style.transform = `translateY(${delta}px)`;
           el.style.zIndex = '1';
-          // force reflow
+          // 리플로우 강제 / force reflow
           el.offsetHeight;
           el.style.transition = 'transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
           el.style.transform = 'translateY(0)';
@@ -137,9 +139,9 @@ export default function AssetList({ assets, period, onPeriodChange }: AssetListP
 
   return (
     <div>
-      {/* Filters */}
+      {/* 필터 / Filters */}
       <div className="pt-8 pb-4 flex items-center gap-2.5 overflow-x-auto scrollbar-hide">
-        {/* Category group */}
+        {/* 카테고리 그룹 / Category group */}
         <div className="flex items-center gap-1.5 shrink-0 bg-bg-secondary/50 rounded-xl px-1.5 py-1.5">
           {categoryTabs.map((tab) => (
             <button
@@ -155,7 +157,7 @@ export default function AssetList({ assets, period, onPeriodChange }: AssetListP
           ))}
         </div>
 
-        {/* Sort group */}
+        {/* 정렬 그룹 / Sort group */}
         <div className="flex items-center gap-1 shrink-0 bg-bg-secondary/50 rounded-xl px-1.5 py-1.5">
           {sortOptions.map((opt) => (
             <button
@@ -171,7 +173,7 @@ export default function AssetList({ assets, period, onPeriodChange }: AssetListP
           ))}
         </div>
 
-        {/* Period group */}
+        {/* 기간 그룹 / Period group */}
         <div className="flex items-center gap-0.5 shrink-0 bg-bg-secondary/50 rounded-xl px-1.5 py-1.5">
           {periodOptions.map((opt) => (
             <button
@@ -188,7 +190,7 @@ export default function AssetList({ assets, period, onPeriodChange }: AssetListP
         </div>
       </div>
 
-      {/* Table header */}
+      {/* 테이블 헤더 / Table header */}
       <div className="flex items-center pt-3 pb-2.5 text-[12px] text-text-quaternary font-medium -mx-3 px-3">
         <span className="w-6 sm:w-8 text-center shrink-0 mr-2 sm:mr-3">{t('table.rank')}</span>
         <span className="w-[120px] sm:w-[180px] lg:w-[200px] shrink-0">
@@ -203,10 +205,10 @@ export default function AssetList({ assets, period, onPeriodChange }: AssetListP
         <span className="w-[80px] lg:w-[90px] text-right hidden md:block shrink-0">{t('table.tradingVolume')}</span>
       </div>
 
-      {/* Divider */}
+      {/* 구분선 / Divider */}
       <div className="h-px bg-border/60" />
 
-      {/* Asset rows */}
+      {/* 자산 행 목록 / Asset rows */}
       <div>
         {paged.map((asset, index) => (
           <div key={asset.symbol} ref={(el) => setRowRef(asset.symbol, el)}>
@@ -220,7 +222,7 @@ export default function AssetList({ assets, period, onPeriodChange }: AssetListP
         )}
       </div>
 
-      {/* Load More */}
+      {/* 더 보기 / Load More */}
       {hasMore && (
         <div className="py-6 flex justify-center">
           <button

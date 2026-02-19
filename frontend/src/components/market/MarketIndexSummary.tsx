@@ -34,7 +34,7 @@ function computeIndex(
   }
   const avgChange = matched.reduce((s, a) => s + a.changePercent, 0) / matched.length;
   const value = baseValue * (1 + avgChange / 100);
-  // Generate sparkline from matched assets' individual changes
+  // 매칭된 자산들의 개별 변동률로 스파크라인 생성 / Generate sparkline from matched assets' individual changes
   const sparkline = generateSparkline(avgChange, 20);
   return { name: baseName, value, changePercent: avgChange, sparkline };
 }

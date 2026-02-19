@@ -39,7 +39,7 @@ export interface Asset {
   symbol: string;
   name?: string;
   type?: 'CRYPTO' | 'STOCK';
-  // From prices endpoint
+  // 시세 API 응답 필드 / From prices endpoint
   price: number;
   bid: number;
   ask: number;
@@ -49,7 +49,7 @@ export interface Asset {
   high24h: number;
   low24h: number;
   timestamp: string;
-  // Merged from assets list
+  // 종목 목록에서 병합 / Merged from assets list
   currentPrice: number;
   changePercent: number;
   changeAmount: number;

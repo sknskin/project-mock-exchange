@@ -55,7 +55,7 @@ export default function AssetDetailPage({
 
   return (
     <div className="pb-24">
-      {/* Header */}
+      {/* 헤더 / Header */}
       <div className="flex items-center gap-3 py-4">
         <Link href="/" className="p-1.5 -ml-1.5 text-text-tertiary hover:text-text-primary transition-colors rounded-lg hover:bg-bg-secondary/60">
           <ArrowLeft className="w-5 h-5" strokeWidth={2} />
@@ -68,7 +68,7 @@ export default function AssetDetailPage({
         </div>
       </div>
 
-      {/* Price */}
+      {/* 현재가 / Price */}
       <div className="pb-5">
         <div className="text-[28px] sm:text-[32px] font-extrabold tabular-nums text-text-primary leading-tight">
           {formatPrice(currentPrice)}
@@ -86,7 +86,7 @@ export default function AssetDetailPage({
         </div>
       </div>
 
-      {/* Chart */}
+      {/* 차트 / Chart */}
       <div className="px-1">
         {chartLoading || !candlesticks ? (
           <ChartSkeleton />
@@ -95,7 +95,7 @@ export default function AssetDetailPage({
         )}
       </div>
 
-      {/* Tabs */}
+      {/* 탭 / Tabs */}
       <div className="mt-5">
         <Tabs tabs={detailTabs} activeTab={activeTab} onChange={setActiveTab} />
 
@@ -167,7 +167,7 @@ export default function AssetDetailPage({
         </div>
       </div>
 
-      {/* Bottom action buttons */}
+      {/* 하단 매수/매도 버튼 / Bottom action buttons */}
       <div className="fixed bottom-[52px] md:bottom-0 left-0 right-0 bg-bg-primary/95 backdrop-blur-md border-t border-border px-5 sm:px-8 lg:px-10 py-3 flex gap-3 max-w-[1080px] mx-auto safe-bottom">
         <button
           onClick={() => setOrderSheetOpen(true)}

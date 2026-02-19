@@ -57,7 +57,7 @@ export default function LeaderboardPage() {
         const delta = (prevRank - entry.rank) * ROW_HEIGHT;
         el.style.transition = 'none';
         el.style.transform = `translateY(${delta}px)`;
-        // force reflow
+        // 리플로우 강제 / force reflow
         el.offsetHeight;
         el.style.transition = 'transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
         el.style.transform = 'translateY(0)';
@@ -76,7 +76,7 @@ export default function LeaderboardPage() {
         <h1 className="text-[20px] font-extrabold text-text-primary">리더보드</h1>
       </div>
 
-      {/* Timestamp + Refresh */}
+      {/* 기준 시간 + 새로고침 / Timestamp + Refresh */}
       <div className="flex items-center justify-between pb-4">
         <span className="text-[12px] text-text-quaternary">
           {dataUpdatedAt
@@ -93,7 +93,7 @@ export default function LeaderboardPage() {
         </button>
       </div>
 
-      {/* Table header */}
+      {/* 테이블 헤더 / Table header */}
       <div className="flex items-center py-2.5 text-[11px] text-text-quaternary font-medium border-b border-border/80">
         <span className="w-10 sm:w-12 text-center shrink-0">순위</span>
         <span className="flex-1 pl-2 min-w-0">사용자</span>

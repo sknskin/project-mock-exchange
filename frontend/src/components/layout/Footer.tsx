@@ -66,7 +66,7 @@ export default function Footer() {
   return (
     <footer className="border-t border-border mt-12 md:mt-20">
       <div className="max-w-[1080px] mx-auto px-5 sm:px-8 lg:px-10 pt-10 md:pt-14">
-        {/* Top: Brand + Description + Contact */}
+        {/* 상단: 브랜드 + 설명 + 연락처 / Top: Brand + Description + Contact */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 shrink-0">
@@ -80,7 +80,7 @@ export default function Footer() {
             </span>
           </div>
 
-          {/* Contact Links */}
+          {/* 연락처 링크 / Contact Links */}
           <div className="flex items-center gap-4">
             <button
               onClick={(e) => copyToClipboard('sknskin@naver.com', e)}
@@ -111,7 +111,7 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* Tech Stack Marquee */}
+        {/* 기술 스택 마키 / Tech Stack Marquee */}
         <div className="relative overflow-hidden py-6 -mx-5 sm:-mx-8 lg:-mx-10">
           <div className="absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-bg-primary to-transparent z-10 pointer-events-none" />
           <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-bg-primary to-transparent z-10 pointer-events-none" />
@@ -139,7 +139,7 @@ export default function Footer() {
         </div>
       </div>
 
-      {/* Copyright */}
+      {/* 저작권 / Copyright */}
       <div className="border-t border-border">
         <div className="max-w-[1080px] mx-auto px-5 sm:px-8 lg:px-10 py-5">
           <p className="text-[11px] text-text-quaternary">
@@ -148,7 +148,7 @@ export default function Footer() {
         </div>
       </div>
 
-      {/* Cursor-relative toast notifications */}
+      {/* 커서 기준 토스트 알림 / Cursor-relative toast notifications */}
       {toasts.map((toast) => (
         <div
           key={toast.id}

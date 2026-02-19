@@ -39,12 +39,12 @@ export default function AssetListItem({ asset, rank }: AssetListItemProps) {
       href={`/asset/${asset.symbol}`}
       className="flex items-center h-[56px] hover:bg-white/[0.03] transition-colors rounded-lg -mx-3 px-3"
     >
-      {/* Rank */}
+      {/* 순위 / Rank */}
       <span className="w-6 sm:w-8 text-center text-[13px] text-text-quaternary tabular-nums shrink-0 mr-2 sm:mr-3">
         {rank}
       </span>
 
-      {/* Icon + Name + Symbol */}
+      {/* 아이콘 + 이름 + 심볼 / Icon + Name + Symbol */}
       <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 w-[120px] sm:w-[180px] lg:w-[200px] shrink-0">
         <div className={cn(
           'w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0',
@@ -62,15 +62,15 @@ export default function AssetListItem({ asset, rank }: AssetListItemProps) {
         </div>
       </div>
 
-      {/* Spacer */}
+      {/* 여백 / Spacer */}
       <div className="flex-1 min-w-2" />
 
-      {/* Price */}
+      {/* 현재가 / Price */}
       <span className="w-[88px] sm:w-[100px] lg:w-[120px] text-right text-[14px] font-semibold text-text-primary tabular-nums shrink-0">
         {formatCompactPrice(asset.currentPrice)}
       </span>
 
-      {/* Change amount */}
+      {/* 변동 금액 / Change amount */}
       <span
         className={cn(
           'w-[90px] lg:w-[100px] text-right text-[13px] font-medium tabular-nums hidden sm:block shrink-0',
@@ -82,7 +82,7 @@ export default function AssetListItem({ asset, rank }: AssetListItemProps) {
         {formatAmount(asset.changeAmount ?? 0)}
       </span>
 
-      {/* Change percent */}
+      {/* 변동률 / Change percent */}
       <div className="w-[62px] sm:w-[72px] lg:w-[84px] flex justify-end shrink-0">
         {isExtreme ? (
           <span
@@ -107,17 +107,17 @@ export default function AssetListItem({ asset, rank }: AssetListItemProps) {
         )}
       </div>
 
-      {/* 24h High */}
+      {/* 24시간 최고가 / 24h High */}
       <span className="w-[90px] text-right text-[13px] text-text-secondary tabular-nums hidden xl:block shrink-0">
         {formatCompactPrice(asset.high24h ?? 0)}
       </span>
 
-      {/* 24h Low */}
+      {/* 24시간 최저가 / 24h Low */}
       <span className="w-[90px] text-right text-[13px] text-text-secondary tabular-nums hidden xl:block shrink-0">
         {formatCompactPrice(asset.low24h ?? 0)}
       </span>
 
-      {/* Volume */}
+      {/* 거래량 / Volume */}
       <span className="w-[80px] lg:w-[90px] text-right text-[13px] text-text-tertiary tabular-nums hidden md:block shrink-0">
         {formatVolume(asset.volume ?? 0)}
       </span>
