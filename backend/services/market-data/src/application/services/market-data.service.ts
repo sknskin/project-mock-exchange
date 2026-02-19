@@ -51,6 +51,9 @@ export class MarketDataService implements OnModuleInit {
   }
 
   /**
+   * 5분마다 DB에서 자산 목록을 갱신합니다.
+   * 서비스 재시작 없이 새로 추가된 자산을 반영합니다.
+   *
    * Refresh assets from DB every 5 minutes.
    * Picks up newly added assets without requiring a service restart.
    */
@@ -88,6 +91,8 @@ export class MarketDataService implements OnModuleInit {
   }
 
   /**
+   * 모든 자산에 대해 매초 가격 틱을 생성합니다.
+   *
    * Generate price ticks every second for all assets.
    */
   @Interval(1000)
@@ -100,20 +105,20 @@ export class MarketDataService implements OnModuleInit {
       ticks.push(tick);
     }
 
-    // Batch SET + PUBLISH via Redis pipeline (2N ops in 1 round-trip)
+    // Redis 파이프라인으로 일괄 SET + PUBLISH (2N 연산을 1회 왕복으로) / Batch SET + PUBLISH via Redis pipeline
     await this.priceCache.setPricesBatch(ticks);
 
-    // Publish to Kafka in background (non-blocking)
+    // Kafka에 백그라운드 발행 (논블로킹) / Publish to Kafka in background (non-blocking)
     for (const tick of ticks) {
       this.priceProducer.publishPriceUpdate(tick).catch(() => {});
     }
 
-    // Persist to DB every 10 ticks (10 seconds) to reduce write pressure
+    // 10틱(10초)마다 DB 저장으로 쓰기 부하 감소 / Persist to DB every 10 ticks (10 seconds) to reduce write pressure
     if (this.tickCount % 10 === 0) {
       await this.persistPrices(ticks);
     }
 
-    // Update candlesticks every 60 ticks (1 minute)
+    // 60틱(1분)마다 캔들스틱 갱신 / Update candlesticks every 60 ticks (1 minute)
     if (this.tickCount % 60 === 0) {
       await this.updateCandlesticks(ticks);
     }
@@ -169,12 +174,12 @@ export class MarketDataService implements OnModuleInit {
 
     const startTime = new Date(Date.now() - ms);
 
-    // Get current prices
+    // 현재 가격 조회 / Get current prices
     const currentPrices = await this.getLatestPrices();
     if (currentPrices.length === 0) return [];
 
-    // Get base prices from price_history near the period start for each symbol
-    // Using raw query for DISTINCT ON performance
+    // 기간 시작 시점의 기준 가격 조회 / Get base prices from price_history near the period start for each symbol
+    // DISTINCT ON 성능을 위해 Raw 쿼리 사용 / Using raw query for DISTINCT ON performance
     try {
       const baseRows: Array<{ symbol: string; price: string }> = await this.prisma.$queryRaw`
         SELECT DISTINCT ON (symbol) symbol, price::text
@@ -188,7 +193,7 @@ export class MarketDataService implements OnModuleInit {
         baseMap.set(row.symbol, parseFloat(row.price));
       }
 
-      // If no history for some symbols, fallback to asset basePrice
+      // 이력이 없는 종목은 기본 가격으로 대체 / If no history for some symbols, fallback to asset basePrice
       const assetBasePrices = new Map<string, number>();
       for (const asset of this.assets) {
         assetBasePrices.set(asset.symbol, asset.basePrice);
@@ -209,7 +214,7 @@ export class MarketDataService implements OnModuleInit {
       });
     } catch (error) {
       this.logger.error('Failed to get period changes', error);
-      // Fallback: use asset basePrice
+      // 대체: 종목 기본 가격 사용 / Fallback: use asset basePrice
       const assetBasePrices = new Map<string, number>();
       for (const asset of this.assets) {
         assetBasePrices.set(asset.symbol, asset.basePrice);

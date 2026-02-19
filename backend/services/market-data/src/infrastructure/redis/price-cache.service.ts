@@ -60,6 +60,9 @@ export class PriceCacheService implements OnModuleDestroy {
   }
 
   /**
+   * Redis 파이프라인을 사용한 일괄 SET + PUBLISH.
+   * 2N개의 순차 호출을 1회 파이프라인 배치로 줄입니다.
+   *
    * Batch SET + PUBLISH using Redis pipeline.
    * Reduces 2N sequential calls to 1 pipelined batch.
    */

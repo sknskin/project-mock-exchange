@@ -25,13 +25,13 @@ export interface AssetConfig {
   name: string;
   assetType: AssetType;
   basePrice: number;
-  volatility: number; // annual volatility (e.g., 0.6 for 60%)
-  spreadBps: number; // bid-ask spread in basis points
+  volatility: number; // 연간 변동성 (예: 0.6 = 60%) / annual volatility
+  spreadBps: number; // 매수-매도 스프레드 (베이시스 포인트) / bid-ask spread in basis points
 }
 
 export const DEFAULT_ASSETS: AssetConfig[] = [
-  // ── Crypto (100) ──
-  // --- Original 25 ---
+  // ── 암호화폐 (100개) / Crypto (100) ──
+  // --- 기존 25개 / Original 25 ---
   { symbol: 'BTC-USD', name: 'Bitcoin', assetType: 'CRYPTO', basePrice: 42000, volatility: 0.65, spreadBps: 10 },
   { symbol: 'ETH-USD', name: 'Ethereum', assetType: 'CRYPTO', basePrice: 2500, volatility: 0.75, spreadBps: 15 },
   { symbol: 'SOL-USD', name: 'Solana', assetType: 'CRYPTO', basePrice: 95, volatility: 0.85, spreadBps: 20 },
@@ -58,7 +58,7 @@ export const DEFAULT_ASSETS: AssetConfig[] = [
   { symbol: 'SAND-USD', name: 'The Sandbox', assetType: 'CRYPTO', basePrice: 0.42, volatility: 0.90, spreadBps: 30 },
   { symbol: 'MANA-USD', name: 'Decentraland', assetType: 'CRYPTO', basePrice: 0.38, volatility: 0.88, spreadBps: 30 },
 
-  // --- Crypto 26-50 ---
+  // --- 암호화폐 26-50 / Crypto 26-50 ---
   { symbol: 'CRO-USD', name: 'Cronos', assetType: 'CRYPTO', basePrice: 0.088, volatility: 0.82, spreadBps: 28 },
   { symbol: 'APE-USD', name: 'ApeCoin', assetType: 'CRYPTO', basePrice: 1.35, volatility: 0.92, spreadBps: 30 },
   { symbol: 'GRT-USD', name: 'The Graph', assetType: 'CRYPTO', basePrice: 0.15, volatility: 0.85, spreadBps: 28 },
@@ -85,7 +85,7 @@ export const DEFAULT_ASSETS: AssetConfig[] = [
   { symbol: 'TIA-USD', name: 'Celestia', assetType: 'CRYPTO', basePrice: 12.5, volatility: 0.90, spreadBps: 24 },
   { symbol: 'INJ-USD', name: 'Injective', assetType: 'CRYPTO', basePrice: 22, volatility: 0.88, spreadBps: 22 },
 
-  // --- Crypto 51-100 (New 50) ---
+  // --- 암호화폐 51-100 (신규 50개) / Crypto 51-100 (New 50) ---
   { symbol: 'PEPE-USD', name: 'Pepe', assetType: 'CRYPTO', basePrice: 0.0000012, volatility: 0.95, spreadBps: 40 },
   { symbol: 'WLD-USD', name: 'Worldcoin', assetType: 'CRYPTO', basePrice: 2.8, volatility: 0.90, spreadBps: 28 },
   { symbol: 'BLUR-USD', name: 'Blur', assetType: 'CRYPTO', basePrice: 0.35, volatility: 0.88, spreadBps: 30 },
@@ -137,8 +137,8 @@ export const DEFAULT_ASSETS: AssetConfig[] = [
   { symbol: 'BICO-USD', name: 'Biconomy', assetType: 'CRYPTO', basePrice: 0.32, volatility: 0.88, spreadBps: 30 },
   { symbol: 'JASMY-USD', name: 'JasmyCoin', assetType: 'CRYPTO', basePrice: 0.012, volatility: 0.90, spreadBps: 35 },
 
-  // ── Stocks (100) ──
-  // --- Original 25 ---
+  // ── 주식 (100개) / Stocks (100) ──
+  // --- 기존 25개 / Original 25 ---
   { symbol: 'AAPL', name: 'Apple Inc.', assetType: 'STOCK', basePrice: 185, volatility: 0.25, spreadBps: 5 },
   { symbol: 'GOOGL', name: 'Alphabet Inc.', assetType: 'STOCK', basePrice: 140, volatility: 0.28, spreadBps: 5 },
   { symbol: 'TSLA', name: 'Tesla Inc.', assetType: 'STOCK', basePrice: 250, volatility: 0.55, spreadBps: 8 },
@@ -165,7 +165,7 @@ export const DEFAULT_ASSETS: AssetConfig[] = [
   { symbol: 'SNAP', name: 'Snap Inc.', assetType: 'STOCK', basePrice: 11, volatility: 0.60, spreadBps: 9 },
   { symbol: 'RIVN', name: 'Rivian Automotive', assetType: 'STOCK', basePrice: 15, volatility: 0.65, spreadBps: 10 },
 
-  // --- Stocks 26-50 ---
+  // --- 주식 26-50 / Stocks 26-50 ---
   { symbol: 'BABA', name: 'Alibaba Group', assetType: 'STOCK', basePrice: 78, volatility: 0.45, spreadBps: 7 },
   { symbol: 'NKE', name: 'Nike Inc.', assetType: 'STOCK', basePrice: 105, volatility: 0.28, spreadBps: 5 },
   { symbol: 'ABNB', name: 'Airbnb Inc.', assetType: 'STOCK', basePrice: 145, volatility: 0.42, spreadBps: 7 },
@@ -192,7 +192,7 @@ export const DEFAULT_ASSETS: AssetConfig[] = [
   { symbol: 'OPEN', name: 'Opendoor Technologies', assetType: 'STOCK', basePrice: 3.2, volatility: 0.72, spreadBps: 12 },
   { symbol: 'CPNG', name: 'Coupang Inc.', assetType: 'STOCK', basePrice: 16, volatility: 0.45, spreadBps: 7 },
 
-  // --- Stocks 51-100 (New 50) ---
+  // --- 주식 51-100 (신규 50개) / Stocks 51-100 (New 50) ---
   { symbol: 'TEAM', name: 'Atlassian Corp.', assetType: 'STOCK', basePrice: 220, volatility: 0.42, spreadBps: 7 },
   { symbol: 'DOCU', name: 'DocuSign Inc.', assetType: 'STOCK', basePrice: 58, volatility: 0.48, spreadBps: 8 },
   { symbol: 'PINS', name: 'Pinterest Inc.', assetType: 'STOCK', basePrice: 35, volatility: 0.45, spreadBps: 7 },
