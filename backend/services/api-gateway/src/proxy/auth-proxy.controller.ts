@@ -45,7 +45,7 @@ export class AuthProxyController {
       },
     });
 
-    // Forward Set-Cookie headers from user-auth
+    // user-auth에서 Set-Cookie 헤더 전달 / Forward Set-Cookie headers from user-auth
     const setCookieHeader = (result.data as Record<string, unknown>)?.['set-cookie'];
     if (setCookieHeader) {
       res.setHeader('Set-Cookie', setCookieHeader as string);
