@@ -71,6 +71,8 @@ export class BalanceService {
   }
 
   /**
+   * 주어진 사용자의 계좌가 존재하는지 확인하고, 없으면 생성합니다.
+   *
    * Ensure an account exists for the given user, creating one if not found.
    */
   private async ensureAccount(userId: string) {
@@ -89,6 +91,8 @@ export class BalanceService {
   }
 
   /**
+   * 사용자의 가용 현금 잔고에 자금을 입금합니다.
+   *
    * Deposit funds into the user's available cash balance.
    */
   async deposit(userId: string, amount: number | string): Promise<BalanceInfo> {
@@ -129,6 +133,8 @@ export class BalanceService {
   }
 
   /**
+   * 주문을 위해 자금을 예약합니다. 가용 현금에서 예약 현금으로 이동합니다.
+   *
    * Reserve funds for an order. Moves cash from available to reserved.
    */
   async reserveFunds(
@@ -193,6 +199,8 @@ export class BalanceService {
   }
 
   /**
+   * 이전에 예약한 자금을 가용 현금으로 해제합니다.
+   *
    * Release previously reserved funds back to available cash.
    */
   async releaseFunds(
@@ -253,6 +261,8 @@ export class BalanceService {
   }
 
   /**
+   * 매수 체결 정산: 예약 현금 차감, 가중 평균 단가로 보유 자산 추가/갱신.
+   *
    * Settle a buy trade: deduct reserved cash, add/update holding with weighted average cost.
    */
   async settleBuy(
@@ -283,7 +293,7 @@ export class BalanceService {
     }
 
     const result = await this.prisma.$transaction(async (tx) => {
-      // Deduct reserved cash
+      // 예약 현금 차감 / Deduct reserved cash
       const updatedAccount = await tx.account.update({
         where: { userId },
         data: {
@@ -291,7 +301,7 @@ export class BalanceService {
         },
       });
 
-      // Upsert holding with weighted average cost basis
+      // 가중 평균 단가로 보유 자산 Upsert / Upsert holding with weighted average cost basis
       const existingHolding = await tx.holding.findUnique({
         where: { userId_symbol: { userId, symbol } },
       });
@@ -332,7 +342,7 @@ export class BalanceService {
         });
       }
 
-      // Record transaction
+      // 거래 내역 기록 / Record transaction
       await tx.transaction.create({
         data: {
           userId,
@@ -359,6 +369,8 @@ export class BalanceService {
   }
 
   /**
+   * 매도 체결 정산: 가용 현금에 매도 대금 추가, 보유 수량 감소.
+   *
    * Settle a sell trade: add cash to available, reduce holding quantity.
    */
   async settleSell(
@@ -399,7 +411,7 @@ export class BalanceService {
     }
 
     const result = await this.prisma.$transaction(async (tx) => {
-      // Add proceeds to available cash
+      // 매도 대금을 가용 현금에 추가 / Add proceeds to available cash
       const updatedAccount = await tx.account.update({
         where: { userId },
         data: {
@@ -409,12 +421,12 @@ export class BalanceService {
         },
       });
 
-      // Reduce holding quantity and total cost proportionally
+      // 보유 수량과 총 비용을 비례적으로 감소 / Reduce holding quantity and total cost proportionally
       const newQty = existingQty.minus(qty);
       const existingTotalCost = new Decimal(
         existingHolding.totalCost.toString(),
       );
-      // Reduce total cost proportionally to quantity sold
+      // 매도 수량에 비례하여 총 비용 감소 / Reduce total cost proportionally to quantity sold
       const costReduction = existingTotalCost.mul(qty).div(existingQty);
       const newTotalCost = existingTotalCost.minus(costReduction);
       const newAvgCost = newQty.gt(0)
@@ -430,7 +442,7 @@ export class BalanceService {
         },
       });
 
-      // Record transaction
+      // 거래 내역 기록 / Record transaction
       await tx.transaction.create({
         data: {
           userId,
@@ -457,6 +469,8 @@ export class BalanceService {
   }
 
   /**
+   * 사용자의 잔고를 조회합니다.
+   *
    * Get the balance for a user.
    */
   async getBalance(userId: string): Promise<BalanceInfo> {
@@ -465,6 +479,8 @@ export class BalanceService {
   }
 
   /**
+   * 사용자의 모든 보유 자산을 조회합니다.
+   *
    * Get all holdings for a user.
    */
   async getHoldings(userId: string): Promise<HoldingInfo[]> {
@@ -479,6 +495,8 @@ export class BalanceService {
   }
 
   /**
+   * 사용자의 모든 거래 내역을 최신순으로 조회합니다.
+   *
    * Get all transactions for a user, ordered by most recent first.
    */
   async getTransactions(
@@ -508,6 +526,8 @@ export class BalanceService {
   }
 
   /**
+   * 사용자 포트폴리오 요약 조회: 잔고 + 전체 보유 자산.
+   *
    * Get a summary of the user's portfolio: balance + all holdings.
    */
   async getSummary(userId: string) {
@@ -534,6 +554,8 @@ export class BalanceService {
   }
 
   /**
+   * 실시간 시장 가격 기반 포트폴리오 평가 및 손익(P&L) 조회.
+   *
    * Get portfolio valuation with real-time P&L using market prices.
    */
   async getPortfolioValuation(userId: string): Promise<PortfolioValuation> {
@@ -542,7 +564,7 @@ export class BalanceService {
       this.getHoldings(userId),
     ]);
 
-    // Fetch current market prices for all held symbols
+    // 보유 종목 전체의 현재 시장 가격 조회 / Fetch current market prices for all held symbols
     const symbols = holdings.map((h) => h.symbol);
     const priceMap = await this.fetchMarketPrices(symbols);
 
@@ -593,6 +615,8 @@ export class BalanceService {
   }
 
   /**
+   * 리더보드 조회: 총 포트폴리오 가치 기준 상위 순위.
+   *
    * Get leaderboard: top portfolios ranked by total value.
    */
   async getLeaderboard(limit = 20): Promise<

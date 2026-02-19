@@ -22,6 +22,8 @@ export class PortfolioController {
   constructor(private readonly balanceService: BalanceService) {}
 
   /**
+   * 사용자 계좌에 자금을 입금합니다.
+   *
    * Deposit funds into the user's account.
    * POST /portfolio/deposit
    */
@@ -36,6 +38,8 @@ export class PortfolioController {
   }
 
   /**
+   * 사용자의 현금 잔고를 조회합니다.
+   *
    * Get user's cash balance.
    * GET /portfolio/balance
    */
@@ -47,6 +51,8 @@ export class PortfolioController {
   }
 
   /**
+   * 사용자의 보유 자산을 조회합니다.
+   *
    * Get user's holdings.
    * GET /portfolio/holdings
    */
@@ -58,6 +64,8 @@ export class PortfolioController {
   }
 
   /**
+   * 전체 포트폴리오 요약 조회: 잔고 + 보유 자산 + 합계.
+   *
    * Get a full portfolio summary: balance + holdings + totals.
    * GET /portfolio/summary
    */
@@ -69,6 +77,8 @@ export class PortfolioController {
   }
 
   /**
+   * 실시간 손익(P&L) 포함 포트폴리오 평가 조회.
+   *
    * Get portfolio valuation with real-time P&L.
    * GET /portfolio/valuation
    */
@@ -80,6 +90,8 @@ export class PortfolioController {
   }
 
   /**
+   * 상위 포트폴리오 리더보드 조회.
+   *
    * Get leaderboard of top portfolios.
    * GET /portfolio/leaderboard?limit=20
    */
@@ -91,6 +103,8 @@ export class PortfolioController {
   }
 
   /**
+   * 거래 내역을 조회합니다.
+   *
    * Get transaction history.
    * GET /portfolio/transactions?limit=50&offset=0
    */
