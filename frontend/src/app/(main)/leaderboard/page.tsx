@@ -7,10 +7,11 @@
  */
 'use client';
 
+import { useRef, useEffect, useCallback, useState } from 'react';
 import { useLeaderboard } from '@/hooks/useLeaderboard';
 import Skeleton from '@/components/ui/Skeleton';
 import { cn, formatCurrency, formatPercent } from '@/lib/format';
-import { Trophy } from 'lucide-react';
+import { Trophy, RefreshCw } from 'lucide-react';
 
 const medalColors: Record<number, string> = {
   1: 'text-yellow-400',
@@ -18,14 +19,78 @@ const medalColors: Record<number, string> = {
   3: 'text-amber-600',
 };
 
+const ROW_HEIGHT = 52;
+
+function formatTimestamp(ts: number): string {
+  const d = new Date(ts);
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const hours = String(d.getHours()).padStart(2, '0');
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  const seconds = String(d.getSeconds()).padStart(2, '0');
+  return `${month}월 ${day}일 ${hours}:${minutes}:${seconds}`;
+}
+
 export default function LeaderboardPage() {
-  const { data: leaderboard, isLoading } = useLeaderboard();
+  const { data: leaderboard, isLoading, dataUpdatedAt, refetch } = useLeaderboard();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const prevRankMap = useRef<Map<string, number>>(new Map());
+  const rowRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    await refetch();
+    setIsRefreshing(false);
+  }, [refetch]);
+
+  useEffect(() => {
+    if (!leaderboard) return;
+
+    const prev = prevRankMap.current;
+
+    leaderboard.forEach((entry) => {
+      const el = rowRefs.current.get(entry.userId);
+      if (!el) return;
+
+      const prevRank = prev.get(entry.userId);
+      if (prevRank !== undefined && prevRank !== entry.rank) {
+        const delta = (prevRank - entry.rank) * ROW_HEIGHT;
+        el.style.transition = 'none';
+        el.style.transform = `translateY(${delta}px)`;
+        // force reflow
+        el.offsetHeight;
+        el.style.transition = 'transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+        el.style.transform = 'translateY(0)';
+      }
+    });
+
+    const next = new Map<string, number>();
+    leaderboard.forEach((entry) => next.set(entry.userId, entry.rank));
+    prevRankMap.current = next;
+  }, [leaderboard]);
 
   return (
     <div>
       <div className="py-6 flex items-center gap-2.5">
         <Trophy className="w-5 h-5 text-yellow-400" />
         <h1 className="text-[20px] font-extrabold text-text-primary">리더보드</h1>
+      </div>
+
+      {/* Timestamp + Refresh */}
+      <div className="flex items-center justify-between pb-4">
+        <span className="text-[12px] text-text-quaternary">
+          {dataUpdatedAt
+            ? `${formatTimestamp(dataUpdatedAt)} 기준`
+            : '데이터 로딩 중...'}
+        </span>
+        <button
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          className="flex items-center gap-1.5 text-[12px] text-text-tertiary hover:text-text-primary transition-colors disabled:opacity-50"
+        >
+          <RefreshCw className={cn('w-3.5 h-3.5', isRefreshing && 'animate-spin')} />
+          새로고침
+        </button>
       </div>
 
       {/* Table header */}
@@ -51,6 +116,9 @@ export default function LeaderboardPage() {
             return (
               <div
                 key={entry.userId}
+                ref={(el) => {
+                  if (el) rowRefs.current.set(entry.userId, el);
+                }}
                 className={cn(
                   'flex items-center py-3.5',
                   isTop3 && 'bg-bg-secondary/20',
