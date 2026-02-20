@@ -220,14 +220,16 @@ export class MarketDataService implements OnModuleInit {
       const seed = this.hashString(`${tick.symbol}:${period}:${today}`);
       const random = this.seededGaussian(seed);
 
-      // 기준가 역산: basePrice = currentPrice / (1 + change)
-      // change는 N(0, periodVol) 분포를 따름
-      // Estimate base price: basePrice = currentPrice / (1 + change)
-      // change follows N(0, periodVol) distribution
-      const change = random * periodVol;
-      const basePrice = tick.price / (1 + change);
+      // 로그정규 수익률 모델: 금융 표준 방식으로 기준가 역산
+      // 가우시안을 ±2.5σ로 클램핑하여 비현실적인 극단값 방지
+      // Log-normal return model: standard financial formula for base price estimation
+      // Clamp Gaussian to ±2.5σ to prevent unrealistic extreme values
+      const clamped = Math.max(-2.5, Math.min(2.5, random));
+      const logReturn = clamped * periodVol;
+      const priceMultiplier = Math.exp(logReturn);
+      const basePrice = tick.price / priceMultiplier;
       const changeAmount = tick.price - basePrice;
-      const changePercent = (change) * 100;
+      const changePercent = (priceMultiplier - 1) * 100;
 
       return {
         symbol: tick.symbol,
