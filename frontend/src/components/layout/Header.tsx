@@ -83,12 +83,12 @@ export default function Header() {
 
             {isAuthenticated ? (
               <>
-                <span className="text-[13px] text-text-secondary font-medium hidden sm:block">
+                <span className="text-[13px] text-text-secondary font-medium hidden md:block">
                   {user?.username}
                 </span>
                 <button
                   onClick={() => setLogoutModalOpen(true)}
-                  className="p-2.5 text-danger hover:text-danger/80 transition-colors rounded-lg hover:bg-bg-secondary translate-y-[1px]"
+                  className="hidden md:flex p-2.5 text-danger hover:text-danger/80 transition-colors rounded-lg hover:bg-bg-secondary translate-y-[1px]"
                 >
                   <LogOut className="w-[18px] h-[18px]" />
                 </button>
@@ -97,6 +97,15 @@ export default function Header() {
               <Link
                 href="/login"
                 className="hidden md:inline-flex h-10 px-6 items-center text-[14px] font-bold text-white bg-accent rounded-lg hover:bg-accent/85 transition-colors"
+              >
+                {t('nav.login')}
+              </Link>
+            )}
+
+            {!isAuthenticated && (
+              <Link
+                href="/login"
+                className="md:hidden text-[13px] font-bold text-accent"
               >
                 {t('nav.login')}
               </Link>
