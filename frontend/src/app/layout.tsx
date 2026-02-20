@@ -33,7 +33,7 @@ export default function RootLayout({
         <QueryProvider>
           <ThemeProvider />
           <Header />
-          <main className="pb-16 md:pb-0 max-w-[1080px] mx-auto px-5 sm:px-8 lg:px-10">
+          <main className="pb-20 md:pb-0 max-w-[1080px] mx-auto px-5 sm:px-8 lg:px-10">
             {children}
           </main>
           <Footer />

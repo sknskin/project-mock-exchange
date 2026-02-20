@@ -37,7 +37,7 @@ export default function HoldingCard({ holding }: HoldingCardProps) {
     >
       <div className="flex items-center gap-3">
         <div className={cn(
-          'w-9 h-9 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0 ring-1 ring-white/10',
+          'w-9 h-9 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0 ring-1 ring-border',
           getSymbolColor(holding.symbol),
         )}>
           {holding.symbol.slice(0, 2)}

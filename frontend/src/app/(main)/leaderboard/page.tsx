@@ -134,7 +134,7 @@ export default function LeaderboardPage() {
                 </div>
 
                 <div className="flex items-center gap-2.5 sm:gap-3 flex-1 pl-2 min-w-0">
-                  <div className="w-8 h-8 rounded-full bg-bg-tertiary flex items-center justify-center text-[11px] font-bold text-text-secondary shrink-0 ring-1 ring-white/5">
+                  <div className="w-8 h-8 rounded-full bg-bg-tertiary flex items-center justify-center text-[11px] font-bold text-text-secondary shrink-0 ring-1 ring-border">
                     {entry.username.slice(0, 1).toUpperCase()}
                   </div>
                   <span className="font-semibold text-text-primary text-[14px] truncate">
