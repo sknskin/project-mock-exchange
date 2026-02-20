@@ -1,0 +1,116 @@
+/**
+ * @file 프로필 컨트롤러
+ * @description 마이페이지: 프로필 수정, 비밀번호 변경
+ *
+ * @file Profile Controller
+ * @description My Page: profile update, password change
+ */
+import {
+  Controller,
+  Get,
+  Put,
+  Post,
+  Body,
+  UseGuards,
+  BadRequestException,
+} from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
+import { JwtAuthGuard } from '../../infrastructure/config/jwt-auth.guard';
+import { CurrentUser } from '../../infrastructure/config/current-user.decorator';
+import { UserDto } from '@mock-exchange/common';
+import { PrismaService } from '../../infrastructure/persistence/prisma/prisma.service';
+
+@Controller('profile')
+@UseGuards(JwtAuthGuard)
+export class ProfileController {
+  constructor(private readonly prisma: PrismaService) {}
+
+  @Get()
+  async getProfile(@CurrentUser() user: UserDto) {
+    const profile = await this.prisma.user.findUnique({
+      where: { id: user.id },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        name: true,
+        role: true,
+        phone: true,
+        address: true,
+        addressDetail: true,
+        zipCode: true,
+        isActive: true,
+        isApproved: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+    return { success: true, data: profile };
+  }
+
+  @Put()
+  async updateProfile(
+    @CurrentUser() user: UserDto,
+    @Body() body: { name?: string; phone?: string; address?: string; addressDetail?: string; zipCode?: string },
+  ) {
+    const data: Record<string, string> = {};
+    if (body.name) data.name = body.name;
+    if (body.phone) data.phone = body.phone;
+    if (body.address) data.address = body.address;
+    if (body.addressDetail !== undefined) data.addressDetail = body.addressDetail;
+    if (body.zipCode) data.zipCode = body.zipCode;
+
+    const updated = await this.prisma.user.update({
+      where: { id: user.id },
+      data,
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        name: true,
+        role: true,
+        phone: true,
+        address: true,
+        addressDetail: true,
+        zipCode: true,
+        isActive: true,
+        isApproved: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+    return { success: true, data: updated };
+  }
+
+  @Post('change-password')
+  async changePassword(
+    @CurrentUser() user: UserDto,
+    @Body() body: { currentPassword: string; newPassword: string; confirmPassword: string },
+  ) {
+    if (!body.currentPassword || !body.newPassword || !body.confirmPassword) {
+      throw new BadRequestException('All password fields are required');
+    }
+    if (body.newPassword !== body.confirmPassword) {
+      throw new BadRequestException('New passwords do not match');
+    }
+    if (body.newPassword.length < 8) {
+      throw new BadRequestException('Password must be at least 8 characters');
+    }
+
+    const dbUser = await this.prisma.user.findUnique({ where: { id: user.id } });
+    if (!dbUser) throw new BadRequestException('User not found');
+
+    const isValid = await bcrypt.compare(body.currentPassword, dbUser.passwordHash);
+    if (!isValid) {
+      throw new BadRequestException('Current password is incorrect');
+    }
+
+    const newHash = await bcrypt.hash(body.newPassword, 12);
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { passwordHash: newHash },
+    });
+
+    return { success: true, message: 'Password changed successfully' };
+  }
+}

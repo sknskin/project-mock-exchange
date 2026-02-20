@@ -11,6 +11,11 @@ import { AuthProxyController } from './auth-proxy.controller';
 import { MarketProxyController } from './market-proxy.controller';
 import { OrderProxyController } from './order-proxy.controller';
 import { PortfolioProxyController } from './portfolio-proxy.controller';
+import { AdminProxyController } from './admin-proxy.controller';
+import { AnnouncementProxyController } from './announcement-proxy.controller';
+import { ProfileProxyController } from './profile-proxy.controller';
+import { NotificationProxyController } from './notification-proxy.controller';
+import { StatisticsProxyController } from './statistics-proxy.controller';
 import { ProxyService } from './proxy.service';
 
 @Module({
@@ -19,6 +24,11 @@ import { ProxyService } from './proxy.service';
     MarketProxyController,
     OrderProxyController,
     PortfolioProxyController,
+    AdminProxyController,
+    AnnouncementProxyController,
+    ProfileProxyController,
+    NotificationProxyController,
+    StatisticsProxyController,
   ],
   providers: [ProxyService, ConfigService],
   exports: [ProxyService],

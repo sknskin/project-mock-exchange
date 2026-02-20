@@ -106,6 +106,23 @@ export class AuthService {
     const created = await this.userRepository.create(user);
     this.logger.log(`User registered: ${created.email}`);
 
+    // Notify SYSTEM/ADMIN users about new registration
+    const admins = await this.prisma.user.findMany({
+      where: { role: { in: ['SYSTEM', 'ADMIN'] }, isActive: true },
+      select: { id: true },
+    });
+    if (admins.length > 0) {
+      await this.prisma.notification.createMany({
+        data: admins.map((a) => ({
+          userId: a.id,
+          type: 'REGISTRATION_REQUEST' as const,
+          title: '새 회원가입 요청',
+          message: `${created.username} (${created.email})님이 회원가입을 요청했습니다.`,
+          link: `/admin/users/${created.id}`,
+        })),
+      }).catch(() => {});
+    }
+
     return this.toUserDto(created);
   }
 
@@ -137,6 +154,9 @@ export class AuthService {
 
     const tokens = await this.generateTokens(user);
     const refreshToken = await this.createRefreshToken(user.id);
+
+    // Log login for statistics
+    await this.prisma.loginLog.create({ data: { userId: user.id } }).catch(() => {});
 
     this.logger.log(`User logged in: ${user.email}`);
 

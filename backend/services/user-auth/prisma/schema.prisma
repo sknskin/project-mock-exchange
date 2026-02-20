@@ -35,6 +35,10 @@ model User {
   updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz()
 
   refreshTokens RefreshToken[]
+  announcements Announcement[]
+  comments      Comment[]
+  notifications Notification[]
+  loginLogs     LoginLog[]
 
   @@map("users")
 }
@@ -50,4 +54,88 @@ model RefreshToken {
 
   @@index([userId])
   @@map("refresh_tokens")
+}
+
+model Announcement {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title     String   @db.VarChar(200)
+  content   String   @db.Text
+  authorId  String   @map("author_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
+  author   User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments Comment[]
+
+  @@index([authorId])
+  @@index([createdAt])
+  @@map("announcements")
+}
+
+model Comment {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  content        String   @db.VarChar(2000)
+  authorId       String   @map("author_id") @db.Uuid
+  announcementId String   @map("announcement_id") @db.Uuid
+  parentId       String?  @map("parent_id") @db.Uuid
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
+  author       User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  announcement Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  parent       Comment?     @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies      Comment[]    @relation("CommentReplies")
+
+  @@index([announcementId])
+  @@index([parentId])
+  @@map("comments")
+}
+
+enum NotificationType {
+  ANNOUNCEMENT_NEW
+  ANNOUNCEMENT_UPDATED
+  REGISTRATION_REQUEST
+  REGISTRATION_APPROVED
+  REGISTRATION_REJECTED
+  GENERAL
+}
+
+model Notification {
+  id        String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String           @map("user_id") @db.Uuid
+  type      NotificationType @default(GENERAL)
+  title     String           @db.VarChar(200)
+  message   String           @db.VarChar(500)
+  link      String?          @db.VarChar(500)
+  isRead    Boolean          @default(false) @map("is_read")
+  createdAt DateTime         @default(now()) @map("created_at") @db.Timestamptz()
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+model PageView {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  path      String   @db.VarChar(500)
+  userId    String?  @map("user_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  @@index([path])
+  @@index([createdAt])
+  @@map("page_views")
+}
+
+model LoginLog {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("login_logs")
 }

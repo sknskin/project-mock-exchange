@@ -10,8 +10,15 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from './services/auth.service';
+import { AdminService } from './services/admin.service';
+import { AnnouncementService } from './services/announcement.service';
 import { SmsVerificationService } from './services/sms-verification.service';
 import { AuthController } from '../presentation/controllers/auth.controller';
+import { AdminController } from '../presentation/controllers/admin.controller';
+import { AnnouncementController } from '../presentation/controllers/announcement.controller';
+import { ProfileController } from '../presentation/controllers/profile.controller';
+import { NotificationController } from '../presentation/controllers/notification.controller';
+import { StatisticsController } from '../presentation/controllers/statistics.controller';
 import { JwtStrategy } from '../infrastructure/config/jwt.strategy';
 import { UserRepository } from '../infrastructure/persistence/prisma/user.repository';
 import { USER_REPOSITORY } from '../domain/repositories/user.repository.interface';
@@ -29,9 +36,18 @@ import { USER_REPOSITORY } from '../domain/repositories/user.repository.interfac
       }),
     }),
   ],
-  controllers: [AuthController],
+  controllers: [
+    AuthController,
+    AdminController,
+    AnnouncementController,
+    ProfileController,
+    NotificationController,
+    StatisticsController,
+  ],
   providers: [
     AuthService,
+    AdminService,
+    AnnouncementService,
     SmsVerificationService,
     JwtStrategy,
     {
@@ -39,6 +55,6 @@ import { USER_REPOSITORY } from '../domain/repositories/user.repository.interfac
       useClass: UserRepository,
     },
   ],
-  exports: [AuthService, SmsVerificationService],
+  exports: [AuthService, AdminService, AnnouncementService, SmsVerificationService],
 })
 export class AuthModule {}

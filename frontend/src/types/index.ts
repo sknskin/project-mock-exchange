@@ -147,3 +147,132 @@ export interface PriceUpdate {
   volume: number;
   timestamp: number;
 }
+
+// Admin User Management
+export interface AdminUser {
+  id: string;
+  email: string;
+  username: string;
+  name: string;
+  role: string;
+  isActive: boolean;
+  isApproved: boolean;
+  phone: string;
+  createdAt: string;
+}
+
+export interface AdminUserDetail extends AdminUser {
+  approvedAt: string | null;
+  approvedBy: string | null;
+  approvalNote: string | null;
+  address: string;
+  addressDetail: string | null;
+  zipCode: string;
+  updatedAt: string;
+}
+
+export interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+// Announcements
+export interface AnnouncementAuthor {
+  id: string;
+  username: string;
+  name: string;
+  role: string;
+}
+
+export interface AnnouncementListItem {
+  id: string;
+  title: string;
+  content: string;
+  author: AnnouncementAuthor;
+  commentCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CommentItem {
+  id: string;
+  content: string;
+  author: AnnouncementAuthor;
+  parentId: string | null;
+  createdAt: string;
+  updatedAt: string;
+  replies?: CommentItem[];
+}
+
+export interface AnnouncementDetail {
+  id: string;
+  title: string;
+  content: string;
+  author: AnnouncementAuthor;
+  comments: CommentItem[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Notifications
+export interface NotificationItem {
+  id: string;
+  userId: string;
+  type: string;
+  title: string;
+  message: string;
+  link: string | null;
+  isRead: boolean;
+  createdAt: string;
+}
+
+// Profile
+export interface UserProfile {
+  id: string;
+  email: string;
+  username: string;
+  name: string;
+  role: string;
+  phone: string;
+  address: string;
+  addressDetail: string | null;
+  zipCode: string;
+  isActive: boolean;
+  isApproved: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Statistics
+export interface StatOverview {
+  totalUsers: number;
+  activeUsers: number;
+  pendingUsers: number;
+  totalAnnouncements: number;
+  totalPageViews: number;
+  todayLogins: number;
+}
+
+export interface TimelineEntry {
+  label: string;
+  count: number;
+}
+
+export interface TopPage {
+  path: string;
+  count: number;
+}
+
+export interface UserStatByRole {
+  role: string;
+  count: number;
+}
+
+export interface UserStatByStatus {
+  isApproved: boolean;
+  isActive: boolean;
+  count: number;
+}

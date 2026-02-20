@@ -1,0 +1,229 @@
+/**
+ * @file 관리자 서비스
+ * @description 사용자 관리 비즈니스 로직 (목록, 승인, 반려, 비활성화, 삭제)
+ *
+ * @file Admin Service
+ * @description User management business logic: list, approve, reject, deactivate, delete
+ */
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  Logger,
+} from '@nestjs/common';
+import { USER_ROLE } from '@mock-exchange/common';
+import { PrismaService } from '../../infrastructure/persistence/prisma/prisma.service';
+
+@Injectable()
+export class AdminService {
+  private readonly logger = new Logger(AdminService.name);
+
+  constructor(private readonly prisma: PrismaService) {}
+
+  private readonly ROLE_ORDER = { SYSTEM: 0, ADMIN: 1, USER: 2 };
+
+  async listUsers(params: {
+    page: number;
+    limit: number;
+    search?: string;
+    role?: string;
+    status?: string;
+    currentUserRole: string;
+  }) {
+    const { page, limit, search, role, status, currentUserRole } = params;
+    const skip = (page - 1) * limit;
+
+    const where: Record<string, unknown> = {};
+
+    if (search) {
+      where.OR = [
+        { email: { contains: search, mode: 'insensitive' } },
+        { username: { contains: search, mode: 'insensitive' } },
+        { name: { contains: search, mode: 'insensitive' } },
+        { phone: { contains: search } },
+      ];
+    }
+
+    if (role && ['SYSTEM', 'ADMIN', 'USER'].includes(role)) {
+      where.role = role;
+    }
+
+    if (status === 'approved') where.isApproved = true;
+    else if (status === 'pending') where.isApproved = false;
+    else if (status === 'inactive') where.isActive = false;
+
+    // ADMIN can't see SYSTEM users
+    if (currentUserRole === USER_ROLE.ADMIN) {
+      where.role = where.role || { not: USER_ROLE.SYSTEM };
+      if (where.role === USER_ROLE.SYSTEM) {
+        return { items: [], total: 0, page, limit, totalPages: 0 };
+      }
+    }
+
+    const [items, total] = await Promise.all([
+      this.prisma.user.findMany({
+        where: where as never,
+        skip,
+        take: limit,
+        orderBy: [
+          { role: 'asc' }, // SYSTEM first (alphabetically: ADMIN > SYSTEM > USER, so we handle differently)
+          { createdAt: 'desc' },
+        ],
+        select: {
+          id: true,
+          email: true,
+          username: true,
+          name: true,
+          role: true,
+          isActive: true,
+          isApproved: true,
+          phone: true,
+          createdAt: true,
+        },
+      }),
+      this.prisma.user.count({ where: where as never }),
+    ]);
+
+    // Sort by role priority: SYSTEM > ADMIN > USER
+    const sorted = items.sort((a, b) => {
+      const aOrder = this.ROLE_ORDER[a.role] ?? 99;
+      const bOrder = this.ROLE_ORDER[b.role] ?? 99;
+      if (aOrder !== bOrder) return aOrder - bOrder;
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+
+    return {
+      items: sorted,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  async getUserDetail(id: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        name: true,
+        role: true,
+        isActive: true,
+        isApproved: true,
+        approvedAt: true,
+        approvedBy: true,
+        approvalNote: true,
+        phone: true,
+        address: true,
+        addressDetail: true,
+        zipCode: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+    if (!user) throw new NotFoundException('User not found');
+    return user;
+  }
+
+  async approveUser(id: string, approvedById: string, currentRole: string, note?: string) {
+    const target = await this.prisma.user.findUnique({ where: { id } });
+    if (!target) throw new NotFoundException('User not found');
+    this.checkPermission(currentRole, target.role);
+
+    const updated = await this.prisma.user.update({
+      where: { id },
+      data: {
+        isApproved: true,
+        approvedAt: new Date(),
+        approvedBy: approvedById,
+        approvalNote: note || null,
+      },
+      select: { id: true, username: true, isApproved: true, approvedAt: true },
+    });
+
+    // Create notification for the user
+    await this.prisma.notification.create({
+      data: {
+        userId: id,
+        type: 'REGISTRATION_APPROVED',
+        title: '가입 승인',
+        message: '회원가입이 승인되었습니다. 이제 로그인할 수 있습니다.',
+        link: '/dashboard',
+      },
+    });
+
+    this.logger.log(`User ${target.username} approved by ${approvedById}`);
+    return updated;
+  }
+
+  async rejectUser(id: string, rejectedById: string, currentRole: string, note?: string) {
+    const target = await this.prisma.user.findUnique({ where: { id } });
+    if (!target) throw new NotFoundException('User not found');
+    this.checkPermission(currentRole, target.role);
+
+    const updated = await this.prisma.user.update({
+      where: { id },
+      data: {
+        isApproved: false,
+        approvedBy: rejectedById,
+        approvalNote: note || 'Rejected',
+      },
+      select: { id: true, username: true, isApproved: true },
+    });
+
+    await this.prisma.notification.create({
+      data: {
+        userId: id,
+        type: 'REGISTRATION_REJECTED',
+        title: '가입 반려',
+        message: note ? `가입이 반려되었습니다: ${note}` : '가입이 반려되었습니다.',
+      },
+    });
+
+    this.logger.log(`User ${target.username} rejected by ${rejectedById}`);
+    return updated;
+  }
+
+  async deactivateUser(id: string, currentRole: string) {
+    const target = await this.prisma.user.findUnique({ where: { id } });
+    if (!target) throw new NotFoundException('User not found');
+    this.checkPermission(currentRole, target.role);
+
+    return this.prisma.user.update({
+      where: { id },
+      data: { isActive: false },
+      select: { id: true, username: true, isActive: true },
+    });
+  }
+
+  async activateUser(id: string, currentRole: string) {
+    const target = await this.prisma.user.findUnique({ where: { id } });
+    if (!target) throw new NotFoundException('User not found');
+    this.checkPermission(currentRole, target.role);
+
+    return this.prisma.user.update({
+      where: { id },
+      data: { isActive: true },
+      select: { id: true, username: true, isActive: true },
+    });
+  }
+
+  async deleteUser(id: string, currentRole: string) {
+    const target = await this.prisma.user.findUnique({ where: { id } });
+    if (!target) throw new NotFoundException('User not found');
+    this.checkPermission(currentRole, target.role);
+
+    await this.prisma.user.delete({ where: { id } });
+    this.logger.log(`User ${target.username} deleted`);
+  }
+
+  private checkPermission(currentRole: string, targetRole: string) {
+    // ADMIN cannot manage SYSTEM or other ADMIN users
+    if (currentRole === USER_ROLE.ADMIN && targetRole !== USER_ROLE.USER) {
+      throw new ForbiddenException('Insufficient permissions for this user role');
+    }
+    // SYSTEM can manage everyone
+  }
+}
