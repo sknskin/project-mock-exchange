@@ -103,17 +103,38 @@ export default function AddressSearch({
         </Button>
       </div>
 
+      {/* 주소 검색: 모바일은 인라인, 데스크톱은 화면 중앙 모달 */}
+      {/* Address search: inline on mobile, centered modal on desktop */}
       {showEmbed && (
-        <div className="relative border border-border rounded-xl overflow-hidden">
-          <button
-            type="button"
-            onClick={() => setShowEmbed(false)}
-            className="absolute top-2 right-2 z-10 w-7 h-7 flex items-center justify-center bg-bg-primary/80 border border-border rounded-full text-text-tertiary hover:text-text-primary text-[14px] font-bold"
-          >
-            X
-          </button>
-          <div ref={embedRef} className="w-full h-[400px]" />
-        </div>
+        <>
+          {/* 데스크톱 오버레이 / Desktop overlay */}
+          <div className="hidden md:block fixed inset-0 z-[60] bg-black/60" onClick={() => setShowEmbed(false)} />
+
+          <div className="md:fixed md:inset-0 md:z-[60] md:flex md:items-start md:justify-center md:pt-[15vh] md:pointer-events-none">
+            <div className="relative border border-border rounded-xl overflow-hidden md:w-[500px] md:rounded-2xl md:shadow-2xl md:pointer-events-auto md:bg-bg-primary">
+              {/* 데스크톱 헤더 / Desktop header */}
+              <div className="hidden md:flex items-center justify-between px-4 py-3 border-b border-border">
+                <span className="text-[14px] font-bold text-text-primary">{t('auth.register.addressSearch')}</span>
+                <button
+                  type="button"
+                  onClick={() => setShowEmbed(false)}
+                  className="w-7 h-7 flex items-center justify-center bg-bg-secondary rounded-full text-text-tertiary hover:text-text-primary text-[14px] font-bold"
+                >
+                  X
+                </button>
+              </div>
+              {/* 모바일 닫기 버튼 / Mobile close button */}
+              <button
+                type="button"
+                onClick={() => setShowEmbed(false)}
+                className="md:hidden absolute top-2 right-2 z-10 w-7 h-7 flex items-center justify-center bg-bg-primary/80 border border-border rounded-full text-text-tertiary hover:text-text-primary text-[14px] font-bold"
+              >
+                X
+              </button>
+              <div ref={embedRef} className="w-full h-[400px] md:h-[450px]" />
+            </div>
+          </div>
+        </>
       )}
 
       {address && (
