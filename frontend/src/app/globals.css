@@ -209,10 +209,11 @@
     font-weight: 600;
   }
 
-  /* Marquee animation – GPU-accelerated */
+  /* Marquee animation – GPU-accelerated, seamless infinite loop
+     3x duplicated items → translate -33.333% = exactly 1 set, loops seamlessly */
   @keyframes marquee {
     0% { transform: translate3d(0, 0, 0); }
-    100% { transform: translate3d(-50%, 0, 0); }
+    100% { transform: translate3d(-33.333%, 0, 0); }
   }
   .animate-marquee {
     display: flex;
@@ -220,9 +221,30 @@
     animation: marquee 40s linear infinite;
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
+    user-select: none;
+    pointer-events: none;
   }
-  .animate-marquee:hover {
-    animation-play-state: paused;
+  .animate-marquee img {
+    -webkit-user-drag: none;
+    user-select: none;
+  }
+
+  /* 가격 변동 플래시: 상승=빨간 배경, 하락=파란 배경 → 0.6초 후 사라짐 */
+  @keyframes tick-flash-rise {
+    0% { background-color: rgba(240, 68, 82, 0.15); }
+    100% { background-color: transparent; }
+  }
+  @keyframes tick-flash-fall {
+    0% { background-color: rgba(49, 130, 246, 0.15); }
+    100% { background-color: transparent; }
+  }
+  .tick-flash-rise {
+    animation: tick-flash-rise 0.6s ease-out;
+    border-radius: 4px;
+  }
+  .tick-flash-fall {
+    animation: tick-flash-fall 0.6s ease-out;
+    border-radius: 4px;
   }
 
   /* Toast fade in/out */

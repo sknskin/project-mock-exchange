@@ -103,3 +103,86 @@ export function formatVolume(volume: number): string {
 export function cn(...classes: (string | boolean | undefined | null)[]): string {
   return classes.filter(Boolean).join(' ');
 }
+
+/** 심볼 기반 통화 판별: .KS 접미사 → KRW, 나머지 → USD */
+export function isKRW(symbol: string): boolean {
+  return symbol.endsWith('.KS');
+}
+
+/** KRW 포맷 (정수 + '원') */
+function formatKRWPrice(price: number): string {
+  return price.toLocaleString('ko-KR', { maximumFractionDigits: 0 }) + '원';
+}
+
+/** USD 포맷 ($X,XXX.XX) */
+function formatUSDPrice(price: number): string {
+  if (price >= 1) {
+    return '$' + price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  if (price >= 0.01) {
+    return '$' + price.toFixed(4);
+  }
+  return '$' + price.toFixed(6);
+}
+
+/**
+ * 통화 접두사/접미사 포함 가격 표시
+ * @param displayKRW true면 USD 가격을 환율로 변환하여 원화 표시
+ * @param exchangeRate USD→KRW 환율
+ */
+export function formatPriceDisplay(
+  price: number,
+  symbol: string,
+  displayKRW?: boolean,
+  exchangeRate?: number,
+): string {
+  if (isKRW(symbol)) {
+    return formatKRWPrice(price);
+  }
+  if (displayKRW && exchangeRate) {
+    return formatKRWPrice(Math.round(price * exchangeRate));
+  }
+  return formatUSDPrice(price);
+}
+
+/** 통화 접두사 포함 변동금액 표시 */
+export function formatAmountDisplay(
+  amount: number,
+  symbol: string,
+  displayKRW?: boolean,
+  exchangeRate?: number,
+): string {
+  if (isKRW(symbol)) {
+    const sign = amount >= 0 ? '+' : '';
+    return sign + Math.round(amount).toLocaleString('ko-KR') + '원';
+  }
+  if (displayKRW && exchangeRate) {
+    const converted = Math.round(amount * exchangeRate);
+    const sign = converted >= 0 ? '+' : '';
+    return sign + converted.toLocaleString('ko-KR') + '원';
+  }
+  const abs = Math.abs(amount);
+  const prefix = amount >= 0 ? '+$' : '-$';
+  if (abs >= 1) return prefix + abs.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  if (abs >= 0.01) return prefix + abs.toFixed(4);
+  return prefix + abs.toFixed(6);
+}
+
+/** 통화별 거래대금 표시 */
+export function formatVolumeDisplay(
+  volume: number,
+  symbol: string,
+  displayKRW?: boolean,
+  exchangeRate?: number,
+): string {
+  if (isKRW(symbol)) {
+    return formatVolume(volume);
+  }
+  if (displayKRW && exchangeRate) {
+    return formatVolume(volume * exchangeRate);
+  }
+  if (volume >= 1e9) return '$' + (volume / 1e9).toFixed(1) + 'B';
+  if (volume >= 1e6) return '$' + (volume / 1e6).toFixed(1) + 'M';
+  if (volume >= 1e3) return '$' + (volume / 1e3).toFixed(0) + 'K';
+  return '$' + volume.toLocaleString('en-US', { maximumFractionDigits: 0 });
+}
