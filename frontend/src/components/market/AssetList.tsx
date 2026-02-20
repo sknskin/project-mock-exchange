@@ -266,7 +266,7 @@ export default function AssetList({ assets, period, onPeriodChange, mainTab = 'r
       <div>
         {paged.map((asset, index) => (
           <div key={asset.symbol} ref={(el) => setRowRef(asset.symbol, el)}>
-            <AssetListItem asset={asset} rank={index + 1} onLoginRequired={onLoginRequired} />
+            <AssetListItem asset={asset} rank={index + 1} />
           </div>
         ))}
         {filtered.length === 0 && (

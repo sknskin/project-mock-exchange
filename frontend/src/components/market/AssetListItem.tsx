@@ -7,18 +7,16 @@
  */
 'use client';
 
-import { useRef, useState, useEffect, useCallback } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { cn, formatPriceDisplay, formatPercent, formatAmountDisplay, formatVolumeDisplay } from '@/lib/format';
 import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
-import { useAuthStore } from '@/stores/auth';
 import type { Asset } from '@/types';
 
 interface AssetListItemProps {
   asset: Asset;
   rank: number;
-  onLoginRequired?: () => void;
 }
 
 function getSymbolColor(symbol: string): string {
@@ -34,9 +32,8 @@ function getSymbolColor(symbol: string): string {
   return colors[Math.abs(hash) % colors.length];
 }
 
-export default function AssetListItem({ asset, rank, onLoginRequired }: AssetListItemProps) {
+export default function AssetListItem({ asset, rank }: AssetListItemProps) {
   const router = useRouter();
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const isRise = asset.changePercent > 0;
   const isFall = asset.changePercent < 0;
   const isExtreme = Math.abs(asset.changePercent) >= 5;
@@ -44,14 +41,6 @@ export default function AssetListItem({ asset, rank, onLoginRequired }: AssetLis
   const { display } = useCurrencyDisplay();
   const { data: rateData } = useExchangeRate();
   const rate = rateData?.rate;
-
-  // 클릭 시 인증 확인 / Check auth on click
-  const handleClick = useCallback((e: React.MouseEvent) => {
-    if (!isAuthenticated) {
-      e.preventDefault();
-      onLoginRequired?.();
-    }
-  }, [isAuthenticated, onLoginRequired]);
 
   const prevPriceRef = useRef(asset.currentPrice);
   const [flashClass, setFlashClass] = useState('');
@@ -70,13 +59,10 @@ export default function AssetListItem({ asset, rank, onLoginRequired }: AssetLis
     <a
       href={`/asset/${asset.symbol}`}
       onClick={(e) => {
-        handleClick(e);
-        if (isAuthenticated) {
-          e.preventDefault();
-          router.push(`/asset/${asset.symbol}`);
-        }
+        e.preventDefault();
+        router.push(`/asset/${asset.symbol}`);
       }}
-      className="flex items-center h-[56px] hover:bg-white/[0.03] transition-colors rounded-lg -mx-3 px-3 cursor-pointer"
+      className="flex items-center h-[56px] hover:bg-bg-secondary/60 transition-colors rounded-lg -mx-3 px-3 cursor-pointer"
     >
       {/* 순위 / Rank */}
       <span className="w-6 sm:w-8 text-center text-[13px] text-text-quaternary tabular-nums shrink-0 mr-2 sm:mr-3">
