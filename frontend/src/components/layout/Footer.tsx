@@ -68,16 +68,21 @@ export default function Footer() {
       <div className="max-w-[1080px] mx-auto px-5 sm:px-8 lg:px-10 pt-10 md:pt-14">
         {/* 상단: 브랜드 + 설명 + 연락처 / Top: Brand + Description + Contact */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 shrink-0">
-              <VirtuExLogo size={20} />
-              <span className="font-extrabold text-[18px] text-text-primary tracking-tight">
-                VirtuEx
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 shrink-0">
+                <VirtuExLogo size={20} />
+                <span className="font-extrabold text-[18px] text-text-primary tracking-tight">
+                  VirtuEx
+                </span>
+              </div>
+              <span className="text-[13px] text-text-tertiary">
+                — {t('footer.description')}
               </span>
             </div>
-            <span className="text-[13px] text-text-tertiary">
-              — {t('footer.description')}
-            </span>
+            <p className="text-[11px] text-text-quaternary pl-[28px]">
+              {t('market.dataSourceDesc')}
+            </p>
           </div>
 
           {/* 연락처 링크 / Contact Links */}

@@ -24,7 +24,7 @@ interface AssetListProps {
 
 const PAGE_SIZE = 50;
 
-type SortKey = 'volume' | 'amount_desc' | 'change_desc' | 'change_asc';
+type SortKey = 'volume' | 'change_desc' | 'change_asc';
 
 export default function AssetList({ assets, period, onPeriodChange, mainTab = 'realtime' }: AssetListProps) {
   const { t } = useTranslation();
@@ -41,7 +41,6 @@ export default function AssetList({ assets, period, onPeriodChange, mainTab = 'r
 
   const sortOptions: { key: SortKey; label: string }[] = [
     { key: 'volume', label: t('filter.volume') },
-    { key: 'amount_desc', label: t('filter.amount') },
     { key: 'change_desc', label: t('filter.riseTop') },
     { key: 'change_asc', label: t('filter.fallTop') },
   ];
@@ -95,19 +94,23 @@ export default function AssetList({ assets, period, onPeriodChange, mainTab = 'r
       const tiebreak = (a: Asset, b: Asset) => a.symbol.localeCompare(b.symbol);
 
       // 탭별 고유 정렬 적용 / Tab-specific sorting
+      // 거래대금 = price × volume (한국 거래소 관행에 맞게 거래량순을 거래대금 기준으로 통합)
+      // Turnover = price × volume (unified as per Korean exchange convention)
+      const byTurnover = (a: Asset, b: Asset) =>
+        ((b.currentPrice * (b.volume ?? 0)) - (a.currentPrice * (a.volume ?? 0))) || tiebreak(a, b);
+
       if (mainTab === 'popular') {
-        // 인기 종목: 거래량순 고정
-        result.sort((a, b) => ((b.volume ?? 0) - (a.volume ?? 0)) || tiebreak(a, b));
+        // 인기 종목: 거래대금순 고정
+        result.sort(byTurnover);
       } else if (mainTab === 'trending') {
         // 투자자 동향: 절대 등락률순 (큰 변동 우선)
         result.sort((a, b) => (Math.abs(b.changePercent) - Math.abs(a.changePercent)) || tiebreak(a, b));
       } else {
         // 실시간 차트: 사용자 선택 정렬
         switch (sort) {
-          case 'volume': result.sort((a, b) => ((b.volume ?? 0) - (a.volume ?? 0)) || tiebreak(a, b)); break;
+          case 'volume': result.sort(byTurnover); break;
           case 'change_desc': result.sort((a, b) => (b.changePercent - a.changePercent) || tiebreak(a, b)); break;
           case 'change_asc': result.sort((a, b) => (a.changePercent - b.changePercent) || tiebreak(a, b)); break;
-          case 'amount_desc': result.sort((a, b) => ((b.currentPrice * (b.volume ?? 0)) - (a.currentPrice * (a.volume ?? 0))) || tiebreak(a, b)); break;
         }
       }
 
