@@ -10,6 +10,7 @@
 import { useState, useCallback, use } from 'react';
 import { useAssetPrice, useCandlesticks, useOrderBook, useRecentTrades } from '@/hooks/useMarket';
 import { useWebSocket } from '@/hooks/useWebSocket';
+import AuthGuard from '@/components/layout/AuthGuard';
 import CandlestickChart from '@/components/chart/CandlestickChart';
 import OrderBookComponent from '@/components/trading/OrderBook';
 import OrderSheet from '@/components/trading/OrderSheet';
@@ -54,6 +55,7 @@ export default function AssetDetailPage({
   const isFall = changePercent < 0;
 
   return (
+    <AuthGuard>
     <div className="pb-24">
       {/* 헤더 / Header */}
       <div className="flex items-center gap-3 py-4">
@@ -190,5 +192,6 @@ export default function AssetDetailPage({
         currentPrice={currentPrice}
       />
     </div>
+    </AuthGuard>
   );
 }

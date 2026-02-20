@@ -7,27 +7,55 @@
  */
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useMarketPrices, useAssets, usePeriodChanges } from '@/hooks/useMarket';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useAuthStore } from '@/stores/auth';
 import AssetList from '@/components/market/AssetList';
 import MarketIndexSummary from '@/components/market/MarketIndexSummary';
 import MarketTicker from '@/components/market/MarketTicker';
 import ExchangeRateBar from '@/components/market/ExchangeRateBar';
+import SpotlightSearch from '@/components/market/SpotlightSearch';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 import { AssetListSkeleton } from '@/components/ui/Skeleton';
 import ServiceError from '@/components/ui/ServiceError';
 import { cn } from '@/lib/format';
 import type { Asset, AssetInfo, PriceUpdate } from '@/types';
 
 export default function DashboardPage() {
+  const router = useRouter();
   const { data: rawPrices, isLoading: pricesLoading, error: pricesError, refetch } = useMarketPrices();
   const { data: assetInfos } = useAssets();
   const { t } = useTranslation();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [search] = useState('');
   const [livePrices, setLivePrices] = useState<Record<string, PriceUpdate>>({});
   const [activeMainTab, setActiveMainTab] = useState('realtime');
   const [period, setPeriod] = useState('realtime');
+  const [spotlightOpen, setSpotlightOpen] = useState(false);
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
+
+  // / 키 또는 헤더 검색 클릭으로 스포트라이트 열기
+  // Open spotlight via / key or header search click
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        const target = e.target as HTMLElement;
+        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return;
+        e.preventDefault();
+        setSpotlightOpen(true);
+      }
+    };
+    const handleSpotlightEvent = () => setSpotlightOpen(true);
+    document.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('open-spotlight', handleSpotlightEvent);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('open-spotlight', handleSpotlightEvent);
+    };
+  }, []);
 
   const { data: periodChanges } = usePeriodChanges(period);
 
@@ -144,8 +172,27 @@ export default function DashboardPage() {
           period={period}
           onPeriodChange={setPeriod}
           mainTab={activeMainTab}
+          onLoginRequired={() => setLoginModalOpen(true)}
         />
       )}
+
+      {/* 스포트라이트 검색 모달 / Spotlight search modal */}
+      <SpotlightSearch
+        isOpen={spotlightOpen}
+        onClose={() => setSpotlightOpen(false)}
+        assets={displayAssets}
+        onLoginRequired={() => setLoginModalOpen(true)}
+      />
+
+      {/* 로그인 필요 모달 / Login required modal */}
+      <ConfirmModal
+        isOpen={loginModalOpen}
+        onClose={() => setLoginModalOpen(false)}
+        onConfirm={() => { setLoginModalOpen(false); router.push('/login'); }}
+        title={t('modal.loginRequired')}
+        message={t('modal.loginRequiredMessage')}
+        confirmLabel={t('modal.loginConfirm')}
+      />
     </div>
   );
 }

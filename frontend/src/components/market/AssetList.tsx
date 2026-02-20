@@ -20,13 +20,14 @@ interface AssetListProps {
   period: string;
   onPeriodChange: (period: string) => void;
   mainTab?: string;
+  onLoginRequired?: () => void;
 }
 
 const PAGE_SIZE = 50;
 
 type SortKey = 'volume' | 'change_desc' | 'change_asc';
 
-export default function AssetList({ assets, period, onPeriodChange, mainTab = 'realtime' }: AssetListProps) {
+export default function AssetList({ assets, period, onPeriodChange, mainTab = 'realtime', onLoginRequired }: AssetListProps) {
   const { t } = useTranslation();
   const [category, setCategory] = useState('all');
   const [sort, setSort] = useState<SortKey>('volume');
@@ -163,6 +164,20 @@ export default function AssetList({ assets, period, onPeriodChange, mainTab = 'r
   const now = new Date();
   const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
 
+  // 기간에 따른 변동 라벨 매핑 / Period-dependent change label mapping
+  const changeLabel = useMemo(() => {
+    const map: Record<string, string> = {
+      realtime: t('table.changeRealtime'),
+      '1d': t('table.change1d'),
+      '1w': t('table.change1w'),
+      '1m': t('table.change1m'),
+      '3m': t('table.change3m'),
+      '6m': t('table.change6m'),
+      '1y': t('table.change1y'),
+    };
+    return map[period] ?? t('table.change');
+  }, [period, t]);
+
   const pillActive = 'bg-accent/15 text-accent font-bold';
   const pillInactive = 'text-text-quaternary hover:text-text-tertiary';
 
@@ -223,7 +238,7 @@ export default function AssetList({ assets, period, onPeriodChange, mainTab = 'r
         )}
       </div>
 
-      {/* 테이블 헤더 / Table header */}
+      {/* 테이블 헤더 (기간에 따라 라벨 변경) / Table header (labels change by period) */}
       <div className="flex items-center pt-3 pb-2.5 text-[12px] text-text-quaternary font-medium -mx-3 px-3">
         <span className="w-6 sm:w-8 text-center shrink-0 mr-2 sm:mr-3">{t('table.rank')}</span>
         <span className="w-[120px] sm:w-[180px] lg:w-[200px] shrink-0">
@@ -231,10 +246,16 @@ export default function AssetList({ assets, period, onPeriodChange, mainTab = 'r
         </span>
         <div className="flex-1 min-w-2" />
         <span className="w-[88px] sm:w-[100px] lg:w-[120px] text-right shrink-0">{t('table.price')}</span>
-        <span className="w-[90px] lg:w-[100px] text-right shrink-0 hidden sm:block">{t('table.change')}</span>
+        <span className="w-[90px] lg:w-[100px] text-right shrink-0 hidden sm:block">
+          {changeLabel}
+        </span>
         <span className="w-[62px] sm:w-[72px] lg:w-[84px] text-right shrink-0">{t('table.changeRate')}</span>
-        <span className="w-[90px] text-right hidden xl:block shrink-0">{t('table.high24h')}</span>
-        <span className="w-[90px] text-right hidden xl:block shrink-0">{t('table.low24h')}</span>
+        <span className="w-[90px] text-right hidden xl:block shrink-0">
+          {period === 'realtime' ? t('table.highRealtime') : t('table.highPeriod')}
+        </span>
+        <span className="w-[90px] text-right hidden xl:block shrink-0">
+          {period === 'realtime' ? t('table.lowRealtime') : t('table.lowPeriod')}
+        </span>
         <span className="w-[80px] lg:w-[90px] text-right hidden md:block shrink-0">{t('table.tradingVolume')}</span>
       </div>
 
@@ -245,7 +266,7 @@ export default function AssetList({ assets, period, onPeriodChange, mainTab = 'r
       <div>
         {paged.map((asset, index) => (
           <div key={asset.symbol} ref={(el) => setRowRef(asset.symbol, el)}>
-            <AssetListItem asset={asset} rank={index + 1} />
+            <AssetListItem asset={asset} rank={index + 1} onLoginRequired={onLoginRequired} />
           </div>
         ))}
         {filtered.length === 0 && (
