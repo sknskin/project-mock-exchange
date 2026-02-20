@@ -1,3 +1,10 @@
+/**
+ * @file 전역 스타일시트
+ * @description 테마 변수, 기본 스타일, 유틸리티 클래스, 애니메이션 정의
+ *
+ * @file Global Stylesheet
+ * @description Theme variables, base styles, utility classes, and animations
+ */
 @import 'tailwindcss';
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css');
 
@@ -19,6 +26,14 @@
   --color-danger: #F04452;
 }
 
+/* Next.js 개발 인디케이터 숨김 (Next 15) */
+/* Hide Next.js Dev Indicator (Next 15) */
+nextjs-portal,
+#__next-build-watcher,
+[data-nextjs-toast] {
+  display: none !important;
+}
+
 @layer base {
   html,
   body {
@@ -36,7 +51,7 @@
     transition: background-color 0.2s, color 0.2s;
   }
 
-  /* Light theme overrides */
+  /* 라이트 테마 오버라이드 / Light theme overrides */
   html.light {
     --color-bg-primary: #FFFFFF;
     --color-bg-secondary: #F2F4F6;
@@ -49,7 +64,7 @@
     --color-border: rgba(0, 0, 0, 0.08);
   }
 
-  /* Thin scrollbar */
+  /* 얇은 스크롤바 / Thin scrollbar */
   ::-webkit-scrollbar {
     width: 4px;
   }
@@ -63,7 +78,7 @@
     border-radius: 2px;
   }
 
-  /* Clickable elements – pointer cursor */
+  /* 클릭 가능 요소 – 포인터 커서 / Clickable elements – pointer cursor */
   button,
   a,
   [role='button'],
@@ -77,19 +92,19 @@
     cursor: pointer;
   }
 
-  /* Selection color */
+  /* 텍스트 선택 색상 / Selection color */
   ::selection {
     background: rgba(49, 130, 246, 0.3);
   }
 }
 
 @layer utilities {
-  /* Tabular numbers */
+  /* 고정폭 숫자 / Tabular numbers */
   .tabular-nums {
     font-variant-numeric: tabular-nums;
   }
 
-  /* Hide scrollbar but allow scrolling */
+  /* 스크롤바 숨기기 (스크롤은 유지) / Hide scrollbar but allow scrolling */
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
@@ -98,12 +113,12 @@
     display: none;
   }
 
-  /* iOS safe area */
+  /* iOS 안전 영역 / iOS safe area */
   .safe-bottom {
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
-  /* Markdown content styling */
+  /* 마크다운 콘텐츠 스타일링 / Markdown content styling */
   .markdown-content h1 {
     font-size: 1.5rem;
     font-weight: 800;
@@ -209,6 +224,7 @@
     font-weight: 600;
   }
 
+  /* 마키 애니메이션 – GPU 가속, 무한 루프 (2배 복제 → -50% 이동으로 매끄러운 반복) */
   /* Marquee animation – GPU-accelerated, seamless infinite loop
      2x duplicated items → translate -50% = exactly 1 set, loops seamlessly */
   @keyframes marquee {
@@ -251,7 +267,7 @@
     border-radius: 4px;
   }
 
-  /* Toast fade in/out */
+  /* 토스트 페이드 인/아웃 / Toast fade in/out */
   @keyframes toast-fade {
     0% { opacity: 0; transform: translateY(-50%) translateX(4px); }
     15% { opacity: 1; transform: translateY(-50%) translateX(0); }

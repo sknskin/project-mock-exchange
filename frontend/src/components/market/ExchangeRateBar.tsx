@@ -1,3 +1,10 @@
+/**
+ * @file 환율 정보 바 컴포넌트
+ * @description USD/KRW 환율과 통화 표시 전환 기능을 제공하는 컴포넌트
+ *
+ * @file Exchange Rate Bar Component
+ * @description Component displaying USD/KRW exchange rate with currency toggle
+ */
 'use client';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';

@@ -1,3 +1,10 @@
+/**
+ * @file VirtuEx 로고 SVG 컴포넌트
+ * @description 브랜드 로고를 렌더링하는 SVG 컴포넌트
+ *
+ * @file VirtuEx Logo SVG Component
+ * @description SVG component rendering the brand logo
+ */
 interface VirtuExLogoProps {
   size?: number;
   className?: string;

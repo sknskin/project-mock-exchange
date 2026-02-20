@@ -64,6 +64,18 @@ const translations = {
     'table.tradingVolume': '거래대금',
     'table.empty': '종목이 없습니다',
     'table.loadMore': '더 보기',
+    'table.changeRealtime': '24H 변동',
+    'table.changeRateRealtime': '24H 등락률',
+    'table.change1d': '전일대비',
+    'table.change1w': '전주대비',
+    'table.change1m': '전월대비',
+    'table.change3m': '3개월대비',
+    'table.change6m': '6개월대비',
+    'table.change1y': '전년대비',
+    'table.highRealtime': '24H 고가',
+    'table.lowRealtime': '24H 저가',
+    'table.highPeriod': '기간 고가',
+    'table.lowPeriod': '기간 저가',
 
     // Settings
     'settings.title': '설정',
@@ -96,6 +108,16 @@ const translations = {
 
     // Modal
     'modal.close': '닫기',
+    'modal.logoutTitle': '로그아웃',
+    'modal.logoutMessage': '로그아웃하시겠습니까?',
+    'modal.logoutConfirm': '로그아웃',
+    'modal.cancel': '취소',
+    'modal.registerTitle': '회원가입 확인',
+    'modal.registerMessage': '입력하신 정보로 회원가입하시겠습니까?',
+    'modal.registerConfirm': '가입하기',
+    'modal.loginRequired': '로그인이 필요합니다',
+    'modal.loginRequiredMessage': '이 기능을 이용하려면 로그인이 필요합니다.\n로그인 하시겠습니까?',
+    'modal.loginConfirm': '로그인',
 
     // Landing Page
     'landing.title': 'VirtuEx',
@@ -142,7 +164,7 @@ const translations = {
     'auth.register.email': '이메일',
     'auth.register.emailPlaceholder': 'example@email.com',
     'auth.register.password': '비밀번호',
-    'auth.register.passwordPlaceholder': '8자 이상',
+    'auth.register.passwordPlaceholder': '영문, 숫자, 특수문자 조합 8자 이상',
     'auth.register.passwordConfirm': '비밀번호 확인',
     'auth.register.passwordConfirmPlaceholder': '비밀번호를 다시 입력하세요',
     'auth.register.name': '성명',
@@ -182,6 +204,7 @@ const translations = {
     'validation.duplicate.checking': '확인 중...',
     'validation.duplicate.available': '사용 가능합니다',
     'validation.duplicate.taken': '이미 사용 중입니다',
+    'validation.englishOnly': '영문/숫자/특수문자만 입력 가능합니다',
 
     // SMS Verification
     'sms.send': '인증요청',
@@ -249,6 +272,18 @@ const translations = {
     'table.tradingVolume': 'Volume',
     'table.empty': 'No assets found',
     'table.loadMore': 'Load More',
+    'table.changeRealtime': '24H Change',
+    'table.changeRateRealtime': '24H %',
+    'table.change1d': 'vs Prev Day',
+    'table.change1w': 'vs Prev Week',
+    'table.change1m': 'vs Prev Month',
+    'table.change3m': 'vs 3M Ago',
+    'table.change6m': 'vs 6M Ago',
+    'table.change1y': 'vs 1Y Ago',
+    'table.highRealtime': '24H High',
+    'table.lowRealtime': '24H Low',
+    'table.highPeriod': 'Period High',
+    'table.lowPeriod': 'Period Low',
 
     // Settings
     'settings.title': 'Settings',
@@ -281,6 +316,16 @@ const translations = {
 
     // Modal
     'modal.close': 'Close',
+    'modal.logoutTitle': 'Logout',
+    'modal.logoutMessage': 'Are you sure you want to logout?',
+    'modal.logoutConfirm': 'Logout',
+    'modal.cancel': 'Cancel',
+    'modal.registerTitle': 'Confirm Sign Up',
+    'modal.registerMessage': 'Would you like to sign up with the information you entered?',
+    'modal.registerConfirm': 'Sign Up',
+    'modal.loginRequired': 'Login Required',
+    'modal.loginRequiredMessage': 'You need to log in to use this feature.\nWould you like to log in?',
+    'modal.loginConfirm': 'Login',
 
     // Landing Page
     'landing.title': 'VirtuEx',
@@ -327,7 +372,7 @@ const translations = {
     'auth.register.email': 'Email',
     'auth.register.emailPlaceholder': 'example@email.com',
     'auth.register.password': 'Password',
-    'auth.register.passwordPlaceholder': 'At least 8 characters',
+    'auth.register.passwordPlaceholder': 'Letters, numbers, special chars (8+ chars)',
     'auth.register.passwordConfirm': 'Confirm Password',
     'auth.register.passwordConfirmPlaceholder': 'Re-enter your password',
     'auth.register.name': 'Full Name',
@@ -367,6 +412,7 @@ const translations = {
     'validation.duplicate.checking': 'Checking...',
     'validation.duplicate.available': 'Available',
     'validation.duplicate.taken': 'Already in use',
+    'validation.englishOnly': 'Only English letters, numbers, and special characters allowed',
 
     // SMS Verification
     'sms.send': 'Send Code',
