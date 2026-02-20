@@ -105,10 +105,15 @@ export default function LandingPage() {
       </section>
 
       {/* 기술 스택 마키 / Tech Stack Marquee */}
-      <section className="py-8">
-        <h2 className="text-[13px] font-bold text-text-quaternary text-center uppercase tracking-wider mb-6">
-          {t('landing.techStack')}
-        </h2>
+      <section className="py-10 md:py-14">
+        <div className="text-center mb-10">
+          <h2 className="text-[22px] md:text-[28px] font-extrabold text-text-primary">
+            {t('landing.techStack')}
+          </h2>
+          <p className="mt-2 text-[14px] text-text-tertiary max-w-[480px] mx-auto">
+            {t('landing.techStackDesc')}
+          </p>
+        </div>
         <div className="relative overflow-hidden py-4 -mx-5 sm:-mx-8 lg:-mx-10">
           <div className="absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-bg-primary to-transparent z-10 pointer-events-none" />
           <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-bg-primary to-transparent z-10 pointer-events-none" />
