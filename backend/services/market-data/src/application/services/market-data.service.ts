@@ -283,10 +283,10 @@ export class MarketDataService implements OnModuleInit {
           const response = await fetch(url);
           if (!response.ok) return;
 
-          const data = await response.json();
+          const data = await response.json() as number[][];
           if (data.length > 0) {
             // kline: [openTime, open, high, low, close, ...]
-            const openPrice = parseFloat(data[0][1]);
+            const openPrice = parseFloat(String(data[0][1]));
             if (openPrice > 0) {
               result.set(asset.symbol, openPrice);
             }
@@ -344,13 +344,21 @@ export class MarketDataService implements OnModuleInit {
           price: t.price,
           bid: t.bid,
           ask: t.ask,
-          volume: t.volume,
+          volume: this.clampDecimal(t.volume),
           timestamp: t.timestamp,
         })),
       });
     } catch (error) {
       this.logger.error('Failed to persist prices', error);
     }
+  }
+
+  /**
+   * Decimal(20,8) 최대값 범위 내로 클램핑 / Clamp to Decimal(20,8) range
+   */
+  private clampDecimal(value: number): number {
+    const MAX = 999_999_999_999;
+    return Math.min(Math.max(value, -MAX), MAX);
   }
 
   private async updateCandlesticks(ticks: PriceTick[]) {
@@ -361,6 +369,7 @@ export class MarketDataService implements OnModuleInit {
 
     for (const tick of ticks) {
       try {
+        const vol = this.clampDecimal(tick.volume);
         await this.prisma.candlestick.upsert({
           where: {
             symbol_interval_openTime: {
@@ -376,15 +385,13 @@ export class MarketDataService implements OnModuleInit {
             highPrice: tick.price,
             lowPrice: tick.price,
             closePrice: tick.price,
-            volume: tick.volume,
+            volume: vol,
             openTime: minuteStart,
             closeTime: minuteEnd,
           },
           update: {
             closePrice: tick.price,
-            highPrice: { set: tick.high24h },
-            lowPrice: { set: tick.low24h },
-            volume: tick.volume,
+            volume: vol,
           },
         });
       } catch (error) {

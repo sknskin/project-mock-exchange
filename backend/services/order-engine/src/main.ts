@@ -9,6 +9,11 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { AppModule } from './app.module';
 
+// BigInt → JSON 직렬화 지원 / Enable BigInt JSON serialization
+(BigInt.prototype as any).toJSON = function () {
+  return Number(this);
+};
+
 async function bootstrap() {
   const logger = new Logger('OrderEngineService');
   const app = await NestFactory.create(AppModule);
