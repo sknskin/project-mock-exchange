@@ -76,7 +76,8 @@ const translations = {
     // Footer
     'footer.techStack': '기술 스택',
     'footer.description': '실시간 모의 주식/암호화폐 거래 플랫폼',
-    'footer.rights': '© 2026 VirtuEx. 교육 목적으로 제작되었습니다.',
+    'footer.about': 'VirtuEx는 NestJS 마이크로서비스와 Next.js 15로 개발되었으며, AWS ECS Fargate로 배포될 예정입니다.',
+    'footer.rights': '© 2026 VirtuEx.',
 
     // Error
     'error.title': '서비스 오류',
@@ -260,7 +261,8 @@ const translations = {
     // Footer
     'footer.techStack': 'Tech Stack',
     'footer.description': 'Real-time mock stock & crypto trading platform',
-    'footer.rights': '© 2026 VirtuEx. Built for educational purposes.',
+    'footer.about': 'VirtuEx is built with NestJS microservices and Next.js 15, and will be deployed on AWS ECS Fargate.',
+    'footer.rights': '© 2026 VirtuEx.',
 
     // Error
     'error.title': 'Service Error',

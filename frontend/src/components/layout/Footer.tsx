@@ -12,7 +12,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { techItems } from '@/lib/constants';
 import VirtuExLogo from '@/components/ui/VirtuExLogo';
 
-const tripledItems = [...techItems, ...techItems, ...techItems];
+const repeatedItems = [...techItems, ...techItems, ...techItems, ...techItems];
 
 const MailIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
@@ -83,6 +83,9 @@ export default function Footer() {
             <p className="text-[11px] text-text-quaternary pl-[28px]">
               {t('market.dataSourceDesc')}
             </p>
+            <p className="text-[11px] text-text-quaternary pl-[28px]">
+              {t('footer.about')}
+            </p>
           </div>
 
           {/* 연락처 링크 / Contact Links */}
@@ -117,12 +120,12 @@ export default function Footer() {
         </div>
 
         {/* 기술 스택 마키 / Tech Stack Marquee */}
-        <div className="relative overflow-hidden py-6 -mx-5 sm:-mx-8 lg:-mx-10">
+        <div className="relative overflow-hidden py-6 pb-10 -mx-5 sm:-mx-8 lg:-mx-10">
           <div className="absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-bg-primary to-transparent z-10 pointer-events-none" />
           <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-bg-primary to-transparent z-10 pointer-events-none" />
 
           <div className="animate-marquee">
-            {tripledItems.map((tech, i) => (
+            {repeatedItems.map((tech, i) => (
               <div
                 key={`${tech.name}-${i}`}
                 className="flex flex-col items-center gap-2 px-5 shrink-0"

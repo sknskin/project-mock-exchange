@@ -210,15 +210,15 @@
   }
 
   /* Marquee animation – GPU-accelerated, seamless infinite loop
-     3x duplicated items → translate -33.333% = exactly 1 set, loops seamlessly */
+     4x duplicated items → translate -25% = exactly 1 set, loops seamlessly */
   @keyframes marquee {
     0% { transform: translate3d(0, 0, 0); }
-    100% { transform: translate3d(-33.333%, 0, 0); }
+    100% { transform: translate3d(-25%, 0, 0); }
   }
   .animate-marquee {
     display: flex;
     will-change: transform;
-    animation: marquee 40s linear infinite;
+    animation: marquee 50s linear infinite;
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
     user-select: none;
