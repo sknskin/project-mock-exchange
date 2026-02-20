@@ -14,12 +14,14 @@ import { useTranslation } from '@/hooks/useTranslation';
 import AssetList from '@/components/market/AssetList';
 import MarketIndexSummary from '@/components/market/MarketIndexSummary';
 import MarketTicker from '@/components/market/MarketTicker';
+import ExchangeRateBar from '@/components/market/ExchangeRateBar';
 import { AssetListSkeleton } from '@/components/ui/Skeleton';
+import ServiceError from '@/components/ui/ServiceError';
 import { cn } from '@/lib/format';
 import type { Asset, AssetInfo, PriceUpdate } from '@/types';
 
 export default function DashboardPage() {
-  const { data: rawPrices, isLoading: pricesLoading } = useMarketPrices();
+  const { data: rawPrices, isLoading: pricesLoading, error: pricesError, refetch } = useMarketPrices();
   const { data: assetInfos } = useAssets();
   const { t } = useTranslation();
   const [search] = useState('');
@@ -90,12 +92,17 @@ export default function DashboardPage() {
     return result;
   }, [assets, livePrices, search, period, periodChangeMap]);
 
+  if (pricesError) {
+    return <ServiceError onRetry={refetch} />;
+  }
+
   return (
     <div>
       {!pricesLoading && displayAssets.length > 0 && (
         <>
           <MarketIndexSummary assets={displayAssets} />
           <MarketTicker assets={displayAssets} />
+          <ExchangeRateBar />
         </>
       )}
 
@@ -117,9 +124,14 @@ export default function DashboardPage() {
             )}
           </button>
         ))}
-        <span className="ml-auto mb-2.5 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-warning/10 border border-warning/20 shrink-0">
-          <span className="w-1.5 h-1.5 rounded-full bg-warning/70 animate-pulse" />
-          <span className="text-[11px] font-semibold text-warning/80">{t('market.mockData')}</span>
+        <span className="ml-auto mb-2.5 inline-flex items-center gap-2 shrink-0">
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-success/10 border border-success/20">
+            <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
+            <span className="text-[10px] font-semibold text-success/80">{t('filter.crypto')}: Binance</span>
+          </span>
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-warning/10 border border-warning/20">
+            <span className="text-[10px] font-semibold text-warning/80">{t('filter.stock')}: {t('market.simulatedData')}</span>
+          </span>
         </span>
       </div>
 

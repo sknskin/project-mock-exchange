@@ -28,6 +28,10 @@ const translations = {
     'market.trending': '투자자 동향',
     'market.mockData': '가상 데이터',
     'market.mockDataDesc': '본 서비스의 모든 시세·거래 데이터는 시뮬레이션으로 생성된 가상 데이터이며, 실제 시장과 무관합니다.',
+    'market.liveData': '실시간',
+    'market.simulatedData': '시뮬레이션',
+    'market.exchangeRate': '환율',
+    'market.dataSourceDesc': '암호화폐 시세는 Binance 실시간 데이터, 주식 시세는 시뮬레이션 데이터입니다.',
 
     // Filters
     'filter.all': '전체',
@@ -71,6 +75,15 @@ const translations = {
     'footer.techStack': '기술 스택',
     'footer.description': '실시간 모의 주식/암호화폐 거래 플랫폼',
     'footer.rights': '© 2026 VirtuEx. 교육 목적으로 제작되었습니다.',
+
+    // Error
+    'error.title': '서비스 오류',
+    'error.description': '서비스에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.',
+    'error.persistent': '지속적으로 오류가 발생하는 경우 관리자에게 연락해주세요.',
+    'error.retry': '다시 시도',
+    'error.goHome': '홈으로',
+    'error.connectionFailed': '서버 연결 실패',
+    'error.connectionDesc': '서버에 연결할 수 없습니다. 서비스가 점검 중이거나 네트워크 상태를 확인해주세요.',
 
     // Toast
     'toast.copied': '복사됨!',
@@ -196,6 +209,10 @@ const translations = {
     'market.trending': 'Trending',
     'market.mockData': 'Simulated Data',
     'market.mockDataDesc': 'All prices and trades on this platform are simulated and not related to real markets.',
+    'market.liveData': 'Live',
+    'market.simulatedData': 'Simulated',
+    'market.exchangeRate': 'Exchange Rate',
+    'market.dataSourceDesc': 'Crypto prices are live from Binance. Stock prices are simulated.',
 
     // Filters
     'filter.all': 'All',
@@ -239,6 +256,15 @@ const translations = {
     'footer.techStack': 'Tech Stack',
     'footer.description': 'Real-time mock stock & crypto trading platform',
     'footer.rights': '© 2026 VirtuEx. Built for educational purposes.',
+
+    // Error
+    'error.title': 'Service Error',
+    'error.description': 'A temporary issue occurred. Please try again shortly.',
+    'error.persistent': 'If the issue persists, please contact the administrator.',
+    'error.retry': 'Retry',
+    'error.goHome': 'Home',
+    'error.connectionFailed': 'Connection Failed',
+    'error.connectionDesc': 'Unable to connect to the server. The service may be under maintenance or please check your network.',
 
     // Toast
     'toast.copied': 'Copied!',

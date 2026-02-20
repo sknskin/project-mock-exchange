@@ -114,7 +114,10 @@ export default function MarketIndexSummary({ assets }: MarketIndexSummaryProps) 
 
   return (
     <div className="py-4 border-b border-border">
-      <div className="flex gap-4 lg:gap-6 overflow-x-auto scrollbar-hide -mx-1 px-1">
+      <div className="flex items-center gap-4 lg:gap-6 overflow-x-auto scrollbar-hide -mx-1 px-1">
+        <span className="text-[12px] text-text-quaternary font-medium shrink-0 self-center">
+          Market Index
+        </span>
         {indices.map((idx) => {
           const isRise = idx.changePercent > 0;
           const isFall = idx.changePercent < 0;
@@ -134,7 +137,7 @@ export default function MarketIndexSummary({ assets }: MarketIndexSummaryProps) 
                       ? `$${(idx.value / 1e12).toFixed(2)}T`
                       : idx.name === 'BTC Dominance'
                         ? `${idx.value.toFixed(1)}%`
-                        : formatCompactPrice(idx.value)}
+                        : `$${formatCompactPrice(idx.value)}`}
                   </span>
                   <span
                     className={cn(

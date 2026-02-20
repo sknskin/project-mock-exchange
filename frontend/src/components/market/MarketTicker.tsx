@@ -7,8 +7,9 @@
  */
 'use client';
 
-import { cn, formatCompactPrice, formatPercent } from '@/lib/format';
-import { useTranslation } from '@/hooks/useTranslation';
+import { cn, isKRW, formatPriceDisplay, formatPercent } from '@/lib/format';
+import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
+import { useExchangeRate } from '@/hooks/useExchangeRate';
 import type { Asset } from '@/types';
 
 interface MarketTickerProps {
@@ -16,18 +17,22 @@ interface MarketTickerProps {
 }
 
 export default function MarketTicker({ assets }: MarketTickerProps) {
-  const { t } = useTranslation();
   const topAssets = assets.slice(0, 5);
+  const { display } = useCurrencyDisplay();
+  const { data: rateData } = useExchangeRate();
+  const rate = rateData?.rate;
   if (topAssets.length === 0) return null;
-
-  const unit = t('market.unit');
 
   return (
     <div className="border-b border-border">
-      <div className="py-5 flex gap-10 lg:gap-14 overflow-x-auto scrollbar-hide">
+      <div className="py-5 flex items-center gap-10 lg:gap-14 overflow-x-auto scrollbar-hide">
+        <span className="text-[12px] text-text-quaternary font-medium shrink-0 self-start mt-0.5">
+          Top 5
+        </span>
         {topAssets.map((asset) => {
           const isRise = asset.changePercent > 0;
           const isFall = asset.changePercent < 0;
+          const showKRW = display === 'krw' && !isKRW(asset.symbol);
 
           return (
             <div key={asset.symbol} className="shrink-0">
@@ -36,8 +41,7 @@ export default function MarketTicker({ assets }: MarketTickerProps) {
               </div>
               <div className="flex items-baseline gap-2.5">
                 <span className="text-[16px] font-bold text-text-primary tabular-nums">
-                  {formatCompactPrice(asset.currentPrice)}
-                  {unit && <span className="text-[13px] text-text-tertiary ml-0.5">{unit}</span>}
+                  {formatPriceDisplay(asset.currentPrice, asset.symbol, showKRW, rate)}
                 </span>
                 <span
                   className={cn(
