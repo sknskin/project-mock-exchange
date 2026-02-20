@@ -184,15 +184,15 @@ export default function AssetList({ assets, period, onPeriodChange, mainTab = 'r
   return (
     <div>
       {/* 필터 / Filters */}
-      <div className="pt-8 pb-4 flex items-center gap-2.5 overflow-x-auto scrollbar-hide">
+      <div className="pt-8 pb-4 flex flex-col gap-2">
         {/* 카테고리 그룹 / Category group */}
-        <div className="flex items-center gap-1.5 shrink-0 bg-bg-secondary/50 rounded-xl px-1.5 py-1.5">
+        <div className="flex items-center gap-1.5 bg-bg-secondary/50 rounded-xl px-1.5 py-1.5 overflow-x-auto scrollbar-hide">
           {categoryTabs.map((tab) => (
             <button
               key={tab.key}
               onClick={() => { setCategory(tab.key); setPage(1); }}
               className={cn(
-                'h-[32px] px-4 text-[13px] font-semibold rounded-lg transition-colors whitespace-nowrap',
+                'h-[32px] px-4 text-[13px] font-semibold rounded-lg transition-colors whitespace-nowrap shrink-0',
                 category === tab.key ? pillActive : pillInactive,
               )}
             >
@@ -201,41 +201,43 @@ export default function AssetList({ assets, period, onPeriodChange, mainTab = 'r
           ))}
         </div>
 
-        {/* 정렬 그룹 / Sort group — 실시간 차트 탭에서만 표시 */}
-        {mainTab === 'realtime' && (
-          <div className="flex items-center gap-1 shrink-0 bg-bg-secondary/50 rounded-xl px-1.5 py-1.5">
-            {sortOptions.map((opt) => (
-              <button
-                key={opt.key}
-                onClick={() => { setSort(opt.key); setPage(1); }}
-                className={cn(
-                  'h-[32px] px-3.5 text-[13px] font-medium transition-colors whitespace-nowrap rounded-lg',
-                  sort === opt.key ? pillActive : pillInactive,
-                )}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          {/* 정렬 그룹 / Sort group — 실시간 차트 탭에서만 표시 */}
+          {mainTab === 'realtime' && (
+            <div className="flex items-center gap-1 bg-bg-secondary/50 rounded-xl px-1.5 py-1.5 overflow-x-auto scrollbar-hide">
+              {sortOptions.map((opt) => (
+                <button
+                  key={opt.key}
+                  onClick={() => { setSort(opt.key); setPage(1); }}
+                  className={cn(
+                    'h-[32px] px-3.5 text-[13px] font-medium transition-colors whitespace-nowrap rounded-lg shrink-0',
+                    sort === opt.key ? pillActive : pillInactive,
+                  )}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          )}
 
-        {/* 기간 그룹 / Period group — 인기종목 탭에서는 숨김 */}
-        {mainTab !== 'popular' && (
-          <div className="flex items-center gap-0.5 shrink-0 bg-bg-secondary/50 rounded-xl px-1.5 py-1.5">
-            {periodOptions.map((opt) => (
-              <button
-                key={opt.key}
-                onClick={() => onPeriodChange(opt.key)}
-                className={cn(
-                  'h-[32px] px-2.5 text-[13px] font-medium transition-colors whitespace-nowrap rounded-lg',
-                  period === opt.key ? pillActive : pillInactive,
-                )}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-        )}
+          {/* 기간 그룹 / Period group — 인기종목 탭에서는 숨김 */}
+          {mainTab !== 'popular' && (
+            <div className="flex items-center gap-0.5 bg-bg-secondary/50 rounded-xl px-1.5 py-1.5 overflow-x-auto scrollbar-hide">
+              {periodOptions.map((opt) => (
+                <button
+                  key={opt.key}
+                  onClick={() => onPeriodChange(opt.key)}
+                  className={cn(
+                    'h-[32px] px-2.5 text-[13px] font-medium transition-colors whitespace-nowrap rounded-lg shrink-0',
+                    period === opt.key ? pillActive : pillInactive,
+                  )}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* 테이블 헤더 (기간에 따라 라벨 변경) / Table header (labels change by period) */}

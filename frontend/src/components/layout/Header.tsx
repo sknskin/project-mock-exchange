@@ -9,7 +9,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/format';
@@ -18,6 +18,7 @@ import VirtuExLogo from '@/components/ui/VirtuExLogo';
 
 export default function Header() {
   const pathname = usePathname();
+  const router = useRouter();
   const { isAuthenticated, user, logout } = useAuthStore();
   const { t } = useTranslation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -188,7 +189,7 @@ export default function Header() {
             {/* 버튼: 확인(좌) + 취소(우) / Buttons: confirm(left) + cancel(right) */}
             <div className="flex gap-3 mt-6">
               <button
-                onClick={() => { logout(); setLogoutModalOpen(false); }}
+                onClick={() => { logout(); setLogoutModalOpen(false); router.push('/dashboard'); }}
                 className="flex-1 h-11 rounded-xl bg-danger text-white text-[14px] font-semibold hover:bg-danger/85 transition-colors"
               >
                 {t('modal.logoutConfirm')}
