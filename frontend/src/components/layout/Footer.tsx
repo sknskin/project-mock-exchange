@@ -8,6 +8,7 @@
 'use client';
 
 import { useCallback, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { useTranslation } from '@/hooks/useTranslation';
 import { techItems } from '@/lib/constants';
 import VirtuExLogo from '@/components/ui/VirtuExLogo';
@@ -42,6 +43,7 @@ interface Toast {
 let toastId = 0;
 
 export default function Footer() {
+  const pathname = usePathname();
   const { t } = useTranslation();
   const [toasts, setToasts] = useState<Toast[]>([]);
 
@@ -61,6 +63,10 @@ export default function Footer() {
       setToasts((prev) => prev.filter((toast) => toast.id !== id));
     }, 1500);
   }, [t]);
+
+  // 로그인/회원가입 페이지에서는 푸터 숨김 / Hide footer on auth pages
+  const isAuthPage = pathname === '/login' || pathname === '/register';
+  if (isAuthPage) return null;
 
   return (
     <footer className="border-t border-border mt-12 md:mt-20">
@@ -122,7 +128,7 @@ export default function Footer() {
         </div>
 
         {/* 기술 스택 마키 / Tech Stack Marquee */}
-        <div className="relative overflow-hidden py-6 pb-16 md:pb-10 -mx-5 sm:-mx-8 lg:-mx-10">
+        <div className="relative overflow-hidden py-6 pb-28 md:pb-10 -mx-5 sm:-mx-8 lg:-mx-10">
           <div className="absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-bg-primary to-transparent z-10 pointer-events-none" />
           <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-bg-primary to-transparent z-10 pointer-events-none" />
 

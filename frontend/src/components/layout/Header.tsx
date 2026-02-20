@@ -21,6 +21,7 @@ export default function Header() {
   const { isAuthenticated, user, logout } = useAuthStore();
   const { t } = useTranslation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [logoutModalOpen, setLogoutModalOpen] = useState(false);
 
   const navItems = [
     { href: '/dashboard', label: t('nav.dashboard') },
@@ -66,13 +67,19 @@ export default function Header() {
           </div>
 
           <div className="flex items-center gap-5">
-            <div className="hidden lg:flex items-center gap-2.5 text-text-quaternary">
-              <Search className="w-4 h-4" />
-              <span className="text-[13px]">
-                <kbd className="px-1.5 py-0.5 text-[11px] border border-border rounded text-text-tertiary font-mono">/</kbd>
-                {t('nav.search')}
-              </span>
-            </div>
+            {/* 홈(/)에서는 검색란 숨김 / Hide search on home page */}
+            {pathname !== '/' && (
+              <button
+                onClick={() => window.dispatchEvent(new CustomEvent('open-spotlight'))}
+                className="hidden lg:flex items-center gap-2.5 text-text-quaternary hover:text-text-tertiary transition-colors cursor-pointer"
+              >
+                <Search className="w-4 h-4" />
+                <span className="text-[13px]">
+                  <kbd className="px-1.5 py-0.5 text-[11px] border border-border rounded text-text-tertiary font-mono">/</kbd>
+                  {t('nav.search')}
+                </span>
+              </button>
+            )}
 
             {isAuthenticated ? (
               <>
@@ -80,8 +87,8 @@ export default function Header() {
                   {user?.username}
                 </span>
                 <button
-                  onClick={logout}
-                  className="p-2.5 text-text-tertiary hover:text-text-primary transition-colors rounded-lg hover:bg-bg-secondary"
+                  onClick={() => setLogoutModalOpen(true)}
+                  className="p-2.5 text-danger hover:text-danger/80 transition-colors rounded-lg hover:bg-bg-secondary translate-y-[1px]"
                 >
                   <LogOut className="w-[18px] h-[18px]" />
                 </button>
@@ -138,8 +145,8 @@ export default function Header() {
                     <span className="text-text-primary font-bold">{user?.username}</span>
                   </div>
                   <button
-                    onClick={() => { logout(); setMobileMenuOpen(false); }}
-                    className="flex items-center gap-2.5 w-full px-4 py-3.5 text-[14px] font-medium text-text-tertiary bg-bg-secondary rounded-xl"
+                    onClick={() => { setLogoutModalOpen(true); setMobileMenuOpen(false); }}
+                    className="flex items-center gap-2.5 w-full px-4 py-3.5 text-[14px] font-medium text-danger bg-bg-secondary rounded-xl"
                   >
                     <LogOut className="w-4 h-4" /> {t('nav.logout')}
                   </button>
@@ -155,6 +162,36 @@ export default function Header() {
             @keyframes slide-in-right { from { transform: translateX(100%); } to { transform: translateX(0); } }
             .animate-slide-in-right { animation: slide-in-right 0.2s ease-out; }
           `}</style>
+        </div>
+      )}
+
+      {/* 로그아웃 확인 모달 / Logout Confirmation Modal */}
+      {logoutModalOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setLogoutModalOpen(false)} />
+          <div className="relative bg-bg-primary border border-border rounded-2xl p-6 w-[320px] shadow-2xl">
+            <h3 className="text-[16px] font-bold text-text-primary text-center">
+              {t('modal.logoutTitle')}
+            </h3>
+            <p className="text-[14px] text-text-secondary text-center mt-3">
+              {t('modal.logoutMessage')}
+            </p>
+            {/* 버튼: 확인(좌) + 취소(우) / Buttons: confirm(left) + cancel(right) */}
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => { logout(); setLogoutModalOpen(false); }}
+                className="flex-1 h-11 rounded-xl bg-danger text-white text-[14px] font-semibold hover:bg-danger/85 transition-colors"
+              >
+                {t('modal.logoutConfirm')}
+              </button>
+              <button
+                onClick={() => setLogoutModalOpen(false)}
+                className="flex-1 h-11 rounded-xl border border-border text-[14px] font-semibold text-text-secondary hover:bg-bg-secondary transition-colors"
+              >
+                {t('modal.cancel')}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </>
