@@ -27,11 +27,13 @@ export default function ExchangeRateBar() {
     hour12: false,
   });
 
+  const isKRWMode = display === 'krw';
+
   return (
-    <div className="flex items-center justify-between py-2.5 px-1 border-b border-border text-[12px]">
-      <div className="flex items-center gap-3">
+    <div className="flex flex-wrap items-center justify-between gap-y-1 py-2.5 px-1 border-b border-border text-[12px]">
+      <div className="flex items-center gap-2 sm:gap-3">
         <span className="text-text-quaternary font-medium shrink-0">USD/KRW</span>
-        <span className="text-text-primary font-bold tabular-nums">
+        <span className="text-text-primary font-bold tabular-nums whitespace-nowrap">
           {data.rate.toLocaleString('ko-KR', {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
@@ -40,37 +42,38 @@ export default function ExchangeRateBar() {
         </span>
         <button
           onClick={toggle}
-          className={cn(
-            'px-2 py-0.5 rounded text-[11px] font-semibold transition-colors border',
-            display === 'krw'
-              ? 'bg-accent/10 text-accent border-accent/30'
-              : 'bg-bg-tertiary/50 text-text-tertiary border-border hover:text-text-secondary',
-          )}
+          className="px-2 py-0.5 rounded text-[11px] font-semibold transition-colors border bg-bg-tertiary/50 text-text-tertiary border-border hover:text-text-secondary whitespace-nowrap"
         >
-          {display === 'original' ? '$ → ₩' : '₩ → $'}
+          {isKRWMode ? '₩ → $' : '$ → ₩'}
         </button>
+        <span className="text-[10px] text-text-quaternary hidden sm:inline whitespace-nowrap">
+          {isKRWMode ? '현재: 원화 표시 중' : '현재: 달러 표시 중'}
+        </span>
       </div>
-      <div className="flex items-center gap-2 text-text-quaternary">
-        <span className="tabular-nums">{timeStr}</span>
-        <button
-          onClick={() => refetch()}
-          disabled={isFetching}
-          className="p-1 hover:text-accent transition-colors disabled:opacity-40"
-        >
-          <svg
-            className={cn('w-3.5 h-3.5', isFetching && 'animate-spin')}
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={2}
-            stroke="currentColor"
+      <div className="flex flex-col items-end gap-0.5 text-text-quaternary">
+        <div className="flex items-center gap-2">
+          <span className="tabular-nums text-[11px] sm:text-[12px]">{timeStr}</span>
+          <button
+            onClick={() => refetch()}
+            disabled={isFetching}
+            className="p-1 hover:text-accent transition-colors disabled:opacity-40"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182M20.015 4.356v4.992"
-            />
-          </svg>
-        </button>
+            <svg
+              className={cn('w-3.5 h-3.5', isFetching && 'animate-spin')}
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={2}
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182M20.015 4.356v4.992"
+              />
+            </svg>
+          </button>
+        </div>
+        <span className="text-[9px] text-text-quaternary/60 hidden sm:block">ECB 기준 평일 1회 갱신 (당일 내 동일 환율)</span>
       </div>
     </div>
   );

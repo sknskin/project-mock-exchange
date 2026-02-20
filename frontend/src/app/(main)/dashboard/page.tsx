@@ -106,13 +106,13 @@ export default function DashboardPage() {
         </>
       )}
 
-      <div className="flex items-end gap-7 pt-7 pb-0 border-b border-border">
+      <div className="flex items-end gap-4 sm:gap-7 pt-7 pb-0 border-b border-border">
         {mainTabs.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveMainTab(tab.key)}
             className={cn(
-              'pb-3.5 text-[15px] font-bold transition-colors relative',
+              'pb-3.5 text-[14px] sm:text-[15px] font-bold transition-colors relative whitespace-nowrap',
               activeMainTab === tab.key
                 ? 'text-text-primary'
                 : 'text-text-quaternary hover:text-text-tertiary',
@@ -124,13 +124,14 @@ export default function DashboardPage() {
             )}
           </button>
         ))}
-        <span className="ml-auto mb-2.5 inline-flex items-center gap-2 shrink-0">
-          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-success/10 border border-success/20">
-            <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
-            <span className="text-[10px] font-semibold text-success/80">{t('filter.crypto')}: Binance</span>
+        <span className="ml-auto mb-2.5 hidden sm:inline-flex items-center gap-2 shrink-0">
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/20">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="text-[10px] font-semibold text-emerald-400">{t('filter.crypto')}: Binance</span>
           </span>
-          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-warning/10 border border-warning/20">
-            <span className="text-[10px] font-semibold text-warning/80">{t('filter.stock')}: {t('market.simulatedData')}</span>
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-rise/10 border border-rise/20">
+            <span className="w-1.5 h-1.5 rounded-full bg-rise animate-pulse" />
+            <span className="text-[10px] font-semibold text-rise/80">{t('filter.stock')}: {t('market.simulatedData')}</span>
           </span>
         </span>
       </div>

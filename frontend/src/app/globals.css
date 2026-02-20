@@ -229,21 +229,24 @@
     user-select: none;
   }
 
-  /* 가격 변동 플래시: 상승=빨간 배경, 하락=파란 배경 → 0.6초 후 사라짐 */
+  /* 가격 변동 플래시: 상승=빨간 배경, 하락=파란 배경 → 1초 후 사라짐 */
+  /* Price tick flash: rise=red bg, fall=blue bg → fades out over 1s */
   @keyframes tick-flash-rise {
-    0% { background-color: rgba(240, 68, 82, 0.15); }
+    0% { background-color: rgba(240, 68, 82, 0.28); }
+    40% { background-color: rgba(240, 68, 82, 0.18); }
     100% { background-color: transparent; }
   }
   @keyframes tick-flash-fall {
-    0% { background-color: rgba(49, 130, 246, 0.15); }
+    0% { background-color: rgba(49, 130, 246, 0.28); }
+    40% { background-color: rgba(49, 130, 246, 0.18); }
     100% { background-color: transparent; }
   }
   .tick-flash-rise {
-    animation: tick-flash-rise 0.6s ease-out;
+    animation: tick-flash-rise 1s ease-out;
     border-radius: 4px;
   }
   .tick-flash-fall {
-    animation: tick-flash-fall 0.6s ease-out;
+    animation: tick-flash-fall 1s ease-out;
     border-radius: 4px;
   }
 

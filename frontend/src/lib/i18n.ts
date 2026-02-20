@@ -31,6 +31,8 @@ const translations = {
     'market.liveData': '실시간',
     'market.simulatedData': '시뮬레이션',
     'market.exchangeRate': '환율',
+    'market.marketIndex': '시장 지수',
+    'market.top5Turnover': '거래대금\nTop 5',
     'market.dataSourceDesc': '암호화폐 시세는 Binance 실시간 데이터, 주식 시세는 시뮬레이션 데이터입니다.',
 
     // Filters
@@ -212,6 +214,8 @@ const translations = {
     'market.liveData': 'Live',
     'market.simulatedData': 'Simulated',
     'market.exchangeRate': 'Exchange Rate',
+    'market.marketIndex': 'Market Index',
+    'market.top5Turnover': 'Turnover\nTop 5',
     'market.dataSourceDesc': 'Crypto prices are live from Binance. Stock prices are simulated.',
 
     // Filters
