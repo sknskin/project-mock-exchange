@@ -81,16 +81,14 @@ export default function LandingPage() {
           {t('landing.description')}
         </p>
         <div className="mt-6 inline-flex flex-col items-center gap-2">
-          <div className="inline-flex items-center gap-3 px-4 py-2 rounded-lg bg-bg-secondary/50 border border-border">
-            <span className="inline-flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
-              <span className="text-[11px] font-bold text-success">LIVE</span>
-              <span className="text-[11px] text-text-tertiary">{t('filter.crypto')}</span>
+          <div className="inline-flex items-center gap-3 px-4 py-2 rounded-lg bg-bg-secondary/50">
+            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/20">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-[10px] font-semibold text-emerald-400">{t('filter.crypto')}: Binance</span>
             </span>
-            <span className="w-px h-3 bg-border" />
-            <span className="inline-flex items-center gap-1.5">
-              <span className="text-[11px] font-bold text-warning/90 px-1 py-0.5 rounded bg-warning/15">MOCK</span>
-              <span className="text-[11px] text-text-tertiary">{t('filter.stock')}</span>
+            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-rise/10 border border-rise/20">
+              <span className="w-1.5 h-1.5 rounded-full bg-rise animate-pulse" />
+              <span className="text-[10px] font-semibold text-rise/80">{t('filter.stock')}: {t('market.simulatedData')}</span>
             </span>
           </div>
           <p className="text-[11px] text-text-quaternary">{t('market.dataSourceDesc')}</p>
