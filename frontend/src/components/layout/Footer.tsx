@@ -146,7 +146,7 @@ export default function Footer() {
 
       {/* 저작권 / Copyright */}
       <div className="border-t border-border">
-        <div className="max-w-[1080px] mx-auto px-5 sm:px-8 lg:px-10 py-5">
+        <div className="max-w-[1080px] mx-auto px-5 sm:px-8 lg:px-10 py-5 pb-16 md:pb-5">
           <p className="text-[11px] text-text-quaternary">
             {t('footer.rights')}
           </p>
