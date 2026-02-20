@@ -17,7 +17,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { randomBytes, createHash } from 'crypto';
-import { JwtPayload, AuthTokensDto, UserDto } from '@mock-exchange/common';
+import { JwtPayload, AuthTokensDto, UserDto, USER_ROLE } from '@mock-exchange/common';
 import {
   USER_REPOSITORY,
   IUserRepository,
@@ -130,6 +130,11 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    // 미승인 회원 로그인 거부 (SYSTEM 계정 예외) / Deny unapproved users (except SYSTEM)
+    if (!user.isApproved && user.role !== USER_ROLE.SYSTEM) {
+      throw new UnauthorizedException('Account not yet approved');
+    }
+
     const tokens = await this.generateTokens(user);
     const refreshToken = await this.createRefreshToken(user.id);
 
@@ -170,6 +175,10 @@ export class AuthService {
       stored.user.name,
       stored.user.role as JwtPayload['role'],
       stored.user.isActive,
+      stored.user.isApproved,
+      stored.user.approvedAt,
+      stored.user.approvedBy,
+      stored.user.approvalNote,
       stored.user.createdAt,
       stored.user.updatedAt,
       stored.user.phone,
@@ -272,7 +281,10 @@ export class AuthService {
       id: user.id,
       email: user.email,
       username: user.username,
+      name: user.name,
       role: user.role,
+      isActive: user.isActive,
+      isApproved: user.isApproved,
       createdAt: user.createdAt.toISOString(),
     };
   }

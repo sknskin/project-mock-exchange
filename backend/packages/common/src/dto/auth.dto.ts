@@ -36,6 +36,9 @@ export interface UserDto {
   id: string;
   email: string;
   username: string;
+  name: string;
   role: UserRole;
+  isActive: boolean;
+  isApproved: boolean;
   createdAt: string;
 }

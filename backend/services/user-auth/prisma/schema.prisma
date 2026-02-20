@@ -9,9 +9,9 @@ datasource db {
 }
 
 enum UserRole {
-  TRADER
-  MODERATOR
+  SYSTEM
   ADMIN
+  USER
 }
 
 model User {
@@ -20,8 +20,12 @@ model User {
   username      String   @unique @db.VarChar(50)
   passwordHash  String   @map("password_hash") @db.VarChar(255)
   name          String   @db.VarChar(50)
-  role          UserRole @default(TRADER)
+  role          UserRole @default(USER)
   isActive      Boolean  @default(true) @map("is_active")
+  isApproved    Boolean  @default(false) @map("is_approved")
+  approvedAt    DateTime? @map("approved_at") @db.Timestamptz()
+  approvedBy    String?  @map("approved_by") @db.Uuid
+  approvalNote  String?  @map("approval_note") @db.VarChar(500)
   phone         String   @unique @db.VarChar(20)
   encryptedRrn  String   @map("encrypted_rrn") @db.VarChar(512)
   address       String   @db.VarChar(500)

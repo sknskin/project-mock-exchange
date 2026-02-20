@@ -54,9 +54,9 @@ export type OrderStatus = (typeof ORDER_STATUS)[keyof typeof ORDER_STATUS];
 
 // Roles
 export const USER_ROLE = {
-  TRADER: 'TRADER',
-  MODERATOR: 'MODERATOR',
+  SYSTEM: 'SYSTEM',
   ADMIN: 'ADMIN',
+  USER: 'USER',
 } as const;
 
 export type UserRole = (typeof USER_ROLE)[keyof typeof USER_ROLE];
