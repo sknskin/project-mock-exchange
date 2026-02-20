@@ -280,49 +280,24 @@ for topic in price.updated order.events trade.events portfolio.events; do
 done
 
 # ─── 5. 빌드 체크 / Build check ───
-# 프론트엔드(.next)와 백엔드(dist/main.js)의 빌드 산출물이 있는지 확인
-# 없으면 tsbuildinfo 정리 후 전체 빌드 실행
-# Check if frontend (.next) and backend (dist/main.js) build artifacts exist
-# If missing, clean stale tsbuildinfo files and run full build
+# 매 실행 시 전체 빌드 수행: 소스 코드 변경이 항상 반영되도록 보장
+# Always rebuild on every run: ensures source code changes are always reflected
 echo ""
-echo -e "${YELLOW}[5/7] 빌드 확인... / Checking build artifacts...${NC}"
+echo -e "${YELLOW}[5/7] 빌드... / Building...${NC}"
 
-need_build=false
+# tsbuildinfo 정리: TypeScript incremental 빌드 캐시가 stale할 수 있으므로 삭제
+# Clean stale tsbuildinfo: prevents stale incremental build cache
+find backend -name "tsconfig.tsbuildinfo" -delete 2>/dev/null || true
 
-# 프론트엔드 빌드 산출물 확인 / Check frontend build output
-if [ ! -d "frontend/.next" ]; then
-  need_build=true
-fi
+# 의존성 설치 (lockfile 우선, 실패 시 일반 install)
+# Install dependencies (prefer frozen lockfile, fallback to regular install)
+pnpm install --frozen-lockfile 2>/dev/null || pnpm install
 
-# 각 백엔드 서비스의 dist/main.js 존재 확인 / Check each backend service's dist/main.js
-for svc in user-auth market-data order-engine portfolio api-gateway; do
-  if [ ! -f "backend/services/$svc/dist/main.js" ]; then
-    need_build=true
-    break
-  fi
-done
+# --force: turbo 캐시를 무시하고 전체 재빌드
+# --force: ignore turbo cache and rebuild everything
+npx turbo build --force
 
-if [ "$need_build" = true ]; then
-  echo "  빌드가 필요합니다. 빌드 중... / Build required. Building..."
-
-  # tsbuildinfo 정리: TypeScript incremental 빌드 캐시가 dist 없이 남아있으면
-  # tsc가 "이미 빌드됨"으로 판단하여 빈 빌드가 발생하는 문제를 방지
-  # Clean stale tsbuildinfo: prevents tsc from skipping emit when dist/ is missing
-  # but tsbuildinfo still exists (causes empty builds)
-  find backend -name "tsconfig.tsbuildinfo" -delete 2>/dev/null || true
-
-  # 의존성 설치 (lockfile 우선, 실패 시 일반 install)
-  # Install dependencies (prefer frozen lockfile, fallback to regular install)
-  pnpm install --frozen-lockfile 2>/dev/null || pnpm install
-
-  # --force: turbo 캐시를 무시하고 전체 재빌드
-  # --force: ignore turbo cache and rebuild everything
-  npx turbo build --force
-
-  echo -e "  ${GREEN}✓${NC} 빌드 완료 / Build complete"
-else
-  echo -e "  ${GREEN}✓${NC} 빌드 파일 존재 (스킵) / Build artifacts found (skipping)"
-fi
+echo -e "  ${GREEN}✓${NC} 빌드 완료 / Build complete"
 
 # ─── 6. DB 마이그레이션 / Database migration ───
 # 각 서비스의 Prisma 스키마를 데이터베이스에 동기화

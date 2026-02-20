@@ -79,7 +79,8 @@ export default function GlobalError({
             </svg>
           </div>
           <h1>서비스 오류</h1>
-          <p className="desc">서비스에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.</p>
+          <p className="desc">서비스에 일시적인 문제가 발생했습니다.</p>
+          <p className="desc">잠시 후 다시 시도해주세요.</p>
           <p className="persistent">지속적으로 오류가 발생하는 경우 관리자에게 연락해주세요.</p>
           <div className="contact">
             <a href="mailto:sknskin@naver.com">sknskin@naver.com</a>
