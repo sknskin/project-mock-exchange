@@ -126,5 +126,5 @@ export default function CandlestickChart({
     };
   }, [data, chartType]);
 
-  return <div ref={chartContainerRef} className="w-full" />;
+  return <div ref={chartContainerRef} className="w-full overflow-hidden" />;
 }

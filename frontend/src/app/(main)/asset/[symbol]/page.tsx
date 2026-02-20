@@ -12,6 +12,8 @@ import { useRouter } from 'next/navigation';
 import { useAssetPrice, useCandlesticks, useOrderBook, useRecentTrades } from '@/hooks/useMarket';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useExchangeRate } from '@/hooks/useExchangeRate';
+import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
 import { useAuthStore } from '@/stores/auth';
 import CandlestickChart from '@/components/chart/CandlestickChart';
 import ExchangeRateBar from '@/components/market/ExchangeRateBar';
@@ -20,7 +22,7 @@ import OrderSheet from '@/components/trading/OrderSheet';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import Tabs from '@/components/ui/Tabs';
 import { ChartSkeleton } from '@/components/ui/Skeleton';
-import { cn, formatPrice, formatPercent, formatQuantity, formatTime, formatVolume } from '@/lib/format';
+import { cn, formatPriceDisplay, formatAmountDisplay, formatPercent, formatQuantity, formatTime, formatVolumeDisplay } from '@/lib/format';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import type { PriceUpdate } from '@/types';
@@ -49,6 +51,13 @@ export default function AssetDetailPage({
   const { t } = useTranslation();
   const { isAuthenticated } = useAuthStore();
   const { data: asset } = useAssetPrice(symbol);
+  const { data: rateData } = useExchangeRate();
+  const currencyMode = useCurrencyDisplay((s) => s.display);
+  const rate = rateData?.rate;
+
+  const fp = (price: number) => formatPriceDisplay(price, symbol, currencyMode, rate);
+  const fa = (amount: number) => formatAmountDisplay(amount, symbol, currencyMode, rate);
+  const fv = (volume: number) => formatVolumeDisplay(volume, symbol, currencyMode, rate);
 
   const chartIntervals = useMemo(
     () => chartIntervalKeys.map((i) => ({ key: i.key, label: t(i.i18nKey) })),
@@ -98,7 +107,7 @@ export default function AssetDetailPage({
   };
 
   return (
-    <div className="pb-8">
+    <div className="pb-32">
       {/* 헤더 / Header */}
       <div className="flex items-center gap-3 py-4">
         <Link href="/dashboard" className="p-1.5 -ml-1.5 text-text-tertiary hover:text-text-primary transition-colors rounded-lg hover:bg-bg-secondary/60">
@@ -132,8 +141,7 @@ export default function AssetDetailPage({
       {/* 현재가 / Price */}
       <div className="pb-5 mt-3">
         <div className="text-[28px] sm:text-[32px] font-extrabold tabular-nums text-text-primary leading-tight">
-          {formatPrice(currentPrice)}
-          <span className="text-[16px] text-text-tertiary ml-1">{t('market.unit')}</span>
+          {fp(currentPrice)}
         </div>
         <div className="flex items-center gap-2 mt-1.5">
           <span
@@ -155,7 +163,7 @@ export default function AssetDetailPage({
                 !isRise && !isFall && 'text-text-quaternary',
               )}
             >
-              {changeAmount > 0 && '+'}{formatPrice(changeAmount)}
+              {fa(changeAmount)}
             </span>
           )}
         </div>
@@ -224,25 +232,25 @@ export default function AssetDetailPage({
           <div className="flex flex-col gap-0.5">
             <span className="text-[11px] text-text-quaternary">{t('detail.open')}</span>
             <span className="text-[13px] font-semibold tabular-nums text-text-primary">
-              {formatPrice(currentPrice - changeAmount)}
+              {fp(currentPrice - changeAmount)}
             </span>
           </div>
           <div className="flex flex-col gap-0.5">
             <span className="text-[11px] text-text-quaternary">{t('detail.high')}</span>
             <span className="text-[13px] font-semibold tabular-nums text-rise">
-              {formatPrice(asset.high24h ?? 0)}
+              {fp(asset.high24h ?? 0)}
             </span>
           </div>
           <div className="flex flex-col gap-0.5">
             <span className="text-[11px] text-text-quaternary">{t('detail.low')}</span>
             <span className="text-[13px] font-semibold tabular-nums text-fall">
-              {formatPrice(asset.low24h ?? 0)}
+              {fp(asset.low24h ?? 0)}
             </span>
           </div>
           <div className="flex flex-col gap-0.5">
             <span className="text-[11px] text-text-quaternary">{t('detail.volume')}</span>
             <span className="text-[13px] font-semibold tabular-nums text-text-primary">
-              {formatVolume(asset.volume ?? 0)}
+              {formatQuantity(asset.volume ?? 0)}
             </span>
           </div>
           <div className="flex flex-col gap-0.5">
@@ -251,7 +259,7 @@ export default function AssetDetailPage({
               'text-[13px] font-semibold tabular-nums',
               isRise ? 'text-rise' : isFall ? 'text-fall' : 'text-text-primary',
             )}>
-              {changeAmount > 0 && '+'}{formatPrice(changeAmount)}
+              {fa(changeAmount)}
             </span>
           </div>
           <div className="flex flex-col gap-0.5">
@@ -268,18 +276,18 @@ export default function AssetDetailPage({
 
       {/* 종목 정보 / Asset Info */}
       {asset && (
-        <div className="mt-3">
+        <div className="mt-8">
           <h3 className="text-[15px] font-bold text-text-primary mb-3">{t('detail.assetInfo')}</h3>
           <div className="py-1">
             {[
-              { label: t('detail.currentPrice'), value: formatPrice(asset.price ?? 0) },
-              { label: t('detail.bidPrice'), value: formatPrice(asset.bid ?? 0) },
-              { label: t('detail.askPrice'), value: formatPrice(asset.ask ?? 0) },
-              { label: t('detail.spread'), value: formatPrice((asset.ask ?? 0) - (asset.bid ?? 0)) },
-              { label: t('detail.high24h'), value: formatPrice(asset.high24h ?? 0) },
-              { label: t('detail.low24h'), value: formatPrice(asset.low24h ?? 0) },
+              { label: t('detail.currentPrice'), value: fp(asset.price ?? 0) },
+              { label: t('detail.bidPrice'), value: fp(asset.bid ?? 0) },
+              { label: t('detail.askPrice'), value: fp(asset.ask ?? 0) },
+              { label: t('detail.spread'), value: fp((asset.ask ?? 0) - (asset.bid ?? 0)) },
+              { label: t('detail.high24h'), value: fp(asset.high24h ?? 0) },
+              { label: t('detail.low24h'), value: fp(asset.low24h ?? 0) },
               { label: t('detail.volume24h'), value: formatQuantity(asset.volume ?? 0) },
-              { label: t('detail.turnover24h'), value: formatVolume((asset.volume ?? 0) * (asset.price ?? 0)) },
+              { label: t('detail.turnover24h'), value: fv((asset.volume ?? 0) * (asset.price ?? 0)) },
               { label: t('detail.assetType'), value: asset.type === 'CRYPTO' ? t('detail.crypto') : asset.type === 'STOCK' ? t('detail.stock') : '-' },
             ].map((item) => (
               <div
@@ -325,7 +333,7 @@ export default function AssetDetailPage({
                       trade.side === 'BUY' ? 'text-rise' : 'text-fall',
                     )}
                   >
-                    {formatPrice(trade.price)}
+                    {fp(trade.price)}
                   </span>
                   <span className="flex-1 text-center tabular-nums text-text-secondary">
                     {formatQuantity(trade.quantity)}
