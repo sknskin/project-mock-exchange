@@ -1,9 +1,9 @@
 /**
  * @file 헤더 컴포넌트
- * @description 로고, 네비게이션, 로그인/로그아웃, 모바일 메뉴를 포함하는 헤더
+ * @description 로고, 네비게이션, 로그인/로그아웃, 모바일 메뉴, 알림, 관리자 메뉴
  *
  * @file Header Component
- * @description Header with logo, navigation, auth actions, and mobile menu
+ * @description Header with logo, navigation, auth, mobile menu, notifications, admin menus
  */
 'use client';
 
@@ -13,8 +13,9 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/format';
-import { LogOut, Search, Menu, X } from 'lucide-react';
+import { LogOut, Search, Menu, X, Megaphone, Users, BarChart3 } from 'lucide-react';
 import VirtuExLogo from '@/components/ui/VirtuExLogo';
+import NotificationBell from '@/components/layout/NotificationBell';
 
 export default function Header() {
   const pathname = usePathname();
@@ -24,11 +25,20 @@ export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [logoutModalOpen, setLogoutModalOpen] = useState(false);
 
+  const isAdmin = user?.role === 'SYSTEM' || user?.role === 'ADMIN';
+
   const navItems = [
     { href: '/dashboard', label: t('nav.dashboard') },
     { href: '/portfolio', label: t('nav.portfolio') },
     { href: '/orders', label: t('nav.orders') },
     { href: '/leaderboard', label: t('nav.leaderboard') },
+    ...(isAuthenticated ? [{ href: '/announcements', label: t('nav.announcements') }] : []),
+    ...(isAdmin
+      ? [
+          { href: '/admin/users', label: t('nav.userManagement') },
+          { href: '/admin/stats', label: t('nav.statistics') },
+        ]
+      : []),
   ];
 
   useEffect(() => { setMobileMenuOpen(false); }, [pathname]);
@@ -49,14 +59,14 @@ export default function Header() {
               </span>
             </Link>
 
-            <nav className="hidden md:flex items-center gap-8">
+            <nav className="hidden md:flex items-center gap-6">
               {navItems.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    'text-[15px] font-medium transition-colors py-1',
-                    pathname === item.href
+                    'text-[14px] font-medium transition-colors py-1',
+                    pathname === item.href || pathname.startsWith(item.href + '/')
                       ? 'text-text-primary'
                       : 'text-text-tertiary hover:text-text-primary',
                   )}
@@ -67,7 +77,7 @@ export default function Header() {
             </nav>
           </div>
 
-          <div className="flex items-center gap-5">
+          <div className="flex items-center gap-3">
             {/* 홈(/)에서는 검색란 숨김 / Hide search on home page */}
             {pathname !== '/' && (
               <button
@@ -84,9 +94,18 @@ export default function Header() {
 
             {isAuthenticated ? (
               <>
-                <span className="text-[13px] text-text-secondary font-medium hidden md:block">
+                {/* 알림 벨 / Notification Bell */}
+                <div className="relative hidden md:block">
+                  <NotificationBell />
+                </div>
+
+                {/* 사용자명 → 마이페이지 / Username → My Page */}
+                <Link
+                  href="/mypage"
+                  className="text-[13px] text-text-secondary font-medium hidden md:block hover:text-accent transition-colors"
+                >
                   {user?.username}
-                </span>
+                </Link>
                 <button
                   onClick={() => setLogoutModalOpen(true)}
                   className="hidden md:flex p-2.5 text-danger hover:text-danger/80 transition-colors rounded-lg hover:bg-bg-secondary translate-y-[1px]"
@@ -138,12 +157,15 @@ export default function Header() {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    'flex items-center px-4 py-3.5 text-[15px] font-medium rounded-xl transition-colors',
-                    pathname === item.href
+                    'flex items-center gap-3 px-4 py-3.5 text-[15px] font-medium rounded-xl transition-colors',
+                    pathname === item.href || pathname.startsWith(item.href + '/')
                       ? 'text-text-primary bg-bg-secondary'
                       : 'text-text-tertiary hover:text-text-primary',
                   )}
                 >
+                  {item.href === '/announcements' && <Megaphone className="w-4 h-4" />}
+                  {item.href === '/admin/users' && <Users className="w-4 h-4" />}
+                  {item.href === '/admin/stats' && <BarChart3 className="w-4 h-4" />}
                   {item.label}
                 </Link>
               ))}
@@ -151,9 +173,10 @@ export default function Header() {
             <div className="px-6 pt-4 mt-2 border-t border-border">
               {isAuthenticated ? (
                 <div className="space-y-4">
-                  <div className="text-[14px] text-text-secondary">
+                  <Link href="/mypage" className="block text-[14px] text-text-secondary hover:text-accent transition-colors">
                     <span className="text-text-primary font-bold">{user?.username}</span>
-                  </div>
+                    <span className="ml-2 text-[12px] text-text-quaternary">{t('nav.mypage')}</span>
+                  </Link>
                   <button
                     onClick={() => { setLogoutModalOpen(true); setMobileMenuOpen(false); }}
                     className="flex items-center gap-2.5 w-full px-4 py-3.5 text-[14px] font-medium text-danger bg-bg-secondary rounded-xl"
