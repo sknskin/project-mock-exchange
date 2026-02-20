@@ -7,7 +7,7 @@
  */
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Button from '@/components/ui/Button';
@@ -26,6 +26,12 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const firstInputRef = useRef<HTMLInputElement>(null);
+
+  // 첫번째 입력 필드 자동 포커스 / Auto-focus first input field
+  useEffect(() => {
+    firstInputRef.current?.focus();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,7 +45,7 @@ export default function LoginPage() {
       });
       const payload = resp.data ?? resp;
       login(payload.user, payload.accessToken);
-      router.push('/');
+      router.push('/dashboard');
     } catch {
       setError(t('auth.login.error'));
     } finally {
@@ -62,10 +68,12 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
+            ref={firstInputRef}
             type="text"
             placeholder={t('auth.login.identifier')}
             value={identifier}
             onChange={(e) => setIdentifier(e.target.value)}
+            englishOnly
             required
           />
           <Input
@@ -73,6 +81,7 @@ export default function LoginPage() {
             placeholder={t('auth.login.password')}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            englishOnly
             required
           />
 

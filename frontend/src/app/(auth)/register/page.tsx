@@ -7,11 +7,12 @@
  */
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 import ValidationFeedback from '@/components/ui/ValidationFeedback';
 import PhoneVerification from '@/components/auth/PhoneVerification';
 import ResidentNumberInput from '@/components/auth/ResidentNumberInput';
@@ -51,11 +52,18 @@ export default function RegisterPage() {
   // UI 상태 / UI state
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const firstInputRef = useRef<HTMLInputElement>(null);
+
+  // 첫번째 입력 필드 자동 포커스 / Auto-focus first input field
+  useEffect(() => {
+    firstInputRef.current?.focus();
+  }, []);
 
   // 중복 확인 / Duplicate checks
-  const usernameStatus = useDuplicateCheck('username', username, 3);
-  const emailStatus = useDuplicateCheck('email', email, 5);
-  const phoneStatus = useDuplicateCheck('phone', phone, 10);
+  const { status: usernameStatus, checkNow: checkUsernameNow } = useDuplicateCheck('username', username, 3);
+  const { status: emailStatus, checkNow: checkEmailNow } = useDuplicateCheck('email', email, 5);
+  const { status: phoneStatus } = useDuplicateCheck('phone', phone, 10);
 
   // 유효성 검사 / Validations
   const usernameValidation = useMemo(() => validateUsername(username), [username]);
@@ -83,10 +91,15 @@ export default function RegisterPage() {
     addressDetail.trim().length > 0 &&
     zipCode.length > 0;
 
-  const handleSubmit = useCallback(async (e: React.FormEvent) => {
+  // 폼 제출 시 확인 모달 표시 / Show confirm modal on form submit
+  const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     if (!canSubmit) return;
+    setShowConfirmModal(true);
+  }, [canSubmit]);
 
+  // 모달 확인 후 실제 회원가입 요청 / Actual registration after modal confirm
+  const handleConfirmRegister = useCallback(async () => {
     setError('');
     setLoading(true);
 
@@ -111,14 +124,16 @@ export default function RegisterPage() {
       );
       const payload = loginResp.data ?? loginResp;
       login(payload.user, payload.accessToken);
-      router.push('/');
+      setShowConfirmModal(false);
+      router.push('/dashboard');
     } catch (err: unknown) {
       const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
       setError(message || t('auth.register.error'));
+      setShowConfirmModal(false);
     } finally {
       setLoading(false);
     }
-  }, [canSubmit, username, email, password, passwordConfirm, name, phone, rrnFront, rrnBack, address, addressDetail, zipCode, login, router, t]);
+  }, [username, email, password, passwordConfirm, name, phone, rrnFront, rrnBack, address, addressDetail, zipCode, login, router, t]);
 
   const getDuplicateMessage = (status: string): string | undefined => {
     switch (status) {
@@ -154,13 +169,18 @@ export default function RegisterPage() {
               {t('auth.register.username')} <span className="text-danger">*</span>
             </label>
             <Input
+              ref={firstInputRef}
               type="text"
               placeholder={t('auth.register.usernamePlaceholder')}
               value={username}
               onChange={(e) => setUsername(e.target.value)}
+              onBlur={checkUsernameNow}
               error={username.length > 0 && (!usernameValidation.format || !usernameValidation.length)
                 ? t('validation.username.format')
-                : undefined}
+                : usernameStatus === 'taken'
+                  ? t('validation.duplicate.taken')
+                  : undefined}
+              englishOnly
               required
             />
             {username.length >= 3 && usernameStatus !== 'idle' && (
@@ -180,7 +200,9 @@ export default function RegisterPage() {
               placeholder={t('auth.register.emailPlaceholder')}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              onBlur={checkEmailNow}
               error={email.length > 0 && !emailValid ? t('validation.email.format') : undefined}
+              englishOnly
               required
             />
             {email.length >= 5 && emailValid && emailStatus !== 'idle' && (
@@ -200,6 +222,7 @@ export default function RegisterPage() {
               placeholder={t('auth.register.passwordPlaceholder')}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              englishOnly
               required
             />
             <ValidationFeedback rules={passwordRules} show={password.length > 0} />
@@ -216,6 +239,7 @@ export default function RegisterPage() {
               value={passwordConfirm}
               onChange={(e) => setPasswordConfirm(e.target.value)}
               error={passwordConfirm.length > 0 && !passwordMatch ? t('validation.passwordConfirm.match') : undefined}
+              englishOnly
               required
             />
             {passwordConfirm.length > 0 && passwordMatch && (
@@ -308,6 +332,17 @@ export default function RegisterPage() {
           </Link>
         </p>
       </div>
+
+      {/* 회원가입 확인 모달 / Registration Confirm Modal */}
+      <ConfirmModal
+        isOpen={showConfirmModal}
+        onClose={() => setShowConfirmModal(false)}
+        onConfirm={handleConfirmRegister}
+        title={t('modal.registerTitle')}
+        message={t('modal.registerMessage')}
+        confirmLabel={t('modal.registerConfirm')}
+        loading={loading}
+      />
     </div>
   );
 }
