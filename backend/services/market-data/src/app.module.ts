@@ -12,6 +12,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { TerminusModule } from '@nestjs/terminus';
 import { PrismaModule } from './infrastructure/persistence/prisma.module';
 import { PriceEngineService } from './domain/services/price-engine.service';
+import { BinancePriceService } from './domain/services/binance-price.service';
 import { PriceCacheService } from './infrastructure/redis/price-cache.service';
 import { PriceProducerService } from './infrastructure/kafka/price-producer.service';
 import { MarketDataService } from './application/services/market-data.service';
@@ -32,6 +33,7 @@ import { HealthController } from './health/health.controller';
   controllers: [MarketController, HealthController],
   providers: [
     PriceEngineService,
+    BinancePriceService,
     PriceCacheService,
     PriceProducerService,
     MarketDataService,

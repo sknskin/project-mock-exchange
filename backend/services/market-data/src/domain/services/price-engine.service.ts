@@ -147,6 +147,20 @@ export class PriceEngineService {
     };
   }
 
+  /**
+   * 외부 데이터(Binance)로 엔진 내부 상태를 동기화합니다.
+   * Binance 연결 끊김 시 마지막 가격부터 GBM이 이어가므로 부드러운 전환.
+   *
+   * Sync engine internal state from external data (Binance).
+   * On disconnect, GBM continues from last price for smooth transition.
+   */
+  updateFromExternal(symbol: string, tick: PriceTick): void {
+    this.prices.set(symbol, tick.price);
+    this.high24h.set(symbol, tick.high24h);
+    this.low24h.set(symbol, tick.low24h);
+    this.volumes.set(symbol, tick.volume);
+  }
+
   getCurrentPrice(symbol: string): number | undefined {
     return this.prices.get(symbol);
   }

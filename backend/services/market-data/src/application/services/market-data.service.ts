@@ -8,6 +8,7 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Interval } from '@nestjs/schedule';
 import { PriceEngineService } from '../../domain/services/price-engine.service';
+import { BinancePriceService } from '../../domain/services/binance-price.service';
 import { PriceCacheService } from '../../infrastructure/redis/price-cache.service';
 import { PriceProducerService } from '../../infrastructure/kafka/price-producer.service';
 import { PrismaService } from '../../infrastructure/persistence/prisma.service';
@@ -22,6 +23,7 @@ export class MarketDataService implements OnModuleInit {
 
   constructor(
     private readonly priceEngine: PriceEngineService,
+    private readonly binancePrice: BinancePriceService,
     private readonly priceCache: PriceCacheService,
     private readonly priceProducer: PriceProducerService,
     private readonly prisma: PrismaService,
@@ -101,7 +103,20 @@ export class MarketDataService implements OnModuleInit {
     const ticks: PriceTick[] = [];
 
     for (const asset of this.assets) {
-      const tick = this.priceEngine.generateTick(asset);
+      let tick: PriceTick;
+
+      if (asset.assetType === 'CRYPTO') {
+        const binanceTick = this.binancePrice.getLatestTick(asset.symbol);
+        if (binanceTick) {
+          tick = binanceTick;
+          this.priceEngine.updateFromExternal(asset.symbol, tick);
+        } else {
+          tick = this.priceEngine.generateTick(asset);
+        }
+      } else {
+        tick = this.priceEngine.generateTick(asset);
+      }
+
       ticks.push(tick);
     }
 

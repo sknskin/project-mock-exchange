@@ -299,3 +299,25 @@ export const DEFAULT_ASSETS: AssetConfig[] = [
   { symbol: 'LGINNOTEK.KS', name: 'LG이노텍', assetType: 'STOCK', basePrice: 280000, volatility: 0.40, spreadBps: 14 },
   { symbol: 'SKTELCOM.KS', name: 'SK텔레콤', assetType: 'STOCK', basePrice: 52000, volatility: 0.25, spreadBps: 8 },
 ];
+
+/**
+ * 내부 심볼 → Binance 스트림 이름 매핑
+ * 규칙: 'XXX-USD' → 'xxxusdt' (예외는 SPECIAL_MAP에서 처리)
+ *
+ * Internal symbol → Binance stream name mapping
+ * Rule: 'XXX-USD' → 'xxxusdt' (exceptions handled via SPECIAL_MAP)
+ */
+const SPECIAL_BINANCE_MAP: Record<string, string> = {
+  'LIDO-USD': 'ldousdt',
+};
+
+export const BINANCE_SYMBOL_MAP = new Map<string, string>();
+export const BINANCE_REVERSE_MAP = new Map<string, string>();
+
+for (const asset of DEFAULT_ASSETS) {
+  if (asset.assetType !== 'CRYPTO') continue;
+  const special = SPECIAL_BINANCE_MAP[asset.symbol];
+  const binanceSymbol = special ?? asset.symbol.replace('-USD', '').toLowerCase() + 'usdt';
+  BINANCE_SYMBOL_MAP.set(asset.symbol, binanceSymbol);
+  BINANCE_REVERSE_MAP.set(binanceSymbol, asset.symbol);
+}
