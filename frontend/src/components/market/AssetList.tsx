@@ -19,13 +19,14 @@ interface AssetListProps {
   assets: Asset[];
   period: string;
   onPeriodChange: (period: string) => void;
+  mainTab?: string;
 }
 
 const PAGE_SIZE = 50;
 
 type SortKey = 'volume' | 'amount_desc' | 'change_desc' | 'change_asc';
 
-export default function AssetList({ assets, period, onPeriodChange }: AssetListProps) {
+export default function AssetList({ assets, period, onPeriodChange, mainTab = 'realtime' }: AssetListProps) {
   const { t } = useTranslation();
   const [category, setCategory] = useState('all');
   const [sort, setSort] = useState<SortKey>('volume');
@@ -34,7 +35,8 @@ export default function AssetList({ assets, period, onPeriodChange }: AssetListP
   const categoryTabs = [
     { key: 'all', label: t('filter.all') },
     { key: 'CRYPTO', label: t('filter.crypto') },
-    { key: 'STOCK', label: t('filter.stock') },
+    { key: 'STOCK_KR', label: t('filter.stockKR') },
+    { key: 'STOCK_US', label: t('filter.stockUS') },
   ];
 
   const sortOptions: { key: SortKey; label: string }[] = [
@@ -59,7 +61,7 @@ export default function AssetList({ assets, period, onPeriodChange }: AssetListP
   // Throttled sort: re-sort at most every 3s on live ticks, immediate on filter change.
   // FLIP animation handles smooth rank transitions.
   const sortedOrderRef = useRef<string[]>([]);
-  const lastSortKeyRef = useRef({ category: 'all', sort: 'volume' as SortKey });
+  const lastSortKeyRef = useRef({ category: 'all', sort: 'volume' as SortKey, period: 'realtime', mainTab: 'realtime' });
   const lastSortTimeRef = useRef(0);
   const SORT_THROTTLE_MS = 3000;
 
@@ -69,7 +71,9 @@ export default function AssetList({ assets, period, onPeriodChange }: AssetListP
 
     const filterChanged =
       lastSortKeyRef.current.category !== category ||
-      lastSortKeyRef.current.sort !== sort;
+      lastSortKeyRef.current.sort !== sort ||
+      lastSortKeyRef.current.period !== period ||
+      lastSortKeyRef.current.mainTab !== mainTab;
 
     const needsResort =
       sortedOrderRef.current.length === 0 ||
@@ -77,23 +81,45 @@ export default function AssetList({ assets, period, onPeriodChange }: AssetListP
       now - lastSortTimeRef.current >= SORT_THROTTLE_MS;
 
     if (needsResort) {
-      let result = category === 'all' ? [...assets] : assets.filter((a) => a.type === category);
-      const tiebreak = (a: Asset, b: Asset) => a.symbol.localeCompare(b.symbol);
-      switch (sort) {
-        case 'volume': result.sort((a, b) => ((b.volume ?? 0) - (a.volume ?? 0)) || tiebreak(a, b)); break;
-        case 'change_desc': result.sort((a, b) => (b.changePercent - a.changePercent) || tiebreak(a, b)); break;
-        case 'change_asc': result.sort((a, b) => (a.changePercent - b.changePercent) || tiebreak(a, b)); break;
-        case 'amount_desc': result.sort((a, b) => ((b.currentPrice * (b.volume ?? 0)) - (a.currentPrice * (a.volume ?? 0))) || tiebreak(a, b)); break;
+      let result: Asset[];
+      if (category === 'all') {
+        result = [...assets];
+      } else if (category === 'STOCK_KR') {
+        result = assets.filter((a) => a.type === 'STOCK' && a.symbol.endsWith('.KS'));
+      } else if (category === 'STOCK_US') {
+        result = assets.filter((a) => a.type === 'STOCK' && !a.symbol.endsWith('.KS'));
+      } else {
+        result = assets.filter((a) => a.type === category);
       }
+
+      const tiebreak = (a: Asset, b: Asset) => a.symbol.localeCompare(b.symbol);
+
+      // 탭별 고유 정렬 적용 / Tab-specific sorting
+      if (mainTab === 'popular') {
+        // 인기 종목: 거래량순 고정
+        result.sort((a, b) => ((b.volume ?? 0) - (a.volume ?? 0)) || tiebreak(a, b));
+      } else if (mainTab === 'trending') {
+        // 투자자 동향: 절대 등락률순 (큰 변동 우선)
+        result.sort((a, b) => (Math.abs(b.changePercent) - Math.abs(a.changePercent)) || tiebreak(a, b));
+      } else {
+        // 실시간 차트: 사용자 선택 정렬
+        switch (sort) {
+          case 'volume': result.sort((a, b) => ((b.volume ?? 0) - (a.volume ?? 0)) || tiebreak(a, b)); break;
+          case 'change_desc': result.sort((a, b) => (b.changePercent - a.changePercent) || tiebreak(a, b)); break;
+          case 'change_asc': result.sort((a, b) => (a.changePercent - b.changePercent) || tiebreak(a, b)); break;
+          case 'amount_desc': result.sort((a, b) => ((b.currentPrice * (b.volume ?? 0)) - (a.currentPrice * (a.volume ?? 0))) || tiebreak(a, b)); break;
+        }
+      }
+
       sortedOrderRef.current = result.map((a) => a.symbol);
-      lastSortKeyRef.current = { category, sort };
+      lastSortKeyRef.current = { category, sort, period, mainTab };
       lastSortTimeRef.current = now;
     }
 
     return sortedOrderRef.current
       .map((sym) => assetMap.get(sym))
       .filter((a): a is Asset => a != null);
-  }, [assets, category, sort]);
+  }, [assets, category, sort, period, mainTab]);
 
   const paged = useMemo(() => filtered.slice(0, page * PAGE_SIZE), [filtered, page]);
   const hasMore = paged.length < filtered.length;
@@ -157,37 +183,41 @@ export default function AssetList({ assets, period, onPeriodChange }: AssetListP
           ))}
         </div>
 
-        {/* 정렬 그룹 / Sort group */}
-        <div className="flex items-center gap-1 shrink-0 bg-bg-secondary/50 rounded-xl px-1.5 py-1.5">
-          {sortOptions.map((opt) => (
-            <button
-              key={opt.key}
-              onClick={() => { setSort(opt.key); setPage(1); }}
-              className={cn(
-                'h-[32px] px-3.5 text-[13px] font-medium transition-colors whitespace-nowrap rounded-lg',
-                sort === opt.key ? pillActive : pillInactive,
-              )}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
+        {/* 정렬 그룹 / Sort group — 실시간 차트 탭에서만 표시 */}
+        {mainTab === 'realtime' && (
+          <div className="flex items-center gap-1 shrink-0 bg-bg-secondary/50 rounded-xl px-1.5 py-1.5">
+            {sortOptions.map((opt) => (
+              <button
+                key={opt.key}
+                onClick={() => { setSort(opt.key); setPage(1); }}
+                className={cn(
+                  'h-[32px] px-3.5 text-[13px] font-medium transition-colors whitespace-nowrap rounded-lg',
+                  sort === opt.key ? pillActive : pillInactive,
+                )}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        )}
 
-        {/* 기간 그룹 / Period group */}
-        <div className="flex items-center gap-0.5 shrink-0 bg-bg-secondary/50 rounded-xl px-1.5 py-1.5">
-          {periodOptions.map((opt) => (
-            <button
-              key={opt.key}
-              onClick={() => onPeriodChange(opt.key)}
-              className={cn(
-                'h-[32px] px-2.5 text-[13px] font-medium transition-colors whitespace-nowrap rounded-lg',
-                period === opt.key ? pillActive : pillInactive,
-              )}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
+        {/* 기간 그룹 / Period group — 인기종목 탭에서는 숨김 */}
+        {mainTab !== 'popular' && (
+          <div className="flex items-center gap-0.5 shrink-0 bg-bg-secondary/50 rounded-xl px-1.5 py-1.5">
+            {periodOptions.map((opt) => (
+              <button
+                key={opt.key}
+                onClick={() => onPeriodChange(opt.key)}
+                className={cn(
+                  'h-[32px] px-2.5 text-[13px] font-medium transition-colors whitespace-nowrap rounded-lg',
+                  period === opt.key ? pillActive : pillInactive,
+                )}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* 테이블 헤더 / Table header */}

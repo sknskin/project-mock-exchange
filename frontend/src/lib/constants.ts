@@ -26,5 +26,5 @@ export const techItems: TechItem[] = [
   { name: 'Docker', icon: 'https://cdn.simpleicons.org/docker/2496ED' },
   { name: 'Turborepo', icon: 'https://cdn.simpleicons.org/turborepo/FFFFFF' },
   { name: 'pnpm', icon: 'https://cdn.simpleicons.org/pnpm/F69220' },
-  { name: 'WebSocket', icon: 'https://cdn.simpleicons.org/websocket/FFFFFF' },
+  { name: 'WebSocket', icon: 'https://cdn.simpleicons.org/socketdotio/FFFFFF' },
 ];

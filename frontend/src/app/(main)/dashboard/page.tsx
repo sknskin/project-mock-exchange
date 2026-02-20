@@ -117,6 +117,10 @@ export default function DashboardPage() {
             )}
           </button>
         ))}
+        <span className="ml-auto mb-2.5 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-warning/10 border border-warning/20 shrink-0">
+          <span className="w-1.5 h-1.5 rounded-full bg-warning/70 animate-pulse" />
+          <span className="text-[11px] font-semibold text-warning/80">{t('market.mockData')}</span>
+        </span>
       </div>
 
       {pricesLoading ? (
@@ -126,6 +130,7 @@ export default function DashboardPage() {
           assets={displayAssets}
           period={period}
           onPeriodChange={setPeriod}
+          mainTab={activeMainTab}
         />
       )}
     </div>

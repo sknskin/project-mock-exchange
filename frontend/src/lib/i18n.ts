@@ -26,11 +26,15 @@ const translations = {
     'market.realtimeChart': '실시간 차트',
     'market.popular': '인기 종목',
     'market.trending': '투자자 동향',
+    'market.mockData': '가상 데이터',
+    'market.mockDataDesc': '본 서비스의 모든 시세·거래 데이터는 시뮬레이션으로 생성된 가상 데이터이며, 실제 시장과 무관합니다.',
 
     // Filters
     'filter.all': '전체',
     'filter.crypto': '암호화폐',
     'filter.stock': '주식',
+    'filter.stockKR': '국내주식',
+    'filter.stockUS': '해외주식',
     'filter.volume': '거래량순',
     'filter.riseTop': '급상승',
     'filter.fallTop': '급하락',
@@ -190,11 +194,15 @@ const translations = {
     'market.realtimeChart': 'Real-time',
     'market.popular': 'Popular',
     'market.trending': 'Trending',
+    'market.mockData': 'Simulated Data',
+    'market.mockDataDesc': 'All prices and trades on this platform are simulated and not related to real markets.',
 
     // Filters
     'filter.all': 'All',
     'filter.crypto': 'Crypto',
     'filter.stock': 'Stocks',
+    'filter.stockKR': 'KR Stocks',
+    'filter.stockUS': 'US Stocks',
     'filter.volume': 'Volume',
     'filter.riseTop': 'Top Gainers',
     'filter.fallTop': 'Top Losers',

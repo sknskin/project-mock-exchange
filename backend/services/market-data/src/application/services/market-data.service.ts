@@ -157,83 +157,98 @@ export class MarketDataService implements OnModuleInit {
     });
   }
 
+  /**
+   * 기간별 등락률을 시뮬레이션합니다.
+   * 모의 거래소이므로 실제 이력 대신 변동성(σ) 기반으로 기간별 기준가를 역산합니다.
+   * 금융 표준: σ_period = σ_annual × √(periodDays / 365)
+   * 결정론적 시드(심볼 해시 + 기간 + 날짜)로 같은 날 같은 요청에 동일한 결과를 보장합니다.
+   *
+   * Simulates period changes using volatility-based base price estimation.
+   * Uses deterministic seed (symbol hash + period + date) for stable results within the same day.
+   */
   async getPeriodChanges(period: string) {
-    const periodMs: Record<string, number> = {
-      '1d': 24 * 60 * 60 * 1000,
-      '1w': 7 * 24 * 60 * 60 * 1000,
-      '1m': 30 * 24 * 60 * 60 * 1000,
-      '3m': 90 * 24 * 60 * 60 * 1000,
-      '6m': 180 * 24 * 60 * 60 * 1000,
-      '1y': 365 * 24 * 60 * 60 * 1000,
+    const periodDays: Record<string, number> = {
+      '1d': 1,
+      '1w': 7,
+      '1m': 30,
+      '3m': 90,
+      '6m': 180,
+      '1y': 365,
     };
 
-    const ms = periodMs[period];
-    if (!ms) {
+    const days = periodDays[period];
+    if (!days) {
       return [];
     }
 
-    const startTime = new Date(Date.now() - ms);
-
-    // 현재 가격 조회 / Get current prices
     const currentPrices = await this.getLatestPrices();
     if (currentPrices.length === 0) return [];
 
-    // 기간 시작 시점의 기준 가격 조회 / Get base prices from price_history near the period start for each symbol
-    // DISTINCT ON 성능을 위해 Raw 쿼리 사용 / Using raw query for DISTINCT ON performance
-    try {
-      const baseRows: Array<{ symbol: string; price: string }> = await this.prisma.$queryRaw`
-        SELECT DISTINCT ON (symbol) symbol, price::text
-        FROM price_history
-        WHERE timestamp >= ${startTime}
-        ORDER BY symbol, timestamp ASC
-      `;
-
-      const baseMap = new Map<string, number>();
-      for (const row of baseRows) {
-        baseMap.set(row.symbol, parseFloat(row.price));
-      }
-
-      // 이력이 없는 종목은 기본 가격으로 대체 / If no history for some symbols, fallback to asset basePrice
-      const assetBasePrices = new Map<string, number>();
-      for (const asset of this.assets) {
-        assetBasePrices.set(asset.symbol, asset.basePrice);
-      }
-
-      return currentPrices.map((tick) => {
-        const base = baseMap.get(tick.symbol) ?? assetBasePrices.get(tick.symbol) ?? tick.price;
-        const changeAmount = tick.price - base;
-        const changePercent = base !== 0 ? (changeAmount / base) * 100 : 0;
-
-        return {
-          symbol: tick.symbol,
-          currentPrice: tick.price,
-          basePrice: base,
-          changeAmount,
-          changePercent,
-        };
-      });
-    } catch (error) {
-      this.logger.error('Failed to get period changes', error);
-      // 대체: 종목 기본 가격 사용 / Fallback: use asset basePrice
-      const assetBasePrices = new Map<string, number>();
-      for (const asset of this.assets) {
-        assetBasePrices.set(asset.symbol, asset.basePrice);
-      }
-
-      return currentPrices.map((tick) => {
-        const base = assetBasePrices.get(tick.symbol) ?? tick.price;
-        const changeAmount = tick.price - base;
-        const changePercent = base !== 0 ? (changeAmount / base) * 100 : 0;
-
-        return {
-          symbol: tick.symbol,
-          currentPrice: tick.price,
-          basePrice: base,
-          changeAmount,
-          changePercent,
-        };
-      });
+    const assetConfigMap = new Map<string, AssetConfig>();
+    for (const asset of this.assets) {
+      assetConfigMap.set(asset.symbol, asset);
     }
+
+    // 오늘 날짜를 시드에 포함 → 하루 동안 안정적, 다음 날 새 값
+    // Include today's date in seed → stable for a day, new values next day
+    const today = new Date().toISOString().slice(0, 10);
+
+    return currentPrices.map((tick) => {
+      const config = assetConfigMap.get(tick.symbol);
+      const annualVol = config?.volatility ?? 0.5;
+
+      // 기간별 변동성 스케일링: σ_period = σ_annual × √(days / 365)
+      // Period volatility scaling: σ_period = σ_annual × √(days / 365)
+      const periodVol = annualVol * Math.sqrt(days / 365);
+
+      // 결정론적 의사난수 생성 / Deterministic pseudo-random number
+      const seed = this.hashString(`${tick.symbol}:${period}:${today}`);
+      const random = this.seededGaussian(seed);
+
+      // 기준가 역산: basePrice = currentPrice / (1 + change)
+      // change는 N(0, periodVol) 분포를 따름
+      // Estimate base price: basePrice = currentPrice / (1 + change)
+      // change follows N(0, periodVol) distribution
+      const change = random * periodVol;
+      const basePrice = tick.price / (1 + change);
+      const changeAmount = tick.price - basePrice;
+      const changePercent = (change) * 100;
+
+      return {
+        symbol: tick.symbol,
+        currentPrice: tick.price,
+        basePrice: Math.max(basePrice, 0.0001),
+        changeAmount,
+        changePercent: Math.round(changePercent * 100) / 100,
+      };
+    });
+  }
+
+  /**
+   * 문자열을 32비트 정수 해시로 변환 (djb2 알고리즘)
+   * Convert string to 32-bit integer hash (djb2 algorithm)
+   */
+  private hashString(str: string): number {
+    let hash = 5381;
+    for (let i = 0; i < str.length; i++) {
+      hash = ((hash << 5) + hash + str.charCodeAt(i)) | 0;
+    }
+    return Math.abs(hash);
+  }
+
+  /**
+   * 시드 기반 가우시안 난수 생성 (Box-Muller 변환)
+   * Seeded Gaussian random using Box-Muller transform
+   */
+  private seededGaussian(seed: number): number {
+    // 간단한 xorshift로 0~1 사이 유니폼 난수 2개 생성
+    // Simple xorshift to generate two uniform random numbers in [0,1]
+    let s = seed;
+    s ^= s << 13; s ^= s >> 17; s ^= s << 5;
+    const u1 = (Math.abs(s) % 10000) / 10000 || 0.0001;
+    s ^= s << 13; s ^= s >> 17; s ^= s << 5;
+    const u2 = (Math.abs(s) % 10000) / 10000 || 0.0001;
+    return Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
   }
 
   async getCandlesticks(symbol: string, interval: string, limit = 100) {

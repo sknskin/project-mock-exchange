@@ -80,7 +80,11 @@ export default function LandingPage() {
         <p className="mt-5 text-[14px] md:text-[16px] text-text-secondary max-w-[560px] mx-auto leading-relaxed">
           {t('landing.description')}
         </p>
-        <div className="mt-8">
+        <div className="mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-warning/10 border border-warning/20">
+          <span className="text-[11px] font-bold text-warning/90 px-1.5 py-0.5 rounded bg-warning/15">MOCK</span>
+          <span className="text-[12px] text-warning/80">{t('market.mockDataDesc')}</span>
+        </div>
+        <div className="mt-6">
           <Link
             href="/dashboard"
             className="inline-flex items-center gap-2 h-12 px-8 text-[15px] font-bold text-white bg-accent rounded-xl hover:bg-accent/85 transition-colors"

@@ -63,6 +63,20 @@
     border-radius: 2px;
   }
 
+  /* Clickable elements – pointer cursor */
+  button,
+  a,
+  [role='button'],
+  summary,
+  select,
+  label[for],
+  input[type='checkbox'],
+  input[type='radio'],
+  input[type='submit'],
+  input[type='button'] {
+    cursor: pointer;
+  }
+
   /* Selection color */
   ::selection {
     background: rgba(49, 130, 246, 0.3);
