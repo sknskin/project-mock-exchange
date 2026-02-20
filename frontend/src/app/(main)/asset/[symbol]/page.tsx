@@ -7,12 +7,14 @@
  */
 'use client';
 
-import { useState, useCallback, use } from 'react';
+import { useState, useCallback, useMemo, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAssetPrice, useCandlesticks, useOrderBook, useRecentTrades } from '@/hooks/useMarket';
 import { useWebSocket } from '@/hooks/useWebSocket';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useAuthStore } from '@/stores/auth';
 import CandlestickChart from '@/components/chart/CandlestickChart';
+import ExchangeRateBar from '@/components/market/ExchangeRateBar';
 import OrderBookComponent from '@/components/trading/OrderBook';
 import OrderSheet from '@/components/trading/OrderSheet';
 import ConfirmModal from '@/components/ui/ConfirmModal';
@@ -22,11 +24,19 @@ import { cn, formatPrice, formatPercent, formatQuantity, formatTime, formatVolum
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import type { PriceUpdate } from '@/types';
+import type { TranslationKey } from '@/lib/i18n';
 
-const detailTabs = [
-  { key: 'orderbook', label: '호가' },
-  { key: 'trades', label: '체결' },
-  { key: 'info', label: '정보' },
+const chartIntervalKeys: { key: string; i18nKey: TranslationKey }[] = [
+  { key: '1m', i18nKey: 'chart.1m' },
+  { key: '5m', i18nKey: 'chart.5m' },
+  { key: '15m', i18nKey: 'chart.15m' },
+  { key: '1h', i18nKey: 'chart.1h' },
+  { key: '1d', i18nKey: 'chart.1d' },
+];
+
+const detailTabKeys: { key: string; i18nKey: TranslationKey }[] = [
+  { key: 'orderbook', i18nKey: 'detail.orderbook' },
+  { key: 'trades', i18nKey: 'detail.trades' },
 ];
 
 export default function AssetDetailPage({
@@ -36,9 +46,20 @@ export default function AssetDetailPage({
 }) {
   const { symbol } = use(params);
   const router = useRouter();
+  const { t } = useTranslation();
   const { isAuthenticated } = useAuthStore();
   const { data: asset } = useAssetPrice(symbol);
-  const [chartInterval, setChartInterval] = useState('1h');
+
+  const chartIntervals = useMemo(
+    () => chartIntervalKeys.map((i) => ({ key: i.key, label: t(i.i18nKey) })),
+    [t],
+  );
+  const detailTabs = useMemo(
+    () => detailTabKeys.map((i) => ({ key: i.key, label: t(i.i18nKey) })),
+    [t],
+  );
+  const [chartInterval, setChartInterval] = useState('1m');
+  const [chartType, setChartType] = useState<'candle' | 'line'>('line');
   const { data: candlesticks, isLoading: chartLoading } = useCandlesticks(symbol, chartInterval);
   const { data: orderBook } = useOrderBook(symbol);
   const { data: trades } = useRecentTrades(symbol, isAuthenticated);
@@ -80,7 +101,7 @@ export default function AssetDetailPage({
     <div className="pb-8">
       {/* 헤더 / Header */}
       <div className="flex items-center gap-3 py-4">
-        <Link href="/" className="p-1.5 -ml-1.5 text-text-tertiary hover:text-text-primary transition-colors rounded-lg hover:bg-bg-secondary/60">
+        <Link href="/dashboard" className="p-1.5 -ml-1.5 text-text-tertiary hover:text-text-primary transition-colors rounded-lg hover:bg-bg-secondary/60">
           <ArrowLeft className="w-5 h-5" strokeWidth={2} />
         </Link>
         <div className="flex-1 min-w-0">
@@ -94,22 +115,25 @@ export default function AssetDetailPage({
             onClick={() => handleBuySell('BUY')}
             className="h-8 px-3 text-[12px] font-bold text-rise border border-rise/30 rounded-md hover:bg-rise hover:text-white transition-colors"
           >
-            매수
+            {t('detail.buy')}
           </button>
           <button
             onClick={() => handleBuySell('SELL')}
             className="h-8 px-3 text-[12px] font-bold text-fall border border-fall/30 rounded-md hover:bg-fall hover:text-white transition-colors"
           >
-            매도
+            {t('detail.sell')}
           </button>
         </div>
       </div>
 
+      {/* 환율 바 / Exchange Rate Bar */}
+      <ExchangeRateBar />
+
       {/* 현재가 / Price */}
-      <div className="pb-5">
+      <div className="pb-5 mt-3">
         <div className="text-[28px] sm:text-[32px] font-extrabold tabular-nums text-text-primary leading-tight">
           {formatPrice(currentPrice)}
-          <span className="text-[16px] text-text-tertiary ml-1">원</span>
+          <span className="text-[16px] text-text-tertiary ml-1">{t('market.unit')}</span>
         </div>
         <div className="flex items-center gap-2 mt-1.5">
           <span
@@ -137,16 +161,60 @@ export default function AssetDetailPage({
         </div>
       </div>
 
-      {/* 차트 / Chart */}
+      {/* 차트 컨트롤 (항상 표시) / Chart controls (always visible) */}
       <div className="px-1">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex gap-1">
+            {chartIntervals.map((i) => (
+              <button
+                key={i.key}
+                onClick={() => setChartInterval(i.key)}
+                className={cn(
+                  'px-2.5 py-1 text-[12px] rounded-md transition-colors',
+                  chartInterval === i.key
+                    ? 'bg-bg-tertiary text-text-primary font-semibold'
+                    : 'text-text-quaternary hover:text-text-tertiary',
+                )}
+              >
+                {i.label}
+              </button>
+            ))}
+          </div>
+          <div className="flex gap-1">
+            <button
+              onClick={() => setChartType('line')}
+              className={cn(
+                'px-2.5 py-1 text-[12px] rounded-md transition-colors',
+                chartType === 'line'
+                  ? 'bg-bg-tertiary text-text-primary font-semibold'
+                  : 'text-text-quaternary hover:text-text-tertiary',
+              )}
+            >
+              {t('chart.line')}
+            </button>
+            <button
+              onClick={() => setChartType('candle')}
+              className={cn(
+                'px-2.5 py-1 text-[12px] rounded-md transition-colors',
+                chartType === 'candle'
+                  ? 'bg-bg-tertiary text-text-primary font-semibold'
+                  : 'text-text-quaternary hover:text-text-tertiary',
+              )}
+            >
+              {t('chart.candle')}
+            </button>
+          </div>
+        </div>
+
+        {/* 차트 본체 / Chart body */}
         {chartLoading || !candlesticks ? (
           <ChartSkeleton />
+        ) : candlesticks.length === 0 ? (
+          <div className="h-[380px] flex items-center justify-center text-text-quaternary text-[14px]">
+            {t('detail.noChart')}
+          </div>
         ) : (
-          <CandlestickChart
-            data={candlesticks}
-            interval={chartInterval}
-            onIntervalChange={setChartInterval}
-          />
+          <CandlestickChart data={candlesticks} chartType={chartType} />
         )}
       </div>
 
@@ -154,31 +222,31 @@ export default function AssetDetailPage({
       {asset && (
         <div className="grid grid-cols-3 gap-x-4 gap-y-3 mt-5 mb-5 px-1">
           <div className="flex flex-col gap-0.5">
-            <span className="text-[11px] text-text-quaternary">시가</span>
+            <span className="text-[11px] text-text-quaternary">{t('detail.open')}</span>
             <span className="text-[13px] font-semibold tabular-nums text-text-primary">
               {formatPrice(currentPrice - changeAmount)}
             </span>
           </div>
           <div className="flex flex-col gap-0.5">
-            <span className="text-[11px] text-text-quaternary">고가</span>
+            <span className="text-[11px] text-text-quaternary">{t('detail.high')}</span>
             <span className="text-[13px] font-semibold tabular-nums text-rise">
               {formatPrice(asset.high24h ?? 0)}
             </span>
           </div>
           <div className="flex flex-col gap-0.5">
-            <span className="text-[11px] text-text-quaternary">저가</span>
+            <span className="text-[11px] text-text-quaternary">{t('detail.low')}</span>
             <span className="text-[13px] font-semibold tabular-nums text-fall">
               {formatPrice(asset.low24h ?? 0)}
             </span>
           </div>
           <div className="flex flex-col gap-0.5">
-            <span className="text-[11px] text-text-quaternary">거래량</span>
+            <span className="text-[11px] text-text-quaternary">{t('detail.volume')}</span>
             <span className="text-[13px] font-semibold tabular-nums text-text-primary">
               {formatVolume(asset.volume ?? 0)}
             </span>
           </div>
           <div className="flex flex-col gap-0.5">
-            <span className="text-[11px] text-text-quaternary">전일대비</span>
+            <span className="text-[11px] text-text-quaternary">{t('detail.change')}</span>
             <span className={cn(
               'text-[13px] font-semibold tabular-nums',
               isRise ? 'text-rise' : isFall ? 'text-fall' : 'text-text-primary',
@@ -187,7 +255,7 @@ export default function AssetDetailPage({
             </span>
           </div>
           <div className="flex flex-col gap-0.5">
-            <span className="text-[11px] text-text-quaternary">변동률</span>
+            <span className="text-[11px] text-text-quaternary">{t('detail.changeRate')}</span>
             <span className={cn(
               'text-[13px] font-semibold tabular-nums',
               isRise ? 'text-rise' : isFall ? 'text-fall' : 'text-text-primary',
@@ -198,8 +266,40 @@ export default function AssetDetailPage({
         </div>
       )}
 
+      {/* 종목 정보 / Asset Info */}
+      {asset && (
+        <div className="mt-3">
+          <h3 className="text-[15px] font-bold text-text-primary mb-3">{t('detail.assetInfo')}</h3>
+          <div className="py-1">
+            {[
+              { label: t('detail.currentPrice'), value: formatPrice(asset.price ?? 0) },
+              { label: t('detail.bidPrice'), value: formatPrice(asset.bid ?? 0) },
+              { label: t('detail.askPrice'), value: formatPrice(asset.ask ?? 0) },
+              { label: t('detail.spread'), value: formatPrice((asset.ask ?? 0) - (asset.bid ?? 0)) },
+              { label: t('detail.high24h'), value: formatPrice(asset.high24h ?? 0) },
+              { label: t('detail.low24h'), value: formatPrice(asset.low24h ?? 0) },
+              { label: t('detail.volume24h'), value: formatQuantity(asset.volume ?? 0) },
+              { label: t('detail.turnover24h'), value: formatVolume((asset.volume ?? 0) * (asset.price ?? 0)) },
+              { label: t('detail.assetType'), value: asset.type === 'CRYPTO' ? t('detail.crypto') : asset.type === 'STOCK' ? t('detail.stock') : '-' },
+            ].map((item) => (
+              <div
+                key={item.label}
+                className="flex justify-between py-3.5 border-b border-border/50"
+              >
+                <span className="text-[14px] text-text-tertiary">
+                  {item.label}
+                </span>
+                <span className="text-[14px] text-text-primary font-semibold tabular-nums">
+                  {item.value}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* 탭 / Tabs */}
-      <div className="mt-3">
+      <div className="mt-5">
         <Tabs tabs={detailTabs} activeTab={activeTab} onChange={setActiveTab} />
 
         <div className="mt-3">
@@ -210,9 +310,9 @@ export default function AssetDetailPage({
           {activeTab === 'trades' && (
             <div>
               <div className="flex text-[12px] text-text-quaternary py-2.5 font-medium">
-                <span className="flex-1">가격</span>
-                <span className="flex-1 text-center">수량</span>
-                <span className="flex-1 text-right">시간</span>
+                <span className="flex-1">{t('detail.tradePrice')}</span>
+                <span className="flex-1 text-center">{t('detail.tradeQuantity')}</span>
+                <span className="flex-1 text-right">{t('detail.tradeTime')}</span>
               </div>
               {trades?.map((trade) => (
                 <div
@@ -237,39 +337,12 @@ export default function AssetDetailPage({
               ))}
               {(!trades || trades.length === 0) && (
                 <div className="py-16 text-center text-text-quaternary text-[14px]">
-                  체결 내역이 없습니다
+                  {t('detail.noTrades')}
                 </div>
               )}
             </div>
           )}
 
-          {activeTab === 'info' && asset && (
-            <div className="py-2">
-              {[
-                { label: '현재가', value: formatPrice(asset.price ?? 0) },
-                { label: '매수호가', value: formatPrice(asset.bid ?? 0) },
-                { label: '매도호가', value: formatPrice(asset.ask ?? 0) },
-                { label: '스프레드', value: formatPrice((asset.ask ?? 0) - (asset.bid ?? 0)) },
-                { label: '24h 최고', value: formatPrice(asset.high24h ?? 0) },
-                { label: '24h 최저', value: formatPrice(asset.low24h ?? 0) },
-                { label: '24h 거래량', value: formatQuantity(asset.volume ?? 0) },
-                { label: '24h 거래대금', value: formatVolume((asset.volume ?? 0) * (asset.price ?? 0)) },
-                { label: '자산 유형', value: asset.type === 'CRYPTO' ? '암호화폐' : asset.type === 'STOCK' ? '주식' : '-' },
-              ].map((item) => (
-                <div
-                  key={item.label}
-                  className="flex justify-between py-3.5 border-b border-border/50"
-                >
-                  <span className="text-[14px] text-text-tertiary">
-                    {item.label}
-                  </span>
-                  <span className="text-[14px] text-text-primary font-semibold tabular-nums">
-                    {item.value}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       </div>
 
@@ -287,10 +360,10 @@ export default function AssetDetailPage({
         isOpen={loginModalOpen}
         onClose={() => setLoginModalOpen(false)}
         onConfirm={handleLoginConfirm}
-        title="로그인이 필요합니다"
-        message="매수/매도 기능을 이용하려면 로그인이 필요합니다.\n로그인 하시겠습니까?"
-        confirmLabel="로그인"
-        cancelLabel="취소"
+        title={t('modal.loginRequired')}
+        message={t('modal.loginRequiredMessage')}
+        confirmLabel={t('modal.loginConfirm')}
+        cancelLabel={t('modal.cancel')}
       />
     </div>
   );

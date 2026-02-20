@@ -227,9 +227,14 @@ const translations = {
     'detail.buy': '매수',
     'detail.sell': '매도',
     'detail.noTrades': '체결 내역이 없습니다',
+    'detail.noChart': '차트 데이터가 없습니다',
     'detail.orderbook': '호가',
     'detail.trades': '체결',
     'detail.info': '정보',
+    'detail.assetInfo': '종목 정보',
+    'detail.tradePrice': '가격',
+    'detail.tradeQuantity': '수량',
+    'detail.tradeTime': '시간',
 
     // Chart
     'chart.candle': '캔들',
@@ -469,9 +474,14 @@ const translations = {
     'detail.buy': 'Buy',
     'detail.sell': 'Sell',
     'detail.noTrades': 'No trades yet',
+    'detail.noChart': 'No chart data',
     'detail.orderbook': 'Order Book',
     'detail.trades': 'Trades',
     'detail.info': 'Info',
+    'detail.assetInfo': 'Asset Info',
+    'detail.tradePrice': 'Price',
+    'detail.tradeQuantity': 'Qty',
+    'detail.tradeTime': 'Time',
 
     // Chart
     'chart.candle': 'Candle',

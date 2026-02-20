@@ -44,19 +44,67 @@ export function useAssets() {
   });
 }
 
+const INTERVAL_MS: Record<string, number> = {
+  '1m': 60_000,
+  '5m': 300_000,
+  '15m': 900_000,
+  '1h': 3_600_000,
+  '1d': 86_400_000,
+};
+
+function aggregateCandles(candles1m: Candlestick[], interval: string): Candlestick[] {
+  const ms = INTERVAL_MS[interval];
+  if (!ms || ms <= 60_000) return candles1m;
+
+  const sorted = [...candles1m].sort((a, b) => a.time - b.time);
+  const groups = new Map<number, Candlestick[]>();
+
+  for (const c of sorted) {
+    const bucket = Math.floor(c.time / ms) * ms;
+    if (!groups.has(bucket)) groups.set(bucket, []);
+    groups.get(bucket)!.push(c);
+  }
+
+  return Array.from(groups.entries())
+    .sort(([a], [b]) => a - b)
+    .map(([time, bars]) => ({
+      time,
+      open: bars[0].open,
+      high: Math.max(...bars.map((b) => b.high)),
+      low: Math.min(...bars.map((b) => b.low)),
+      close: bars[bars.length - 1].close,
+      volume: bars.reduce((sum, b) => sum + b.volume, 0),
+    }));
+}
+
 export function useCandlesticks(
   symbol: string,
-  interval: string = '1h',
+  interval: string = '1m',
   limit: number = 100,
 ) {
+  const fetchLimit = interval === '1m' ? limit
+    : interval === '5m' ? limit * 5
+    : interval === '15m' ? limit * 15
+    : interval === '1h' ? Math.min(limit * 60, 3000)
+    : Math.min(limit * 1440, 5000);
+
   return useQuery<Candlestick[]>({
     queryKey: ['market', 'candlesticks', symbol, interval],
     queryFn: async () => {
       const { data } = await api.get(
         `/api/market/prices/${symbol}/candlesticks`,
-        { params: { interval, limit } },
+        { params: { interval: '1m', limit: fetchLimit } },
       );
-      return data.data ?? data;
+      const raw = data.data ?? data;
+      const candles1m: Candlestick[] = raw.map((d: any) => ({
+        time: new Date(d.openTime).getTime(),
+        open: Number(d.openPrice),
+        high: Number(d.highPrice),
+        low: Number(d.lowPrice),
+        close: Number(d.closePrice),
+        volume: Number(d.volume),
+      }));
+      return aggregateCandles(candles1m, interval);
     },
     enabled: !!symbol,
   });
@@ -71,6 +119,7 @@ export function useOrderBook(symbol: string) {
     },
     refetchInterval: 3000,
     enabled: !!symbol,
+    retry: false,
   });
 }
 
