@@ -1,0 +1,88 @@
+/**
+ * @file 확인 모달 컴포넌트
+ * @description 확인/취소 버튼이 있는 공통 모달 (취소 버튼은 항상 우측에 배치)
+ *
+ * @file Confirm Modal Component
+ * @description Common modal with confirm/cancel buttons (cancel always on the right)
+ */
+'use client';
+
+import { useEffect } from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
+
+interface ConfirmModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  title: string;
+  message: string;
+  confirmLabel?: string;
+  cancelLabel?: string;
+  confirmVariant?: 'primary' | 'danger';
+  loading?: boolean;
+}
+
+export default function ConfirmModal({
+  isOpen,
+  onClose,
+  onConfirm,
+  title,
+  message,
+  confirmLabel,
+  cancelLabel,
+  confirmVariant = 'primary',
+  loading = false,
+}: ConfirmModalProps) {
+  const { t } = useTranslation();
+
+  // ESC 키로 닫기 / Close on Escape key
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+
+  const confirmBg = confirmVariant === 'danger'
+    ? 'bg-danger hover:bg-danger/85'
+    : 'bg-accent hover:bg-accent/85';
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center">
+      {/* 오버레이 / Overlay */}
+      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
+
+      {/* 모달 본체 / Modal body */}
+      <div className="relative bg-bg-primary border border-border rounded-2xl p-6 w-[320px] shadow-2xl">
+        <h3 className="text-[16px] font-bold text-text-primary text-center">
+          {title}
+        </h3>
+        <p className="text-[14px] text-text-secondary text-center mt-3 whitespace-pre-line">
+          {message}
+        </p>
+
+        {/* 버튼: 확인(좌) + 취소(우) / Buttons: confirm(left) + cancel(right) */}
+        <div className="flex gap-3 mt-6">
+          <button
+            onClick={onConfirm}
+            disabled={loading}
+            className={`flex-1 h-11 rounded-xl text-white text-[14px] font-semibold transition-colors ${confirmBg} disabled:opacity-50`}
+          >
+            {loading ? '...' : (confirmLabel || t('modal.logoutConfirm'))}
+          </button>
+          <button
+            onClick={onClose}
+            disabled={loading}
+            className="flex-1 h-11 rounded-xl border border-border text-[14px] font-semibold text-text-secondary hover:bg-bg-secondary transition-colors"
+          >
+            {cancelLabel || t('modal.cancel')}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
