@@ -15,7 +15,6 @@ import ContentModal from '@/components/ui/ContentModal';
 import { ArrowRight, Boxes, Radio, MessageSquare, Cpu, Terminal, FileText, Globe } from 'lucide-react';
 import VirtuExLogo from '@/components/ui/VirtuExLogo';
 
-const repeatedItems = [...techItems, ...techItems, ...techItems, ...techItems];
 
 type ModalState = {
   isOpen: boolean;
@@ -118,9 +117,9 @@ export default function LandingPage() {
           <div className="absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-bg-primary to-transparent z-10 pointer-events-none" />
           <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-bg-primary to-transparent z-10 pointer-events-none" />
           <div className="animate-marquee">
-            {repeatedItems.map((tech, i) => (
+            {[...techItems, ...techItems].map((tech, i) => (
               <div
-                key={`${tech.name}-${i}`}
+                key={`marquee-${i}`}
                 className="flex flex-col items-center gap-2 px-5 shrink-0"
               >
                 <div className="w-10 h-10 rounded-xl bg-bg-secondary/80 flex items-center justify-center p-2">
