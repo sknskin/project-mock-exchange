@@ -173,13 +173,16 @@ export class MarketDataService implements OnModuleInit {
   }
 
   /**
-   * 기간별 등락률을 시뮬레이션합니다.
-   * 모의 거래소이므로 실제 이력 대신 변동성(σ) 기반으로 기간별 기준가를 역산합니다.
-   * 금융 표준: σ_period = σ_annual × √(periodDays / 365)
-   * 결정론적 시드(심볼 해시 + 기간 + 날짜)로 같은 날 같은 요청에 동일한 결과를 보장합니다.
+   * 기간별 등락률을 계산합니다.
+   * 1) DB에 해당 기간의 실제 가격 이력이 있으면 실측 데이터 사용
+   * 2) 이력이 없으면 현실적 범위 내에서 시뮬레이션
+   * tanh로 부드럽게 바운딩하여 비현실적 극단값을 방지하고,
+   * 기간별로 다른 시드 오프셋을 사용해 순위가 의미 있게 변동되도록 합니다.
    *
-   * Simulates period changes using volatility-based base price estimation.
-   * Uses deterministic seed (symbol hash + period + date) for stable results within the same day.
+   * Calculates period changes.
+   * 1) Uses actual DB price history when available
+   * 2) Falls back to realistic bounded simulation
+   * Uses tanh for smooth bounding and per-period seed offsets for meaningful rank changes.
    */
   async getPeriodChanges(period: string) {
     const periodDays: Record<string, number> = {
@@ -204,39 +207,77 @@ export class MarketDataService implements OnModuleInit {
       assetConfigMap.set(asset.symbol, asset);
     }
 
-    // 오늘 날짜를 시드에 포함 → 하루 동안 안정적, 다음 날 새 값
-    // Include today's date in seed → stable for a day, new values next day
+    // DB에서 기간 시작 시점의 가격을 일괄 조회 (±1시간 허용)
+    // Batch query for historical prices at period start (±1h tolerance)
+    const targetDate = new Date(Date.now() - days * 86400000);
+    const windowStart = new Date(targetDate.getTime() - 3600000);
+    const windowEnd = new Date(targetDate.getTime() + 3600000);
+
+    const historicalPrices = await this.prisma.priceHistory.findMany({
+      where: {
+        timestamp: { gte: windowStart, lte: windowEnd },
+      },
+      distinct: ['symbol'],
+      orderBy: { timestamp: 'asc' },
+    });
+
+    const historyMap = new Map<string, number>();
+    for (const h of historicalPrices) {
+      historyMap.set(h.symbol, Number(h.price));
+    }
+
+    // 기간별 최대 변동률 (%) / Max change percent per period
+    const maxPct: Record<string, { crypto: number; stock: number }> = {
+      '1d': { crypto: 8, stock: 4 },
+      '1w': { crypto: 15, stock: 8 },
+      '1m': { crypto: 25, stock: 15 },
+      '3m': { crypto: 40, stock: 25 },
+      '6m': { crypto: 55, stock: 35 },
+      '1y': { crypto: 80, stock: 50 },
+    };
+
+    // 기간별 시드 오프셋으로 순위 변동 보장 / Seed offset per period for meaningful rank changes
+    const periodOffset: Record<string, number> = {
+      '1d': 17, '1w': 53, '1m': 97, '3m': 149, '6m': 211, '1y': 277,
+    };
+
     const today = new Date().toISOString().slice(0, 10);
 
     return currentPrices.map((tick) => {
+      // 1) DB 실측 데이터 우선 / Prefer actual DB data
+      const histPrice = historyMap.get(tick.symbol);
+      if (histPrice && histPrice > 0) {
+        const changeAmount = tick.price - histPrice;
+        const changePercent = ((tick.price - histPrice) / histPrice) * 100;
+        return {
+          symbol: tick.symbol,
+          currentPrice: tick.price,
+          basePrice: histPrice,
+          changeAmount,
+          changePercent: Math.round(changePercent * 100) / 100,
+        };
+      }
+
+      // 2) 시뮬레이션 폴백: 현실적 범위로 제한 / Simulation fallback: bounded to realistic range
       const config = assetConfigMap.get(tick.symbol);
-      const annualVol = config?.volatility ?? 0.5;
+      const isCrypto = config?.assetType === 'CRYPTO';
+      const cap = maxPct[period]?.[isCrypto ? 'crypto' : 'stock'] ?? 30;
+      const offset = periodOffset[period] ?? 0;
 
-      // 기간별 변동성 스케일링: σ_period = σ_annual × √(days / 365)
-      // Period volatility scaling: σ_period = σ_annual × √(days / 365)
-      const periodVol = annualVol * Math.sqrt(days / 365);
-
-      // 결정론적 의사난수 생성 / Deterministic pseudo-random number
-      const seed = this.hashString(`${tick.symbol}:${period}:${today}`);
+      const seed = this.hashString(`${tick.symbol}:${period}:${today}`) + offset;
       const random = this.seededGaussian(seed);
 
-      // 로그정규 수익률 모델: 금융 표준 방식으로 기준가 역산
-      // 가우시안을 ±2.5σ로 클램핑하여 비현실적인 극단값 방지
-      // Log-normal return model: standard financial formula for base price estimation
-      // Clamp Gaussian to ±2.5σ to prevent unrealistic extreme values
-      const clamped = Math.max(-2.5, Math.min(2.5, random));
-      const logReturn = clamped * periodVol;
-      const priceMultiplier = Math.exp(logReturn);
-      const basePrice = tick.price / priceMultiplier;
+      // tanh로 부드럽게 ±cap% 범위로 바운딩 / Smooth bounding via tanh
+      const changePct = Math.tanh(random * 0.6) * cap;
+      const basePrice = tick.price / (1 + changePct / 100);
       const changeAmount = tick.price - basePrice;
-      const changePercent = (priceMultiplier - 1) * 100;
 
       return {
         symbol: tick.symbol,
         currentPrice: tick.price,
         basePrice: Math.max(basePrice, 0.0001),
         changeAmount,
-        changePercent: Math.round(changePercent * 100) / 100,
+        changePercent: Math.round(changePct * 100) / 100,
       };
     });
   }
