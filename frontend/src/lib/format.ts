@@ -127,19 +127,23 @@ function formatUSDPrice(price: number): string {
 
 /**
  * 통화 접두사/접미사 포함 가격 표시
- * @param displayKRW true면 USD 가격을 환율로 변환하여 원화 표시
+ * @param currencyMode 'krw'=모든 수치를 원화로, 'original'=원래 통화 그대로
  * @param exchangeRate USD→KRW 환율
  */
 export function formatPriceDisplay(
   price: number,
   symbol: string,
-  displayKRW?: boolean,
+  currencyMode?: 'krw' | 'original' | boolean,
   exchangeRate?: number,
 ): string {
+  const wantKRW = currencyMode === 'krw' || currencyMode === true;
   if (isKRW(symbol)) {
+    if (!wantKRW && exchangeRate) {
+      return formatUSDPrice(price / exchangeRate);
+    }
     return formatKRWPrice(price);
   }
-  if (displayKRW && exchangeRate) {
+  if (wantKRW && exchangeRate) {
     return formatKRWPrice(Math.round(price * exchangeRate));
   }
   return formatUSDPrice(price);
@@ -149,14 +153,22 @@ export function formatPriceDisplay(
 export function formatAmountDisplay(
   amount: number,
   symbol: string,
-  displayKRW?: boolean,
+  currencyMode?: 'krw' | 'original' | boolean,
   exchangeRate?: number,
 ): string {
+  const wantKRW = currencyMode === 'krw' || currencyMode === true;
   if (isKRW(symbol)) {
+    if (!wantKRW && exchangeRate) {
+      const converted = amount / exchangeRate;
+      const abs = Math.abs(converted);
+      const prefix = converted >= 0 ? '+$' : '-$';
+      if (abs >= 1) return prefix + abs.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      return prefix + abs.toFixed(4);
+    }
     const sign = amount >= 0 ? '+' : '';
     return sign + Math.round(amount).toLocaleString('ko-KR') + '원';
   }
-  if (displayKRW && exchangeRate) {
+  if (wantKRW && exchangeRate) {
     const converted = Math.round(amount * exchangeRate);
     const sign = converted >= 0 ? '+' : '';
     return sign + converted.toLocaleString('ko-KR') + '원';
@@ -172,13 +184,21 @@ export function formatAmountDisplay(
 export function formatVolumeDisplay(
   volume: number,
   symbol: string,
-  displayKRW?: boolean,
+  currencyMode?: 'krw' | 'original' | boolean,
   exchangeRate?: number,
 ): string {
+  const wantKRW = currencyMode === 'krw' || currencyMode === true;
   if (isKRW(symbol)) {
+    if (!wantKRW && exchangeRate) {
+      const usd = volume / exchangeRate;
+      if (usd >= 1e9) return '$' + (usd / 1e9).toFixed(1) + 'B';
+      if (usd >= 1e6) return '$' + (usd / 1e6).toFixed(1) + 'M';
+      if (usd >= 1e3) return '$' + (usd / 1e3).toFixed(0) + 'K';
+      return '$' + usd.toLocaleString('en-US', { maximumFractionDigits: 0 });
+    }
     return formatVolume(volume);
   }
-  if (displayKRW && exchangeRate) {
+  if (wantKRW && exchangeRate) {
     return formatVolume(volume * exchangeRate);
   }
   if (volume >= 1e9) return '$' + (volume / 1e9).toFixed(1) + 'B';

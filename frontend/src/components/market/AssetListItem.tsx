@@ -9,7 +9,7 @@
 
 import { useRef, useState, useEffect } from 'react';
 import Link from 'next/link';
-import { cn, isKRW, formatPriceDisplay, formatPercent, formatAmountDisplay, formatVolumeDisplay } from '@/lib/format';
+import { cn, formatPriceDisplay, formatPercent, formatAmountDisplay, formatVolumeDisplay } from '@/lib/format';
 import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import type { Asset } from '@/types';
@@ -39,7 +39,6 @@ export default function AssetListItem({ asset, rank }: AssetListItemProps) {
 
   const { display } = useCurrencyDisplay();
   const { data: rateData } = useExchangeRate();
-  const showKRW = display === 'krw' && !isKRW(asset.symbol);
   const rate = rateData?.rate;
 
   const prevPriceRef = useRef(asset.currentPrice);
@@ -50,7 +49,7 @@ export default function AssetListItem({ asset, rank }: AssetListItemProps) {
       const cls = asset.currentPrice > prevPriceRef.current ? 'tick-flash-rise' : 'tick-flash-fall';
       setFlashClass(cls);
       prevPriceRef.current = asset.currentPrice;
-      const timer = setTimeout(() => setFlashClass(''), 600);
+      const timer = setTimeout(() => setFlashClass(''), 1000);
       return () => clearTimeout(timer);
     }
   }, [asset.currentPrice]);
@@ -88,7 +87,7 @@ export default function AssetListItem({ asset, rank }: AssetListItemProps) {
 
       {/* 현재가 / Price */}
       <span className={cn('w-[88px] sm:w-[100px] lg:w-[120px] text-right text-[14px] font-semibold text-text-primary tabular-nums shrink-0', flashClass)}>
-        {formatPriceDisplay(asset.currentPrice, asset.symbol, showKRW, rate)}
+        {formatPriceDisplay(asset.currentPrice, asset.symbol, display, rate)}
       </span>
 
       {/* 변동 금액 / Change amount */}
@@ -100,7 +99,7 @@ export default function AssetListItem({ asset, rank }: AssetListItemProps) {
           !isRise && !isFall && 'text-text-quaternary',
         )}
       >
-        {formatAmountDisplay(asset.changeAmount ?? 0, asset.symbol, showKRW, rate)}
+        {formatAmountDisplay(asset.changeAmount ?? 0, asset.symbol, display, rate)}
       </span>
 
       {/* 변동률 / Change percent */}
@@ -130,17 +129,17 @@ export default function AssetListItem({ asset, rank }: AssetListItemProps) {
 
       {/* 24시간 최고가 / 24h High */}
       <span className="w-[90px] text-right text-[13px] text-text-secondary tabular-nums hidden xl:block shrink-0">
-        {formatPriceDisplay(asset.high24h ?? 0, asset.symbol, showKRW, rate)}
+        {formatPriceDisplay(asset.high24h ?? 0, asset.symbol, display, rate)}
       </span>
 
       {/* 24시간 최저가 / 24h Low */}
       <span className="w-[90px] text-right text-[13px] text-text-secondary tabular-nums hidden xl:block shrink-0">
-        {formatPriceDisplay(asset.low24h ?? 0, asset.symbol, showKRW, rate)}
+        {formatPriceDisplay(asset.low24h ?? 0, asset.symbol, display, rate)}
       </span>
 
       {/* 거래대금 / Volume */}
       <span className="w-[80px] lg:w-[90px] text-right text-[13px] text-text-tertiary tabular-nums hidden md:block shrink-0">
-        {formatVolumeDisplay((asset.currentPrice * (asset.volume ?? 0)), asset.symbol, showKRW, rate)}
+        {formatVolumeDisplay((asset.currentPrice * (asset.volume ?? 0)), asset.symbol, display, rate)}
       </span>
     </Link>
   );

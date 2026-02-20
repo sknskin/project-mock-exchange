@@ -9,6 +9,6 @@ interface CurrencyDisplayState {
 }
 
 export const useCurrencyDisplay = create<CurrencyDisplayState>((set) => ({
-  display: 'original',
+  display: 'krw',
   toggle: () => set((s) => ({ display: s.display === 'original' ? 'krw' : 'original' })),
 }));

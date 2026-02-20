@@ -7,9 +7,11 @@
  */
 'use client';
 
-import { cn, isKRW, formatPriceDisplay, formatPercent } from '@/lib/format';
+import { useMemo } from 'react';
+import { cn, formatPriceDisplay, formatPercent } from '@/lib/format';
 import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
+import { useTranslation } from '@/hooks/useTranslation';
 import type { Asset } from '@/types';
 
 interface MarketTickerProps {
@@ -17,42 +19,53 @@ interface MarketTickerProps {
 }
 
 export default function MarketTicker({ assets }: MarketTickerProps) {
-  const topAssets = assets.slice(0, 5);
+  const { t } = useTranslation();
   const { display } = useCurrencyDisplay();
   const { data: rateData } = useExchangeRate();
   const rate = rateData?.rate;
+
+  const topAssets = useMemo(() =>
+    [...assets]
+      .sort((a, b) => (b.currentPrice * (b.volume ?? 0)) - (a.currentPrice * (a.volume ?? 0)))
+      .slice(0, 5),
+    [assets],
+  );
   if (topAssets.length === 0) return null;
 
   return (
-    <div className="border-b border-border">
-      <div className="py-5 flex items-center gap-10 lg:gap-14 overflow-x-auto scrollbar-hide">
-        <span className="text-[12px] text-text-quaternary font-medium shrink-0 self-start mt-0.5">
-          Top 5
+    <div className="py-4 border-b border-border">
+      <div className="flex items-center gap-4 lg:gap-6 overflow-x-auto scrollbar-hide -mx-1 px-1">
+        <span className="text-[12px] text-text-quaternary font-medium shrink-0 self-center leading-tight text-center min-w-[52px] whitespace-pre-line">
+          {t('market.top5Turnover')}
         </span>
         {topAssets.map((asset) => {
           const isRise = asset.changePercent > 0;
           const isFall = asset.changePercent < 0;
-          const showKRW = display === 'krw' && !isKRW(asset.symbol);
 
           return (
-            <div key={asset.symbol} className="shrink-0">
-              <div className="text-[13px] text-text-tertiary font-medium mb-1.5">
-                {asset.name ?? asset.symbol}
-              </div>
-              <div className="flex items-baseline gap-2.5">
-                <span className="text-[16px] font-bold text-text-primary tabular-nums">
-                  {formatPriceDisplay(asset.currentPrice, asset.symbol, showKRW, rate)}
-                </span>
-                <span
-                  className={cn(
-                    'text-[13px] font-semibold tabular-nums',
-                    isRise && 'text-rise',
-                    isFall && 'text-fall',
-                    !isRise && !isFall && 'text-text-quaternary',
-                  )}
-                >
-                  {formatPercent(asset.changePercent)}
-                </span>
+            <div
+              key={asset.symbol}
+              className="flex items-center shrink-0 pl-3 pr-2 py-2.5 rounded-xl bg-bg-secondary/40 min-w-[170px]"
+            >
+              <div className="flex-1 min-w-0">
+                <div className="text-[11px] text-text-quaternary font-medium mb-0.5">
+                  {asset.name ?? asset.symbol}
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-[14px] font-bold text-text-primary tabular-nums">
+                    {formatPriceDisplay(asset.currentPrice, asset.symbol, display, rate)}
+                  </span>
+                  <span
+                    className={cn(
+                      'text-[11px] font-semibold tabular-nums',
+                      isRise && 'text-rise',
+                      isFall && 'text-fall',
+                      !isRise && !isFall && 'text-text-quaternary',
+                    )}
+                  >
+                    {formatPercent(asset.changePercent)}
+                  </span>
+                </div>
               </div>
             </div>
           );

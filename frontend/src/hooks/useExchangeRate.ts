@@ -7,7 +7,9 @@ interface ExchangeRateData {
 }
 
 async function fetchExchangeRate(): Promise<ExchangeRateData> {
-  const res = await fetch('https://api.frankfurter.app/latest?from=USD&to=KRW');
+  const res = await fetch('https://api.frankfurter.app/latest?from=USD&to=KRW', {
+    cache: 'no-store',
+  });
   if (!res.ok) throw new Error('Failed to fetch exchange rate');
   const data = await res.json();
   return { rate: data.rates.KRW, updatedAt: new Date() };
