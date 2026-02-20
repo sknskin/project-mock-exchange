@@ -9,6 +9,7 @@
 
 import { useMemo, useRef, useEffect } from 'react';
 import { cn, formatCompactPrice, formatPercent } from '@/lib/format';
+import { useTranslation } from '@/hooks/useTranslation';
 import type { Asset } from '@/types';
 
 interface MarketIndexSummaryProps {
@@ -100,6 +101,7 @@ const KOSPI_CRYPTO = ['BTC-USD', 'ETH-USD', 'SOL-USD', 'XRP-USD', 'ADA-USD', 'DO
 const CRYPTO_INDEX = ['BTC-USD', 'ETH-USD', 'SOL-USD', 'XRP-USD', 'DOGE-USD', 'ADA-USD', 'AVAX-USD', 'LINK-USD'];
 
 export default function MarketIndexSummary({ assets }: MarketIndexSummaryProps) {
+  const { t } = useTranslation();
   const indices = useMemo((): IndexData[] => {
     if (assets.length === 0) return [];
     return [
@@ -116,7 +118,7 @@ export default function MarketIndexSummary({ assets }: MarketIndexSummaryProps) 
     <div className="py-4 border-b border-border">
       <div className="flex items-center gap-4 lg:gap-6 overflow-x-auto scrollbar-hide -mx-1 px-1">
         <span className="text-[12px] text-text-quaternary font-medium shrink-0 self-center">
-          Market Index
+          {t('market.marketIndex')}
         </span>
         {indices.map((idx) => {
           const isRise = idx.changePercent > 0;
@@ -125,7 +127,7 @@ export default function MarketIndexSummary({ assets }: MarketIndexSummaryProps) 
           return (
             <div
               key={idx.name}
-              className="flex items-center gap-3 shrink-0 px-3 py-2.5 rounded-xl bg-bg-secondary/40 min-w-[200px]"
+              className="flex items-center gap-3 shrink-0 pl-3 pr-2 py-2.5 rounded-xl bg-bg-secondary/40 min-w-[180px]"
             >
               <div className="flex-1 min-w-0">
                 <div className="text-[11px] text-text-quaternary font-medium mb-0.5">
