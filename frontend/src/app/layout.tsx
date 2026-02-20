@@ -13,6 +13,7 @@ import BottomNav from '@/components/layout/BottomNav';
 import FloatingActions from '@/components/layout/FloatingActions';
 import Footer from '@/components/layout/Footer';
 import ThemeProvider from '@/components/layout/ThemeProvider';
+import PageViewTracker from '@/components/layout/PageViewTracker';
 
 export const metadata: Metadata = {
   title: 'VirtuEx - 모의투자',
@@ -32,6 +33,7 @@ export default function RootLayout({
       <body className="bg-bg-primary text-text-primary min-h-screen">
         <QueryProvider>
           <ThemeProvider />
+          <PageViewTracker />
           <Header />
           <main className="pb-20 md:pb-0 max-w-[1080px] mx-auto px-5 sm:px-8 lg:px-10">
             {children}
