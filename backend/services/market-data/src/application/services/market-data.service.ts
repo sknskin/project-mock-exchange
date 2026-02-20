@@ -12,7 +12,7 @@ import { BinancePriceService } from '../../domain/services/binance-price.service
 import { PriceCacheService } from '../../infrastructure/redis/price-cache.service';
 import { PriceProducerService } from '../../infrastructure/kafka/price-producer.service';
 import { PrismaService } from '../../infrastructure/persistence/prisma.service';
-import { AssetConfig, DEFAULT_ASSETS, PriceTick } from '../../domain/entities/asset.entity';
+import { AssetConfig, DEFAULT_ASSETS, PriceTick, BINANCE_SYMBOL_MAP } from '../../domain/entities/asset.entity';
 
 @Injectable()
 export class MarketDataService implements OnModuleInit {
@@ -174,15 +174,12 @@ export class MarketDataService implements OnModuleInit {
 
   /**
    * 기간별 등락률을 계산합니다.
-   * 1) DB에 해당 기간의 실제 가격 이력이 있으면 실측 데이터 사용
-   * 2) 이력이 없으면 현실적 범위 내에서 시뮬레이션
-   * tanh로 부드럽게 바운딩하여 비현실적 극단값을 방지하고,
-   * 기간별로 다른 시드 오프셋을 사용해 순위가 의미 있게 변동되도록 합니다.
+   * 암호화폐: Binance klines API로 실제 과거 가격 사용
+   * 주식: 시뮬레이션 (tanh 바운딩)
    *
    * Calculates period changes.
-   * 1) Uses actual DB price history when available
-   * 2) Falls back to realistic bounded simulation
-   * Uses tanh for smooth bounding and per-period seed offsets for meaningful rank changes.
+   * Crypto: Real historical prices from Binance klines API
+   * Stocks: Bounded simulation (tanh)
    */
   async getPeriodChanges(period: string) {
     const periodDays: Record<string, number> = {
@@ -207,67 +204,45 @@ export class MarketDataService implements OnModuleInit {
       assetConfigMap.set(asset.symbol, asset);
     }
 
-    // DB에서 기간 시작 시점의 가격을 일괄 조회 (±1시간 허용)
-    // Batch query for historical prices at period start (±1h tolerance)
-    const targetDate = new Date(Date.now() - days * 86400000);
-    const windowStart = new Date(targetDate.getTime() - 3600000);
-    const windowEnd = new Date(targetDate.getTime() + 3600000);
+    // 암호화폐: Binance klines API에서 실제 과거 가격 일괄 조회
+    // Crypto: Batch fetch real historical prices from Binance klines API
+    const cryptoHistoryMap = await this.fetchBinanceHistoricalPrices(days);
 
-    const historicalPrices = await this.prisma.priceHistory.findMany({
-      where: {
-        timestamp: { gte: windowStart, lte: windowEnd },
-      },
-      distinct: ['symbol'],
-      orderBy: { timestamp: 'asc' },
-    });
-
-    const historyMap = new Map<string, number>();
-    for (const h of historicalPrices) {
-      historyMap.set(h.symbol, Number(h.price));
-    }
-
-    // 기간별 최대 변동률 (%) / Max change percent per period
-    const maxPct: Record<string, { crypto: number; stock: number }> = {
-      '1d': { crypto: 8, stock: 4 },
-      '1w': { crypto: 15, stock: 8 },
-      '1m': { crypto: 25, stock: 15 },
-      '3m': { crypto: 40, stock: 25 },
-      '6m': { crypto: 55, stock: 35 },
-      '1y': { crypto: 80, stock: 50 },
+    // 주식: 시뮬레이션용 설정 / Stocks: simulation config
+    const maxPct: Record<string, number> = {
+      '1d': 4, '1w': 8, '1m': 15, '3m': 25, '6m': 35, '1y': 50,
     };
-
-    // 기간별 시드 오프셋으로 순위 변동 보장 / Seed offset per period for meaningful rank changes
     const periodOffset: Record<string, number> = {
       '1d': 17, '1w': 53, '1m': 97, '3m': 149, '6m': 211, '1y': 277,
     };
-
     const today = new Date().toISOString().slice(0, 10);
 
     return currentPrices.map((tick) => {
-      // 1) DB 실측 데이터 우선 / Prefer actual DB data
-      const histPrice = historyMap.get(tick.symbol);
-      if (histPrice && histPrice > 0) {
-        const changeAmount = tick.price - histPrice;
-        const changePercent = ((tick.price - histPrice) / histPrice) * 100;
-        return {
-          symbol: tick.symbol,
-          currentPrice: tick.price,
-          basePrice: histPrice,
-          changeAmount,
-          changePercent: Math.round(changePercent * 100) / 100,
-        };
-      }
-
-      // 2) 시뮬레이션 폴백: 현실적 범위로 제한 / Simulation fallback: bounded to realistic range
       const config = assetConfigMap.get(tick.symbol);
       const isCrypto = config?.assetType === 'CRYPTO';
-      const cap = maxPct[period]?.[isCrypto ? 'crypto' : 'stock'] ?? 30;
-      const offset = periodOffset[period] ?? 0;
 
+      // 1) 암호화폐: Binance 실제 데이터 / Crypto: real Binance data
+      if (isCrypto) {
+        const histPrice = cryptoHistoryMap.get(tick.symbol);
+        if (histPrice && histPrice > 0) {
+          const changeAmount = tick.price - histPrice;
+          const changePercent = ((tick.price - histPrice) / histPrice) * 100;
+          return {
+            symbol: tick.symbol,
+            currentPrice: tick.price,
+            basePrice: histPrice,
+            changeAmount,
+            changePercent: Math.round(changePercent * 100) / 100,
+          };
+        }
+      }
+
+      // 2) 주식 또는 Binance 데이터 없는 경우: 시뮬레이션
+      // Stocks or missing Binance data: simulation
+      const cap = maxPct[period] ?? 30;
+      const offset = periodOffset[period] ?? 0;
       const seed = this.hashString(`${tick.symbol}:${period}:${today}`) + offset;
       const random = this.seededGaussian(seed);
-
-      // tanh로 부드럽게 ±cap% 범위로 바운딩 / Smooth bounding via tanh
       const changePct = Math.tanh(random * 0.6) * cap;
       const basePrice = tick.price / (1 + changePct / 100);
       const changeAmount = tick.price - basePrice;
@@ -280,6 +255,50 @@ export class MarketDataService implements OnModuleInit {
         changePercent: Math.round(changePct * 100) / 100,
       };
     });
+  }
+
+  /**
+   * Binance klines API에서 암호화폐 과거 가격을 일괄 조회합니다.
+   * 각 심볼별로 해당 기간 시작 시점의 종가(close)를 반환합니다.
+   *
+   * Fetches historical crypto prices from Binance klines API.
+   * Returns the close price at the start of the given period for each symbol.
+   */
+  private async fetchBinanceHistoricalPrices(days: number): Promise<Map<string, number>> {
+    const result = new Map<string, number>();
+    const startTime = Date.now() - days * 86400000;
+
+    // 병렬 요청 (최대 10개씩 배치) / Parallel requests (batched by 10)
+    const cryptoAssets = this.assets.filter((a) => a.assetType === 'CRYPTO');
+    const batchSize = 10;
+
+    for (let i = 0; i < cryptoAssets.length; i += batchSize) {
+      const batch = cryptoAssets.slice(i, i + batchSize);
+      const promises = batch.map(async (asset) => {
+        try {
+          const binanceSymbol = BINANCE_SYMBOL_MAP.get(asset.symbol);
+          if (!binanceSymbol) return;
+
+          const url = `https://api.binance.com/api/v3/klines?symbol=${binanceSymbol.toUpperCase()}&interval=1d&startTime=${startTime}&limit=1`;
+          const response = await fetch(url);
+          if (!response.ok) return;
+
+          const data = await response.json();
+          if (data.length > 0) {
+            // kline: [openTime, open, high, low, close, ...]
+            const openPrice = parseFloat(data[0][1]);
+            if (openPrice > 0) {
+              result.set(asset.symbol, openPrice);
+            }
+          }
+        } catch {
+          // 개별 실패 무시 / Ignore individual failures
+        }
+      });
+      await Promise.all(promises);
+    }
+
+    return result;
   }
 
   /**
