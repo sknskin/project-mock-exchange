@@ -12,7 +12,6 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { techItems } from '@/lib/constants';
 import VirtuExLogo from '@/components/ui/VirtuExLogo';
 
-const repeatedItems = [...techItems, ...techItems, ...techItems, ...techItems];
 
 const MailIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
@@ -86,6 +85,9 @@ export default function Footer() {
             <p className="text-[11px] text-text-quaternary pl-[28px]">
               {t('footer.about')}
             </p>
+            <p className="text-[11px] text-text-quaternary pl-[28px]">
+              {t('footer.rights')}
+            </p>
           </div>
 
           {/* 연락처 링크 / Contact Links */}
@@ -120,14 +122,14 @@ export default function Footer() {
         </div>
 
         {/* 기술 스택 마키 / Tech Stack Marquee */}
-        <div className="relative overflow-hidden py-6 pb-10 -mx-5 sm:-mx-8 lg:-mx-10">
+        <div className="relative overflow-hidden py-6 pb-16 md:pb-10 -mx-5 sm:-mx-8 lg:-mx-10">
           <div className="absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-bg-primary to-transparent z-10 pointer-events-none" />
           <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-bg-primary to-transparent z-10 pointer-events-none" />
 
           <div className="animate-marquee">
-            {repeatedItems.map((tech, i) => (
+            {[...techItems, ...techItems].map((tech, i) => (
               <div
-                key={`${tech.name}-${i}`}
+                key={`marquee-${i}`}
                 className="flex flex-col items-center gap-2 px-5 shrink-0"
               >
                 <div className="w-10 h-10 rounded-xl bg-bg-secondary/80 flex items-center justify-center p-2">
@@ -144,15 +146,6 @@ export default function Footer() {
               </div>
             ))}
           </div>
-        </div>
-      </div>
-
-      {/* 저작권 / Copyright */}
-      <div className="border-t border-border">
-        <div className="max-w-[1080px] mx-auto px-5 sm:px-8 lg:px-10 py-5 pb-16 md:pb-5">
-          <p className="text-[11px] text-text-quaternary">
-            {t('footer.rights')}
-          </p>
         </div>
       </div>
 
