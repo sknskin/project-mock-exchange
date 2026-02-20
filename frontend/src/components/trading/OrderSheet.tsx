@@ -1,22 +1,23 @@
 /**
- * @file 주문 시트 컴포넌트
- * @description 모바일에서 바텀시트로 주문 폼을 보여주는 컴포넌트
+ * @file 주문 모달 컴포넌트
+ * @description 중앙 모달로 주문 폼을 보여주는 컴포넌트
  *
- * @file Order Sheet Component
- * @description Bottom sheet showing order form on mobile devices
+ * @file Order Modal Component
+ * @description Center modal showing order form
  */
 'use client';
 
-import { useState } from 'react';
-import BottomSheet from '@/components/ui/BottomSheet';
+import { useState, useEffect, useCallback } from 'react';
 import OrderForm from './OrderForm';
 import { cn } from '@/lib/format';
+import { X } from 'lucide-react';
 
 interface OrderSheetProps {
   isOpen: boolean;
   onClose: () => void;
   symbol: string;
   currentPrice: number;
+  initialSide: 'BUY' | 'SELL';
 }
 
 export default function OrderSheet({
@@ -24,42 +25,91 @@ export default function OrderSheet({
   onClose,
   symbol,
   currentPrice,
+  initialSide,
 }: OrderSheetProps) {
-  const [side, setSide] = useState<'BUY' | 'SELL'>('BUY');
+  const [side, setSide] = useState<'BUY' | 'SELL'>(initialSide);
+
+  useEffect(() => {
+    if (isOpen) {
+      setSide(initialSide);
+    }
+  }, [initialSide, isOpen]);
+
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    },
+    [onClose],
+  );
+
+  useEffect(() => {
+    if (isOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'hidden';
+    }
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = '';
+    };
+  }, [isOpen, handleKeyDown]);
+
+  if (!isOpen) return null;
 
   return (
-    <BottomSheet isOpen={isOpen} onClose={onClose} title={`${symbol} 주문`}>
-      <div className="flex gap-2 mb-6">
-        <button
-          onClick={() => setSide('BUY')}
-          className={cn(
-            'flex-1 h-11 text-[14px] font-bold rounded-lg transition-colors',
-            side === 'BUY'
-              ? 'bg-rise text-white'
-              : 'bg-bg-secondary text-text-quaternary hover:text-text-tertiary',
-          )}
-        >
-          매수
-        </button>
-        <button
-          onClick={() => setSide('SELL')}
-          className={cn(
-            'flex-1 h-11 text-[14px] font-bold rounded-lg transition-colors',
-            side === 'SELL'
-              ? 'bg-fall text-white'
-              : 'bg-bg-secondary text-text-quaternary hover:text-text-tertiary',
-          )}
-        >
-          매도
-        </button>
-      </div>
-
-      <OrderForm
-        symbol={symbol}
-        currentPrice={currentPrice}
-        side={side}
-        onSuccess={onClose}
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div
+        className="absolute inset-0 bg-black/50"
+        onClick={onClose}
       />
-    </BottomSheet>
+      <div className="relative bg-bg-elevated rounded-2xl w-full max-w-[400px] mx-4 max-h-[85vh] overflow-y-auto">
+        {/* 헤더 / Header */}
+        <div className="flex items-center justify-between px-6 pt-5 pb-3">
+          <h3 className="text-[18px] font-bold text-text-primary">
+            {symbol} 주문
+          </h3>
+          <button
+            onClick={onClose}
+            className="p-1 text-text-quaternary hover:text-text-tertiary transition-colors rounded-lg"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="px-6 pb-6">
+          {/* 매수/매도 토글 / Buy/Sell toggle */}
+          <div className="flex gap-2 mb-6">
+            <button
+              onClick={() => setSide('BUY')}
+              className={cn(
+                'flex-1 h-11 text-[14px] font-bold rounded-lg transition-colors',
+                side === 'BUY'
+                  ? 'bg-rise text-white'
+                  : 'bg-bg-secondary text-text-quaternary hover:text-text-tertiary',
+              )}
+            >
+              매수
+            </button>
+            <button
+              onClick={() => setSide('SELL')}
+              className={cn(
+                'flex-1 h-11 text-[14px] font-bold rounded-lg transition-colors',
+                side === 'SELL'
+                  ? 'bg-fall text-white'
+                  : 'bg-bg-secondary text-text-quaternary hover:text-text-tertiary',
+              )}
+            >
+              매도
+            </button>
+          </div>
+
+          <OrderForm
+            symbol={symbol}
+            currentPrice={currentPrice}
+            side={side}
+            onSuccess={onClose}
+          />
+        </div>
+      </div>
+    </div>
   );
 }

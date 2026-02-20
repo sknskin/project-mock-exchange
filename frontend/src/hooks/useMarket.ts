@@ -97,14 +97,16 @@ export function usePeriodChanges(period: string) {
   });
 }
 
-export function useRecentTrades(symbol: string) {
+export function useRecentTrades(symbol: string, enabled: boolean = true) {
   return useQuery<Trade[]>({
     queryKey: ['market', 'trades', symbol],
     queryFn: async () => {
-      const { data } = await api.get('/api/orders/trades/history');
+      const { data } = await api.get('/api/orders/trades/history', {
+        params: { symbol },
+      });
       return data.data ?? data;
     },
     refetchInterval: 5000,
-    enabled: !!symbol,
+    enabled: !!symbol && enabled,
   });
 }
