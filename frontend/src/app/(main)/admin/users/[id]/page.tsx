@@ -26,6 +26,15 @@ import { cn } from '@/lib/format';
 
 type ModalType = 'approve' | 'reject' | 'deactivate' | 'activate' | 'delete' | null;
 
+function InfoRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 py-2.5">
+      <span className="text-[13px] text-text-tertiary sm:w-28 sm:shrink-0">{label}</span>
+      <span className="text-[14px] text-text-primary font-medium break-all">{children}</span>
+    </div>
+  );
+}
+
 export default function AdminUserDetailPage({
   params,
 }: {
@@ -140,8 +149,53 @@ export default function AdminUserDetailPage({
     return t('common.confirm');
   };
 
+  const roleBadge = user && (
+    <span
+      className={cn(
+        'text-[13px] font-semibold px-2.5 py-0.5 rounded-full',
+        user.role === 'SYSTEM'
+          ? 'bg-purple-500/15 text-purple-400'
+          : user.role === 'ADMIN'
+            ? 'bg-accent/15 text-accent'
+            : 'bg-bg-tertiary text-text-secondary',
+      )}
+    >
+      {user.role === 'SYSTEM'
+        ? t('common.system')
+        : user.role === 'ADMIN'
+          ? t('common.admin')
+          : t('common.user')}
+    </span>
+  );
+
+  const statusBadge = user && (
+    <span
+      className={cn(
+        'text-[13px] font-semibold px-2.5 py-0.5 rounded-full',
+        user.isActive
+          ? 'bg-green-500/15 text-green-400'
+          : 'bg-danger/15 text-danger',
+      )}
+    >
+      {user.isActive ? t('admin.users.approved') : t('admin.users.inactive')}
+    </span>
+  );
+
+  const approvalBadge = user && (
+    <span
+      className={cn(
+        'text-[13px] font-semibold px-2.5 py-0.5 rounded-full',
+        user.isApproved
+          ? 'bg-green-500/15 text-green-400'
+          : 'bg-yellow-500/15 text-yellow-400',
+      )}
+    >
+      {user.isApproved ? t('admin.users.approved') : t('admin.users.pending')}
+    </span>
+  );
+
   return (
-    <div className="pb-24">
+    <div className="pb-16">
       {/* Back button + title */}
       <div className="flex items-center gap-3 py-4">
         <Link
@@ -152,6 +206,7 @@ export default function AdminUserDetailPage({
         </Link>
         <h1 className="text-[17px] font-bold text-text-primary">
           {t('admin.users.detail')}
+          {user && <span className="text-text-tertiary font-normal ml-2">— {user.name}</span>}
         </h1>
       </div>
 
@@ -168,183 +223,82 @@ export default function AdminUserDetailPage({
       )}
 
       {user && (
-        <div className="flex flex-col gap-5">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Basic Info */}
-          <div className="bg-bg-secondary rounded-2xl p-5">
-            <h2 className="text-[14px] font-bold text-text-tertiary uppercase tracking-wide mb-4">
+          <div className="bg-bg-secondary rounded-2xl px-5 py-4">
+            <h2 className="text-[13px] font-bold text-text-tertiary uppercase tracking-wide mb-2">
               {t('admin.users.basicInfo')}
             </h2>
-            <div className="flex flex-col divide-y divide-border/50">
-              {[
-                { label: t('admin.users.name'), value: user.name || '-' },
-                { label: t('admin.users.email'), value: user.email || '-' },
-                { label: t('admin.users.username'), value: user.username || '-' },
-                { label: t('admin.users.phone'), value: user.phone || '-' },
-                {
-                  label: t('admin.users.address'),
-                  value: [user.address, user.addressDetail].filter(Boolean).join(' ') || '-',
-                },
-              ].map((item) => (
-                <div key={item.label} className="flex justify-between py-3">
-                  <span className="text-[14px] text-text-tertiary">{item.label}</span>
-                  <span className="text-[14px] text-text-primary font-medium text-right max-w-[60%] break-all">
-                    {item.value}
-                  </span>
-                </div>
-              ))}
+            <div className="flex flex-col divide-y divide-border/40">
+              <InfoRow label={t('admin.users.name')}>{user.name || '-'}</InfoRow>
+              <InfoRow label={t('admin.users.email')}>{user.email || '-'}</InfoRow>
+              <InfoRow label={t('admin.users.username')}>{user.username || '-'}</InfoRow>
+              <InfoRow label={t('admin.users.phone')}>{user.phone || '-'}</InfoRow>
+              <InfoRow label={t('admin.users.address')}>
+                {[user.address, user.addressDetail].filter(Boolean).join(' ') || '-'}
+              </InfoRow>
             </div>
           </div>
 
           {/* Account Info */}
-          <div className="bg-bg-secondary rounded-2xl p-5">
-            <h2 className="text-[14px] font-bold text-text-tertiary uppercase tracking-wide mb-4">
+          <div className="bg-bg-secondary rounded-2xl px-5 py-4">
+            <h2 className="text-[13px] font-bold text-text-tertiary uppercase tracking-wide mb-2">
               {t('admin.users.accountInfo')}
             </h2>
-            <div className="flex flex-col divide-y divide-border/50">
-              {/* Role */}
-              <div className="flex justify-between items-center py-3">
-                <span className="text-[14px] text-text-tertiary">{t('admin.users.role')}</span>
-                <span
-                  className={cn(
-                    'text-[13px] font-semibold px-2.5 py-0.5 rounded-full',
-                    user.role === 'SYSTEM'
-                      ? 'bg-purple-500/15 text-purple-400'
-                      : user.role === 'ADMIN'
-                        ? 'bg-accent/15 text-accent'
-                        : 'bg-bg-tertiary text-text-secondary',
-                  )}
-                >
-                  {user.role === 'SYSTEM'
-                    ? t('common.system')
-                    : user.role === 'ADMIN'
-                      ? t('common.admin')
-                      : t('common.user')}
-                </span>
-              </div>
-
-              {/* isActive */}
-              <div className="flex justify-between items-center py-3">
-                <span className="text-[14px] text-text-tertiary">{t('admin.users.status')}</span>
-                <span
-                  className={cn(
-                    'text-[13px] font-semibold px-2.5 py-0.5 rounded-full',
-                    user.isActive
-                      ? 'bg-green-500/15 text-green-400'
-                      : 'bg-danger/15 text-danger',
-                  )}
-                >
-                  {user.isActive ? t('admin.users.approved') : t('admin.users.inactive')}
-                </span>
-              </div>
-
-              {/* isApproved */}
-              <div className="flex justify-between items-center py-3">
-                <span className="text-[14px] text-text-tertiary">{t('admin.users.approve')}</span>
-                <span
-                  className={cn(
-                    'text-[13px] font-semibold px-2.5 py-0.5 rounded-full',
-                    user.isApproved
-                      ? 'bg-green-500/15 text-green-400'
-                      : 'bg-yellow-500/15 text-yellow-400',
-                  )}
-                >
-                  {user.isApproved ? t('admin.users.approved') : t('admin.users.pending')}
-                </span>
-              </div>
-
-              {/* approvedAt */}
-              <div className="flex justify-between py-3">
-                <span className="text-[14px] text-text-tertiary">{t('admin.users.approvedAt')}</span>
-                <span className="text-[14px] text-text-primary font-medium">
-                  {formatDateValue(user.approvedAt)}
-                </span>
-              </div>
-
-              {/* approvedBy */}
-              <div className="flex justify-between py-3">
-                <span className="text-[14px] text-text-tertiary">{t('admin.users.approvedBy')}</span>
-                <span className="text-[14px] text-text-primary font-medium">
-                  {user.approvedBy || '-'}
-                </span>
-              </div>
-
-              {/* approvalNote */}
-              <div className="flex justify-between py-3">
-                <span className="text-[14px] text-text-tertiary">{t('admin.users.approvalNote')}</span>
-                <span className="text-[14px] text-text-primary font-medium text-right max-w-[60%] break-all">
-                  {user.approvalNote || '-'}
-                </span>
-              </div>
-
-              {/* createdAt */}
-              <div className="flex justify-between py-3">
-                <span className="text-[14px] text-text-tertiary">{t('admin.users.joinDate')}</span>
-                <span className="text-[14px] text-text-primary font-medium">
-                  {formatDateValue(user.createdAt)}
-                </span>
-              </div>
-
-              {/* updatedAt */}
-              <div className="flex justify-between py-3">
-                <span className="text-[14px] text-text-tertiary">{t('admin.users.updatedAt')}</span>
-                <span className="text-[14px] text-text-primary font-medium">
-                  {formatDateValue(user.updatedAt)}
-                </span>
-              </div>
+            <div className="flex flex-col divide-y divide-border/40">
+              <InfoRow label={t('admin.users.role')}>{roleBadge}</InfoRow>
+              <InfoRow label={t('admin.users.status')}>{statusBadge}</InfoRow>
+              <InfoRow label={t('admin.users.approve')}>{approvalBadge}</InfoRow>
+              <InfoRow label={t('admin.users.approvedAt')}>{formatDateValue(user.approvedAt)}</InfoRow>
+              <InfoRow label={t('admin.users.approvedBy')}>{user.approvedByUsername || user.approvedBy || '-'}</InfoRow>
+              <InfoRow label={t('admin.users.approvalNote')}>{user.approvalNote || '-'}</InfoRow>
+              <InfoRow label={t('admin.users.joinDate')}>{formatDateValue(user.createdAt)}</InfoRow>
+              <InfoRow label={t('admin.users.updatedAt')}>{formatDateValue(user.updatedAt)}</InfoRow>
             </div>
           </div>
 
           {/* Action Buttons */}
           {canManage && (
-            <div className="bg-bg-secondary rounded-2xl p-5">
-              <h2 className="text-[14px] font-bold text-text-tertiary uppercase tracking-wide mb-4">
+            <div className="bg-bg-secondary rounded-2xl px-5 py-4 lg:col-span-2">
+              <h2 className="text-[13px] font-bold text-text-tertiary uppercase tracking-wide mb-3">
                 {t('admin.users.actions')}
               </h2>
-              <div className="flex flex-col gap-3">
-                {/* Approve — only when not yet approved */}
+              <div className="flex flex-wrap gap-3">
                 {!user.isApproved && (
                   <button
                     onClick={() => openModal('approve')}
-                    className="w-full h-11 rounded-xl bg-green-600 hover:bg-green-600/85 text-white text-[14px] font-semibold transition-colors"
+                    className="h-10 px-6 rounded-xl bg-green-600 hover:bg-green-600/85 text-white text-[14px] font-semibold transition-colors"
                   >
                     {t('admin.users.approve')}
                   </button>
                 )}
-
-                {/* Reject — only when not yet approved */}
                 {!user.isApproved && (
                   <button
                     onClick={() => openModal('reject')}
-                    className="w-full h-11 rounded-xl bg-orange-500 hover:bg-orange-500/85 text-white text-[14px] font-semibold transition-colors"
+                    className="h-10 px-6 rounded-xl bg-orange-500 hover:bg-orange-500/85 text-white text-[14px] font-semibold transition-colors"
                   >
                     {t('admin.users.reject')}
                   </button>
                 )}
-
-                {/* Deactivate — only when currently active */}
                 {user.isActive && (
                   <button
                     onClick={() => openModal('deactivate')}
-                    className="w-full h-11 rounded-xl bg-yellow-500 hover:bg-yellow-500/85 text-white text-[14px] font-semibold transition-colors"
+                    className="h-10 px-6 rounded-xl bg-yellow-500 hover:bg-yellow-500/85 text-white text-[14px] font-semibold transition-colors"
                   >
                     {t('admin.users.deactivate')}
                   </button>
                 )}
-
-                {/* Activate — only when currently inactive */}
                 {!user.isActive && (
                   <button
                     onClick={() => openModal('activate')}
-                    className="w-full h-11 rounded-xl bg-yellow-500 hover:bg-yellow-500/85 text-white text-[14px] font-semibold transition-colors"
+                    className="h-10 px-6 rounded-xl bg-yellow-500 hover:bg-yellow-500/85 text-white text-[14px] font-semibold transition-colors"
                   >
                     {t('admin.users.activate')}
                   </button>
                 )}
-
-                {/* Delete */}
                 <button
                   onClick={() => openModal('delete')}
-                  className="w-full h-11 rounded-xl bg-danger hover:bg-danger/85 text-white text-[14px] font-semibold transition-colors"
+                  className="h-10 px-6 rounded-xl bg-danger hover:bg-danger/85 text-white text-[14px] font-semibold transition-colors"
                 >
                   {t('admin.users.delete')}
                 </button>
@@ -370,12 +324,10 @@ export default function AdminUserDetailPage({
       {/* Note Modal — for approve and reject (with optional textarea) */}
       {hasNoteField && (
         <>
-          {/* Overlay */}
           <div
             className="fixed inset-0 z-[60] bg-black/60"
             onClick={closeModal}
           />
-          {/* Modal body */}
           <div className="fixed inset-0 z-[61] flex items-center justify-center pointer-events-none">
             <div className="relative bg-bg-primary border border-border rounded-2xl p-6 w-[320px] shadow-2xl pointer-events-auto">
               <h3 className="text-[16px] font-bold text-text-primary text-center">
@@ -384,8 +336,6 @@ export default function AdminUserDetailPage({
               <p className="text-[14px] text-text-secondary text-center mt-3 whitespace-pre-line">
                 {getModalMessage()}
               </p>
-
-              {/* Optional note textarea */}
               <div className="mt-4">
                 <label className="text-[13px] text-text-tertiary block mb-1.5">
                   {t('admin.users.noteLabel')}
@@ -398,8 +348,6 @@ export default function AdminUserDetailPage({
                   placeholder={t('admin.users.noteLabel')}
                 />
               </div>
-
-              {/* Buttons: confirm (left) + cancel (right) */}
               <div className="flex gap-3 mt-5">
                 <button
                   onClick={handleConfirm}

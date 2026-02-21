@@ -194,8 +194,44 @@ export default function AdminUsersPage() {
         </div>
       </div>
 
-      {/* Table - horizontal scroll on mobile */}
-      <div className="overflow-x-auto -mx-4 sm:mx-0">
+      {/* Mobile card view */}
+      <div className="sm:hidden space-y-3">
+        {isLoading ? (
+          Array.from({ length: limit }).map((_, i) => (
+            <div key={i} className="h-24 rounded-xl bg-bg-secondary animate-pulse" />
+          ))
+        ) : users.length === 0 ? (
+          <div className="py-20 text-center text-[14px] text-text-quaternary">
+            {t('admin.users.noUsers')}
+          </div>
+        ) : (
+          users.map((u) => (
+            <div
+              key={u.id}
+              onClick={() => router.push(`/admin/users/${u.id}`)}
+              className="p-4 rounded-xl border border-border bg-bg-secondary hover:bg-bg-tertiary hover:border-accent/40 cursor-pointer transition-colors"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[14px] font-semibold text-text-primary">{u.name}</span>
+                <StatusBadge user={u} t={t} />
+              </div>
+              <div className="flex items-center gap-2 mb-1.5">
+                <RoleBadge role={u.role} />
+                <span className="text-[12px] text-text-tertiary font-mono">{u.username}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[12px] text-text-quaternary truncate mr-2">{u.email}</span>
+                <span className="text-[11px] text-text-quaternary tabular-nums shrink-0">
+                  {formatDate(u.createdAt)}
+                </span>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Table - desktop only */}
+      <div className="hidden sm:block overflow-x-auto">
         <table className="w-full min-w-[640px]">
           <thead>
             <tr className="border-b border-border/80">

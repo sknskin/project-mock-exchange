@@ -124,7 +124,18 @@ export class AdminService {
       },
     });
     if (!user) throw new NotFoundException('User not found');
-    return user;
+
+    // Resolve approvedBy UUID to username
+    let approvedByUsername: string | null = null;
+    if (user.approvedBy) {
+      const approver = await this.prisma.user.findUnique({
+        where: { id: user.approvedBy },
+        select: { username: true },
+      });
+      approvedByUsername = approver?.username ?? null;
+    }
+
+    return { ...user, approvedByUsername };
   }
 
   async approveUser(id: string, approvedById: string, currentRole: string, note?: string) {
