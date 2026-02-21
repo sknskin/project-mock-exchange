@@ -14,6 +14,7 @@ import { ArrowLeft } from 'lucide-react';
 import { useCreateAnnouncement } from '@/hooks/useAdmin';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuthStore } from '@/stores/auth';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 
 export default function NewAnnouncementPage() {
   const router = useRouter();
@@ -23,6 +24,7 @@ export default function NewAnnouncementPage() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [isPinned, setIsPinned] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const { mutateAsync: createAnnouncement, isPending } = useCreateAnnouncement();
 
@@ -38,12 +40,16 @@ export default function NewAnnouncementPage() {
     return null;
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !content.trim()) return;
+    setShowConfirm(true);
+  };
 
+  const handleConfirmCreate = async () => {
     try {
       await createAnnouncement({ title: title.trim(), content: content.trim(), isPinned });
+      setShowConfirm(false);
       router.push('/announcements');
     } catch {
       // mutation error handled by React Query
@@ -92,8 +98,8 @@ export default function NewAnnouncementPage() {
             onChange={(e) => setContent(e.target.value)}
             placeholder={t('announce.contentPlaceholder')}
             required
-            rows={12}
-            className="w-full bg-bg-secondary border border-border rounded-xl px-4 py-3 text-[14px] text-text-primary placeholder:text-text-quaternary focus:outline-none focus:border-accent transition-colors resize-none"
+            rows={8}
+            className="w-full bg-bg-secondary border border-border rounded-xl px-4 py-3 text-[14px] text-text-primary placeholder:text-text-quaternary focus:outline-none focus:border-accent transition-colors resize-none min-h-[120px] sm:min-h-[200px]"
           />
         </div>
 
@@ -134,6 +140,18 @@ export default function NewAnnouncementPage() {
           </button>
         </div>
       </form>
+
+      {/* Create confirm modal */}
+      <ConfirmModal
+        isOpen={showConfirm}
+        onClose={() => setShowConfirm(false)}
+        onConfirm={handleConfirmCreate}
+        title={t('announce.create')}
+        message={t('announce.createConfirm')}
+        confirmLabel={t('announce.submit')}
+        cancelLabel={t('modal.cancel')}
+        loading={isPending}
+      />
     </div>
   );
 }

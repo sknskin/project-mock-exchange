@@ -164,6 +164,7 @@ export interface AdminUser {
 export interface AdminUserDetail extends AdminUser {
   approvedAt: string | null;
   approvedBy: string | null;
+  approvedByUsername: string | null;
   approvalNote: string | null;
   address: string;
   addressDetail: string | null;
@@ -199,10 +200,11 @@ export interface AttachmentItem {
 export interface AnnouncementListItem {
   id: string;
   title: string;
-  content: string;
   author: AnnouncementAuthor;
   commentCount: number;
   attachmentCount: number;
+  viewCount: number;
+  likeCount: number;
   isPinned: boolean;
   createdAt: string;
   updatedAt: string;
@@ -213,6 +215,8 @@ export interface CommentItem {
   content: string;
   author: AnnouncementAuthor;
   parentId: string | null;
+  likeCount: number;
+  isLiked: boolean;
   createdAt: string;
   updatedAt: string;
   replies?: CommentItem[];
@@ -224,6 +228,9 @@ export interface AnnouncementDetail {
   content: string;
   author: AnnouncementAuthor;
   isPinned: boolean;
+  viewCount: number;
+  likeCount: number;
+  isLiked: boolean;
   attachments: AttachmentItem[];
   comments: CommentItem[];
   createdAt: string;
@@ -288,4 +295,36 @@ export interface UserStatByStatus {
   isApproved: boolean;
   isActive: boolean;
   count: number;
+}
+
+// Overview Trend (today vs yesterday)
+export interface OverviewTrendItem {
+  today: number;
+  yesterday: number;
+  changePercent: number;
+}
+
+export interface OverviewTrend {
+  newUsers: OverviewTrendItem;
+  logins: OverviewTrendItem;
+  pageViews: OverviewTrendItem;
+  announcements: OverviewTrendItem;
+}
+
+// Trading Stats
+export interface TradingStats {
+  totalOrders: number;
+  totalVolume: number;
+  avgOrderSize: number;
+  buyCount: number;
+  sellCount: number;
+  dailyVolume: { date: string; buy: number; sell: number; total: number }[];
+  popularAssets: { symbol: string; volume: number }[];
+}
+
+// Popular Announcements
+export interface PopularAnnouncement {
+  id: string;
+  title: string;
+  commentCount: number;
 }

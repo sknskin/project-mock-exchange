@@ -34,11 +34,13 @@ model User {
   createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz()
 
-  refreshTokens RefreshToken[]
-  announcements Announcement[]
-  comments      Comment[]
-  notifications Notification[]
-  loginLogs     LoginLog[]
+  refreshTokens      RefreshToken[]
+  announcements      Announcement[]
+  comments           Comment[]
+  notifications      Notification[]
+  loginLogs          LoginLog[]
+  announcementLikes  AnnouncementLike[]
+  commentLikes       CommentLike[]
 
   @@map("users")
 }
@@ -62,17 +64,33 @@ model Announcement {
   content   String   @db.Text
   authorId  String   @map("author_id") @db.Uuid
   isPinned  Boolean  @default(false) @map("is_pinned")
+  viewCount Int      @default(0) @map("view_count")
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz()
 
-  author      User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  author      User               @relation(fields: [authorId], references: [id], onDelete: Cascade)
   comments    Comment[]
   attachments Attachment[]
+  likes       AnnouncementLike[]
 
   @@index([authorId])
   @@index([createdAt])
   @@index([isPinned])
   @@map("announcements")
+}
+
+model AnnouncementLike {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  announcementId String   @map("announcement_id") @db.Uuid
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  announcement Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, announcementId])
+  @@index([announcementId])
+  @@map("announcement_likes")
 }
 
 model Attachment {
@@ -99,14 +117,29 @@ model Comment {
   createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz()
 
-  author       User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  announcement Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
-  parent       Comment?     @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
-  replies      Comment[]    @relation("CommentReplies")
+  author       User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  announcement Announcement  @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  parent       Comment?      @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies      Comment[]     @relation("CommentReplies")
+  likes        CommentLike[]
 
   @@index([announcementId])
   @@index([parentId])
   @@map("comments")
+}
+
+model CommentLike {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  commentId String   @map("comment_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comment Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, commentId])
+  @@index([commentId])
+  @@map("comment_likes")
 }
 
 enum NotificationType {

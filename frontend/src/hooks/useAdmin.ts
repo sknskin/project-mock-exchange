@@ -17,6 +17,9 @@ import type {
   NotificationItem,
   UserProfile,
   StatOverview,
+  OverviewTrend,
+  TradingStats,
+  PopularAnnouncement,
   TimelineEntry,
   TopPage,
   UserStatByRole,
@@ -255,6 +258,39 @@ export function useDeleteComment() {
   });
 }
 
+export function useToggleAnnouncementLike() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await api.post(`/api/announcements/${id}/like`);
+      return data.data as { liked: boolean };
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['announcement'] });
+      qc.invalidateQueries({ queryKey: ['announcements'] });
+    },
+  });
+}
+
+export function useToggleCommentLike() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (commentId: string) => {
+      const { data } = await api.post(`/api/announcements/comments/${commentId}/like`);
+      return data.data as { liked: boolean };
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['announcement'] }),
+  });
+}
+
+export function useIncrementViewCount() {
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await api.post(`/api/announcements/${id}/view`);
+    },
+  });
+}
+
 // ===== Profile =====
 export function useProfile() {
   return useQuery({
@@ -418,6 +454,38 @@ export function useStatUsers() {
         byRole: UserStatByRole[];
         byStatus: UserStatByStatus[];
       };
+    },
+  });
+}
+
+export function useStatOverviewTrend() {
+  return useQuery({
+    queryKey: ['stat-overview-trend'],
+    queryFn: async () => {
+      const { data } = await api.get('/api/statistics/overview-trend');
+      return data.data as OverviewTrend;
+    },
+  });
+}
+
+export function useStatTrading(days: number) {
+  return useQuery({
+    queryKey: ['stat-trading', days],
+    queryFn: async () => {
+      const { data } = await api.get('/api/orders/stats/trading', {
+        params: { days },
+      });
+      return data.data as TradingStats;
+    },
+  });
+}
+
+export function useStatPopularAnnouncements() {
+  return useQuery({
+    queryKey: ['stat-popular-announcements'],
+    queryFn: async () => {
+      const { data } = await api.get('/api/statistics/popular-announcements');
+      return data.data as PopularAnnouncement[];
     },
   });
 }

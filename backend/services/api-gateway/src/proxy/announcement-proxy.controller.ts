@@ -19,7 +19,7 @@ import {
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { ProxyService } from './proxy.service';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { JwtAuthGuard, OptionalJwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('api/announcements')
 @UseGuards(JwtAuthGuard)
@@ -57,6 +57,7 @@ export class AnnouncementProxyController {
   }
 
   @Get(':id')
+  @UseGuards(OptionalJwtAuthGuard)
   async detail(@Param('id') id: string, @Req() req: Request, @Res() res: Response) {
     const result = await this.proxyService.forward('user-auth', {
       method: 'GET',
@@ -115,6 +116,50 @@ export class AnnouncementProxyController {
       method: 'POST',
       url: `/announcements/${id}/pin`,
       data: body,
+      headers: { Authorization: req.headers.authorization || '' },
+    });
+    return res.status(result.status).json(result.data);
+  }
+
+  // Like
+  @Post(':id/like')
+  async toggleAnnouncementLike(
+    @Param('id') id: string,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    const result = await this.proxyService.forward('user-auth', {
+      method: 'POST',
+      url: `/announcements/${id}/like`,
+      headers: { Authorization: req.headers.authorization || '' },
+    });
+    return res.status(result.status).json(result.data);
+  }
+
+  // View count
+  @Post(':id/view')
+  @UseGuards() // Override class-level guard - no auth needed
+  async incrementViewCount(
+    @Param('id') id: string,
+    @Res() res: Response,
+  ) {
+    const result = await this.proxyService.forward('user-auth', {
+      method: 'POST',
+      url: `/announcements/${id}/view`,
+    });
+    return res.status(result.status).json(result.data);
+  }
+
+  // Comment like
+  @Post('comments/:commentId/like')
+  async toggleCommentLike(
+    @Param('commentId') commentId: string,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    const result = await this.proxyService.forward('user-auth', {
+      method: 'POST',
+      url: `/announcements/comments/${commentId}/like`,
       headers: { Authorization: req.headers.authorization || '' },
     });
     return res.status(result.status).json(result.data);

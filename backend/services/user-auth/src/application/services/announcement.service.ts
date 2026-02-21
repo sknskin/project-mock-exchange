@@ -41,7 +41,7 @@ export class AnnouncementService {
         include: {
           author: { select: { id: true, username: true, name: true, role: true } },
           attachments: true,
-          _count: { select: { comments: true, attachments: true } },
+          _count: { select: { comments: true, attachments: true, likes: true } },
         },
       }),
       this.prisma.announcement.count({ where: where as never }),
@@ -51,9 +51,10 @@ export class AnnouncementService {
       items: items.map((a) => ({
         id: a.id,
         title: a.title,
-        content: a.content.length > 200 ? a.content.slice(0, 200) + '...' : a.content,
         author: a.author,
         isPinned: a.isPinned,
+        viewCount: a.viewCount,
+        likeCount: a._count.likes,
         commentCount: a._count.comments,
         attachmentCount: a._count.attachments,
         createdAt: a.createdAt,
@@ -66,21 +67,27 @@ export class AnnouncementService {
     };
   }
 
-  async detail(id: string) {
+  async detail(id: string, userId?: string) {
     const announcement = await this.prisma.announcement.findUnique({
       where: { id },
       include: {
         author: { select: { id: true, username: true, name: true, role: true } },
         attachments: true,
+        _count: { select: { likes: true } },
+        likes: userId ? { where: { userId }, select: { id: true } } : false,
         comments: {
           where: { parentId: null },
           orderBy: { createdAt: 'asc' },
           include: {
             author: { select: { id: true, username: true, name: true, role: true } },
+            _count: { select: { likes: true } },
+            likes: userId ? { where: { userId }, select: { id: true } } : false,
             replies: {
               orderBy: { createdAt: 'asc' },
               include: {
                 author: { select: { id: true, username: true, name: true, role: true } },
+                _count: { select: { likes: true } },
+                likes: userId ? { where: { userId }, select: { id: true } } : false,
               },
             },
           },
@@ -88,7 +95,83 @@ export class AnnouncementService {
       },
     });
     if (!announcement) throw new NotFoundException('Announcement not found');
-    return announcement;
+
+    return {
+      id: announcement.id,
+      title: announcement.title,
+      content: announcement.content,
+      author: announcement.author,
+      isPinned: announcement.isPinned,
+      viewCount: announcement.viewCount,
+      likeCount: announcement._count.likes,
+      isLiked: announcement.likes ? announcement.likes.length > 0 : false,
+      attachments: announcement.attachments,
+      createdAt: announcement.createdAt,
+      updatedAt: announcement.updatedAt,
+      comments: announcement.comments.map((c: any) => ({
+        id: c.id,
+        content: c.content,
+        author: c.author,
+        likeCount: c._count.likes,
+        isLiked: c.likes ? c.likes.length > 0 : false,
+        createdAt: c.createdAt,
+        updatedAt: c.updatedAt,
+        replies: c.replies.map((r: any) => ({
+          id: r.id,
+          content: r.content,
+          author: r.author,
+          likeCount: r._count.likes,
+          isLiked: r.likes ? r.likes.length > 0 : false,
+          createdAt: r.createdAt,
+          updatedAt: r.updatedAt,
+        })),
+      })),
+    };
+  }
+
+  async toggleAnnouncementLike(userId: string, announcementId: string) {
+    const announcement = await this.prisma.announcement.findUnique({ where: { id: announcementId } });
+    if (!announcement) throw new NotFoundException('Announcement not found');
+
+    const existing = await this.prisma.announcementLike.findUnique({
+      where: { userId_announcementId: { userId, announcementId } },
+    });
+
+    if (existing) {
+      await this.prisma.announcementLike.delete({ where: { id: existing.id } });
+      return { liked: false };
+    } else {
+      await this.prisma.announcementLike.create({
+        data: { userId, announcementId },
+      });
+      return { liked: true };
+    }
+  }
+
+  async toggleCommentLike(userId: string, commentId: string) {
+    const comment = await this.prisma.comment.findUnique({ where: { id: commentId } });
+    if (!comment) throw new NotFoundException('Comment not found');
+
+    const existing = await this.prisma.commentLike.findUnique({
+      where: { userId_commentId: { userId, commentId } },
+    });
+
+    if (existing) {
+      await this.prisma.commentLike.delete({ where: { id: existing.id } });
+      return { liked: false };
+    } else {
+      await this.prisma.commentLike.create({
+        data: { userId, commentId },
+      });
+      return { liked: true };
+    }
+  }
+
+  async incrementViewCount(announcementId: string) {
+    await this.prisma.announcement.update({
+      where: { id: announcementId },
+      data: { viewCount: { increment: 1 } },
+    });
   }
 
   async create(user: UserDto, title: string, content: string, isPinned?: boolean) {

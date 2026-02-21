@@ -7,9 +7,9 @@
  */
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Search, Plus, MessageSquare, Pin, Paperclip } from 'lucide-react';
+import { Search, Plus, MessageSquare, Pin, Paperclip, Eye, Heart } from 'lucide-react';
 import { useAnnouncements } from '@/hooks/useAdmin';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuthStore } from '@/stores/auth';
@@ -30,11 +30,14 @@ export default function AnnouncementsPage() {
   const isAdminOrSystem =
     user?.role === 'SYSTEM' || user?.role === 'ADMIN';
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setSearch(searchInput);
-    setPage(1);
-  };
+  // Debounced live search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearch(searchInput);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   const getRoleBadgeClass = (role: string) => {
     switch (role) {
@@ -79,8 +82,8 @@ export default function AnnouncementsPage() {
         )}
       </div>
 
-      {/* Search */}
-      <form onSubmit={handleSearch} className="mb-5">
+      {/* Search - debounced live search */}
+      <div className="mb-5">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-quaternary" />
           <input
@@ -96,7 +99,7 @@ export default function AnnouncementsPage() {
             )}
           />
         </div>
-      </form>
+      </div>
 
       {/* List */}
       {isLoading ? (
@@ -125,7 +128,7 @@ export default function AnnouncementsPage() {
               )}
             >
               {/* Title row */}
-              <div className="flex items-start justify-between gap-3 mb-2">
+              <div className="flex items-start justify-between gap-3 mb-2.5">
                 <div className="flex items-center gap-2 min-w-0 flex-1">
                   {item.isPinned && (
                     <Pin className="w-3.5 h-3.5 text-accent shrink-0 rotate-45" />
@@ -134,42 +137,47 @@ export default function AnnouncementsPage() {
                     {item.title}
                   </h2>
                 </div>
-                <div className="flex items-center gap-2.5 shrink-0 text-text-quaternary">
-                  {item.attachmentCount > 0 && (
-                    <div className="flex items-center gap-0.5">
-                      <Paperclip className="w-3.5 h-3.5" />
-                      <span className="text-[12px]">{item.attachmentCount}</span>
-                    </div>
-                  )}
-                  <div className="flex items-center gap-0.5">
+                {item.attachmentCount > 0 && (
+                  <div className="flex items-center gap-0.5 shrink-0 text-text-quaternary">
+                    <Paperclip className="w-3.5 h-3.5" />
+                    <span className="text-[12px]">{item.attachmentCount}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer: author + date + counts */}
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span
+                    className={cn(
+                      'text-[11px] font-semibold px-1.5 py-0.5 rounded',
+                      getRoleBadgeClass(item.author.role),
+                    )}
+                  >
+                    {getRoleLabel(item.author.role)}
+                  </span>
+                  <span className="text-[12px] text-text-tertiary font-medium">
+                    {item.author.name}
+                  </span>
+                  <span className="text-text-quaternary text-[11px]">·</span>
+                  <span className="text-[12px] text-text-quaternary">
+                    {new Date(item.createdAt).toLocaleDateString()}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 shrink-0 text-text-quaternary">
+                  <div className="flex items-center gap-1">
+                    <Eye className="w-3.5 h-3.5" />
+                    <span className="text-[12px]">{item.viewCount ?? 0}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Heart className="w-3.5 h-3.5" />
+                    <span className="text-[12px]">{item.likeCount ?? 0}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
                     <MessageSquare className="w-3.5 h-3.5" />
                     <span className="text-[12px]">{item.commentCount}</span>
                   </div>
                 </div>
-              </div>
-
-              {/* Content preview */}
-              <p className="text-[13px] text-text-tertiary line-clamp-2 mb-3 leading-relaxed">
-                {item.content}
-              </p>
-
-              {/* Footer: author + date */}
-              <div className="flex items-center gap-2">
-                <span
-                  className={cn(
-                    'text-[11px] font-semibold px-1.5 py-0.5 rounded',
-                    getRoleBadgeClass(item.author.role),
-                  )}
-                >
-                  {getRoleLabel(item.author.role)}
-                </span>
-                <span className="text-[12px] text-text-tertiary font-medium">
-                  {item.author.name}
-                </span>
-                <span className="text-text-quaternary text-[11px]">·</span>
-                <span className="text-[12px] text-text-quaternary">
-                  {new Date(item.createdAt).toLocaleDateString()}
-                </span>
               </div>
             </Link>
           ))}

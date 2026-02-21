@@ -22,7 +22,7 @@ import {
 import { Response } from 'express';
 import * as fs from 'fs';
 import * as path from 'path';
-import { JwtAuthGuard } from '../../infrastructure/config/jwt-auth.guard';
+import { JwtAuthGuard, OptionalJwtAuthGuard } from '../../infrastructure/config/jwt-auth.guard';
 import { CurrentUser } from '../../infrastructure/config/current-user.decorator';
 import { AnnouncementService } from '../../application/services/announcement.service';
 import { UserDto } from '@mock-exchange/common';
@@ -58,8 +58,9 @@ export class AnnouncementController {
   }
 
   @Get(':id')
-  async detail(@Param('id') id: string) {
-    const result = await this.announcementService.detail(id);
+  @UseGuards(OptionalJwtAuthGuard)
+  async detail(@Param('id') id: string, @CurrentUser() user?: UserDto) {
+    const result = await this.announcementService.detail(id, user?.id);
     return { success: true, data: result };
   }
 
@@ -98,6 +99,34 @@ export class AnnouncementController {
     @Param('id') id: string,
   ) {
     const result = await this.announcementService.togglePin(user, id);
+    return { success: true, data: result };
+  }
+
+  // Like
+  @Post(':id/like')
+  async toggleAnnouncementLike(
+    @CurrentUser() user: UserDto,
+    @Param('id') id: string,
+  ) {
+    const result = await this.announcementService.toggleAnnouncementLike(user.id, id);
+    return { success: true, data: result };
+  }
+
+  // View count
+  @Post(':id/view')
+  @UseGuards() // Override class-level guard - no auth needed
+  async incrementViewCount(@Param('id') id: string) {
+    await this.announcementService.incrementViewCount(id);
+    return { success: true };
+  }
+
+  // Comment like
+  @Post('comments/:commentId/like')
+  async toggleCommentLike(
+    @CurrentUser() user: UserDto,
+    @Param('commentId') commentId: string,
+  ) {
+    const result = await this.announcementService.toggleCommentLike(user.id, commentId);
     return { success: true, data: result };
   }
 

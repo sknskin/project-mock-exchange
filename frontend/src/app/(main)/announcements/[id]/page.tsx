@@ -7,10 +7,10 @@
  */
 'use client';
 
-import { use, useState } from 'react';
+import { use, useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, MessageSquare, Trash2, Reply, Pin, Paperclip, Download, FileText } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Trash2, Reply, Pin, Paperclip, Download, FileText, Heart, Eye } from 'lucide-react';
 import {
   useAnnouncementDetail,
   useUpdateAnnouncement,
@@ -20,6 +20,9 @@ import {
   useTogglePin,
   useUploadAttachment,
   useDeleteAttachment,
+  useToggleAnnouncementLike,
+  useToggleCommentLike,
+  useIncrementViewCount,
 } from '@/hooks/useAdmin';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuthStore } from '@/stores/auth';
@@ -46,6 +49,18 @@ export default function AnnouncementDetailPage({
   const togglePin = useTogglePin();
   const uploadAttachment = useUploadAttachment();
   const deleteAttachment = useDeleteAttachment();
+  const toggleAnnouncementLike = useToggleAnnouncementLike();
+  const toggleCommentLike = useToggleCommentLike();
+  const incrementViewCount = useIncrementViewCount();
+
+  // View count increment (once per page visit)
+  const viewTracked = useRef(false);
+  useEffect(() => {
+    if (id && !viewTracked.current) {
+      viewTracked.current = true;
+      incrementViewCount.mutate(id);
+    }
+  }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Edit state
   const [isEditing, setIsEditing] = useState(false);
@@ -54,6 +69,9 @@ export default function AnnouncementDetailPage({
 
   // Delete announcement modal
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  // Edit save confirm modal
+  const [showEditConfirm, setShowEditConfirm] = useState(false);
 
   // Attachment delete modal
   const [attachmentToDelete, setAttachmentToDelete] = useState<string | null>(null);
@@ -114,14 +132,19 @@ export default function AnnouncementDetailPage({
     setIsEditing(true);
   };
 
-  const handleEditSave = async () => {
+  const handleEditSave = () => {
     if (!editTitle.trim() || !editContent.trim()) return;
+    setShowEditConfirm(true);
+  };
+
+  const handleConfirmEditSave = async () => {
     try {
       await updateAnnouncement.mutateAsync({
         id,
         title: editTitle.trim(),
         content: editContent.trim(),
       });
+      setShowEditConfirm(false);
       setIsEditing(false);
     } catch {
       // mutation error state handles feedback
@@ -415,6 +438,28 @@ export default function AnnouncementDetailPage({
                   {data.content}
                 </p>
 
+                {/* Like & View counts */}
+                <div className="flex items-center gap-4 mt-5 pt-4 border-t border-border/50">
+                  <button
+                    onClick={() => toggleAnnouncementLike.mutate(id)}
+                    disabled={!user || toggleAnnouncementLike.isPending}
+                    className={cn(
+                      'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium transition-colors',
+                      data.isLiked
+                        ? 'text-red-400 bg-red-500/10 border border-red-500/20'
+                        : 'text-text-tertiary hover:text-red-400 hover:bg-red-500/10 border border-border',
+                      !user && 'opacity-50 cursor-not-allowed',
+                    )}
+                  >
+                    <Heart className={cn('w-4 h-4', data.isLiked && 'fill-red-400')} />
+                    {t('announce.like')} {data.likeCount > 0 && data.likeCount}
+                  </button>
+                  <div className="flex items-center gap-1.5 text-text-quaternary text-[13px]">
+                    <Eye className="w-4 h-4" />
+                    {data.viewCount ?? 0}
+                  </div>
+                </div>
+
                 {/* Attachments */}
                 {(data.attachments?.length > 0 || canEditAnnouncement) && (
                   <div className="mt-5 pt-4 border-t border-border/50">
@@ -531,8 +576,22 @@ export default function AnnouncementDetailPage({
                         {comment.content}
                       </p>
 
-                      {/* Actions: Reply + Delete */}
+                      {/* Actions: Like + Reply + Delete */}
                       <div className="flex items-center gap-3 mt-0.5">
+                        <button
+                          onClick={() => user && toggleCommentLike.mutate(comment.id)}
+                          disabled={!user || toggleCommentLike.isPending}
+                          className={cn(
+                            'flex items-center gap-1 text-[12px] transition-colors',
+                            comment.isLiked
+                              ? 'text-red-400'
+                              : 'text-text-quaternary hover:text-red-400',
+                            !user && 'opacity-50 cursor-not-allowed',
+                          )}
+                        >
+                          <Heart className={cn('w-3.5 h-3.5', comment.isLiked && 'fill-red-400')} />
+                          {comment.likeCount > 0 && comment.likeCount}
+                        </button>
                         {user && (
                           <button
                             onClick={() => openReply(comment.id)}
@@ -614,16 +673,32 @@ export default function AnnouncementDetailPage({
                               {reply.content}
                             </p>
 
-                            {/* Reply delete action */}
-                            {canDeleteComment(reply) && (
+                            {/* Reply actions: Like + Delete */}
+                            <div className="flex items-center gap-3">
                               <button
-                                onClick={() => setCommentToDelete(reply.id)}
-                                className="self-start flex items-center gap-1 text-[12px] text-text-quaternary hover:text-danger transition-colors"
+                                onClick={() => user && toggleCommentLike.mutate(reply.id)}
+                                disabled={!user || toggleCommentLike.isPending}
+                                className={cn(
+                                  'flex items-center gap-1 text-[12px] transition-colors',
+                                  reply.isLiked
+                                    ? 'text-red-400'
+                                    : 'text-text-quaternary hover:text-red-400',
+                                  !user && 'opacity-50 cursor-not-allowed',
+                                )}
                               >
-                                <Trash2 className="w-3.5 h-3.5" />
-                                {t('announce.deleteComment')}
+                                <Heart className={cn('w-3.5 h-3.5', reply.isLiked && 'fill-red-400')} />
+                                {reply.likeCount > 0 && reply.likeCount}
                               </button>
-                            )}
+                              {canDeleteComment(reply) && (
+                                <button
+                                  onClick={() => setCommentToDelete(reply.id)}
+                                  className="flex items-center gap-1 text-[12px] text-text-quaternary hover:text-danger transition-colors"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                  {t('announce.deleteComment')}
+                                </button>
+                              )}
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -706,6 +781,18 @@ export default function AnnouncementDetailPage({
         cancelLabel={t('modal.cancel')}
         confirmVariant="danger"
         loading={deleteComment.isPending}
+      />
+
+      {/* Edit save confirm modal */}
+      <ConfirmModal
+        isOpen={showEditConfirm}
+        onClose={() => setShowEditConfirm(false)}
+        onConfirm={handleConfirmEditSave}
+        title={t('announce.edit')}
+        message={t('announce.editConfirm')}
+        confirmLabel={t('announce.update')}
+        cancelLabel={t('modal.cancel')}
+        loading={updateAnnouncement.isPending}
       />
     </div>
   );
