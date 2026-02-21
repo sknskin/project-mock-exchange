@@ -54,7 +54,7 @@ export default function NotificationBell() {
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   const { data: unreadCount = 0 } = useUnreadCount();
-  const { data: notificationsData } = useNotifications({ page: 1, limit: DROPDOWN_LIMIT });
+  const { data: notificationsData, refetch } = useNotifications({ page: 1, limit: DROPDOWN_LIMIT });
   const markAsRead = useMarkAsRead();
   const markAllAsRead = useMarkAllAsRead();
 
@@ -76,7 +76,10 @@ export default function NotificationBell() {
   }, [open]);
 
   function handleBellClick() {
-    setOpen((prev) => !prev);
+    setOpen((prev) => {
+      if (!prev) refetch();
+      return !prev;
+    });
   }
 
   function handleNotificationClick(notification: NotificationItem) {
