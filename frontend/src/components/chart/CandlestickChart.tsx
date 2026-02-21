@@ -175,7 +175,7 @@ export default function CandlestickChart({
       chartRef.current.timeScale().fitContent();
       isFirstRenderRef.current = false;
     }
-  }, [data, exchangeRate]);
+  }, [data, exchangeRate, chartType]);
 
   return <div ref={chartContainerRef} className="w-full overflow-hidden" />;
 }

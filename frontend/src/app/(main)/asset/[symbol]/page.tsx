@@ -152,7 +152,7 @@ export default function AssetDetailPage({
               !isRise && !isFall && 'text-text-quaternary',
             )}
           >
-            {isRise && '+'}{formatPercent(changePercent)}
+            {formatPercent(changePercent)}
           </span>
           {changeAmount !== 0 && (
             <span
@@ -268,7 +268,7 @@ export default function AssetDetailPage({
               'text-[13px] font-semibold tabular-nums',
               isRise ? 'text-rise' : isFall ? 'text-fall' : 'text-text-primary',
             )}>
-              {isRise && '+'}{formatPercent(changePercent)}
+              {formatPercent(changePercent)}
             </span>
           </div>
         </div>
