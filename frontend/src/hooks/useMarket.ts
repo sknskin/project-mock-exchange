@@ -80,13 +80,13 @@ function aggregateCandles(candles1m: Candlestick[], interval: string): Candlesti
 export function useCandlesticks(
   symbol: string,
   interval: string = '1m',
-  limit: number = 500,
+  limit: number = 2000,
 ) {
   const fetchLimit = interval === '1m' ? limit
     : interval === '5m' ? limit * 5
     : interval === '15m' ? limit * 15
-    : interval === '1h' ? Math.min(limit * 60, 10000)
-    : Math.min(limit * 1440, 20000);
+    : interval === '1h' ? Math.min(limit * 60, 20000)
+    : Math.min(limit * 1440, 50000);
 
   return useQuery<Candlestick[]>({
     queryKey: ['market', 'candlesticks', symbol, interval],
