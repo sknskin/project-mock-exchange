@@ -13,7 +13,7 @@ export default function NewsPage() {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<NewsTab>('CRYPTO');
   const [page, setPage] = useState(1);
-  const [limit] = useState(10);
+  const [limit, setLimit] = useState(10);
 
   const { data, isLoading } = useNews({ category: activeTab, page, limit });
   const { data: scrapeStatusList } = useScrapeStatus();
@@ -183,6 +183,7 @@ export default function NewsPage() {
           total={data.total}
           limit={limit}
           onPageChange={(p) => setPage(p)}
+          onLimitChange={(n) => { setLimit(n); setPage(1); }}
         />
       )}
     </div>

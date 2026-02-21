@@ -486,9 +486,11 @@ const translations = {
     'pagination.last': '끝',
     'pagination.prev': '이전',
     'pagination.next': '다음',
+    'pagination.total': '총',
+    'pagination.count': '건',
     'pagination.showing': '표시',
     'pagination.of': '/',
-    'pagination.perPage': '개씩',
+    'pagination.perPage': '건씩 보기',
 
     // Common
     'common.confirm': '확인',
@@ -983,9 +985,11 @@ const translations = {
     'pagination.last': 'Last',
     'pagination.prev': 'Prev',
     'pagination.next': 'Next',
+    'pagination.total': 'Total',
+    'pagination.count': '',
     'pagination.showing': 'Showing',
     'pagination.of': 'of',
-    'pagination.perPage': 'per page',
+    'pagination.perPage': ' per page',
 
     // Common
     'common.confirm': 'Confirm',

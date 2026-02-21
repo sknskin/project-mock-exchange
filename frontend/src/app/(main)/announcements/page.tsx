@@ -21,7 +21,7 @@ export default function AnnouncementsPage() {
   const user = useAuthStore((s) => s.user);
 
   const [page, setPage] = useState(1);
-  const [limit] = useState(10);
+  const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
 
@@ -192,6 +192,7 @@ export default function AnnouncementsPage() {
           total={data.total}
           limit={limit}
           onPageChange={(p) => setPage(p)}
+          onLimitChange={(n) => { setLimit(n); setPage(1); }}
         />
       )}
     </div>

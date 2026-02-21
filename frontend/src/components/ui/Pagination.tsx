@@ -1,9 +1,9 @@
 /**
  * @file 페이지네이션 컴포넌트
- * @description 현재 페이지 ± 5, 처음/끝 페이지 표시, 페이지 사이즈 변경
+ * @description 총 건수(좌), 페이지 번호(중앙), 건씩 보기(우)
  *
  * @file Pagination Component
- * @description Current page ± 5, first/last page, page size selector
+ * @description Total count(left), page numbers(center), per-page selector(right)
  */
 'use client';
 
@@ -54,8 +54,13 @@ export default function Pagination({
   };
 
   return (
-    <div className="relative flex flex-col items-center gap-2 py-4">
-      {/* Page numbers — centered */}
+    <div className="flex items-center justify-between gap-2 py-3">
+      {/* Total count — left */}
+      <span className="text-[12px] text-text-quaternary whitespace-nowrap">
+        {t('pagination.total')} {total}{t('pagination.count')}
+      </span>
+
+      {/* Page numbers — center */}
       <div className="flex items-center gap-0.5">
         <button
           onClick={() => onPageChange(1)}
@@ -107,21 +112,22 @@ export default function Pagination({
         </button>
       </div>
 
-      {/* Count + per-page selector — bottom right */}
-      <div className="flex items-center gap-2 text-[12px] text-text-quaternary sm:absolute sm:right-0 sm:bottom-4">
-        <span>{total}{t('pagination.showing')}</span>
-        {onLimitChange && (
-          <select
-            value={limit}
-            onChange={(e) => onLimitChange(Number(e.target.value))}
-            className="bg-bg-secondary border border-border rounded px-1.5 py-0.5 text-[12px] text-text-secondary"
-          >
-            {[10, 20, 50, 100].map((n) => (
-              <option key={n} value={n}>{n}{t('pagination.perPage')}</option>
-            ))}
-          </select>
-        )}
-      </div>
+      {/* Per-page selector — right */}
+      {onLimitChange ? (
+        <select
+          value={limit}
+          onChange={(e) => onLimitChange(Number(e.target.value))}
+          className="bg-bg-secondary border border-border rounded px-1.5 py-0.5 text-[12px] text-text-secondary whitespace-nowrap"
+        >
+          {[10, 20, 50, 100].map((n) => (
+            <option key={n} value={n}>{n}{t('pagination.perPage')}</option>
+          ))}
+        </select>
+      ) : (
+        <span className="text-[12px] text-text-quaternary whitespace-nowrap">
+          {limit}{t('pagination.perPage')}
+        </span>
+      )}
     </div>
   );
 }
