@@ -18,12 +18,16 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { OrderService } from '../../application/services/order.service';
+import { PrismaService } from '../../infrastructure/persistence/prisma/prisma.service';
 import { PlaceOrderRequestDto } from '../dto/place-order.dto';
 import { ModifyOrderRequestDto } from '../dto/modify-order.dto';
 
 @Controller('orders')
 export class OrderController {
-  constructor(private readonly orderService: OrderService) {}
+  constructor(
+    private readonly orderService: OrderService,
+    private readonly prisma: PrismaService,
+  ) {}
 
   @Post()
   async placeOrder(
@@ -116,6 +120,66 @@ export class OrderController {
       offset ? parseInt(offset, 10) : 0,
     );
     return { success: true, data: trades };
+  }
+
+  @Get('stats/trading')
+  async tradingStats(@Query('days') days?: string) {
+    const daysNum = parseInt(days || '30', 10) || 30;
+    const since = new Date(Date.now() - daysNum * 86400000);
+
+    const orders = await this.prisma.orderRead.findMany({
+      where: { createdAt: { gte: since } },
+      select: { symbol: true, side: true, quantity: true, price: true, createdAt: true, status: true },
+    });
+
+    // Daily volume
+    const dailyMap: Record<string, { buy: number; sell: number }> = {};
+    orders.forEach((o) => {
+      const d = new Date(o.createdAt);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      if (!dailyMap[key]) dailyMap[key] = { buy: 0, sell: 0 };
+      const qty = Number(o.quantity);
+      if (o.side === 'BUY') dailyMap[key].buy += qty;
+      else dailyMap[key].sell += qty;
+    });
+    const dailyVolume = Object.entries(dailyMap)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, v]) => ({ date, buy: v.buy, sell: v.sell, total: v.buy + v.sell }));
+
+    // Popular assets
+    const symbolMap: Record<string, number> = {};
+    orders.forEach((o) => {
+      symbolMap[o.symbol] = (symbolMap[o.symbol] || 0) + Number(o.quantity);
+    });
+    const popularAssets = Object.entries(symbolMap)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([symbol, volume]) => ({ symbol, volume }));
+
+    // Buy/sell ratio
+    let buyCount = 0;
+    let sellCount = 0;
+    orders.forEach((o) => {
+      if (o.side === 'BUY') buyCount++;
+      else sellCount++;
+    });
+
+    // Average order size
+    const totalQty = orders.reduce((sum, o) => sum + Number(o.quantity), 0);
+    const avgOrderSize = orders.length > 0 ? totalQty / orders.length : 0;
+
+    return {
+      success: true,
+      data: {
+        totalOrders: orders.length,
+        totalVolume: totalQty,
+        avgOrderSize,
+        buyCount,
+        sellCount,
+        dailyVolume,
+        popularAssets,
+      },
+    };
   }
 
   @Get('book/:symbol')

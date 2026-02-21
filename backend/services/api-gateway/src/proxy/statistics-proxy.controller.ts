@@ -92,6 +92,28 @@ export class StatisticsProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  @Get('overview-trend')
+  @UseGuards(JwtAuthGuard)
+  async overviewTrend(@Req() req: Request, @Res() res: Response) {
+    const result = await this.proxyService.forward('user-auth', {
+      method: 'GET',
+      url: '/statistics/overview-trend',
+      headers: { Authorization: req.headers.authorization || '' },
+    });
+    return res.status(result.status).json(result.data);
+  }
+
+  @Get('popular-announcements')
+  @UseGuards(JwtAuthGuard)
+  async popularAnnouncements(@Req() req: Request, @Res() res: Response) {
+    const result = await this.proxyService.forward('user-auth', {
+      method: 'GET',
+      url: '/statistics/popular-announcements',
+      headers: { Authorization: req.headers.authorization || '' },
+    });
+    return res.status(result.status).json(result.data);
+  }
+
   @Get('users')
   @UseGuards(JwtAuthGuard)
   async users(@Req() req: Request, @Res() res: Response) {

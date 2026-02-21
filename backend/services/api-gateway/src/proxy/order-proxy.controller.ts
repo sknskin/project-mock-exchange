@@ -49,6 +49,24 @@ export class OrderProxyController {
   // ── 구체적 경로를 :orderId 파라미터 경로보다 먼저 정의 ──
   // ── Specific paths must come before :orderId parameter path ──
 
+  @Get('stats/trading')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '거래 통계', description: '거래량, 인기 자산, 매수/매도 비율 등 거래 통계' })
+  @ApiQuery({ name: 'days', required: false, description: '조회 기간 (일)' })
+  @ApiResponse({ status: 200, description: '거래 통계 반환' })
+  async tradingStats(
+    @Query('days') days: string,
+    @Res() res: Response,
+  ) {
+    const result = await this.proxyService.forward('order-engine', {
+      method: 'GET',
+      url: '/orders/stats/trading',
+      params: { days },
+    });
+    return res.status(result.status).json(result.data);
+  }
+
   @Get('book/:symbol')
   @ApiOperation({ summary: '호가창 조회', description: '특정 자산의 호가창(주문서)을 반환합니다' })
   @ApiParam({ name: 'symbol', description: '자산 심볼 (예: BTC-USD)' })

@@ -190,6 +190,67 @@ export class StatisticsController {
     };
   }
 
+  @Get('overview-trend')
+  @UseGuards(JwtAuthGuard)
+  async overviewTrend(@CurrentUser() user: UserDto) {
+    this.assertAdmin(user);
+
+    const todayStart = startOfDay();
+    const yesterdayStart = new Date(todayStart.getTime() - 86400000);
+
+    const [todayUsers, yesterdayUsers, todayLogins, yesterdayLogins, todayViews, yesterdayViews, todayAnnouncements, yesterdayAnnouncements] =
+      await Promise.all([
+        this.prisma.user.count({ where: { createdAt: { gte: todayStart } } }),
+        this.prisma.user.count({ where: { createdAt: { gte: yesterdayStart, lt: todayStart } } }),
+        this.prisma.loginLog.count({ where: { createdAt: { gte: todayStart } } }),
+        this.prisma.loginLog.count({ where: { createdAt: { gte: yesterdayStart, lt: todayStart } } }),
+        this.prisma.pageView.count({ where: { createdAt: { gte: todayStart } } }),
+        this.prisma.pageView.count({ where: { createdAt: { gte: yesterdayStart, lt: todayStart } } }),
+        this.prisma.announcement.count({ where: { createdAt: { gte: todayStart } } }),
+        this.prisma.announcement.count({ where: { createdAt: { gte: yesterdayStart, lt: todayStart } } }),
+      ]);
+
+    const calcChange = (today: number, yesterday: number) => {
+      if (yesterday === 0) return today > 0 ? 100 : 0;
+      return Math.round(((today - yesterday) / yesterday) * 100);
+    };
+
+    return {
+      success: true,
+      data: {
+        newUsers: { today: todayUsers, yesterday: yesterdayUsers, changePercent: calcChange(todayUsers, yesterdayUsers) },
+        logins: { today: todayLogins, yesterday: yesterdayLogins, changePercent: calcChange(todayLogins, yesterdayLogins) },
+        pageViews: { today: todayViews, yesterday: yesterdayViews, changePercent: calcChange(todayViews, yesterdayViews) },
+        announcements: { today: todayAnnouncements, yesterday: yesterdayAnnouncements, changePercent: calcChange(todayAnnouncements, yesterdayAnnouncements) },
+      },
+    };
+  }
+
+  @Get('popular-announcements')
+  @UseGuards(JwtAuthGuard)
+  async popularAnnouncements(@CurrentUser() user: UserDto) {
+    this.assertAdmin(user);
+
+    const announcements = await this.prisma.announcement.findMany({
+      select: {
+        id: true,
+        title: true,
+        _count: { select: { comments: true } },
+      },
+      orderBy: { comments: { _count: 'desc' } },
+      take: 5,
+    });
+
+    return {
+      success: true,
+      data: announcements.map((a) => ({
+        id: a.id,
+        title: a.title,
+        commentCount: a._count.comments,
+      })),
+    };
+  }
+
   @Get('users')
   @UseGuards(JwtAuthGuard)
   async userStats(@CurrentUser() user: UserDto) {
