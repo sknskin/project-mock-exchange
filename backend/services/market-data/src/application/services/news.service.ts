@@ -22,6 +22,21 @@ const RSS_FEEDS: RssFeedConfig[] = [
     source: 'CoinTelegraph',
     category: 'CRYPTO',
   },
+  {
+    url: 'https://decrypt.co/feed',
+    source: 'Decrypt',
+    category: 'CRYPTO',
+  },
+  {
+    url: 'https://bitcoinmagazine.com/.rss/full/',
+    source: 'Bitcoin Magazine',
+    category: 'CRYPTO',
+  },
+  {
+    url: 'https://www.theblock.co/rss.xml',
+    source: 'The Block',
+    category: 'CRYPTO',
+  },
   // 국내주식
   {
     url: 'https://www.hankyung.com/feed/stock',
@@ -33,6 +48,21 @@ const RSS_FEEDS: RssFeedConfig[] = [
     source: '매일경제',
     category: 'DOMESTIC_STOCK',
   },
+  {
+    url: 'https://biz.chosun.com/svc/rss/www_stock.xml',
+    source: '조선비즈',
+    category: 'DOMESTIC_STOCK',
+  },
+  {
+    url: 'https://www.sedaily.com/RSS/Economy',
+    source: '서울경제',
+    category: 'DOMESTIC_STOCK',
+  },
+  {
+    url: 'https://www.edaily.co.kr/rss/RssServiceList.asp?svc=stock',
+    source: '이데일리',
+    category: 'DOMESTIC_STOCK',
+  },
   // 해외주식
   {
     url: 'https://finance.yahoo.com/news/rssindex',
@@ -42,6 +72,21 @@ const RSS_FEEDS: RssFeedConfig[] = [
   {
     url: 'https://www.cnbc.com/id/10001147/device/rss/rss.html',
     source: 'CNBC',
+    category: 'FOREIGN_STOCK',
+  },
+  {
+    url: 'https://feeds.marketwatch.com/marketwatch/topstories/',
+    source: 'MarketWatch',
+    category: 'FOREIGN_STOCK',
+  },
+  {
+    url: 'https://www.investing.com/rss/news.rss',
+    source: 'Investing.com',
+    category: 'FOREIGN_STOCK',
+  },
+  {
+    url: 'https://seekingalpha.com/market_currents.xml',
+    source: 'Seeking Alpha',
     category: 'FOREIGN_STOCK',
   },
 ];
@@ -87,7 +132,7 @@ export class NewsService implements OnModuleInit {
     for (const feed of feeds) {
       try {
         const parsed = await this.parser.parseURL(feed.url);
-        const items = (parsed.items || []).slice(0, 30);
+        const items = (parsed.items || []).slice(0, 50);
 
         for (const item of items) {
           if (!item.link || !item.title) continue;
