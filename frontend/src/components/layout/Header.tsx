@@ -13,7 +13,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/format';
-import { LogOut, Search, Menu, X, Megaphone, Users, BarChart3 } from 'lucide-react';
+import { LogOut, Search, Menu, X, Megaphone, Newspaper, Users, BarChart3 } from 'lucide-react';
 import VirtuExLogo from '@/components/ui/VirtuExLogo';
 import NotificationBell from '@/components/layout/NotificationBell';
 
@@ -32,6 +32,7 @@ export default function Header() {
     { href: '/portfolio', label: t('nav.portfolio') },
     { href: '/orders', label: t('nav.orders') },
     { href: '/leaderboard', label: t('nav.leaderboard') },
+    { href: '/news', label: t('nav.news') },
     ...(isAuthenticated ? [{ href: '/announcements', label: t('nav.announcements') }] : []),
     ...(isAdmin
       ? [
@@ -163,6 +164,7 @@ export default function Header() {
                       : 'text-text-tertiary hover:text-text-primary',
                   )}
                 >
+                  {item.href === '/news' && <Newspaper className="w-4 h-4" />}
                   {item.href === '/announcements' && <Megaphone className="w-4 h-4" />}
                   {item.href === '/admin/users' && <Users className="w-4 h-4" />}
                   {item.href === '/admin/stats' && <BarChart3 className="w-4 h-4" />}

@@ -255,6 +255,18 @@ const translations = {
     'sms.invalidCode': '인증번호가 올바르지 않습니다',
     'sms.expired': '인증번호가 만료되었습니다. 재전송해주세요',
 
+    // News
+    'nav.news': '뉴스',
+    'news.title': '뉴스',
+    'news.crypto': '암호화폐',
+    'news.domesticStock': '국내주식',
+    'news.foreignStock': '해외주식',
+    'news.lastScraped': '마지막 수집',
+    'news.noItems': '뉴스가 없습니다',
+    'news.source': '출처',
+    'news.refreshing': '새로고침 중...',
+    'news.openArticle': '기사 보기',
+
     // Navigation - New
     'nav.announcements': '공지사항',
     'nav.admin': '관리',
@@ -739,6 +751,18 @@ const translations = {
     'sms.verified': 'Verification complete',
     'sms.invalidCode': 'Invalid verification code',
     'sms.expired': 'Code expired. Please resend',
+
+    // News
+    'nav.news': 'News',
+    'news.title': 'News',
+    'news.crypto': 'Crypto',
+    'news.domesticStock': 'KR Stocks',
+    'news.foreignStock': 'Global Stocks',
+    'news.lastScraped': 'Last scraped',
+    'news.noItems': 'No news available',
+    'news.source': 'Source',
+    'news.refreshing': 'Refreshing...',
+    'news.openArticle': 'Open article',
 
     // Navigation - New
     'nav.announcements': 'Announcements',

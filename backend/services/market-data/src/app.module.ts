@@ -16,7 +16,9 @@ import { BinancePriceService } from './domain/services/binance-price.service';
 import { PriceCacheService } from './infrastructure/redis/price-cache.service';
 import { PriceProducerService } from './infrastructure/kafka/price-producer.service';
 import { MarketDataService } from './application/services/market-data.service';
+import { NewsService } from './application/services/news.service';
 import { MarketController } from './presentation/controllers/market.controller';
+import { NewsController } from './presentation/controllers/news.controller';
 import { HealthController } from './health/health.controller';
 
 @Module({
@@ -30,13 +32,14 @@ import { HealthController } from './health/health.controller';
     TerminusModule,
     PrismaModule,
   ],
-  controllers: [MarketController, HealthController],
+  controllers: [MarketController, NewsController, HealthController],
   providers: [
     PriceEngineService,
     BinancePriceService,
     PriceCacheService,
     PriceProducerService,
     MarketDataService,
+    NewsService,
   ],
 })
 export class AppModule {}

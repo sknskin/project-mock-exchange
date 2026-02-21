@@ -322,6 +322,25 @@ export interface TradingStats {
   popularAssets: { symbol: string; volume: number }[];
 }
 
+// News
+export interface NewsItem {
+  id: string;
+  category: 'CRYPTO' | 'DOMESTIC_STOCK' | 'FOREIGN_STOCK';
+  title: string;
+  summary: string | null;
+  sourceUrl: string;
+  source: string;
+  imageUrl: string | null;
+  publishedAt: string | null;
+  scrapedAt: string;
+}
+
+export interface ScrapeStatus {
+  category: string;
+  scrapedAt: string;
+  count: number;
+}
+
 // Popular Announcements
 export interface PopularAnnouncement {
   id: string;

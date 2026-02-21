@@ -16,6 +16,7 @@ import { AnnouncementProxyController } from './announcement-proxy.controller';
 import { ProfileProxyController } from './profile-proxy.controller';
 import { NotificationProxyController } from './notification-proxy.controller';
 import { StatisticsProxyController } from './statistics-proxy.controller';
+import { NewsProxyController } from './news-proxy.controller';
 import { ProxyService } from './proxy.service';
 
 @Module({
@@ -29,6 +30,7 @@ import { ProxyService } from './proxy.service';
     ProfileProxyController,
     NotificationProxyController,
     StatisticsProxyController,
+    NewsProxyController,
   ],
   providers: [ProxyService, ConfigService],
   exports: [ProxyService],
