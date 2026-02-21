@@ -5,24 +5,40 @@
  * @file JWT Auth Guard
  * @description Validates JWT tokens to allow only authenticated requests
  */
-import { Injectable, ExecutionContext } from '@nestjs/common';
+import { Injectable, ExecutionContext, SetMetadata } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
 
-@Injectable()
-export class JwtAuthGuard extends AuthGuard('jwt') {}
+export const IS_PUBLIC_KEY = 'isPublic';
+export const Public = () => SetMetadata(IS_PUBLIC_KEY, true);
 
-/**
- * Optional JWT Auth Guard
- * Attempts to authenticate but does not reject unauthenticated requests.
- * If a valid token is present, req.user is populated; otherwise req.user is undefined.
- */
+export const IS_OPTIONAL_AUTH_KEY = 'isOptionalAuth';
+export const OptionalAuth = () => SetMetadata(IS_OPTIONAL_AUTH_KEY, true);
+
 @Injectable()
-export class OptionalJwtAuthGuard extends AuthGuard('jwt') {
+export class JwtAuthGuard extends AuthGuard('jwt') {
+  constructor(private reflector: Reflector) {
+    super();
+  }
+
   canActivate(context: ExecutionContext) {
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    if (isPublic) return true;
+
     return super.canActivate(context);
   }
 
-  handleRequest(_err: any, user: any) {
-    return user || null;
+  handleRequest(err: any, user: any, info: any, context: ExecutionContext) {
+    const isOptionalAuth = this.reflector.getAllAndOverride<boolean>(
+      IS_OPTIONAL_AUTH_KEY,
+      [context.getHandler(), context.getClass()],
+    );
+    if (isOptionalAuth) {
+      return user || null;
+    }
+    return super.handleRequest(err, user, info, context);
   }
 }

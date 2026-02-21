@@ -19,7 +19,7 @@ import {
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { ProxyService } from './proxy.service';
-import { JwtAuthGuard, OptionalJwtAuthGuard } from '../auth/jwt-auth.guard';
+import { JwtAuthGuard, Public, OptionalAuth } from '../auth/jwt-auth.guard';
 
 @Controller('api/announcements')
 @UseGuards(JwtAuthGuard)
@@ -38,7 +38,7 @@ export class AnnouncementProxyController {
   }
 
   @Get('uploads/:fileName')
-  @UseGuards() // Override class-level guard - no auth needed for file serving
+  @Public()
   async serveFile(
     @Param('fileName') fileName: string,
     @Res() res: Response,
@@ -57,7 +57,7 @@ export class AnnouncementProxyController {
   }
 
   @Get(':id')
-  @UseGuards(OptionalJwtAuthGuard)
+  @OptionalAuth()
   async detail(@Param('id') id: string, @Req() req: Request, @Res() res: Response) {
     const result = await this.proxyService.forward('user-auth', {
       method: 'GET',
@@ -138,7 +138,7 @@ export class AnnouncementProxyController {
 
   // View count
   @Post(':id/view')
-  @UseGuards() // Override class-level guard - no auth needed
+  @Public()
   async incrementViewCount(
     @Param('id') id: string,
     @Res() res: Response,

@@ -1,54 +1,80 @@
 /**
- * @file 공지사항 작성 페이지
- * @description 관리자 전용 공지사항 작성 페이지 (제목, 내용, 고정, 첨부파일)
+ * @file 공지사항 수정 페이지
+ * @description 관리자 전용 공지사항 수정 페이지 (제목, 내용, 고정, 첨부파일)
  *
- * @file New Announcement Page
- * @description Admin-only page for creating a new announcement with attachments
+ * @file Edit Announcement Page
+ * @description Admin-only page for editing an announcement
  */
 'use client';
 
-import { useState, useEffect } from 'react';
+import { use, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Pin, Upload, FileText, X } from 'lucide-react';
-import { useCreateAnnouncement, useUploadAttachment } from '@/hooks/useAdmin';
+import { ArrowLeft, Pin, Paperclip, X, FileText, Trash2, Upload } from 'lucide-react';
+import {
+  useAnnouncementDetail,
+  useUpdateAnnouncement,
+  useUploadAttachment,
+  useDeleteAttachment,
+} from '@/hooks/useAdmin';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuthStore } from '@/stores/auth';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import { cn } from '@/lib/format';
 
-export default function NewAnnouncementPage() {
+export default function EditAnnouncementPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = use(params);
   const router = useRouter();
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
 
+  const { data, isLoading } = useAnnouncementDetail(id);
+  const updateAnnouncement = useUpdateAnnouncement();
+  const uploadAttachment = useUploadAttachment();
+  const deleteAttachment = useDeleteAttachment();
+
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [isPinned, setIsPinned] = useState(false);
-  const [files, setFiles] = useState<File[]>([]);
+  const [initialized, setInitialized] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [attachmentToDelete, setAttachmentToDelete] = useState<string | null>(null);
 
-  const { mutateAsync: createAnnouncement, isPending: isCreating } = useCreateAnnouncement();
-  const { mutateAsync: uploadAttachment, isPending: isUploading } = useUploadAttachment();
+  // Pending new files to upload on save
+  const [newFiles, setNewFiles] = useState<File[]>([]);
+
+  // Initialize form when data loads
+  useEffect(() => {
+    if (data && !initialized) {
+      setTitle(data.title);
+      setContent(data.content);
+      setIsPinned(data.isPinned);
+      setInitialized(true);
+    }
+  }, [data, initialized]);
 
   // Redirect non-admin users
   useEffect(() => {
     if (user && user.role !== 'SYSTEM' && user.role !== 'ADMIN') {
-      router.replace('/announcements');
+      router.replace(`/announcements/${id}`);
     }
-  }, [user, router]);
+  }, [user, router, id]);
 
   if (user && user.role !== 'SYSTEM' && user.role !== 'ADMIN') return null;
 
   const handleAddFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newFiles = Array.from(e.target.files || []);
-    const valid = newFiles.filter((f) => f.size <= 5 * 1024 * 1024);
-    setFiles((prev) => [...prev, ...valid]);
+    const files = Array.from(e.target.files || []);
+    const valid = files.filter((f) => f.size <= 5 * 1024 * 1024);
+    setNewFiles((prev) => [...prev, ...valid]);
     e.target.value = '';
   };
 
-  const handleRemoveFile = (index: number) => {
-    setFiles((prev) => prev.filter((_, i) => i !== index));
+  const handleRemoveNewFile = (index: number) => {
+    setNewFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
   const formatFileSize = (bytes: number) => {
@@ -63,40 +89,68 @@ export default function NewAnnouncementPage() {
     setShowConfirm(true);
   };
 
-  const isSaving = isCreating || isUploading;
-
-  const handleConfirmCreate = async () => {
+  const handleConfirmSave = async () => {
     try {
-      const result = await createAnnouncement({ title: title.trim(), content: content.trim(), isPinned });
-      // Upload files after announcement is created
-      if (files.length > 0 && result?.id) {
-        for (const file of files) {
-          await uploadAttachment({ announcementId: result.id, file });
-        }
+      await updateAnnouncement.mutateAsync({
+        id,
+        title: title.trim(),
+        content: content.trim(),
+        isPinned,
+      });
+      // Upload new files
+      for (const file of newFiles) {
+        await uploadAttachment.mutateAsync({ announcementId: id, file });
       }
       setShowConfirm(false);
-      router.push('/announcements');
+      router.push(`/announcements/${id}`);
     } catch {
-      // mutation error handled by React Query
+      // mutation error handled
     }
   };
+
+  const handleDeleteAttachment = async () => {
+    if (!attachmentToDelete) return;
+    try {
+      await deleteAttachment.mutateAsync(attachmentToDelete);
+      setAttachmentToDelete(null);
+    } catch {
+      // handled
+    }
+  };
+
+  const isSaving = updateAnnouncement.isPending || uploadAttachment.isPending;
+
+  if (isLoading) {
+    return (
+      <div className="py-20 text-center text-text-quaternary text-[14px]">
+        {t('common.loading')}
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="py-20 text-center text-text-quaternary text-[14px]">
+        {t('common.noData')}
+      </div>
+    );
+  }
 
   return (
     <div>
       {/* Header */}
       <div className="flex items-center gap-3 py-6">
         <Link
-          href="/announcements"
+          href={`/announcements/${id}`}
           className="flex items-center justify-center w-8 h-8 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-secondary transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
         </Link>
         <h1 className="text-[20px] font-extrabold text-text-primary">
-          {t('announce.create')}
+          {t('announce.edit')}
         </h1>
       </div>
 
-      {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* Title */}
         <div className="space-y-1.5">
@@ -160,7 +214,37 @@ export default function NewAnnouncementPage() {
           </div>
         </button>
 
-        {/* File attachments */}
+        {/* Existing Attachments */}
+        {data.attachments?.length > 0 && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-1.5">
+              <Paperclip className="w-4 h-4 text-text-tertiary" />
+              <span className="text-[13px] font-semibold text-text-secondary">
+                {t('announce.attachments')}
+              </span>
+            </div>
+            <div className="flex flex-col gap-2">
+              {data.attachments.map((att) => (
+                <div key={att.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-bg-secondary border border-border">
+                  <FileText className="w-4 h-4 text-text-quaternary shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] text-text-primary font-medium truncate">{att.originalName}</p>
+                    <p className="text-[11px] text-text-quaternary">{formatFileSize(att.size)}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setAttachmentToDelete(att.id)}
+                    className="p-1.5 rounded-lg text-text-quaternary hover:text-danger hover:bg-danger/10 transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* New files to upload */}
         <div className="space-y-2">
           <label className="flex items-center gap-2 px-4 py-3 rounded-xl border border-dashed border-border bg-bg-secondary hover:border-accent/40 transition-colors cursor-pointer">
             <Upload className="w-4 h-4 text-text-tertiary" />
@@ -174,9 +258,9 @@ export default function NewAnnouncementPage() {
               multiple
             />
           </label>
-          {files.length > 0 && (
+          {newFiles.length > 0 && (
             <div className="flex flex-col gap-2">
-              {files.map((file, idx) => (
+              {newFiles.map((file, idx) => (
                 <div key={idx} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-accent/5 border border-accent/20">
                   <FileText className="w-4 h-4 text-accent shrink-0" />
                   <div className="flex-1 min-w-0">
@@ -185,7 +269,7 @@ export default function NewAnnouncementPage() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => handleRemoveFile(idx)}
+                    onClick={() => handleRemoveNewFile(idx)}
                     className="p-1.5 rounded-lg text-text-quaternary hover:text-danger hover:bg-danger/10 transition-colors"
                   >
                     <X className="w-4 h-4" />
@@ -199,10 +283,10 @@ export default function NewAnnouncementPage() {
         {/* Actions */}
         <div className="flex items-center justify-end gap-3 pt-2">
           <Link
-            href="/announcements"
+            href={`/announcements/${id}`}
             className="px-4 py-2.5 rounded-xl text-[14px] font-semibold text-text-tertiary hover:text-text-primary hover:bg-bg-secondary border border-border transition-colors"
           >
-            {t('announce.back')}
+            {t('modal.cancel')}
           </Link>
           <button
             type="submit"
@@ -212,25 +296,38 @@ export default function NewAnnouncementPage() {
             {isSaving ? (
               <span className="flex items-center gap-2">
                 <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                {t('announce.submit')}
+                {t('announce.update')}
               </span>
             ) : (
-              t('announce.submit')
+              t('announce.update')
             )}
           </button>
         </div>
       </form>
 
-      {/* Create confirm modal */}
+      {/* Save confirm modal */}
       <ConfirmModal
         isOpen={showConfirm}
         onClose={() => setShowConfirm(false)}
-        onConfirm={handleConfirmCreate}
-        title={t('announce.create')}
-        message={t('announce.createConfirm')}
-        confirmLabel={t('announce.submit')}
+        onConfirm={handleConfirmSave}
+        title={t('announce.edit')}
+        message={t('announce.editConfirm')}
+        confirmLabel={t('announce.update')}
         cancelLabel={t('modal.cancel')}
         loading={isSaving}
+      />
+
+      {/* Delete attachment confirm modal */}
+      <ConfirmModal
+        isOpen={!!attachmentToDelete}
+        onClose={() => setAttachmentToDelete(null)}
+        onConfirm={handleDeleteAttachment}
+        title={t('announce.deleteFile')}
+        message={t('announce.deleteFileConfirm')}
+        confirmLabel={t('announce.deleteFile')}
+        cancelLabel={t('modal.cancel')}
+        confirmVariant="danger"
+        loading={deleteAttachment.isPending}
       />
     </div>
   );

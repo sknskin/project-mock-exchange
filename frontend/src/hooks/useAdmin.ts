@@ -158,7 +158,7 @@ export function useCreateAnnouncement() {
 export function useUpdateAnnouncement() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...body }: { id: string; title: string; content: string }) => {
+    mutationFn: async ({ id, ...body }: { id: string; title: string; content: string; isPinned?: boolean }) => {
       const { data } = await api.put(`/api/announcements/${id}`, body);
       return data.data;
     },

@@ -22,7 +22,7 @@ import {
 import { Response } from 'express';
 import * as fs from 'fs';
 import * as path from 'path';
-import { JwtAuthGuard, OptionalJwtAuthGuard } from '../../infrastructure/config/jwt-auth.guard';
+import { JwtAuthGuard, Public, OptionalAuth } from '../../infrastructure/config/jwt-auth.guard';
 import { CurrentUser } from '../../infrastructure/config/current-user.decorator';
 import { AnnouncementService } from '../../application/services/announcement.service';
 import { UserDto } from '@mock-exchange/common';
@@ -48,7 +48,7 @@ export class AnnouncementController {
   }
 
   @Get('uploads/:fileName')
-  @UseGuards() // Override class-level guard - no auth needed
+  @Public()
   async serveFile(@Param('fileName') fileName: string, @Res() res: Response) {
     const filePath = path.join(process.cwd(), 'uploads', fileName);
     if (!fs.existsSync(filePath)) {
@@ -58,7 +58,7 @@ export class AnnouncementController {
   }
 
   @Get(':id')
-  @UseGuards(OptionalJwtAuthGuard)
+  @OptionalAuth()
   async detail(@Param('id') id: string, @CurrentUser() user?: UserDto) {
     const result = await this.announcementService.detail(id, user?.id);
     return { success: true, data: result };
@@ -114,7 +114,7 @@ export class AnnouncementController {
 
   // View count
   @Post(':id/view')
-  @UseGuards() // Override class-level guard - no auth needed
+  @Public()
   async incrementViewCount(@Param('id') id: string) {
     await this.announcementService.incrementViewCount(id);
     return { success: true };

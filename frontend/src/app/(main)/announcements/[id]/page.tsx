@@ -7,19 +7,15 @@
  */
 'use client';
 
-import { use, useState, useEffect, useRef } from 'react';
+import { use, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, MessageSquare, Trash2, Reply, Pin, Paperclip, Download, FileText, Heart, Eye } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Trash2, Reply, Pin, Paperclip, Download, FileText, Heart, Eye, Pencil } from 'lucide-react';
 import {
   useAnnouncementDetail,
-  useUpdateAnnouncement,
   useDeleteAnnouncement,
   useAddComment,
   useDeleteComment,
-  useTogglePin,
-  useUploadAttachment,
-  useDeleteAttachment,
   useToggleAnnouncementLike,
   useToggleCommentLike,
   useIncrementViewCount,
@@ -42,13 +38,9 @@ export default function AnnouncementDetailPage({
 
   const { data, isLoading } = useAnnouncementDetail(id);
 
-  const updateAnnouncement = useUpdateAnnouncement();
   const deleteAnnouncement = useDeleteAnnouncement();
   const addComment = useAddComment();
   const deleteComment = useDeleteComment();
-  const togglePin = useTogglePin();
-  const uploadAttachment = useUploadAttachment();
-  const deleteAttachment = useDeleteAttachment();
   const toggleAnnouncementLike = useToggleAnnouncementLike();
   const toggleCommentLike = useToggleCommentLike();
   const incrementViewCount = useIncrementViewCount();
@@ -62,19 +54,8 @@ export default function AnnouncementDetailPage({
     }
   }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Edit state
-  const [isEditing, setIsEditing] = useState(false);
-  const [editTitle, setEditTitle] = useState('');
-  const [editContent, setEditContent] = useState('');
-
   // Delete announcement modal
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-
-  // Edit save confirm modal
-  const [showEditConfirm, setShowEditConfirm] = useState(false);
-
-  // Attachment delete modal
-  const [attachmentToDelete, setAttachmentToDelete] = useState<string | null>(null);
 
   // Comment delete modal
   const [commentToDelete, setCommentToDelete] = useState<string | null>(null);
@@ -124,68 +105,6 @@ export default function AnnouncementDetailPage({
   };
 
   // ─── Handlers ────────────────────────────────────────────────────────────────
-
-  const handleEditStart = () => {
-    if (!data) return;
-    setEditTitle(data.title);
-    setEditContent(data.content);
-    setIsEditing(true);
-  };
-
-  const handleEditSave = () => {
-    if (!editTitle.trim() || !editContent.trim()) return;
-    setShowEditConfirm(true);
-  };
-
-  const handleConfirmEditSave = async () => {
-    try {
-      await updateAnnouncement.mutateAsync({
-        id,
-        title: editTitle.trim(),
-        content: editContent.trim(),
-      });
-      setShowEditConfirm(false);
-      setIsEditing(false);
-    } catch {
-      // mutation error state handles feedback
-    }
-  };
-
-  const handleEditCancel = () => {
-    setIsEditing(false);
-    setEditTitle('');
-    setEditContent('');
-  };
-
-  const handleTogglePin = async () => {
-    try {
-      await togglePin.mutateAsync(id);
-    } catch {
-      // mutation error state handles feedback
-    }
-  };
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) return; // 5MB limit
-    try {
-      await uploadAttachment.mutateAsync({ announcementId: id, file });
-    } catch {
-      // mutation error state handles feedback
-    }
-    e.target.value = '';
-  };
-
-  const handleDeleteAttachment = async () => {
-    if (!attachmentToDelete) return;
-    try {
-      await deleteAttachment.mutateAsync(attachmentToDelete);
-      setAttachmentToDelete(null);
-    } catch {
-      // mutation error state handles feedback
-    }
-  };
 
   const formatFileSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;
@@ -292,97 +211,22 @@ export default function AnnouncementDetailPage({
 
           {/* ── Announcement body ─────────────────────────────────────────── */}
           <div className="bg-bg-secondary rounded-2xl p-5">
-            {isEditing ? (
-              /* Edit mode */
-              <div className="flex flex-col gap-3">
-                {/* Title input */}
-                <div>
-                  <label className="text-[12px] text-text-tertiary font-semibold uppercase tracking-wide block mb-1.5">
-                    {t('announce.titleLabel')}
-                  </label>
-                  <input
-                    type="text"
-                    value={editTitle}
-                    onChange={(e) => setEditTitle(e.target.value)}
-                    placeholder={t('announce.titlePlaceholder')}
-                    className={cn(
-                      'w-full px-3 py-2.5 rounded-xl text-[15px] font-semibold',
-                      'bg-bg-primary border border-border',
-                      'text-text-primary placeholder:text-text-quaternary',
-                      'focus:outline-none focus:border-accent transition-colors',
-                    )}
-                  />
-                </div>
-
-                {/* Content textarea */}
-                <div>
-                  <label className="text-[12px] text-text-tertiary font-semibold uppercase tracking-wide block mb-1.5">
-                    {t('announce.contentLabel')}
-                  </label>
-                  <textarea
-                    value={editContent}
-                    onChange={(e) => setEditContent(e.target.value)}
-                    placeholder={t('announce.contentPlaceholder')}
-                    rows={8}
-                    className={cn(
-                      'w-full px-3 py-2.5 rounded-xl text-[14px]',
-                      'bg-bg-primary border border-border',
-                      'text-text-primary placeholder:text-text-quaternary',
-                      'focus:outline-none focus:border-accent transition-colors',
-                      'resize-none leading-relaxed',
-                    )}
-                  />
-                </div>
-
-                {/* Save / Cancel */}
-                <div className="flex gap-2.5 mt-1">
-                  <button
-                    onClick={handleEditSave}
-                    disabled={updateAnnouncement.isPending || !editTitle.trim() || !editContent.trim()}
-                    className="flex-1 h-10 rounded-xl bg-accent hover:bg-accent/90 text-white text-[13px] font-semibold transition-colors disabled:opacity-50"
-                  >
-                    {updateAnnouncement.isPending ? '...' : t('announce.update')}
-                  </button>
-                  <button
-                    onClick={handleEditCancel}
-                    disabled={updateAnnouncement.isPending}
-                    className="flex-1 h-10 rounded-xl border border-border text-[13px] font-semibold text-text-secondary hover:bg-bg-tertiary transition-colors"
-                  >
-                    {t('modal.cancel')}
-                  </button>
-                </div>
-              </div>
-            ) : (
-              /* View mode */
-              <>
                 {/* Title row */}
                 <div className="flex items-start justify-between gap-3 mb-3">
                   <h2 className="text-[18px] font-bold text-text-primary leading-snug flex-1">
                     {data.title}
                   </h2>
 
-                  {/* Pin / Edit / Delete buttons */}
+                  {/* Edit / Delete buttons */}
                   {canEditAnnouncement && (
                     <div className="flex items-center gap-1.5 shrink-0">
-                      <button
-                        onClick={handleTogglePin}
-                        disabled={togglePin.isPending}
-                        className={cn(
-                          'px-3 py-1.5 rounded-lg text-[12px] font-semibold border transition-colors',
-                          data.isPinned
-                            ? 'text-accent border-accent/30 bg-accent/10 hover:bg-accent/20'
-                            : 'text-text-secondary border-border hover:bg-bg-tertiary hover:text-text-primary',
-                        )}
+                      <Link
+                        href={`/announcements/${id}/edit`}
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[12px] font-semibold text-text-secondary border border-border hover:bg-bg-tertiary hover:text-text-primary transition-colors"
                       >
-                        <Pin className="w-3.5 h-3.5 inline mr-1 rotate-45" />
-                        {data.isPinned ? t('announce.unpin') : t('announce.pin')}
-                      </button>
-                      <button
-                        onClick={handleEditStart}
-                        className="px-3 py-1.5 rounded-lg text-[12px] font-semibold text-text-secondary border border-border hover:bg-bg-tertiary hover:text-text-primary transition-colors"
-                      >
+                        <Pencil className="w-3 h-3" />
                         {t('announce.edit')}
-                      </button>
+                      </Link>
                       <button
                         onClick={() => setShowDeleteModal(true)}
                         className="px-3 py-1.5 rounded-lg text-[12px] font-semibold text-danger border border-danger/30 hover:bg-danger/10 transition-colors"
@@ -461,71 +305,37 @@ export default function AnnouncementDetailPage({
                 </div>
 
                 {/* Attachments */}
-                {(data.attachments?.length > 0 || canEditAnnouncement) && (
+                {data.attachments?.length > 0 && (
                   <div className="mt-5 pt-4 border-t border-border/50">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-1.5">
-                        <Paperclip className="w-4 h-4 text-text-tertiary" />
-                        <h4 className="text-[13px] font-semibold text-text-tertiary">
-                          {t('announce.attachments')}
-                        </h4>
-                        {data.attachments?.length > 0 && (
-                          <span className="text-[12px] text-text-quaternary">{data.attachments.length}</span>
-                        )}
-                      </div>
-                      {canEditAnnouncement && (
-                        <label className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[12px] font-semibold text-accent border border-accent/30 hover:bg-accent/10 transition-colors cursor-pointer">
-                          <Paperclip className="w-3.5 h-3.5" />
-                          {t('announce.addFile')}
-                          <input
-                            type="file"
-                            onChange={handleFileUpload}
-                            className="hidden"
-                            accept="*/*"
-                          />
-                        </label>
-                      )}
+                    <div className="flex items-center gap-1.5 mb-3">
+                      <Paperclip className="w-4 h-4 text-text-tertiary" />
+                      <h4 className="text-[13px] font-semibold text-text-tertiary">
+                        {t('announce.attachments')}
+                      </h4>
+                      <span className="text-[12px] text-text-quaternary">{data.attachments.length}</span>
                     </div>
-                    {uploadAttachment.isPending && (
-                      <div className="flex items-center gap-2 py-2 text-[12px] text-text-quaternary">
-                        <span className="w-3.5 h-3.5 border-2 border-accent/30 border-t-accent rounded-full animate-spin" />
-                        업로드 중...
-                      </div>
-                    )}
-                    {data.attachments?.length > 0 && (
-                      <div className="flex flex-col gap-2">
-                        {data.attachments.map((att) => (
-                          <div key={att.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-bg-primary border border-border/50">
-                            <FileText className="w-4 h-4 text-text-quaternary shrink-0" />
-                            <div className="flex-1 min-w-0">
-                              <p className="text-[13px] text-text-primary font-medium truncate">{att.originalName}</p>
-                              <p className="text-[11px] text-text-quaternary">{formatFileSize(att.size)}</p>
-                            </div>
-                            <a
-                              href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/announcements/uploads/${att.fileName}`}
-                              download={att.originalName}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="p-1.5 rounded-lg text-text-quaternary hover:text-accent hover:bg-accent/10 transition-colors"
-                            >
-                              <Download className="w-4 h-4" />
-                            </a>
-                            {canEditAnnouncement && (
-                              <button
-                                onClick={() => setAttachmentToDelete(att.id)}
-                                className="p-1.5 rounded-lg text-text-quaternary hover:text-danger hover:bg-danger/10 transition-colors"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            )}
+                    <div className="flex flex-col gap-2">
+                      {data.attachments.map((att) => (
+                        <div key={att.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-bg-primary border border-border/50">
+                          <FileText className="w-4 h-4 text-text-quaternary shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[13px] text-text-primary font-medium truncate">{att.originalName}</p>
+                            <p className="text-[11px] text-text-quaternary">{formatFileSize(att.size)}</p>
                           </div>
-                        ))}
-                      </div>
-                    )}
+                          <a
+                            href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/announcements/uploads/${att.fileName}`}
+                            download={att.originalName}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-1.5 rounded-lg text-text-quaternary hover:text-accent hover:bg-accent/10 transition-colors"
+                          >
+                            <Download className="w-4 h-4" />
+                          </a>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
-              </>
-            )}
           </div>
 
           {/* ── Comments section ──────────────────────────────────────────── */}
@@ -757,19 +567,6 @@ export default function AnnouncementDetailPage({
         loading={deleteAnnouncement.isPending}
       />
 
-      {/* Delete attachment confirm modal */}
-      <ConfirmModal
-        isOpen={!!attachmentToDelete}
-        onClose={() => setAttachmentToDelete(null)}
-        onConfirm={handleDeleteAttachment}
-        title={t('announce.deleteFile')}
-        message={t('announce.deleteFileConfirm')}
-        confirmLabel={t('announce.deleteFile')}
-        cancelLabel={t('modal.cancel')}
-        confirmVariant="danger"
-        loading={deleteAttachment.isPending}
-      />
-
       {/* Delete comment confirm modal */}
       <ConfirmModal
         isOpen={!!commentToDelete}
@@ -783,17 +580,6 @@ export default function AnnouncementDetailPage({
         loading={deleteComment.isPending}
       />
 
-      {/* Edit save confirm modal */}
-      <ConfirmModal
-        isOpen={showEditConfirm}
-        onClose={() => setShowEditConfirm(false)}
-        onConfirm={handleConfirmEditSave}
-        title={t('announce.edit')}
-        message={t('announce.editConfirm')}
-        confirmLabel={t('announce.update')}
-        cancelLabel={t('modal.cancel')}
-        loading={updateAnnouncement.isPending}
-      />
     </div>
   );
 }
