@@ -7,12 +7,14 @@
  */
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Tabs from '@/components/ui/Tabs';
 import { usePlaceOrder } from '@/hooks/useOrders';
+import { useTranslation } from '@/hooks/useTranslation';
 import { formatPrice } from '@/lib/format';
+import type { TranslationKey } from '@/lib/i18n';
 
 interface OrderFormProps {
   symbol: string;
@@ -21,9 +23,9 @@ interface OrderFormProps {
   onSuccess?: () => void;
 }
 
-const typeTabs = [
-  { key: 'MARKET', label: '시장가' },
-  { key: 'LIMIT', label: '지정가' },
+const typeTabKeys: { key: string; i18nKey: TranslationKey }[] = [
+  { key: 'MARKET', i18nKey: 'order.market' },
+  { key: 'LIMIT', i18nKey: 'order.limit' },
 ];
 
 export default function OrderForm({
@@ -32,10 +34,16 @@ export default function OrderForm({
   side,
   onSuccess,
 }: OrderFormProps) {
+  const { t } = useTranslation();
   const [orderType, setOrderType] = useState<'MARKET' | 'LIMIT'>('MARKET');
   const [quantity, setQuantity] = useState('');
   const [price, setPrice] = useState(currentPrice.toString());
   const placeOrder = usePlaceOrder();
+
+  const typeTabs = useMemo(
+    () => typeTabKeys.map((i) => ({ key: i.key, label: t(i.i18nKey) })),
+    [t],
+  );
 
   const isBuy = side === 'BUY';
   const estimatedTotal =
@@ -72,26 +80,26 @@ export default function OrderForm({
 
       {orderType === 'LIMIT' && (
         <Input
-          label="가격"
+          label={t('order.price')}
           type="number"
           value={price}
           onChange={(e) => setPrice(e.target.value)}
-          placeholder="주문 가격"
+          placeholder={t('order.pricePlaceholder')}
         />
       )}
 
       <Input
-        label="수량"
+        label={t('order.quantity')}
         type="number"
         value={quantity}
         onChange={(e) => setQuantity(e.target.value)}
-        placeholder="주문 수량"
+        placeholder={t('order.quantityPlaceholder')}
       />
 
       <div className="flex justify-between py-3 text-[14px]">
-        <span className="text-text-tertiary">예상 금액</span>
+        <span className="text-text-tertiary">{t('order.estimatedTotal')}</span>
         <span className="text-text-primary font-bold tabular-nums">
-          {formatPrice(estimatedTotal)} 원
+          {formatPrice(estimatedTotal)} {t('order.unit')}
         </span>
       </div>
 
@@ -105,10 +113,10 @@ export default function OrderForm({
         }
       >
         {placeOrder.isPending
-          ? '주문 중...'
+          ? t('order.submitting')
           : isBuy
-            ? `${formatPrice(currentPrice)} 매수`
-            : `${formatPrice(currentPrice)} 매도`}
+            ? `${formatPrice(currentPrice)} ${t('detail.buy')}`
+            : `${formatPrice(currentPrice)} ${t('detail.sell')}`}
       </Button>
     </div>
   );

@@ -9,6 +9,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import OrderForm from './OrderForm';
+import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/format';
 import { X } from 'lucide-react';
 
@@ -27,6 +28,7 @@ export default function OrderSheet({
   currentPrice,
   initialSide,
 }: OrderSheetProps) {
+  const { t } = useTranslation();
   const [side, setSide] = useState<'BUY' | 'SELL'>(initialSide);
 
   useEffect(() => {
@@ -65,7 +67,7 @@ export default function OrderSheet({
         {/* 헤더 / Header */}
         <div className="flex items-center justify-between px-6 pt-5 pb-3">
           <h3 className="text-[18px] font-bold text-text-primary">
-            {symbol} 주문
+            {symbol} {t('order.title')}
           </h3>
           <button
             onClick={onClose}
@@ -87,7 +89,7 @@ export default function OrderSheet({
                   : 'bg-bg-secondary text-text-quaternary hover:text-text-tertiary',
               )}
             >
-              매수
+              {t('detail.buy')}
             </button>
             <button
               onClick={() => setSide('SELL')}
@@ -98,7 +100,7 @@ export default function OrderSheet({
                   : 'bg-bg-secondary text-text-quaternary hover:text-text-tertiary',
               )}
             >
-              매도
+              {t('detail.sell')}
             </button>
           </div>
 

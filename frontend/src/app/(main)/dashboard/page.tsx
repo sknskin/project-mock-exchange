@@ -30,7 +30,6 @@ export default function DashboardPage() {
   const { data: assetInfos } = useAssets();
   const { t } = useTranslation();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  const [search] = useState('');
   const [livePrices, setLivePrices] = useState<Record<string, PriceUpdate>>({});
   const [activeMainTab, setActiveMainTab] = useState('realtime');
   const [period, setPeriod] = useState('realtime');
@@ -113,12 +112,8 @@ export default function DashboardPage() {
 
       return display;
     });
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      result = result.filter((a) => a.symbol.toLowerCase().includes(q) || (a.name ?? '').toLowerCase().includes(q));
-    }
     return result;
-  }, [assets, livePrices, search, period, periodChangeMap]);
+  }, [assets, livePrices, period, periodChangeMap]);
 
   if (pricesError) {
     return <ServiceError onRetry={refetch} />;

@@ -8,6 +8,7 @@
 'use client';
 
 import { cn, formatPrice, formatQuantity, formatDate } from '@/lib/format';
+import { useTranslation } from '@/hooks/useTranslation';
 import type { Order } from '@/types';
 
 interface TransactionListProps {
@@ -15,10 +16,12 @@ interface TransactionListProps {
 }
 
 export default function TransactionList({ orders }: TransactionListProps) {
+  const { t } = useTranslation();
+
   if (orders.length === 0) {
     return (
       <div className="py-24 text-center text-text-quaternary text-[14px]">
-        거래 내역이 없습니다
+        {t('orders.noOrders')}
       </div>
     );
   }
@@ -37,7 +40,7 @@ export default function TransactionList({ orders }: TransactionListProps) {
                     : 'bg-fall/12 text-fall',
                 )}
               >
-                {order.side === 'BUY' ? '매수' : '매도'}
+                {order.side === 'BUY' ? t('orders.buy') : t('orders.sell')}
               </span>
               <span className="text-[14px] font-semibold text-text-primary">
                 {order.symbol}
@@ -53,18 +56,18 @@ export default function TransactionList({ orders }: TransactionListProps) {
               )}
             >
               {order.status === 'FILLED'
-                ? '체결'
+                ? t('orders.filled')
                 : order.status === 'PENDING'
-                  ? '대기'
+                  ? t('orders.pending')
                   : order.status === 'CANCELLED'
-                    ? '취소'
-                    : '부분체결'}
+                    ? t('orders.cancel')
+                    : t('orders.filled')}
             </span>
           </div>
           <div className="flex items-center justify-between mt-2">
             <span className="text-[12px] text-text-quaternary">
-              {formatQuantity(order.quantity)}개 ·{' '}
-              {order.price ? formatPrice(order.price) : '시장가'}
+              {formatQuantity(order.quantity)}{t('orders.unit')} ·{' '}
+              {order.price ? formatPrice(order.price) : t('orders.marketPrice')}
             </span>
             <span className="text-[12px] text-text-quaternary">
               {formatDate(order.createdAt)}

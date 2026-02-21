@@ -9,6 +9,14 @@
 
 import { useEffect, useRef } from 'react';
 import { createChart, ColorType } from 'lightweight-charts';
+import type {
+  IChartApi,
+  ISeriesApi,
+  CandlestickData,
+  LineData,
+  HistogramData,
+  UTCTimestamp,
+} from 'lightweight-charts';
 import type { Candlestick } from '@/types';
 
 interface CandlestickChartProps {
@@ -23,9 +31,15 @@ export default function CandlestickChart({
   exchangeRate,
 }: CandlestickChartProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
+  const chartRef = useRef<IChartApi | null>(null);
+  const mainSeriesRef = useRef<ISeriesApi<'Candlestick'> | ISeriesApi<'Line'> | null>(null);
+  const volumeSeriesRef = useRef<ISeriesApi<'Histogram'> | null>(null);
+  const currentTypeRef = useRef<'candle' | 'line'>(chartType);
+  const isFirstRenderRef = useRef(true);
 
+  // Effect 1: Chart creation (mount only)
   useEffect(() => {
-    if (!chartContainerRef.current || data.length === 0) return;
+    if (!chartContainerRef.current) return;
 
     const chart = createChart(chartContainerRef.current, {
       layout: {
@@ -53,61 +67,8 @@ export default function CandlestickChart({
       },
     });
 
-    const sortedData = [...data].sort((a, b) => a.time - b.time);
-    const r = exchangeRate ?? 1;
-
-    if (chartType === 'candle') {
-      const candleSeries = chart.addCandlestickSeries({
-        upColor: '#F04452',
-        downColor: '#3182F6',
-        borderUpColor: '#F04452',
-        borderDownColor: '#3182F6',
-        wickUpColor: '#F04452',
-        wickDownColor: '#3182F6',
-      });
-
-      candleSeries.setData(
-        sortedData.map((d) => ({
-          time: (d.time / 1000) as import('lightweight-charts').UTCTimestamp,
-          open: d.open * r,
-          high: d.high * r,
-          low: d.low * r,
-          close: d.close * r,
-        })),
-      );
-    } else {
-      const lineSeries = chart.addLineSeries({
-        color: '#3182F6',
-        lineWidth: 2,
-      });
-
-      lineSeries.setData(
-        sortedData.map((d) => ({
-          time: (d.time / 1000) as import('lightweight-charts').UTCTimestamp,
-          value: d.close * r,
-        })),
-      );
-    }
-
-    // Volume histogram
-    const volumeSeries = chart.addHistogramSeries({
-      priceFormat: { type: 'volume' },
-      priceScaleId: 'volume',
-    });
-
-    chart.priceScale('volume').applyOptions({
-      scaleMargins: { top: 0.8, bottom: 0 },
-    });
-
-    volumeSeries.setData(
-      sortedData.map((d) => ({
-        time: (d.time / 1000) as import('lightweight-charts').UTCTimestamp,
-        value: d.volume,
-        color: d.close >= d.open ? 'rgba(240,68,82,0.3)' : 'rgba(49,130,246,0.3)',
-      })),
-    );
-
-    chart.timeScale().fitContent();
+    chartRef.current = chart;
+    isFirstRenderRef.current = true;
 
     // Remove TradingView attribution logo
     const links = chartContainerRef.current.querySelectorAll('a');
@@ -125,9 +86,96 @@ export default function CandlestickChart({
 
     return () => {
       window.removeEventListener('resize', handleResize);
+      chartRef.current = null;
+      mainSeriesRef.current = null;
+      volumeSeriesRef.current = null;
       chart.remove();
     };
-  }, [data, chartType, exchangeRate]);
+  }, []);
+
+  // Effect 2: Series type change
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+
+    // Remove existing series if type changed or first render
+    if (mainSeriesRef.current) {
+      chart.removeSeries(mainSeriesRef.current);
+      mainSeriesRef.current = null;
+    }
+    if (volumeSeriesRef.current) {
+      chart.removeSeries(volumeSeriesRef.current);
+      volumeSeriesRef.current = null;
+    }
+
+    // Create main series
+    if (chartType === 'candle') {
+      mainSeriesRef.current = chart.addCandlestickSeries({
+        upColor: '#F04452',
+        downColor: '#3182F6',
+        borderUpColor: '#F04452',
+        borderDownColor: '#3182F6',
+        wickUpColor: '#F04452',
+        wickDownColor: '#3182F6',
+      });
+    } else {
+      mainSeriesRef.current = chart.addLineSeries({
+        color: '#3182F6',
+        lineWidth: 2,
+      });
+    }
+
+    // Create volume series
+    volumeSeriesRef.current = chart.addHistogramSeries({
+      priceFormat: { type: 'volume' },
+      priceScaleId: 'volume',
+    });
+
+    chart.priceScale('volume').applyOptions({
+      scaleMargins: { top: 0.8, bottom: 0 },
+    });
+
+    currentTypeRef.current = chartType;
+    isFirstRenderRef.current = true;
+  }, [chartType]);
+
+  // Effect 3: Data update (preserves pan/zoom)
+  useEffect(() => {
+    if (!mainSeriesRef.current || !volumeSeriesRef.current || data.length === 0) return;
+
+    const sortedData = [...data].sort((a, b) => a.time - b.time);
+    const r = exchangeRate ?? 1;
+
+    if (currentTypeRef.current === 'candle') {
+      const candleData: CandlestickData[] = sortedData.map((d) => ({
+        time: (d.time / 1000) as UTCTimestamp,
+        open: d.open * r,
+        high: d.high * r,
+        low: d.low * r,
+        close: d.close * r,
+      }));
+      (mainSeriesRef.current as ISeriesApi<'Candlestick'>).setData(candleData);
+    } else {
+      const lineData: LineData[] = sortedData.map((d) => ({
+        time: (d.time / 1000) as UTCTimestamp,
+        value: d.close * r,
+      }));
+      (mainSeriesRef.current as ISeriesApi<'Line'>).setData(lineData);
+    }
+
+    const volumeData: HistogramData[] = sortedData.map((d) => ({
+      time: (d.time / 1000) as UTCTimestamp,
+      value: d.volume,
+      color: d.close >= d.open ? 'rgba(240,68,82,0.3)' : 'rgba(49,130,246,0.3)',
+    }));
+    volumeSeriesRef.current.setData(volumeData);
+
+    // Only fitContent on first render
+    if (isFirstRenderRef.current && chartRef.current) {
+      chartRef.current.timeScale().fitContent();
+      isFirstRenderRef.current = false;
+    }
+  }, [data, exchangeRate]);
 
   return <div ref={chartContainerRef} className="w-full overflow-hidden" />;
 }

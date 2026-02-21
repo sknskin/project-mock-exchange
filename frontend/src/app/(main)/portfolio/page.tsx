@@ -16,8 +16,10 @@ import Input from '@/components/ui/Input';
 import BottomSheet from '@/components/ui/BottomSheet';
 import Skeleton from '@/components/ui/Skeleton';
 import { usePortfolio, useDeposit } from '@/hooks/usePortfolio';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export default function PortfolioPage() {
+  const { t } = useTranslation();
   const { data: portfolio, isLoading } = usePortfolio();
   const deposit = useDeposit();
   const [depositOpen, setDepositOpen] = useState(false);
@@ -60,14 +62,14 @@ export default function PortfolioPage() {
                 fullWidth
                 onClick={() => setDepositOpen(true)}
               >
-                입금하기
+                {t('portfolio.deposit')}
               </Button>
             </div>
 
             <div className="border-t border-border/60">
               <div className="py-4">
                 <h2 className="text-[14px] font-bold text-text-secondary">
-                  보유 자산 ({portfolio.holdings.length})
+                  {t('portfolio.holdings')} ({portfolio.holdings.length})
                 </h2>
               </div>
 
@@ -79,7 +81,7 @@ export default function PortfolioPage() {
                 </div>
               ) : (
                 <div className="py-24 text-center text-text-quaternary text-[14px]">
-                  보유한 자산이 없습니다
+                  {t('portfolio.noHoldings')}
                 </div>
               )}
             </div>
@@ -89,15 +91,15 @@ export default function PortfolioPage() {
         <BottomSheet
           isOpen={depositOpen}
           onClose={() => setDepositOpen(false)}
-          title="입금"
+          title={t('portfolio.depositTitle')}
         >
           <div className="space-y-5">
             <Input
-              label="입금 금액 (원)"
+              label={t('portfolio.depositAmount')}
               type="number"
               value={depositAmount}
               onChange={(e) => setDepositAmount(e.target.value)}
-              placeholder="입금할 금액을 입력하세요"
+              placeholder={t('portfolio.depositPlaceholder')}
             />
 
             <div className="flex gap-2">
@@ -107,7 +109,7 @@ export default function PortfolioPage() {
                   onClick={() => setDepositAmount(amount.toString())}
                   className="flex-1 h-10 text-[13px] font-medium bg-bg-secondary text-text-secondary rounded-lg hover:bg-bg-tertiary transition-colors"
                 >
-                  {(amount / 10000).toFixed(0)}만
+                  {(amount / 10000).toFixed(0)}{t('portfolio.tenThousand')}
                 </button>
               ))}
             </div>
@@ -122,7 +124,7 @@ export default function PortfolioPage() {
                 parseFloat(depositAmount) <= 0
               }
             >
-              {deposit.isPending ? '입금 중...' : '입금하기'}
+              {deposit.isPending ? t('portfolio.depositing') : t('portfolio.deposit')}
             </Button>
           </div>
         </BottomSheet>

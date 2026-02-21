@@ -54,34 +54,20 @@ export default function Pagination({
   };
 
   return (
-    <div className="flex items-center justify-between py-4">
-      <div className="flex items-center gap-2 text-[12px] text-text-quaternary">
-        <span>{total}{t('pagination.showing')}</span>
-        {onLimitChange && (
-          <select
-            value={limit}
-            onChange={(e) => onLimitChange(Number(e.target.value))}
-            className="bg-bg-secondary border border-border rounded px-1.5 py-0.5 text-[12px] text-text-secondary"
-          >
-            {[10, 20, 50, 100].map((n) => (
-              <option key={n} value={n}>{n}{t('pagination.perPage')}</option>
-            ))}
-          </select>
-        )}
-      </div>
-
+    <div className="relative flex flex-col items-center gap-2 py-4">
+      {/* Page numbers — centered */}
       <div className="flex items-center gap-0.5">
         <button
           onClick={() => onPageChange(1)}
           disabled={page === 1}
-          className="p-1.5 rounded text-text-quaternary hover:text-text-primary hover:bg-bg-secondary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          className="p-2 rounded text-text-quaternary hover:text-text-primary hover:bg-bg-secondary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
         >
           <ChevronsLeft className="w-4 h-4" />
         </button>
         <button
           onClick={() => onPageChange(page - 1)}
           disabled={page === 1}
-          className="p-1.5 rounded text-text-quaternary hover:text-text-primary hover:bg-bg-secondary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          className="p-2 rounded text-text-quaternary hover:text-text-primary hover:bg-bg-secondary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
         >
           <ChevronLeft className="w-4 h-4" />
         </button>
@@ -108,17 +94,33 @@ export default function Pagination({
         <button
           onClick={() => onPageChange(page + 1)}
           disabled={page >= totalPages}
-          className="p-1.5 rounded text-text-quaternary hover:text-text-primary hover:bg-bg-secondary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          className="p-2 rounded text-text-quaternary hover:text-text-primary hover:bg-bg-secondary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
         >
           <ChevronRight className="w-4 h-4" />
         </button>
         <button
           onClick={() => onPageChange(totalPages)}
           disabled={page >= totalPages}
-          className="p-1.5 rounded text-text-quaternary hover:text-text-primary hover:bg-bg-secondary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          className="p-2 rounded text-text-quaternary hover:text-text-primary hover:bg-bg-secondary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
         >
           <ChevronsRight className="w-4 h-4" />
         </button>
+      </div>
+
+      {/* Count + per-page selector — bottom right */}
+      <div className="flex items-center gap-2 text-[12px] text-text-quaternary sm:absolute sm:right-0 sm:bottom-4">
+        <span>{total}{t('pagination.showing')}</span>
+        {onLimitChange && (
+          <select
+            value={limit}
+            onChange={(e) => onLimitChange(Number(e.target.value))}
+            className="bg-bg-secondary border border-border rounded px-1.5 py-0.5 text-[12px] text-text-secondary"
+          >
+            {[10, 20, 50, 100].map((n) => (
+              <option key={n} value={n}>{n}{t('pagination.perPage')}</option>
+            ))}
+          </select>
+        )}
       </div>
     </div>
   );

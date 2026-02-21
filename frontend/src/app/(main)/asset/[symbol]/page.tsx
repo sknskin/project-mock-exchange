@@ -68,10 +68,10 @@ export default function AssetDetailPage({
     [t],
   );
   const [chartInterval, setChartInterval] = useState('1m');
-  const [chartType, setChartType] = useState<'candle' | 'line'>('line');
+  const [chartType, setChartType] = useState<'candle' | 'line'>('candle');
   const { data: candlesticks, isLoading: chartLoading } = useCandlesticks(symbol, chartInterval);
-  const { data: orderBook } = useOrderBook(symbol);
-  const { data: trades } = useRecentTrades(symbol, isAuthenticated);
+  const { data: orderBook, isLoading: orderbookLoading } = useOrderBook(symbol);
+  const { data: trades, isLoading: tradesLoading } = useRecentTrades(symbol, isAuthenticated);
   const [activeTab, setActiveTab] = useState('orderbook');
   const [orderSheetOpen, setOrderSheetOpen] = useState(false);
   const [orderSide, setOrderSide] = useState<'BUY' | 'SELL'>('BUY');
@@ -122,13 +122,13 @@ export default function AssetDetailPage({
         <div className="flex gap-1.5">
           <button
             onClick={() => handleBuySell('BUY')}
-            className="h-8 px-3 text-[12px] font-bold text-rise border border-rise/30 rounded-md hover:bg-rise hover:text-white transition-colors"
+            className="h-10 px-4 text-[13px] font-bold text-rise border border-rise/30 rounded-md hover:bg-rise hover:text-white transition-colors"
           >
             {t('detail.buy')}
           </button>
           <button
             onClick={() => handleBuySell('SELL')}
-            className="h-8 px-3 text-[12px] font-bold text-fall border border-fall/30 rounded-md hover:bg-fall hover:text-white transition-colors"
+            className="h-10 px-4 text-[13px] font-bold text-fall border border-fall/30 rounded-md hover:bg-fall hover:text-white transition-colors"
           >
             {t('detail.sell')}
           </button>
@@ -228,7 +228,7 @@ export default function AssetDetailPage({
 
       {/* 주요 지표 그리드 / Key Metrics Grid */}
       {asset && (
-        <div className="grid grid-cols-3 gap-x-4 gap-y-3 mt-5 mb-5 px-1">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-3 mt-5 mb-5 px-1">
           <div className="flex flex-col gap-0.5">
             <span className="text-[11px] text-text-quaternary">{t('detail.open')}</span>
             <span className="text-[13px] font-semibold tabular-nums text-text-primary">
@@ -311,11 +311,25 @@ export default function AssetDetailPage({
         <Tabs tabs={detailTabs} activeTab={activeTab} onChange={setActiveTab} />
 
         <div className="mt-3">
-          {activeTab === 'orderbook' && orderBook && (
+          {activeTab === 'orderbook' && orderbookLoading && (
+            <div className="space-y-2 py-2">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="h-6 rounded bg-bg-secondary animate-pulse" />
+              ))}
+            </div>
+          )}
+          {activeTab === 'orderbook' && !orderbookLoading && orderBook && (
             <OrderBookComponent orderBook={orderBook} />
           )}
 
-          {activeTab === 'trades' && (
+          {activeTab === 'trades' && tradesLoading && (
+            <div className="space-y-2 py-2">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="h-6 rounded bg-bg-secondary animate-pulse" />
+              ))}
+            </div>
+          )}
+          {activeTab === 'trades' && !tradesLoading && (
             <div>
               <div className="flex text-[12px] text-text-quaternary py-2.5 font-medium">
                 <span className="flex-1">{t('detail.tradePrice')}</span>
