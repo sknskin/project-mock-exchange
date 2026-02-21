@@ -222,7 +222,7 @@ export default function AssetDetailPage({
             {t('detail.noChart')}
           </div>
         ) : (
-          <CandlestickChart data={candlesticks} chartType={chartType} />
+          <CandlestickChart data={candlesticks} chartType={chartType} exchangeRate={currencyMode === 'krw' && rate ? rate : undefined} />
         )}
       </div>
 

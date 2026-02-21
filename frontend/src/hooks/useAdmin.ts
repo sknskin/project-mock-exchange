@@ -13,6 +13,7 @@ import type {
   PaginatedResponse,
   AnnouncementListItem,
   AnnouncementDetail,
+  AttachmentItem,
   NotificationItem,
   UserProfile,
   StatOverview,
@@ -143,7 +144,7 @@ export function useAnnouncementDetail(id: string) {
 export function useCreateAnnouncement() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (body: { title: string; content: string }) => {
+    mutationFn: async (body: { title: string; content: string; isPinned?: boolean }) => {
       const { data } = await api.post('/api/announcements', body);
       return data.data;
     },
@@ -162,6 +163,51 @@ export function useUpdateAnnouncement() {
       qc.invalidateQueries({ queryKey: ['announcements'] });
       qc.invalidateQueries({ queryKey: ['announcement'] });
     },
+  });
+}
+
+export function useTogglePin() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await api.post(`/api/announcements/${id}/pin`);
+      return data.data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['announcements'] });
+      qc.invalidateQueries({ queryKey: ['announcement'] });
+    },
+  });
+}
+
+export function useUploadAttachment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ announcementId, file }: { announcementId: string; file: File }) => {
+      const buffer = await file.arrayBuffer();
+      const base64 = btoa(
+        new Uint8Array(buffer).reduce((data, byte) => data + String.fromCharCode(byte), ''),
+      );
+      const { data } = await api.post(`/api/announcements/${announcementId}/attachments`, {
+        originalName: file.name,
+        mimeType: file.type,
+        size: file.size,
+        data: base64,
+      });
+      return data.data as AttachmentItem;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['announcement'] }),
+  });
+}
+
+export function useDeleteAttachment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (attachmentId: string) => {
+      const { data } = await api.delete(`/api/announcements/attachments/${attachmentId}`);
+      return data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['announcement'] }),
   });
 }
 

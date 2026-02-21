@@ -9,7 +9,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Search, Plus, MessageSquare } from 'lucide-react';
+import { Search, Plus, MessageSquare, Pin, Paperclip } from 'lucide-react';
 import { useAnnouncements } from '@/hooks/useAdmin';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuthStore } from '@/stores/auth';
@@ -126,12 +126,25 @@ export default function AnnouncementsPage() {
             >
               {/* Title row */}
               <div className="flex items-start justify-between gap-3 mb-2">
-                <h2 className="text-[15px] font-semibold text-text-primary leading-snug line-clamp-1">
-                  {item.title}
-                </h2>
-                <div className="flex items-center gap-1 shrink-0 text-text-quaternary">
-                  <MessageSquare className="w-3.5 h-3.5" />
-                  <span className="text-[12px]">{item.commentCount}</span>
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  {item.isPinned && (
+                    <Pin className="w-3.5 h-3.5 text-accent shrink-0 rotate-45" />
+                  )}
+                  <h2 className="text-[15px] font-semibold text-text-primary leading-snug line-clamp-1">
+                    {item.title}
+                  </h2>
+                </div>
+                <div className="flex items-center gap-2.5 shrink-0 text-text-quaternary">
+                  {item.attachmentCount > 0 && (
+                    <div className="flex items-center gap-0.5">
+                      <Paperclip className="w-3.5 h-3.5" />
+                      <span className="text-[12px]">{item.attachmentCount}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-0.5">
+                    <MessageSquare className="w-3.5 h-3.5" />
+                    <span className="text-[12px]">{item.commentCount}</span>
+                  </div>
                 </div>
               </div>
 

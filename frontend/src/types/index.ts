@@ -187,12 +187,23 @@ export interface AnnouncementAuthor {
   role: string;
 }
 
+export interface AttachmentItem {
+  id: string;
+  fileName: string;
+  originalName: string;
+  mimeType: string;
+  size: number;
+  createdAt: string;
+}
+
 export interface AnnouncementListItem {
   id: string;
   title: string;
   content: string;
   author: AnnouncementAuthor;
   commentCount: number;
+  attachmentCount: number;
+  isPinned: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -212,6 +223,8 @@ export interface AnnouncementDetail {
   title: string;
   content: string;
   author: AnnouncementAuthor;
+  isPinned: boolean;
+  attachments: AttachmentItem[];
   comments: CommentItem[];
   createdAt: string;
   updatedAt: string;

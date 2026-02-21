@@ -37,10 +37,11 @@ export class AnnouncementService {
         where: where as never,
         skip,
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy: [{ isPinned: 'desc' }, { createdAt: 'desc' }],
         include: {
           author: { select: { id: true, username: true, name: true, role: true } },
-          _count: { select: { comments: true } },
+          attachments: true,
+          _count: { select: { comments: true, attachments: true } },
         },
       }),
       this.prisma.announcement.count({ where: where as never }),
@@ -52,7 +53,9 @@ export class AnnouncementService {
         title: a.title,
         content: a.content.length > 200 ? a.content.slice(0, 200) + '...' : a.content,
         author: a.author,
+        isPinned: a.isPinned,
         commentCount: a._count.comments,
+        attachmentCount: a._count.attachments,
         createdAt: a.createdAt,
         updatedAt: a.updatedAt,
       })),
@@ -68,6 +71,7 @@ export class AnnouncementService {
       where: { id },
       include: {
         author: { select: { id: true, username: true, name: true, role: true } },
+        attachments: true,
         comments: {
           where: { parentId: null },
           orderBy: { createdAt: 'asc' },
@@ -87,15 +91,16 @@ export class AnnouncementService {
     return announcement;
   }
 
-  async create(user: UserDto, title: string, content: string) {
+  async create(user: UserDto, title: string, content: string, isPinned?: boolean) {
     if (user.role !== USER_ROLE.SYSTEM && user.role !== USER_ROLE.ADMIN) {
       throw new ForbiddenException('Only SYSTEM/ADMIN can create announcements');
     }
 
     const announcement = await this.prisma.announcement.create({
-      data: { title, content, authorId: user.id },
+      data: { title, content, authorId: user.id, isPinned: isPinned ?? false },
       include: {
         author: { select: { id: true, username: true, name: true, role: true } },
+        attachments: true,
       },
     });
 
@@ -120,7 +125,7 @@ export class AnnouncementService {
     return announcement;
   }
 
-  async update(user: UserDto, id: string, title: string, content: string) {
+  async update(user: UserDto, id: string, title: string, content: string, isPinned?: boolean) {
     const announcement = await this.prisma.announcement.findUnique({ where: { id } });
     if (!announcement) throw new NotFoundException('Announcement not found');
 
@@ -129,11 +134,17 @@ export class AnnouncementService {
       throw new ForbiddenException('Only SYSTEM or the author can edit');
     }
 
+    const updateData: Record<string, unknown> = { title, content };
+    if (isPinned !== undefined) {
+      updateData.isPinned = isPinned;
+    }
+
     const updated = await this.prisma.announcement.update({
       where: { id },
-      data: { title, content },
+      data: updateData,
       include: {
         author: { select: { id: true, username: true, name: true, role: true } },
+        attachments: true,
       },
     });
 
@@ -167,6 +178,60 @@ export class AnnouncementService {
 
     await this.prisma.announcement.delete({ where: { id } });
     this.logger.log(`Announcement deleted: ${id} by ${user.username}`);
+  }
+
+  async togglePin(user: UserDto, id: string) {
+    if (user.role !== USER_ROLE.SYSTEM && user.role !== USER_ROLE.ADMIN) {
+      throw new ForbiddenException('Only SYSTEM/ADMIN can pin announcements');
+    }
+
+    const announcement = await this.prisma.announcement.findUnique({ where: { id } });
+    if (!announcement) throw new NotFoundException('Announcement not found');
+
+    const updated = await this.prisma.announcement.update({
+      where: { id },
+      data: { isPinned: !announcement.isPinned },
+      include: {
+        author: { select: { id: true, username: true, name: true, role: true } },
+        attachments: true,
+      },
+    });
+
+    this.logger.log(`Announcement ${id} pin toggled to ${updated.isPinned} by ${user.username}`);
+    return updated;
+  }
+
+  async addAttachment(
+    announcementId: string,
+    file: { fileName: string; originalName: string; mimeType: string; size: number },
+  ) {
+    const announcement = await this.prisma.announcement.findUnique({ where: { id: announcementId } });
+    if (!announcement) throw new NotFoundException('Announcement not found');
+
+    return this.prisma.attachment.create({
+      data: {
+        announcementId,
+        fileName: file.fileName,
+        originalName: file.originalName,
+        mimeType: file.mimeType,
+        size: file.size,
+      },
+    });
+  }
+
+  async deleteAttachment(user: UserDto, attachmentId: string) {
+    const attachment = await this.prisma.attachment.findUnique({
+      where: { id: attachmentId },
+      include: { announcement: true },
+    });
+    if (!attachment) throw new NotFoundException('Attachment not found');
+
+    if (user.role !== USER_ROLE.SYSTEM && attachment.announcement.authorId !== user.id) {
+      throw new ForbiddenException('Only SYSTEM or the author can delete attachments');
+    }
+
+    await this.prisma.attachment.delete({ where: { id: attachmentId } });
+    this.logger.log(`Attachment ${attachmentId} deleted by ${user.username}`);
   }
 
   async addComment(user: UserDto, announcementId: string, content: string, parentId?: string) {

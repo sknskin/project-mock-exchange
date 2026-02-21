@@ -53,8 +53,6 @@ export default function Pagination({
     return pages;
   };
 
-  if (totalPages <= 1 && !onLimitChange) return null;
-
   return (
     <div className="flex items-center justify-between py-4">
       <div className="flex items-center gap-2 text-[12px] text-text-quaternary">
@@ -72,58 +70,56 @@ export default function Pagination({
         )}
       </div>
 
-      {totalPages > 1 && (
-        <div className="flex items-center gap-0.5">
-          <button
-            onClick={() => onPageChange(1)}
-            disabled={page === 1}
-            className="p-1.5 rounded text-text-quaternary hover:text-text-primary hover:bg-bg-secondary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          >
-            <ChevronsLeft className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => onPageChange(page - 1)}
-            disabled={page === 1}
-            className="p-1.5 rounded text-text-quaternary hover:text-text-primary hover:bg-bg-secondary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
+      <div className="flex items-center gap-0.5">
+        <button
+          onClick={() => onPageChange(1)}
+          disabled={page === 1}
+          className="p-1.5 rounded text-text-quaternary hover:text-text-primary hover:bg-bg-secondary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        >
+          <ChevronsLeft className="w-4 h-4" />
+        </button>
+        <button
+          onClick={() => onPageChange(page - 1)}
+          disabled={page === 1}
+          className="p-1.5 rounded text-text-quaternary hover:text-text-primary hover:bg-bg-secondary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
 
-          {getPageNumbers().map((p, i) =>
-            p === '...' ? (
-              <span key={`dots-${i}`} className="px-1 text-text-quaternary text-[12px]">...</span>
-            ) : (
-              <button
-                key={p}
-                onClick={() => onPageChange(p)}
-                className={cn(
-                  'min-w-[32px] h-8 px-1.5 rounded text-[13px] font-medium transition-colors',
-                  p === page
-                    ? 'bg-accent text-white'
-                    : 'text-text-tertiary hover:text-text-primary hover:bg-bg-secondary',
-                )}
-              >
-                {p}
-              </button>
-            ),
-          )}
+        {getPageNumbers().map((p, i) =>
+          p === '...' ? (
+            <span key={`dots-${i}`} className="px-1 text-text-quaternary text-[12px]">...</span>
+          ) : (
+            <button
+              key={p}
+              onClick={() => onPageChange(p)}
+              className={cn(
+                'min-w-[32px] h-8 px-1.5 rounded text-[13px] font-medium transition-colors',
+                p === page
+                  ? 'bg-accent text-white'
+                  : 'text-text-tertiary hover:text-text-primary hover:bg-bg-secondary',
+              )}
+            >
+              {p}
+            </button>
+          ),
+        )}
 
-          <button
-            onClick={() => onPageChange(page + 1)}
-            disabled={page === totalPages}
-            className="p-1.5 rounded text-text-quaternary hover:text-text-primary hover:bg-bg-secondary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => onPageChange(totalPages)}
-            disabled={page === totalPages}
-            className="p-1.5 rounded text-text-quaternary hover:text-text-primary hover:bg-bg-secondary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          >
-            <ChevronsRight className="w-4 h-4" />
-          </button>
-        </div>
-      )}
+        <button
+          onClick={() => onPageChange(page + 1)}
+          disabled={page >= totalPages}
+          className="p-1.5 rounded text-text-quaternary hover:text-text-primary hover:bg-bg-secondary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
+        <button
+          onClick={() => onPageChange(totalPages)}
+          disabled={page >= totalPages}
+          className="p-1.5 rounded text-text-quaternary hover:text-text-primary hover:bg-bg-secondary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        >
+          <ChevronsRight className="w-4 h-4" />
+        </button>
+      </div>
     </div>
   );
 }

@@ -37,6 +37,25 @@ export class AnnouncementProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  @Get('uploads/:fileName')
+  @UseGuards() // Override class-level guard - no auth needed for file serving
+  async serveFile(
+    @Param('fileName') fileName: string,
+    @Res() res: Response,
+  ) {
+    const result = await this.proxyService.forward('user-auth', {
+      method: 'GET',
+      url: `/announcements/uploads/${fileName}`,
+      responseType: 'arraybuffer',
+    });
+    if (result.status !== 200) {
+      return res.status(result.status).json(result.data);
+    }
+    const contentType = result.headers?.['content-type'] || 'application/octet-stream';
+    res.set('Content-Type', contentType);
+    return res.send(Buffer.from(result.data as ArrayBuffer));
+  }
+
   @Get(':id')
   async detail(@Param('id') id: string, @Req() req: Request, @Res() res: Response) {
     const result = await this.proxyService.forward('user-auth', {
@@ -79,6 +98,54 @@ export class AnnouncementProxyController {
     const result = await this.proxyService.forward('user-auth', {
       method: 'DELETE',
       url: `/announcements/${id}`,
+      headers: { Authorization: req.headers.authorization || '' },
+    });
+    return res.status(result.status).json(result.data);
+  }
+
+  // Pin toggle
+  @Post(':id/pin')
+  async togglePin(
+    @Param('id') id: string,
+    @Body() body: unknown,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    const result = await this.proxyService.forward('user-auth', {
+      method: 'POST',
+      url: `/announcements/${id}/pin`,
+      data: body,
+      headers: { Authorization: req.headers.authorization || '' },
+    });
+    return res.status(result.status).json(result.data);
+  }
+
+  // Attachments (base64 JSON body)
+  @Post(':id/attachments')
+  async uploadAttachment(
+    @Param('id') id: string,
+    @Body() body: unknown,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    const result = await this.proxyService.forward('user-auth', {
+      method: 'POST',
+      url: `/announcements/${id}/attachments`,
+      data: body,
+      headers: { Authorization: req.headers.authorization || '' },
+    });
+    return res.status(result.status).json(result.data);
+  }
+
+  @Delete('attachments/:attachmentId')
+  async deleteAttachment(
+    @Param('attachmentId') attachmentId: string,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    const result = await this.proxyService.forward('user-auth', {
+      method: 'DELETE',
+      url: `/announcements/attachments/${attachmentId}`,
       headers: { Authorization: req.headers.authorization || '' },
     });
     return res.status(result.status).json(result.data);

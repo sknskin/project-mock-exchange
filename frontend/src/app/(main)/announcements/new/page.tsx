@@ -22,6 +22,7 @@ export default function NewAnnouncementPage() {
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [isPinned, setIsPinned] = useState(false);
 
   const { mutateAsync: createAnnouncement, isPending } = useCreateAnnouncement();
 
@@ -42,7 +43,7 @@ export default function NewAnnouncementPage() {
     if (!title.trim() || !content.trim()) return;
 
     try {
-      await createAnnouncement({ title: title.trim(), content: content.trim() });
+      await createAnnouncement({ title: title.trim(), content: content.trim(), isPinned });
       router.push('/announcements');
     } catch {
       // mutation error handled by React Query
@@ -95,6 +96,19 @@ export default function NewAnnouncementPage() {
             className="w-full bg-bg-secondary border border-border rounded-xl px-4 py-3 text-[14px] text-text-primary placeholder:text-text-quaternary focus:outline-none focus:border-accent transition-colors resize-none"
           />
         </div>
+
+        {/* Pin toggle */}
+        <label className="flex items-center gap-2.5 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={isPinned}
+            onChange={(e) => setIsPinned(e.target.checked)}
+            className="w-4 h-4 rounded border-border text-accent focus:ring-accent"
+          />
+          <span className="text-[14px] text-text-secondary font-medium">
+            {t('announce.pin')}
+          </span>
+        </label>
 
         {/* Actions */}
         <div className="flex items-center justify-end gap-3 pt-2">

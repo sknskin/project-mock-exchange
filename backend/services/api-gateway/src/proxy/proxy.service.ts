@@ -44,7 +44,7 @@ export class ProxyService {
   async forward(
     service: string,
     config: AxiosRequestConfig,
-  ): Promise<{ status: number; data: unknown }> {
+  ): Promise<{ status: number; data: unknown; headers?: Record<string, string> }> {
     const client = this.clients.get(service);
     if (!client) {
       throw new Error(`Unknown service: ${service}`);
@@ -52,10 +52,18 @@ export class ProxyService {
 
     try {
       const response = await client.request(config);
-      return { status: response.status, data: response.data };
+      return {
+        status: response.status,
+        data: response.data,
+        headers: response.headers as Record<string, string>,
+      };
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {
-        return { status: error.response.status, data: error.response.data };
+        return {
+          status: error.response.status,
+          data: error.response.data,
+          headers: error.response.headers as Record<string, string>,
+        };
       }
       this.logger.error(`Proxy error to ${service}: ${error}`);
       throw error;

@@ -326,6 +326,16 @@ const translations = {
     'announce.noComments': '댓글이 없습니다',
     'announce.commentCount': '댓글',
     'announce.back': '목록',
+    'announce.pinned': '고정',
+    'announce.pin': '상단 고정',
+    'announce.unpin': '고정 해제',
+    'announce.attachment': '첨부파일',
+    'announce.attachments': '첨부파일',
+    'announce.addFile': '파일 첨부',
+    'announce.fileSize': '파일 크기: 최대 5MB',
+    'announce.downloadFile': '다운로드',
+    'announce.deleteFile': '파일 삭제',
+    'announce.deleteFileConfirm': '이 첨부파일을 삭제하시겠습니까?',
 
     // My Page
     'mypage.title': '마이페이지',
@@ -375,6 +385,12 @@ const translations = {
     'stats.byRole': '역할별',
     'stats.byStatus': '상태별',
     'stats.comments': '댓글',
+    'stats.tab.overview': '개요',
+    'stats.tab.users': '사용자',
+    'stats.tab.activity': '활동',
+    'stats.tab.content': '콘텐츠',
+    'stats.userStatus': '사용자 상태',
+    'stats.hourlyActivity': '시간대별 활동',
 
     // Notifications
     'notification.title': '알림',
@@ -724,6 +740,16 @@ const translations = {
     'announce.noComments': 'No comments yet',
     'announce.commentCount': 'Comments',
     'announce.back': 'Back',
+    'announce.pinned': 'Pinned',
+    'announce.pin': 'Pin to top',
+    'announce.unpin': 'Unpin',
+    'announce.attachment': 'Attachment',
+    'announce.attachments': 'Attachments',
+    'announce.addFile': 'Attach file',
+    'announce.fileSize': 'Max file size: 5MB',
+    'announce.downloadFile': 'Download',
+    'announce.deleteFile': 'Delete file',
+    'announce.deleteFileConfirm': 'Delete this attachment?',
 
     // My Page
     'mypage.title': 'My Page',
@@ -773,6 +799,12 @@ const translations = {
     'stats.byRole': 'By Role',
     'stats.byStatus': 'By Status',
     'stats.comments': 'Comments',
+    'stats.tab.overview': 'Overview',
+    'stats.tab.users': 'Users',
+    'stats.tab.activity': 'Activity',
+    'stats.tab.content': 'Content',
+    'stats.userStatus': 'User Status',
+    'stats.hourlyActivity': 'Hourly Activity',
 
     // Notifications
     'notification.title': 'Notifications',

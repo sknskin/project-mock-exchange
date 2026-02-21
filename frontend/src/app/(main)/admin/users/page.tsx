@@ -9,7 +9,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, Shield, ShieldCheck, User } from 'lucide-react';
+import { Search, Shield, ShieldCheck, User, ChevronDown } from 'lucide-react';
 import { useAdminUsers } from '@/hooks/useAdmin';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuthStore } from '@/stores/auth';
@@ -67,8 +67,8 @@ function StatusBadge({ user, t }: { user: AdminUser; t: (key: Parameters<ReturnT
   );
 }
 
-// ===== Status filter tabs =====
-const STATUS_TABS = [
+// ===== Status filter options =====
+const STATUS_OPTIONS = [
   { key: '', labelKey: 'admin.users.filterAll' as const },
   { key: 'pending', labelKey: 'admin.users.filterPending' as const },
   { key: 'approved', labelKey: 'admin.users.filterApproved' as const },
@@ -159,8 +159,8 @@ export default function AdminUsersPage() {
         </h1>
       </div>
 
-      {/* Search + Filter bar */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-4">
+      {/* Search + Status filter bar */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-5">
         {/* Search input */}
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-quaternary pointer-events-none" />
@@ -172,27 +172,26 @@ export default function AdminUsersPage() {
             className="w-full bg-bg-secondary border border-border rounded-xl pl-9 pr-4 py-2.5 text-[14px] text-text-primary placeholder:text-text-quaternary focus:outline-none focus:border-accent/60 transition-colors"
           />
         </div>
-      </div>
-
-      {/* Status filter tabs */}
-      <div className="flex gap-1 mb-5 border-b border-border">
-        {STATUS_TABS.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => handleStatusChange(tab.key)}
+        {/* Status filter select */}
+        <div className="relative shrink-0">
+          <select
+            value={status}
+            onChange={(e) => handleStatusChange(e.target.value)}
             className={cn(
-              'pb-3 px-3 text-[13px] font-semibold transition-colors relative whitespace-nowrap',
-              status === tab.key
-                ? 'text-text-primary'
-                : 'text-text-quaternary hover:text-text-tertiary',
+              'appearance-none bg-bg-secondary border border-border rounded-xl pl-4 pr-9 py-2.5',
+              'text-[14px] font-medium transition-colors cursor-pointer',
+              'focus:outline-none focus:border-accent/60',
+              status ? 'text-text-primary' : 'text-text-tertiary',
             )}
           >
-            {t(tab.labelKey)}
-            {status === tab.key && (
-              <span className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-accent rounded-full" />
-            )}
-          </button>
-        ))}
+            {STATUS_OPTIONS.map((opt) => (
+              <option key={opt.key} value={opt.key}>
+                {t(opt.labelKey)}
+              </option>
+            ))}
+          </select>
+          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-quaternary pointer-events-none" />
+        </div>
       </div>
 
       {/* Table - horizontal scroll on mobile */}

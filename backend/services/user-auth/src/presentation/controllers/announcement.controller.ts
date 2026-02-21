@@ -14,10 +14,14 @@ import {
   Param,
   Query,
   Body,
+  Res,
   UseGuards,
   ParseIntPipe,
   DefaultValuePipe,
 } from '@nestjs/common';
+import { Response } from 'express';
+import * as fs from 'fs';
+import * as path from 'path';
 import { JwtAuthGuard } from '../../infrastructure/config/jwt-auth.guard';
 import { CurrentUser } from '../../infrastructure/config/current-user.decorator';
 import { AnnouncementService } from '../../application/services/announcement.service';
@@ -26,7 +30,12 @@ import { UserDto } from '@mock-exchange/common';
 @Controller('announcements')
 @UseGuards(JwtAuthGuard)
 export class AnnouncementController {
-  constructor(private readonly announcementService: AnnouncementService) {}
+  constructor(private readonly announcementService: AnnouncementService) {
+    const uploadsDir = path.join(process.cwd(), 'uploads');
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+  }
 
   @Get()
   async list(
@@ -38,6 +47,16 @@ export class AnnouncementController {
     return { success: true, data: result };
   }
 
+  @Get('uploads/:fileName')
+  @UseGuards() // Override class-level guard - no auth needed
+  async serveFile(@Param('fileName') fileName: string, @Res() res: Response) {
+    const filePath = path.join(process.cwd(), 'uploads', fileName);
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ success: false, message: 'File not found' });
+    }
+    return res.sendFile(filePath);
+  }
+
   @Get(':id')
   async detail(@Param('id') id: string) {
     const result = await this.announcementService.detail(id);
@@ -47,9 +66,9 @@ export class AnnouncementController {
   @Post()
   async create(
     @CurrentUser() user: UserDto,
-    @Body() body: { title: string; content: string },
+    @Body() body: { title: string; content: string; isPinned?: boolean },
   ) {
-    const result = await this.announcementService.create(user, body.title, body.content);
+    const result = await this.announcementService.create(user, body.title, body.content, body.isPinned);
     return { success: true, data: result };
   }
 
@@ -57,9 +76,9 @@ export class AnnouncementController {
   async update(
     @CurrentUser() user: UserDto,
     @Param('id') id: string,
-    @Body() body: { title: string; content: string },
+    @Body() body: { title: string; content: string; isPinned?: boolean },
   ) {
-    const result = await this.announcementService.update(user, id, body.title, body.content);
+    const result = await this.announcementService.update(user, id, body.title, body.content, body.isPinned);
     return { success: true, data: result };
   }
 
@@ -70,6 +89,47 @@ export class AnnouncementController {
   ) {
     await this.announcementService.delete(user, id);
     return { success: true, message: 'Announcement deleted' };
+  }
+
+  // Pin toggle
+  @Post(':id/pin')
+  async togglePin(
+    @CurrentUser() user: UserDto,
+    @Param('id') id: string,
+  ) {
+    const result = await this.announcementService.togglePin(user, id);
+    return { success: true, data: result };
+  }
+
+  // Attachments
+  @Post(':id/attachments')
+  async addAttachment(
+    @CurrentUser() _user: UserDto,
+    @Param('id') id: string,
+    @Body() body: { originalName: string; mimeType: string; size: number; data: string },
+  ) {
+    const ext = path.extname(body.originalName);
+    const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`;
+    const uploadsDir = path.join(process.cwd(), 'uploads');
+    if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+    fs.writeFileSync(path.join(uploadsDir, fileName), Buffer.from(body.data, 'base64'));
+
+    const result = await this.announcementService.addAttachment(id, {
+      fileName,
+      originalName: body.originalName,
+      mimeType: body.mimeType,
+      size: body.size,
+    });
+    return { success: true, data: result };
+  }
+
+  @Delete('attachments/:attachmentId')
+  async deleteAttachment(
+    @CurrentUser() user: UserDto,
+    @Param('attachmentId') attachmentId: string,
+  ) {
+    await this.announcementService.deleteAttachment(user, attachmentId);
+    return { success: true, message: 'Attachment deleted' };
   }
 
   // Comments

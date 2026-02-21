@@ -14,11 +14,13 @@ import type { Candlestick } from '@/types';
 interface CandlestickChartProps {
   data: Candlestick[];
   chartType: 'candle' | 'line';
+  exchangeRate?: number;
 }
 
 export default function CandlestickChart({
   data,
   chartType,
+  exchangeRate,
 }: CandlestickChartProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
 
@@ -52,6 +54,7 @@ export default function CandlestickChart({
     });
 
     const sortedData = [...data].sort((a, b) => a.time - b.time);
+    const r = exchangeRate ?? 1;
 
     if (chartType === 'candle') {
       const candleSeries = chart.addCandlestickSeries({
@@ -66,10 +69,10 @@ export default function CandlestickChart({
       candleSeries.setData(
         sortedData.map((d) => ({
           time: (d.time / 1000) as import('lightweight-charts').UTCTimestamp,
-          open: d.open,
-          high: d.high,
-          low: d.low,
-          close: d.close,
+          open: d.open * r,
+          high: d.high * r,
+          low: d.low * r,
+          close: d.close * r,
         })),
       );
     } else {
@@ -81,7 +84,7 @@ export default function CandlestickChart({
       lineSeries.setData(
         sortedData.map((d) => ({
           time: (d.time / 1000) as import('lightweight-charts').UTCTimestamp,
-          value: d.close,
+          value: d.close * r,
         })),
       );
     }
@@ -124,7 +127,7 @@ export default function CandlestickChart({
       window.removeEventListener('resize', handleResize);
       chart.remove();
     };
-  }, [data, chartType]);
+  }, [data, chartType, exchangeRate]);
 
   return <div ref={chartContainerRef} className="w-full overflow-hidden" />;
 }
