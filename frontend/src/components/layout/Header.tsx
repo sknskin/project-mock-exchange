@@ -29,9 +29,13 @@ export default function Header() {
 
   const navItems = [
     { href: '/dashboard', label: t('nav.dashboard') },
-    { href: '/portfolio', label: t('nav.portfolio') },
-    { href: '/orders', label: t('nav.orders') },
-    { href: '/leaderboard', label: t('nav.leaderboard') },
+    ...(isAuthenticated
+      ? [
+          { href: '/portfolio', label: t('nav.portfolio') },
+          { href: '/orders', label: t('nav.orders') },
+          { href: '/leaderboard', label: t('nav.leaderboard') },
+        ]
+      : []),
     { href: '/news', label: t('nav.news') },
     ...(isAuthenticated ? [{ href: '/announcements', label: t('nav.announcements') }] : []),
     ...(isAdmin

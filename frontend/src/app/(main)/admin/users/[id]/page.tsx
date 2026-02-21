@@ -206,7 +206,6 @@ export default function AdminUserDetailPage({
         </Link>
         <h1 className="text-[17px] font-bold text-text-primary">
           {t('admin.users.detail')}
-          {user && <span className="text-text-tertiary font-normal ml-2">— {user.name}</span>}
         </h1>
       </div>
 
