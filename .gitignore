@@ -50,6 +50,9 @@ infrastructure/docker/postgres/data/
 infrastructure/docker/redis/data/
 infrastructure/docker/kafka/data/
 
+# Uploads
+uploads/
+
 # Secrets
 *.pem
 *.key

@@ -1,21 +1,30 @@
 /**
  * @file 마이페이지
- * @description 사용자 프로필 조회/수정 및 비밀번호 변경 페이지
+ * @description 사용자 프로필 조회 및 비밀번호 변경 페이지 (회원관리 상세 스타일)
  *
  * @file My Page
- * @description User profile view/edit and password change page
+ * @description User profile view and password change page (admin user detail style)
  */
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Lock, Edit2, Save, X } from 'lucide-react';
-import { useProfile, useUpdateProfile, useChangePassword } from '@/hooks/useAdmin';
+import Link from 'next/link';
+import { Lock, Edit2, User } from 'lucide-react';
+import { useProfile, useChangePassword } from '@/hooks/useAdmin';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuthStore } from '@/stores/auth';
 import { cn } from '@/lib/format';
 
-// ===== Role badge =====
+function InfoRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 py-2.5">
+      <span className="text-[13px] text-text-tertiary sm:w-28 sm:shrink-0">{label}</span>
+      <span className="text-[14px] text-text-primary font-medium break-all">{children}</span>
+    </div>
+  );
+}
+
 function RoleBadge({ role, t }: { role: string; t: (key: Parameters<ReturnType<typeof useTranslation>['t']>[0]) => string }) {
   if (role === 'SYSTEM') {
     return (
@@ -43,30 +52,15 @@ export default function MyPage() {
   const { t } = useTranslation();
   const { isAuthenticated } = useAuthStore();
 
-  // Redirect unauthenticated users
   useEffect(() => {
     if (!isAuthenticated) {
-      router.replace('/login');
+      router.replace('/dashboard');
     }
   }, [isAuthenticated, router]);
 
   const { data: profile, isLoading } = useProfile();
-  const updateProfile = useUpdateProfile();
   const changePassword = useChangePassword();
 
-  // ===== Edit mode state =====
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [editForm, setEditForm] = useState({
-    name: '',
-    phone: '',
-    address: '',
-    addressDetail: '',
-    zipCode: '',
-  });
-  const [profileError, setProfileError] = useState('');
-  const [profileSuccess, setProfileSuccess] = useState('');
-
-  // ===== Password modal state =====
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',
@@ -76,54 +70,6 @@ export default function MyPage() {
   const [passwordError, setPasswordError] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState('');
 
-  // Sync editForm with fetched profile
-  useEffect(() => {
-    if (profile) {
-      setEditForm({
-        name: profile.name ?? '',
-        phone: profile.phone ?? '',
-        address: profile.address ?? '',
-        addressDetail: profile.addressDetail ?? '',
-        zipCode: profile.zipCode ?? '',
-      });
-    }
-  }, [profile]);
-
-  // ===== Edit mode handlers =====
-  const handleEnterEdit = () => {
-    setProfileError('');
-    setProfileSuccess('');
-    setIsEditMode(true);
-  };
-
-  const handleCancelEdit = () => {
-    if (profile) {
-      setEditForm({
-        name: profile.name ?? '',
-        phone: profile.phone ?? '',
-        address: profile.address ?? '',
-        addressDetail: profile.addressDetail ?? '',
-        zipCode: profile.zipCode ?? '',
-      });
-    }
-    setProfileError('');
-    setProfileSuccess('');
-    setIsEditMode(false);
-  };
-
-  const handleSaveProfile = async () => {
-    setProfileError('');
-    setProfileSuccess('');
-    try {
-      await updateProfile.mutateAsync(editForm);
-      setProfileSuccess(t('mypage.profileUpdated'));
-      setIsEditMode(false);
-    } catch {
-      setProfileError(t('common.error'));
-    }
-  };
-
-  // ===== Password modal handlers =====
   const handleOpenPasswordModal = () => {
     setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
     setPasswordError('');
@@ -174,185 +120,77 @@ export default function MyPage() {
     <div className="pb-24">
       {/* Page header */}
       <div className="py-6 flex items-center justify-between">
-        <h1 className="text-[20px] font-extrabold text-text-primary">
-          {t('mypage.title')}
-        </h1>
-        {!isEditMode ? (
-          <button
-            onClick={handleEnterEdit}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-bg-secondary border border-border text-[13px] font-semibold text-text-secondary hover:text-text-primary hover:border-accent/50 transition-colors"
-          >
-            <Edit2 className="w-3.5 h-3.5" />
-            {t('mypage.editMode')}
-          </button>
-        ) : (
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleCancelEdit}
-              disabled={updateProfile.isPending}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-border text-[13px] font-semibold text-text-secondary hover:bg-bg-secondary transition-colors disabled:opacity-50"
-            >
-              <X className="w-3.5 h-3.5" />
-              {t('mypage.cancel')}
-            </button>
-            <button
-              onClick={handleSaveProfile}
-              disabled={updateProfile.isPending}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-accent hover:bg-accent/85 text-white text-[13px] font-semibold transition-colors disabled:opacity-50"
-            >
-              <Save className="w-3.5 h-3.5" />
-              {updateProfile.isPending ? '...' : t('mypage.save')}
-            </button>
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-accent/10 flex items-center justify-center">
+            <User className="w-4 h-4 text-accent" />
           </div>
-        )}
+          <h1 className="text-[20px] font-extrabold text-text-primary">
+            {t('mypage.title')}
+          </h1>
+        </div>
+        <Link
+          href="/mypage/edit"
+          className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-accent hover:bg-accent/90 text-white text-[13px] font-semibold transition-colors"
+        >
+          <Edit2 className="w-3.5 h-3.5" />
+          {t('mypage.edit')}
+        </Link>
       </div>
 
-      {/* Loading state */}
       {isLoading && (
         <div className="py-20 text-center text-text-quaternary text-[14px]">
           {t('common.loading')}
         </div>
       )}
 
-      {/* Profile content */}
       {!isLoading && profile && (
-        <div className="flex flex-col gap-5">
-          {/* Profile success/error feedback */}
-          {profileSuccess && (
-            <div className="rounded-xl px-4 py-3 bg-green-500/10 border border-green-500/20 text-[13px] text-green-400 font-medium">
-              {profileSuccess}
-            </div>
-          )}
-          {profileError && (
-            <div className="rounded-xl px-4 py-3 bg-danger/10 border border-danger/20 text-[13px] text-danger font-medium">
-              {profileError}
-            </div>
-          )}
-
-          {/* Basic Info card */}
-          <div className="bg-bg-secondary rounded-2xl p-5">
-            <h2 className="text-[14px] font-bold text-text-tertiary uppercase tracking-wide mb-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Basic Info */}
+          <div className="bg-bg-secondary rounded-2xl px-5 py-4">
+            <h2 className="text-[13px] font-bold text-text-tertiary uppercase tracking-wide mb-2">
               {t('admin.users.basicInfo')}
             </h2>
-
-            <div className="flex flex-col divide-y divide-border/50">
-              {/* Name */}
-              <div className="flex justify-between items-center py-3">
-                <span className="text-[14px] text-text-tertiary shrink-0">{t('mypage.name')}</span>
-                {isEditMode ? (
-                  <input
-                    type="text"
-                    value={editForm.name}
-                    onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
-                    className="bg-bg-secondary border border-border rounded-xl px-4 py-3 text-[14px] text-text-primary placeholder:text-text-quaternary focus:outline-none focus:border-accent/60 transition-colors text-right w-[60%]"
-                  />
-                ) : (
-                  <span className="text-[14px] text-text-primary font-medium text-right max-w-[60%] break-all">
-                    {profile.name || '-'}
+            <div className="flex flex-col divide-y divide-border/40">
+              <InfoRow label={t('mypage.name')}>{profile.name || '-'}</InfoRow>
+              <InfoRow label={t('mypage.email')}>{profile.email || '-'}</InfoRow>
+              <InfoRow label={t('mypage.username')}>
+                <span className="font-mono">{profile.username || '-'}</span>
+              </InfoRow>
+              <InfoRow label={t('mypage.phone')}>{profile.phone || '-'}</InfoRow>
+              <InfoRow label={t('mypage.address')}>
+                {profile.address || profile.addressDetail ? (
+                  <span className="flex flex-col gap-0.5">
+                    {profile.address && <span>{profile.address}{profile.zipCode ? ` (${profile.zipCode})` : ''}</span>}
+                    {profile.addressDetail && <span className="text-text-secondary">{profile.addressDetail}</span>}
                   </span>
-                )}
-              </div>
-
-              {/* Email — always read-only */}
-              <div className="flex justify-between items-center py-3">
-                <span className="text-[14px] text-text-tertiary shrink-0">{t('mypage.email')}</span>
-                <span className="text-[14px] text-text-primary font-medium text-right max-w-[60%] break-all">
-                  {profile.email || '-'}
-                </span>
-              </div>
-
-              {/* Username — always read-only */}
-              <div className="flex justify-between items-center py-3">
-                <span className="text-[14px] text-text-tertiary shrink-0">{t('mypage.username')}</span>
-                <span className="text-[14px] text-text-primary font-medium font-mono text-right max-w-[60%] break-all">
-                  {profile.username || '-'}
-                </span>
-              </div>
-
-              {/* Phone */}
-              <div className="flex justify-between items-center py-3">
-                <span className="text-[14px] text-text-tertiary shrink-0">{t('mypage.phone')}</span>
-                {isEditMode ? (
-                  <input
-                    type="tel"
-                    value={editForm.phone}
-                    onChange={(e) => setEditForm((f) => ({ ...f, phone: e.target.value }))}
-                    className="bg-bg-secondary border border-border rounded-xl px-4 py-3 text-[14px] text-text-primary placeholder:text-text-quaternary focus:outline-none focus:border-accent/60 transition-colors text-right w-[60%]"
-                  />
-                ) : (
-                  <span className="text-[14px] text-text-primary font-medium text-right max-w-[60%] break-all">
-                    {profile.phone || '-'}
-                  </span>
-                )}
-              </div>
-
-              {/* Address */}
-              <div className={cn('py-3', isEditMode ? 'flex flex-col gap-2' : 'flex justify-between items-start')}>
-                <span className="text-[14px] text-text-tertiary shrink-0">{t('mypage.address')}</span>
-                {isEditMode ? (
-                  <div className="flex flex-col gap-2 w-full">
-                    <input
-                      type="text"
-                      value={editForm.zipCode}
-                      onChange={(e) => setEditForm((f) => ({ ...f, zipCode: e.target.value }))}
-                      placeholder={t('auth.register.zipCode')}
-                      className="bg-bg-secondary border border-border rounded-xl px-4 py-3 text-[14px] text-text-primary placeholder:text-text-quaternary focus:outline-none focus:border-accent/60 transition-colors"
-                    />
-                    <input
-                      type="text"
-                      value={editForm.address}
-                      onChange={(e) => setEditForm((f) => ({ ...f, address: e.target.value }))}
-                      placeholder={t('auth.register.address')}
-                      className="bg-bg-secondary border border-border rounded-xl px-4 py-3 text-[14px] text-text-primary placeholder:text-text-quaternary focus:outline-none focus:border-accent/60 transition-colors"
-                    />
-                    <input
-                      type="text"
-                      value={editForm.addressDetail}
-                      onChange={(e) => setEditForm((f) => ({ ...f, addressDetail: e.target.value }))}
-                      placeholder={t('auth.register.addressDetailPlaceholder')}
-                      className="bg-bg-secondary border border-border rounded-xl px-4 py-3 text-[14px] text-text-primary placeholder:text-text-quaternary focus:outline-none focus:border-accent/60 transition-colors"
-                    />
-                  </div>
-                ) : (
-                  <span className="text-[14px] text-text-primary font-medium text-right max-w-[60%] break-all">
-                    {[profile.zipCode, profile.address, profile.addressDetail].filter(Boolean).join(' ') || '-'}
-                  </span>
-                )}
-              </div>
+                ) : '-'}
+              </InfoRow>
             </div>
           </div>
 
-          {/* Account Info card */}
-          <div className="bg-bg-secondary rounded-2xl p-5">
-            <h2 className="text-[14px] font-bold text-text-tertiary uppercase tracking-wide mb-4">
+          {/* Account Info */}
+          <div className="bg-bg-secondary rounded-2xl px-5 py-4">
+            <h2 className="text-[13px] font-bold text-text-tertiary uppercase tracking-wide mb-2">
               {t('admin.users.accountInfo')}
             </h2>
-
-            <div className="flex flex-col divide-y divide-border/50">
-              {/* Role — always read-only */}
-              <div className="flex justify-between items-center py-3">
-                <span className="text-[14px] text-text-tertiary">{t('mypage.role')}</span>
+            <div className="flex flex-col divide-y divide-border/40">
+              <InfoRow label={t('mypage.role')}>
                 <RoleBadge role={profile.role} t={t} />
-              </div>
-
-              {/* Join Date */}
-              <div className="flex justify-between items-center py-3">
-                <span className="text-[14px] text-text-tertiary">{t('mypage.joinDate')}</span>
-                <span className="text-[14px] text-text-primary font-medium">
-                  {formatJoinDate(profile.createdAt)}
-                </span>
-              </div>
+              </InfoRow>
+              <InfoRow label={t('mypage.joinDate')}>
+                {formatJoinDate(profile.createdAt)}
+              </InfoRow>
             </div>
           </div>
 
-          {/* Password change button */}
-          <div className="bg-bg-secondary rounded-2xl p-5">
-            <h2 className="text-[14px] font-bold text-text-tertiary uppercase tracking-wide mb-4">
+          {/* Password change */}
+          <div className="bg-bg-secondary rounded-2xl px-5 py-4 lg:col-span-2">
+            <h2 className="text-[13px] font-bold text-text-tertiary uppercase tracking-wide mb-3">
               {t('mypage.changePassword')}
             </h2>
             <button
               onClick={handleOpenPasswordModal}
-              className="w-full flex items-center justify-center gap-2 h-11 rounded-xl border border-border text-[14px] font-semibold text-text-secondary hover:text-text-primary hover:bg-bg-primary/60 transition-colors"
+              className="w-full flex items-center justify-center gap-2 h-11 rounded-xl border border-border text-[14px] font-semibold text-text-secondary hover:text-text-primary hover:bg-bg-tertiary transition-colors"
             >
               <Lock className="w-4 h-4" />
               {t('mypage.changePassword')}
@@ -361,31 +199,27 @@ export default function MyPage() {
         </div>
       )}
 
-      {/* Password Change Modal (inline) */}
+      {/* Password Change Modal */}
       {isPasswordModalOpen && (
         <>
-          {/* Overlay */}
           <div
             className="fixed inset-0 z-[60] bg-black/60"
             onClick={handleClosePasswordModal}
           />
-          {/* Modal body */}
           <div className="fixed inset-0 z-[61] flex items-center justify-center pointer-events-none px-4">
             <div className="relative bg-bg-primary border border-border rounded-2xl p-6 w-full max-w-[360px] shadow-2xl pointer-events-auto">
-              {/* Modal header */}
               <div className="flex items-center justify-between mb-5">
                 <h3 className="text-[16px] font-bold text-text-primary">
                   {t('mypage.changePassword')}
                 </h3>
                 <button
                   onClick={handleClosePasswordModal}
-                  className="p-1 rounded-lg text-text-quaternary hover:text-text-primary transition-colors"
+                  className="p-1 rounded-lg text-text-quaternary hover:text-text-primary transition-colors text-[18px] font-bold"
                 >
-                  <X className="w-5 h-5" />
+                  ✕
                 </button>
               </div>
 
-              {/* Feedback messages */}
               {passwordSuccess && (
                 <div className="mb-4 rounded-xl px-4 py-3 bg-green-500/10 border border-green-500/20 text-[13px] text-green-400 font-medium">
                   {passwordSuccess}
@@ -397,9 +231,7 @@ export default function MyPage() {
                 </div>
               )}
 
-              {/* Form fields */}
               <div className="flex flex-col gap-3">
-                {/* Current password */}
                 <div className="flex flex-col gap-1.5">
                   <label className="text-[13px] text-text-tertiary">
                     {t('mypage.currentPassword')}
@@ -415,7 +247,6 @@ export default function MyPage() {
                   />
                 </div>
 
-                {/* New password */}
                 <div className="flex flex-col gap-1.5">
                   <label className="text-[13px] text-text-tertiary">
                     {t('mypage.newPassword')}
@@ -439,7 +270,6 @@ export default function MyPage() {
                   )}
                 </div>
 
-                {/* Confirm password */}
                 <div className="flex flex-col gap-1.5">
                   <label className="text-[13px] text-text-tertiary">
                     {t('mypage.confirmPassword')}
@@ -479,12 +309,11 @@ export default function MyPage() {
                 </div>
               </div>
 
-              {/* Action buttons */}
               <div className="flex gap-3 mt-6">
                 <button
                   onClick={handleChangePassword}
                   disabled={changePassword.isPending}
-                  className="flex-1 h-11 rounded-xl bg-accent hover:bg-accent/85 text-white text-[14px] font-semibold transition-colors disabled:opacity-50"
+                  className="flex-1 h-11 rounded-xl bg-accent hover:bg-accent/90 text-white text-[14px] font-semibold transition-colors disabled:opacity-50"
                 >
                   {changePassword.isPending ? '...' : t('mypage.save')}
                 </button>

@@ -289,6 +289,10 @@ echo -e "${YELLOW}[5/7] 빌드... / Building...${NC}"
 # Clean stale tsbuildinfo: prevents stale incremental build cache
 find backend -name "tsconfig.tsbuildinfo" -delete 2>/dev/null || true
 
+# Next.js 캐시 정리: stale 웹팩 캐시로 인한 런타임 오류 방지
+# Clean Next.js cache: prevents runtime errors from stale webpack cache
+rm -rf frontend/.next 2>/dev/null || true
+
 # 의존성 설치 (lockfile 우선, 실패 시 일반 install)
 # Install dependencies (prefer frozen lockfile, fallback to regular install)
 pnpm install --frozen-lockfile 2>/dev/null || pnpm install
