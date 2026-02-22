@@ -11,7 +11,9 @@ import { CqrsModule } from '@nestjs/cqrs';
 import { TerminusModule } from '@nestjs/terminus';
 import { PrismaModule } from './infrastructure/persistence/prisma/prisma.module';
 import { BalanceService } from './domain/services/balance.service';
+import { WatchlistService } from './domain/services/watchlist.service';
 import { PortfolioController } from './presentation/controllers/portfolio.controller';
+import { WatchlistController } from './presentation/controllers/watchlist.controller';
 import { InternalController } from './presentation/controllers/internal.controller';
 import { HealthController } from './health/health.controller';
 
@@ -25,7 +27,7 @@ import { HealthController } from './health/health.controller';
     TerminusModule,
     PrismaModule,
   ],
-  controllers: [HealthController, PortfolioController, InternalController],
-  providers: [BalanceService],
+  controllers: [HealthController, PortfolioController, WatchlistController, InternalController],
+  providers: [BalanceService, WatchlistService],
 })
 export class AppModule {}

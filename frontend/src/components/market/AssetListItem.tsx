@@ -12,11 +12,14 @@ import { useRouter } from 'next/navigation';
 import { cn, formatPriceDisplay, formatPercent, formatAmountDisplay, formatVolumeDisplay } from '@/lib/format';
 import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
+import { Star } from 'lucide-react';
 import type { Asset } from '@/types';
 
 interface AssetListItemProps {
   asset: Asset;
   rank: number;
+  isWatchlisted?: boolean;
+  onToggleWatchlist?: (symbol: string) => void;
 }
 
 function getSymbolColor(symbol: string): string {
@@ -32,7 +35,7 @@ function getSymbolColor(symbol: string): string {
   return colors[Math.abs(hash) % colors.length];
 }
 
-export default function AssetListItem({ asset, rank }: AssetListItemProps) {
+export default function AssetListItem({ asset, rank, isWatchlisted, onToggleWatchlist }: AssetListItemProps) {
   const router = useRouter();
   const isRise = asset.changePercent > 0;
   const isFall = asset.changePercent < 0;
@@ -65,9 +68,28 @@ export default function AssetListItem({ asset, rank }: AssetListItemProps) {
       className="flex items-center h-[56px] hover:bg-bg-secondary/60 transition-colors rounded-lg -mx-3 px-3 cursor-pointer"
     >
       {/* 순위 / Rank */}
-      <span className="w-6 sm:w-8 text-center text-[13px] text-text-quaternary tabular-nums shrink-0 mr-2 sm:mr-3">
+      <span className="w-6 sm:w-8 text-center text-[13px] text-text-quaternary tabular-nums shrink-0 mr-1 sm:mr-1.5">
         {rank}
       </span>
+
+      {/* 관심종목 / Watchlist Star */}
+      {onToggleWatchlist && (
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onToggleWatchlist(asset.symbol);
+          }}
+          className="shrink-0 mr-1 sm:mr-1.5 p-0.5 rounded transition-colors hover:bg-bg-secondary/80"
+        >
+          <Star
+            className={cn(
+              'w-4 h-4 transition-colors',
+              isWatchlisted ? 'text-yellow-400 fill-yellow-400' : 'text-text-quaternary',
+            )}
+          />
+        </button>
+      )}
 
       {/* 아이콘 + 이름 + 심볼 / Icon + Name + Symbol */}
       <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 w-[120px] sm:w-[180px] lg:w-[200px] shrink-0">

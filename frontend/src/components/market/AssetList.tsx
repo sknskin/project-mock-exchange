@@ -21,13 +21,15 @@ interface AssetListProps {
   onPeriodChange: (period: string) => void;
   mainTab?: string;
   onLoginRequired?: () => void;
+  watchlistSymbols?: string[];
+  onToggleWatchlist?: (symbol: string) => void;
 }
 
 const PAGE_SIZE = 50;
 
 type SortKey = 'volume' | 'change_desc' | 'change_asc';
 
-export default function AssetList({ assets, period, onPeriodChange, mainTab = 'realtime', onLoginRequired }: AssetListProps) {
+export default function AssetList({ assets, period, onPeriodChange, mainTab = 'realtime', onLoginRequired, watchlistSymbols, onToggleWatchlist }: AssetListProps) {
   const { t } = useTranslation();
   const [category, setCategory] = useState('all');
   const [sort, setSort] = useState<SortKey>('volume');
@@ -268,12 +270,17 @@ export default function AssetList({ assets, period, onPeriodChange, mainTab = 'r
       <div>
         {paged.map((asset, index) => (
           <div key={asset.symbol} ref={(el) => setRowRef(asset.symbol, el)}>
-            <AssetListItem asset={asset} rank={index + 1} />
+            <AssetListItem
+              asset={asset}
+              rank={index + 1}
+              isWatchlisted={watchlistSymbols?.includes(asset.symbol)}
+              onToggleWatchlist={onToggleWatchlist}
+            />
           </div>
         ))}
         {filtered.length === 0 && (
-          <div className="py-24 text-center text-text-quaternary text-[14px]">
-            {t('table.empty')}
+          <div className="py-24 text-center text-text-quaternary text-[14px] whitespace-pre-line">
+            {mainTab === 'watchlist' ? t('watchlist.empty') : t('table.empty')}
           </div>
         )}
       </div>

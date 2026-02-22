@@ -9,7 +9,9 @@ import {
   Controller,
   Get,
   Post,
+  Delete,
   Body,
+  Param,
   Query,
   Req,
   Res,
@@ -126,6 +128,53 @@ export class PortfolioProxyController {
       method: 'GET',
       url: '/portfolio/transactions',
       params: { limit, offset },
+      headers: { 'x-user-id': userId },
+    });
+    return res.status(result.status).json(result.data);
+  }
+
+  @Get('watchlist')
+  @ApiOperation({ summary: '관심종목 조회', description: '관심종목 심볼 목록을 반환합니다' })
+  @ApiResponse({ status: 200, description: '관심종목 목록 반환' })
+  async getWatchlist(@Req() req: Request, @Res() res: Response) {
+    const userId = (req as any).user?.id;
+    const result = await this.proxyService.forward('portfolio', {
+      method: 'GET',
+      url: '/portfolio/watchlist',
+      headers: { 'x-user-id': userId },
+    });
+    return res.status(result.status).json(result.data);
+  }
+
+  @Post('watchlist/:symbol')
+  @ApiOperation({ summary: '관심종목 추가', description: '종목을 관심종목에 추가합니다' })
+  @ApiResponse({ status: 201, description: '관심종목 추가 성공' })
+  async addWatchlist(
+    @Param('symbol') symbol: string,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    const userId = (req as any).user?.id;
+    const result = await this.proxyService.forward('portfolio', {
+      method: 'POST',
+      url: `/portfolio/watchlist/${symbol}`,
+      headers: { 'x-user-id': userId },
+    });
+    return res.status(result.status).json(result.data);
+  }
+
+  @Delete('watchlist/:symbol')
+  @ApiOperation({ summary: '관심종목 삭제', description: '종목을 관심종목에서 삭제합니다' })
+  @ApiResponse({ status: 200, description: '관심종목 삭제 성공' })
+  async removeWatchlist(
+    @Param('symbol') symbol: string,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    const userId = (req as any).user?.id;
+    const result = await this.proxyService.forward('portfolio', {
+      method: 'DELETE',
+      url: `/portfolio/watchlist/${symbol}`,
       headers: { 'x-user-id': userId },
     });
     return res.status(result.status).json(result.data);

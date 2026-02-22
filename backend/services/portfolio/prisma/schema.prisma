@@ -54,3 +54,14 @@ model Transaction {
   @@index([userId, createdAt(sort: Desc)])
   @@map("transactions")
 }
+
+model Watchlist {
+  id      String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId  String   @map("user_id") @db.Uuid
+  symbol  String   @db.VarChar(20)
+  addedAt DateTime @default(now()) @map("added_at") @db.Timestamptz()
+
+  @@unique([userId, symbol])
+  @@index([userId])
+  @@map("watchlists")
+}

@@ -23,7 +23,8 @@ import ConfirmModal from '@/components/ui/ConfirmModal';
 import Tabs from '@/components/ui/Tabs';
 import { ChartSkeleton } from '@/components/ui/Skeleton';
 import { cn, formatPriceDisplay, formatAmountDisplay, formatPercent, formatQuantity, formatTime, formatVolumeDisplay } from '@/lib/format';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Star } from 'lucide-react';
+import { useWatchlist, useAddWatchlist, useRemoveWatchlist } from '@/hooks/useWatchlist';
 import Link from 'next/link';
 import type { PriceUpdate } from '@/types';
 import type { TranslationKey } from '@/lib/i18n';
@@ -76,6 +77,23 @@ export default function AssetDetailPage({
   const [orderSheetOpen, setOrderSheetOpen] = useState(false);
   const [orderSide, setOrderSide] = useState<'BUY' | 'SELL'>('BUY');
   const [loginModalOpen, setLoginModalOpen] = useState(false);
+  const { data: watchlistSymbols } = useWatchlist();
+  const addWatchlist = useAddWatchlist();
+  const removeWatchlist = useRemoveWatchlist();
+  const isWatchlisted = watchlistSymbols?.includes(symbol) ?? false;
+
+  const handleToggleWatchlist = useCallback(() => {
+    if (!isAuthenticated) {
+      setLoginModalOpen(true);
+      return;
+    }
+    if (isWatchlisted) {
+      removeWatchlist.mutate(symbol);
+    } else {
+      addWatchlist.mutate(symbol);
+    }
+  }, [isAuthenticated, isWatchlisted, symbol, addWatchlist, removeWatchlist]);
+
   const [livePrice, setLivePrice] = useState<PriceUpdate | null>(null);
 
   const handlePriceUpdate = useCallback((update: PriceUpdate) => {
@@ -114,9 +132,22 @@ export default function AssetDetailPage({
           <ArrowLeft className="w-5 h-5" strokeWidth={2} />
         </Link>
         <div className="flex-1 min-w-0">
-          <h1 className="text-[16px] sm:text-[17px] font-bold text-text-primary leading-tight truncate">
-            {asset?.name ?? symbol}
-          </h1>
+          <div className="flex items-center gap-1.5">
+            <h1 className="text-[16px] sm:text-[17px] font-bold text-text-primary leading-tight truncate">
+              {asset?.name ?? symbol}
+            </h1>
+            <button
+              onClick={handleToggleWatchlist}
+              className="shrink-0 p-0.5 rounded transition-colors hover:bg-bg-secondary/80"
+            >
+              <Star
+                className={cn(
+                  'w-[18px] h-[18px] transition-colors',
+                  isWatchlisted ? 'text-yellow-400 fill-yellow-400' : 'text-text-quaternary',
+                )}
+              />
+            </button>
+          </div>
           <span className="text-[12px] text-text-quaternary">{symbol}</span>
         </div>
         <div className="flex gap-1.5">

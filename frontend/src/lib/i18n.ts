@@ -33,7 +33,11 @@ const translations = {
     'market.exchangeRate': '환율',
     'market.marketIndex': '시장 지수',
     'market.top5Turnover': '거래대금\nTop 5',
+    'market.watchlist': '관심종목',
     'market.dataSourceDesc': '암호화폐 시세는 Binance 실시간 데이터, 주식 시세는 시뮬레이션 데이터입니다.',
+
+    // Watchlist
+    'watchlist.empty': '관심종목이 없습니다.\n종목 목록에서 ★를 눌러 추가하세요.',
 
     // Filters
     'filter.all': '전체',
@@ -532,7 +536,11 @@ const translations = {
     'market.exchangeRate': 'Exchange Rate',
     'market.marketIndex': 'Market Index',
     'market.top5Turnover': 'Turnover\nTop 5',
+    'market.watchlist': 'Watchlist',
     'market.dataSourceDesc': 'Crypto prices are live from Binance. Stock prices are simulated.',
+
+    // Watchlist
+    'watchlist.empty': 'No watchlist items.\nTap ★ to add from the list.',
 
     // Filters
     'filter.all': 'All',

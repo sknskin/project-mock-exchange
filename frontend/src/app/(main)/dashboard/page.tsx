@@ -13,6 +13,7 @@ import { useMarketPrices, useAssets, usePeriodChanges } from '@/hooks/useMarket'
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuthStore } from '@/stores/auth';
+import { useWatchlist, useAddWatchlist, useRemoveWatchlist } from '@/hooks/useWatchlist';
 import AssetList from '@/components/market/AssetList';
 import MarketIndexSummary from '@/components/market/MarketIndexSummary';
 import MarketTicker from '@/components/market/MarketTicker';
@@ -58,10 +59,35 @@ export default function DashboardPage() {
 
   const { data: periodChanges } = usePeriodChanges(period);
 
+  const { data: watchlistSymbols } = useWatchlist();
+  const addWatchlist = useAddWatchlist();
+  const removeWatchlist = useRemoveWatchlist();
+
+  const handleToggleWatchlist = useCallback((symbol: string) => {
+    if (!isAuthenticated) {
+      setLoginModalOpen(true);
+      return;
+    }
+    if (watchlistSymbols?.includes(symbol)) {
+      removeWatchlist.mutate(symbol);
+    } else {
+      addWatchlist.mutate(symbol);
+    }
+  }, [isAuthenticated, watchlistSymbols, addWatchlist, removeWatchlist]);
+
+  const handleMainTabChange = useCallback((key: string) => {
+    if (key === 'watchlist' && !isAuthenticated) {
+      setLoginModalOpen(true);
+      return;
+    }
+    setActiveMainTab(key);
+  }, [isAuthenticated]);
+
   const mainTabs = [
     { key: 'realtime', label: t('market.realtimeChart') },
     { key: 'popular', label: t('market.popular') },
     { key: 'trending', label: t('market.trending') },
+    { key: 'watchlist', label: t('market.watchlist') },
   ];
 
   const assetMap = useMemo(() => {
@@ -115,6 +141,14 @@ export default function DashboardPage() {
     return result;
   }, [assets, livePrices, period, periodChangeMap]);
 
+  const filteredDisplayAssets = useMemo(() => {
+    if (activeMainTab === 'watchlist' && watchlistSymbols) {
+      const set = new Set(watchlistSymbols);
+      return displayAssets.filter((a) => set.has(a.symbol));
+    }
+    return displayAssets;
+  }, [displayAssets, activeMainTab, watchlistSymbols]);
+
   if (pricesError) {
     return <ServiceError onRetry={refetch} />;
   }
@@ -133,7 +167,7 @@ export default function DashboardPage() {
         {mainTabs.map((tab) => (
           <button
             key={tab.key}
-            onClick={() => setActiveMainTab(tab.key)}
+            onClick={() => handleMainTabChange(tab.key)}
             className={cn(
               'pb-3.5 text-[14px] sm:text-[15px] font-bold transition-colors relative whitespace-nowrap',
               activeMainTab === tab.key
@@ -163,11 +197,13 @@ export default function DashboardPage() {
         <AssetListSkeleton />
       ) : (
         <AssetList
-          assets={displayAssets}
+          assets={filteredDisplayAssets}
           period={period}
           onPeriodChange={setPeriod}
           mainTab={activeMainTab}
           onLoginRequired={() => setLoginModalOpen(true)}
+          watchlistSymbols={watchlistSymbols}
+          onToggleWatchlist={handleToggleWatchlist}
         />
       )}
 
