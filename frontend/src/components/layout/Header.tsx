@@ -1,9 +1,11 @@
 /**
  * @file 헤더 컴포넌트
  * @description 로고, 네비게이션, 로그인/로그아웃, 모바일 메뉴, 알림, 관리자 메뉴
+ *              SSR hydration 깜빡임 방지: 모든 메뉴를 항상 렌더하고 CSS로 가시성 제어
  *
  * @file Header Component
  * @description Header with logo, navigation, auth, mobile menu, notifications, admin menus
+ *              Prevents SSR hydration flicker: renders all items, CSS controls visibility
  */
 'use client';
 
@@ -25,23 +27,37 @@ export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [logoutModalOpen, setLogoutModalOpen] = useState(false);
 
-  const isAdmin = user?.role === 'SYSTEM' || user?.role === 'ADMIN';
+  // Zustand 상태 변경 시 html data 속성 동기화 (로그인/로그아웃 시 CSS 즉시 반영)
+  // Sync html data attributes with Zustand state for CSS-based visibility
+  useEffect(() => {
+    const html = document.documentElement;
+    if (isAuthenticated) {
+      html.dataset.authed = '1';
+      if (user?.role) html.dataset.role = user.role;
+    } else {
+      delete html.dataset.authed;
+      delete html.dataset.role;
+    }
+  }, [isAuthenticated, user?.role]);
 
-  const navItems = [
-    { href: '/dashboard', label: t('nav.dashboard') },
+  // 모바일 메뉴용 navItems (메뉴 열릴 때만 사용, hydration 이후이므로 조건부 OK)
+  // Mobile menu navItems (only used when menu is open, after hydration, so conditional OK)
+  const isAdmin = user?.role === 'SYSTEM' || user?.role === 'ADMIN';
+  const mobileNavItems = [
+    { href: '/dashboard', label: t('nav.dashboard'), icon: LayoutDashboard },
     ...(isAuthenticated
       ? [
-          { href: '/portfolio', label: t('nav.portfolio') },
-          { href: '/orders', label: t('nav.orders') },
-          { href: '/leaderboard', label: t('nav.leaderboard') },
+          { href: '/portfolio', label: t('nav.portfolio'), icon: Briefcase },
+          { href: '/orders', label: t('nav.orders'), icon: ClipboardList },
+          { href: '/leaderboard', label: t('nav.leaderboard'), icon: Trophy },
         ]
       : []),
-    { href: '/news', label: t('nav.news') },
-    ...(isAuthenticated ? [{ href: '/announcements', label: t('nav.announcements') }] : []),
+    { href: '/news', label: t('nav.news'), icon: Newspaper },
+    ...(isAuthenticated ? [{ href: '/announcements', label: t('nav.announcements'), icon: Megaphone }] : []),
     ...(isAdmin
       ? [
-          { href: '/admin/users', label: t('nav.userManagement') },
-          { href: '/admin/stats', label: t('nav.statistics') },
+          { href: '/admin/users', label: t('nav.userManagement'), icon: Users },
+          { href: '/admin/stats', label: t('nav.statistics'), icon: BarChart3 },
         ]
       : []),
   ];
@@ -51,6 +67,14 @@ export default function Header() {
     document.body.style.overflow = mobileMenuOpen ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
   }, [mobileMenuOpen]);
+
+  // 각 페이지에서 커스텀 이벤트로 모바일 메뉴를 열 수 있도록 리스너 등록
+  // Allow pages to open mobile menu via custom event
+  useEffect(() => {
+    const handler = () => setMobileMenuOpen(true);
+    window.addEventListener('open-mobile-menu', handler);
+    return () => window.removeEventListener('open-mobile-menu', handler);
+  }, []);
 
   return (
     <>
@@ -64,21 +88,101 @@ export default function Header() {
               </span>
             </Link>
 
+            {/* 데스크톱 네비게이션: 모든 항목 렌더, CSS 클래스로 가시성 제어 */}
+            {/* Desktop nav: all items rendered, CSS classes control visibility */}
             <nav className="hidden lg:flex items-center gap-6">
-              {navItems.map((item) => (
+              <Link
+                href="/dashboard"
+                className={cn(
+                  'text-[14px] font-medium transition-colors py-1',
+                  pathname === '/dashboard' || pathname.startsWith('/dashboard/')
+                    ? 'text-text-primary' : 'text-text-tertiary hover:text-text-primary',
+                )}
+              >
+                {t('nav.dashboard')}
+              </Link>
+
+              <Link
+                href="/news"
+                className={cn(
+                  'text-[14px] font-medium transition-colors py-1',
+                  pathname === '/news' || pathname.startsWith('/news/')
+                    ? 'text-text-primary' : 'text-text-tertiary hover:text-text-primary',
+                )}
+              >
+                {t('nav.news')}
+              </Link>
+
+              {/* 인증 필요 메뉴 / Auth-only nav items */}
+              <div className="contents auth-show">
                 <Link
-                  key={item.href}
-                  href={item.href}
+                  href="/portfolio"
                   className={cn(
                     'text-[14px] font-medium transition-colors py-1',
-                    pathname === item.href || pathname.startsWith(item.href + '/')
-                      ? 'text-text-primary'
-                      : 'text-text-tertiary hover:text-text-primary',
+                    pathname === '/portfolio' || pathname.startsWith('/portfolio/')
+                      ? 'text-text-primary' : 'text-text-tertiary hover:text-text-primary',
                   )}
                 >
-                  {item.label}
+                  {t('nav.portfolio')}
                 </Link>
-              ))}
+                <Link
+                  href="/orders"
+                  className={cn(
+                    'text-[14px] font-medium transition-colors py-1',
+                    pathname === '/orders' || pathname.startsWith('/orders/')
+                      ? 'text-text-primary' : 'text-text-tertiary hover:text-text-primary',
+                  )}
+                >
+                  {t('nav.orders')}
+                </Link>
+                <Link
+                  href="/leaderboard"
+                  className={cn(
+                    'text-[14px] font-medium transition-colors py-1',
+                    pathname === '/leaderboard' || pathname.startsWith('/leaderboard/')
+                      ? 'text-text-primary' : 'text-text-tertiary hover:text-text-primary',
+                  )}
+                >
+                  {t('nav.leaderboard')}
+                </Link>
+              </div>
+
+              <div className="contents auth-show">
+                <Link
+                  href="/announcements"
+                  className={cn(
+                    'text-[14px] font-medium transition-colors py-1',
+                    pathname === '/announcements' || pathname.startsWith('/announcements/')
+                      ? 'text-text-primary' : 'text-text-tertiary hover:text-text-primary',
+                  )}
+                >
+                  {t('nav.announcements')}
+                </Link>
+              </div>
+
+              {/* 관리자 메뉴 / Admin-only nav items */}
+              <div className="contents admin-show">
+                <Link
+                  href="/admin/users"
+                  className={cn(
+                    'text-[14px] font-medium transition-colors py-1',
+                    pathname === '/admin/users' || pathname.startsWith('/admin/users/')
+                      ? 'text-text-primary' : 'text-text-tertiary hover:text-text-primary',
+                  )}
+                >
+                  {t('nav.userManagement')}
+                </Link>
+                <Link
+                  href="/admin/stats"
+                  className={cn(
+                    'text-[14px] font-medium transition-colors py-1',
+                    pathname === '/admin/stats' || pathname.startsWith('/admin/stats/')
+                      ? 'text-text-primary' : 'text-text-tertiary hover:text-text-primary',
+                  )}
+                >
+                  {t('nav.statistics')}
+                </Link>
+              </div>
             </nav>
           </div>
 
@@ -97,44 +201,46 @@ export default function Header() {
               </button>
             )}
 
-            {isAuthenticated ? (
-              <>
-                {/* 알림 벨 / Notification Bell */}
-                <div className="relative hidden lg:block">
+            {/* 인증 시: 알림 + 사용자명 + 로그아웃 / When authed: bell + username + logout */}
+            <div className="auth-show">
+              <div className="lg:hidden relative">
+                <NotificationBell />
+              </div>
+              <div className="hidden lg:flex items-center gap-3">
+                <div className="relative">
                   <NotificationBell />
                 </div>
-
-                {/* 사용자명 → 마이페이지 / Username → My Page */}
                 <Link
                   href="/mypage"
-                  className="text-[13px] text-text-secondary font-medium hidden lg:block hover:text-accent transition-colors"
+                  className="text-[13px] text-text-secondary font-medium hover:text-accent transition-colors"
+                  suppressHydrationWarning
                 >
                   {user?.username}
                 </Link>
                 <button
                   onClick={() => setLogoutModalOpen(true)}
-                  className="hidden lg:flex p-2.5 text-danger hover:text-danger/80 transition-colors rounded-lg hover:bg-bg-secondary translate-y-[1px]"
+                  className="p-2.5 text-danger hover:text-danger/80 transition-colors rounded-lg hover:bg-bg-secondary translate-y-[1px]"
                 >
                   <LogOut className="w-[18px] h-[18px]" />
                 </button>
-              </>
-            ) : (
+              </div>
+            </div>
+
+            {/* 비인증 시: 로그인 버튼 / When not authed: login button */}
+            <div className="auth-hide">
               <Link
                 href="/login"
                 className="hidden lg:inline-flex h-10 px-6 items-center text-[14px] font-bold text-white bg-accent rounded-lg hover:bg-accent/85 transition-colors"
               >
                 {t('nav.login')}
               </Link>
-            )}
-
-            {!isAuthenticated && (
               <Link
                 href="/login"
                 className="lg:hidden text-[13px] font-bold text-accent"
               >
                 {t('nav.login')}
               </Link>
-            )}
+            </div>
 
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -146,6 +252,7 @@ export default function Header() {
         </div>
       </header>
 
+      {/* 모바일 사이드 메뉴 (열릴 때만 렌더, hydration 이후이므로 조건부 OK) */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-black/60" onClick={() => setMobileMenuOpen(false)} />
@@ -157,7 +264,7 @@ export default function Header() {
               </button>
             </div>
             <nav className="px-4 py-5 space-y-1">
-              {navItems.map((item) => (
+              {mobileNavItems.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
@@ -168,14 +275,7 @@ export default function Header() {
                       : 'text-text-tertiary hover:text-text-primary',
                   )}
                 >
-                  {item.href === '/dashboard' && <LayoutDashboard className="w-4 h-4" />}
-                  {item.href === '/portfolio' && <Briefcase className="w-4 h-4" />}
-                  {item.href === '/orders' && <ClipboardList className="w-4 h-4" />}
-                  {item.href === '/leaderboard' && <Trophy className="w-4 h-4" />}
-                  {item.href === '/news' && <Newspaper className="w-4 h-4" />}
-                  {item.href === '/announcements' && <Megaphone className="w-4 h-4" />}
-                  {item.href === '/admin/users' && <Users className="w-4 h-4" />}
-                  {item.href === '/admin/stats' && <BarChart3 className="w-4 h-4" />}
+                  <item.icon className="w-4 h-4" />
                   {item.label}
                 </Link>
               ))}
@@ -219,7 +319,6 @@ export default function Header() {
             <p className="text-[14px] text-text-secondary text-center mt-3">
               {t('modal.logoutMessage')}
             </p>
-            {/* 버튼: 확인(좌) + 취소(우) / Buttons: confirm(left) + cancel(right) */}
             <div className="flex gap-3 mt-6">
               <button
                 onClick={() => { logout(); setLogoutModalOpen(false); router.push('/dashboard'); }}
