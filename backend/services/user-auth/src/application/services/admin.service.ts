@@ -155,13 +155,19 @@ export class AdminService {
     });
 
     // Create notification for the user
+    const approver = await this.prisma.user.findUnique({
+      where: { id: approvedById },
+      select: { name: true, username: true },
+    });
+    const approverName = approver?.name ?? approver?.username ?? '-';
+    const approvedTime = new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' });
     await this.prisma.notification.create({
       data: {
         userId: id,
         type: 'REGISTRATION_APPROVED',
         title: '가입 승인',
-        message: '회원가입이 승인되었습니다. 이제 로그인할 수 있습니다.',
-        link: '/dashboard',
+        message: `회원가입이 승인되었습니다.\n승인자: ${approverName}\n승인일시: ${approvedTime}`,
+        link: null,
       },
     });
 

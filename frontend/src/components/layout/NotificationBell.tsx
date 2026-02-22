@@ -51,6 +51,7 @@ export default function NotificationBell() {
   const router = useRouter();
   const { t, locale } = useTranslation();
   const [open, setOpen] = useState(false);
+  const [modalNotification, setModalNotification] = useState<NotificationItem | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   const { data: unreadCount = 0 } = useUnreadCount();
@@ -75,6 +76,16 @@ export default function NotificationBell() {
     };
   }, [open]);
 
+  // Close modal on ESC
+  useEffect(() => {
+    if (!modalNotification) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setModalNotification(null);
+    };
+    document.addEventListener('keydown', handleKey);
+    return () => document.removeEventListener('keydown', handleKey);
+  }, [modalNotification]);
+
   function handleBellClick() {
     setOpen((prev) => {
       if (!prev) refetch();
@@ -86,6 +97,13 @@ export default function NotificationBell() {
     if (!notification.isRead) {
       markAsRead.mutate(notification.id);
     }
+
+    // 승인/반려 알림은 모달로 표시
+    if (notification.type === 'REGISTRATION_APPROVED' || notification.type === 'REGISTRATION_REJECTED') {
+      setModalNotification(notification);
+      return;
+    }
+
     setOpen(false);
     if (notification.link) {
       router.push(notification.link);
@@ -194,6 +212,36 @@ export default function NotificationBell() {
                 ))}
               </ul>
             )}
+          </div>
+        </div>
+      )}
+      {/* 승인/반려 알림 모달 */}
+      {modalNotification && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setModalNotification(null)} />
+          <div className="relative bg-bg-primary border border-border rounded-2xl p-6 w-[340px] shadow-2xl">
+            <h3 className={cn(
+              'text-[16px] font-bold text-center',
+              modalNotification.type === 'REGISTRATION_APPROVED' ? 'text-accent' : 'text-danger',
+            )}>
+              {modalNotification.title}
+            </h3>
+            <div className="mt-4 space-y-2">
+              {modalNotification.message.split('\n').map((line, i) => (
+                <p key={i} className={cn(
+                  'text-[14px] text-center',
+                  i === 0 ? 'text-text-primary font-medium' : 'text-text-secondary',
+                )}>
+                  {line}
+                </p>
+              ))}
+            </div>
+            <button
+              onClick={() => setModalNotification(null)}
+              className="w-full h-11 mt-6 rounded-xl bg-accent text-white text-[14px] font-semibold hover:bg-accent/85 transition-colors"
+            >
+              {t('common.confirm')}
+            </button>
           </div>
         </div>
       )}
