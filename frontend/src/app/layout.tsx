@@ -14,6 +14,7 @@ import Footer from '@/components/layout/Footer';
 import ThemeProvider from '@/components/layout/ThemeProvider';
 import PageViewTracker from '@/components/layout/PageViewTracker';
 import ToastContainer from '@/components/ui/ToastContainer';
+import ConnectionGuard from '@/components/layout/ConnectionGuard';
 
 export const metadata: Metadata = {
   title: 'VirtuEx - Mock Trading Platform',
@@ -38,15 +39,17 @@ export default function RootLayout({
       </head>
       <body className="bg-bg-primary text-text-primary min-h-screen">
         <QueryProvider>
-          <ThemeProvider />
-          <PageViewTracker />
-          <Header />
-          <main className="pb-20 md:pb-0 max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-10">
-            {children}
-          </main>
-          <Footer />
-          <BottomNav />
-          <ToastContainer />
+          <ConnectionGuard>
+            <ThemeProvider />
+            <PageViewTracker />
+            <Header />
+            <main className="pb-20 md:pb-0 max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-10">
+              {children}
+            </main>
+            <Footer />
+            <BottomNav />
+            <ToastContainer />
+          </ConnectionGuard>
         </QueryProvider>
       </body>
     </html>
