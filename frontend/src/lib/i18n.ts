@@ -157,6 +157,8 @@ const translations = {
     'auth.login.submit': '로그인',
     'auth.login.loading': '로그인 중...',
     'auth.login.error': '이메일/아이디 또는 비밀번호가 올바르지 않습니다.',
+    'auth.login.pendingApproval': '승인 대기 중인 계정입니다. 관리자 승인 후 로그인할 수 있습니다.',
+    'auth.login.deactivated': '비활성화된 계정입니다. 관리자에게 문의하세요.',
     'auth.login.noAccount': '계정이 없으신가요?',
     'auth.login.register': '회원가입',
 
@@ -660,6 +662,8 @@ const translations = {
     'auth.login.submit': 'Login',
     'auth.login.loading': 'Logging in...',
     'auth.login.error': 'Invalid email/username or password.',
+    'auth.login.pendingApproval': 'Your account is pending approval. You can log in after admin approval.',
+    'auth.login.deactivated': 'Your account has been deactivated. Please contact the administrator.',
     'auth.login.noAccount': "Don't have an account?",
     'auth.login.register': 'Sign Up',
 

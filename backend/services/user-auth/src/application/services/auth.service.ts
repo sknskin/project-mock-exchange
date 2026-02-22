@@ -138,6 +138,11 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    // 미승인 회원 로그인 거부 (SYSTEM 계정 예외) / Deny unapproved users (except SYSTEM)
+    if (!user.isApproved && user.role !== USER_ROLE.SYSTEM) {
+      throw new UnauthorizedException('Account not yet approved');
+    }
+
     if (!user.isActive) {
       throw new UnauthorizedException('Account is deactivated');
     }
@@ -145,11 +150,6 @@ export class AuthService {
     const isValid = await bcrypt.compare(password, user.passwordHash);
     if (!isValid) {
       throw new UnauthorizedException('Invalid credentials');
-    }
-
-    // 미승인 회원 로그인 거부 (SYSTEM 계정 예외) / Deny unapproved users (except SYSTEM)
-    if (!user.isApproved && user.role !== USER_ROLE.SYSTEM) {
-      throw new UnauthorizedException('Account not yet approved');
     }
 
     const tokens = await this.generateTokens(user);

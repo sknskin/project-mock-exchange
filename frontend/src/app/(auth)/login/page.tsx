@@ -16,6 +16,7 @@ import { useAuthStore } from '@/stores/auth';
 import { useTranslation } from '@/hooks/useTranslation';
 import VirtuExLogo from '@/components/ui/VirtuExLogo';
 import api from '@/lib/api';
+import type { AxiosError } from 'axios';
 import type { AuthResponse } from '@/types';
 
 export default function LoginPage() {
@@ -46,8 +47,16 @@ export default function LoginPage() {
       const payload = resp.data ?? resp;
       login(payload.user, payload.accessToken);
       router.push('/dashboard');
-    } catch {
-      setError(t('auth.login.error'));
+    } catch (err) {
+      const axiosErr = err as AxiosError<{ message?: string }>;
+      const msg = axiosErr.response?.data?.message;
+      if (msg === 'Account not yet approved') {
+        setError(t('auth.login.pendingApproval'));
+      } else if (msg === 'Account is deactivated') {
+        setError(t('auth.login.deactivated'));
+      } else {
+        setError(t('auth.login.error'));
+      }
     } finally {
       setLoading(false);
     }
