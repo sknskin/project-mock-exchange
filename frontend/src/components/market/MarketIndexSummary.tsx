@@ -237,7 +237,7 @@ export default function MarketIndexSummary({ assets }: MarketIndexSummaryProps) 
   const doubled = [...indices, ...indices];
 
   return (
-    <div className="relative overflow-hidden py-4 border-b border-border">
+    <div className="relative overflow-hidden py-4 border-b border-border marquee-pause-on-hover">
       {/* 좌우 그라데이션 마스크 / Left-right gradient masks */}
       <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-bg-primary to-transparent z-10 pointer-events-none" />
       <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-bg-primary to-transparent z-10 pointer-events-none" />

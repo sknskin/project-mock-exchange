@@ -34,8 +34,8 @@ export default function MarketTicker({ assets }: MarketTickerProps) {
 
   return (
     <div className="py-4 border-b border-border">
-      <div className="flex items-center gap-4 lg:gap-6 overflow-x-auto scrollbar-hide -mx-1 px-1">
-        <span className="text-[12px] text-text-quaternary font-medium shrink-0 self-center leading-tight text-center min-w-[52px] whitespace-pre-line">
+      <div className="flex items-center gap-2 lg:gap-3 overflow-x-auto scrollbar-hide -mx-1 px-1">
+        <span className="text-[12px] text-text-quaternary font-medium shrink-0 self-center leading-tight text-center min-w-[44px] whitespace-pre-line">
           {t('market.top5Turnover')}
         </span>
         {topAssets.map((asset) => {
@@ -45,7 +45,7 @@ export default function MarketTicker({ assets }: MarketTickerProps) {
           return (
             <div
               key={asset.symbol}
-              className="flex items-center shrink-0 pl-3 pr-2 py-2.5 rounded-xl bg-bg-secondary/40 min-w-[170px]"
+              className="flex items-center shrink-0 pl-2.5 pr-2 py-2.5 rounded-xl bg-bg-secondary/40 min-w-0"
             >
               <div className="flex-1 min-w-0">
                 <div className="text-[11px] text-text-quaternary font-medium mb-0.5">

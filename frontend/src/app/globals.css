@@ -257,7 +257,7 @@ nextjs-portal,
     -webkit-backface-visibility: hidden;
     user-select: none;
   }
-  .animate-marquee-index:hover {
+  .marquee-pause-on-hover:hover .animate-marquee-index {
     animation-play-state: paused;
   }
 
