@@ -314,7 +314,7 @@ export default function AdminStatsPage() {
       : '0';
 
   return (
-    <div>
+    <div className="overflow-x-hidden">
       {/* Page header */}
       <div className="py-6 flex items-center gap-2.5">
         <TrendingUp className="w-5 h-5 text-accent" />
