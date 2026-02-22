@@ -282,6 +282,17 @@ nextjs-portal,
     border-radius: 4px;
   }
 
+  /* 인증 기반 가시성 – 인라인 script(layout.tsx)가 설정한 data-authed/data-role 사용 */
+  /* Auth-based visibility – uses data-authed/data-role set by inline script in layout.tsx */
+  /* display: contents → 래퍼가 레이아웃에 영향 없이 자식을 그대로 노출 */
+  .auth-show { display: none; }
+  .admin-show { display: none; }
+  .auth-hide { display: contents; }
+  html[data-authed] .auth-show { display: contents; }
+  html[data-authed] .auth-hide { display: none; }
+  html[data-role="ADMIN"] .admin-show,
+  html[data-role="SYSTEM"] .admin-show { display: contents; }
+
   /* 토스트 페이드 인/아웃 / Toast fade in/out */
   @keyframes toast-fade {
     0% { opacity: 0; transform: translateY(-50%) translateX(4px); }
