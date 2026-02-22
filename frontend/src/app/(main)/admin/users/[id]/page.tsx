@@ -168,18 +168,27 @@ export default function AdminUserDetailPage({
     </span>
   );
 
-  const statusBadge = user && (
-    <span
-      className={cn(
-        'text-[13px] font-semibold px-2.5 py-0.5 rounded-full',
-        user.isActive
-          ? 'bg-green-500/15 text-green-400'
-          : 'bg-danger/15 text-danger',
-      )}
-    >
-      {user.isActive ? t('admin.users.approved') : t('admin.users.inactive')}
-    </span>
-  );
+  const statusBadge = user && (() => {
+    if (!user.isApproved) {
+      return (
+        <span className="text-[13px] font-semibold px-2.5 py-0.5 rounded-full bg-yellow-500/15 text-yellow-400">
+          {t('admin.users.pending')}
+        </span>
+      );
+    }
+    if (user.isActive) {
+      return (
+        <span className="text-[13px] font-semibold px-2.5 py-0.5 rounded-full bg-green-500/15 text-green-400">
+          {t('admin.users.approved')}
+        </span>
+      );
+    }
+    return (
+      <span className="text-[13px] font-semibold px-2.5 py-0.5 rounded-full bg-danger/15 text-danger">
+        {t('admin.users.inactive')}
+      </span>
+    );
+  })();
 
   const approvalBadge = user && (
     <span
@@ -279,7 +288,7 @@ export default function AdminUserDetailPage({
                     {t('admin.users.reject')}
                   </button>
                 )}
-                {user.isActive && (
+                {user.isApproved && user.isActive && (
                   <button
                     onClick={() => openModal('deactivate')}
                     className="h-10 px-6 rounded-xl bg-yellow-500 hover:bg-yellow-500/85 text-white text-[14px] font-semibold transition-colors"
@@ -287,7 +296,7 @@ export default function AdminUserDetailPage({
                     {t('admin.users.deactivate')}
                   </button>
                 )}
-                {!user.isActive && (
+                {user.isApproved && !user.isActive && (
                   <button
                     onClick={() => openModal('activate')}
                     className="h-10 px-6 rounded-xl bg-yellow-500 hover:bg-yellow-500/85 text-white text-[14px] font-semibold transition-colors"
@@ -295,12 +304,14 @@ export default function AdminUserDetailPage({
                     {t('admin.users.activate')}
                   </button>
                 )}
-                <button
-                  onClick={() => openModal('delete')}
-                  className="h-10 px-6 rounded-xl bg-danger hover:bg-danger/85 text-white text-[14px] font-semibold transition-colors"
-                >
-                  {t('admin.users.delete')}
-                </button>
+                {user.isApproved && (
+                  <button
+                    onClick={() => openModal('delete')}
+                    className="h-10 px-6 rounded-xl bg-danger hover:bg-danger/85 text-white text-[14px] font-semibold transition-colors"
+                  >
+                    {t('admin.users.delete')}
+                  </button>
+                )}
               </div>
             </div>
           )}
