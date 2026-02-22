@@ -13,7 +13,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/format';
-import { LogOut, Search, Menu, X, Megaphone, Newspaper, Users, BarChart3 } from 'lucide-react';
+import { LogOut, Search, Menu, X, Megaphone, Newspaper, Users, BarChart3, LayoutDashboard, Briefcase, ClipboardList, Trophy } from 'lucide-react';
 import VirtuExLogo from '@/components/ui/VirtuExLogo';
 import NotificationBell from '@/components/layout/NotificationBell';
 
@@ -168,6 +168,10 @@ export default function Header() {
                       : 'text-text-tertiary hover:text-text-primary',
                   )}
                 >
+                  {item.href === '/dashboard' && <LayoutDashboard className="w-4 h-4" />}
+                  {item.href === '/portfolio' && <Briefcase className="w-4 h-4" />}
+                  {item.href === '/orders' && <ClipboardList className="w-4 h-4" />}
+                  {item.href === '/leaderboard' && <Trophy className="w-4 h-4" />}
                   {item.href === '/news' && <Newspaper className="w-4 h-4" />}
                   {item.href === '/announcements' && <Megaphone className="w-4 h-4" />}
                   {item.href === '/admin/users' && <Users className="w-4 h-4" />}
