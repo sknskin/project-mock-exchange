@@ -97,7 +97,7 @@ const translations = {
 
     // Error
     'error.title': '서비스 오류',
-    'error.description': '서비스에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.',
+    'error.description': '서비스에 일시적인 문제가 발생했습니다.\n잠시 후 다시 시도해주세요.',
     'error.persistent': '지속적으로 오류가 발생하는 경우 관리자에게 연락해주세요.',
     'error.retry': '다시 시도',
     'error.goHome': '홈으로',
@@ -663,7 +663,7 @@ const translations = {
 
     // Error
     'error.title': 'Service Error',
-    'error.description': 'A temporary issue occurred. Please try again shortly.',
+    'error.description': 'A temporary issue occurred.\nPlease try again shortly.',
     'error.persistent': 'If the issue persists, please contact the administrator.',
     'error.retry': 'Retry',
     'error.goHome': 'Home',

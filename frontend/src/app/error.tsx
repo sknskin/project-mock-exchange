@@ -90,7 +90,7 @@ export default function ErrorPage({
       <h1 className="text-[24px] font-extrabold text-text-primary mb-3">
         {t('error.title')}
       </h1>
-      <p className="text-[14px] text-text-secondary max-w-[400px] leading-relaxed mb-2">
+      <p className="text-[14px] text-text-secondary max-w-[400px] leading-relaxed mb-2 whitespace-pre-line">
         {t('error.description')}
       </p>
       <p className="text-[13px] text-text-tertiary max-w-[400px] leading-relaxed mb-8">
@@ -98,23 +98,23 @@ export default function ErrorPage({
       </p>
 
       {/* 연락처 */}
-      <div className="flex items-center gap-4 mb-8 px-4 py-3 rounded-xl bg-bg-secondary/60 border border-border">
+      <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 mb-8 px-4 py-3 rounded-xl bg-bg-secondary/60 border border-border">
         <button
           onClick={(e) => copyToClipboard('sknskin@naver.com', e)}
           className="flex items-center gap-1.5 text-[12px] text-text-quaternary hover:text-text-secondary transition-colors cursor-pointer"
           title="sknskin@naver.com"
         >
           <MailIcon />
-          <span className="hidden lg:inline">sknskin@naver.com</span>
+          <span>sknskin@naver.com</span>
         </button>
-        <span className="w-px h-3 bg-border" />
+        <span className="hidden sm:block w-px h-3 bg-border" />
         <button
           onClick={(e) => copyToClipboard('010-7455-4829', e)}
           className="flex items-center gap-1.5 text-[12px] text-text-quaternary hover:text-text-secondary transition-colors cursor-pointer"
           title="010-7455-4829"
         >
           <PhoneIcon />
-          <span className="hidden lg:inline">010-7455-4829</span>
+          <span>010-7455-4829</span>
         </button>
       </div>
 

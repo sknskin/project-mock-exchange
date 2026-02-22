@@ -53,15 +53,15 @@ const CHART_COLORS = {
 };
 
 const TOOLTIP_STYLE = {
-  backgroundColor: '#1E1E24',
-  borderColor: 'rgba(255,255,255,0.1)',
+  backgroundColor: 'var(--color-bg-elevated, #1E1E24)',
+  borderColor: 'var(--color-border, rgba(255,255,255,0.1))',
   borderRadius: '8px',
-  color: '#fff',
+  color: 'var(--color-text-primary, #fff)',
 };
 
-const GRID_STROKE = 'rgba(255,255,255,0.06)';
-const AXIS_TICK_FILL = '#6B7683';
-const AXIS_LINE_STROKE = 'rgba(255,255,255,0.06)';
+const GRID_STROKE = 'var(--color-border, rgba(255,255,255,0.06))';
+const AXIS_TICK_FILL = 'var(--color-text-quaternary, #6B7683)';
+const AXIS_LINE_STROKE = 'var(--color-border, rgba(255,255,255,0.06))';
 
 // ===== Period / Days selector options =====
 const PERIOD_OPTIONS = [

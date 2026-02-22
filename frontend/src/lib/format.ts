@@ -34,6 +34,7 @@ export function formatPrice(price: number): string {
 }
 
 export function formatPercent(percent: number): string {
+  if (percent == null || isNaN(percent)) return '-';
   const sign = percent >= 0 ? '+' : '';
   return `${sign}${percent.toFixed(2)}%`;
 }
@@ -67,6 +68,7 @@ export function formatCompactPrice(price: number): string {
 }
 
 export function formatCurrency(value: number): string {
+  if (value == null || isNaN(value)) return '-';
   const locale = getLocale();
   if (locale === 'en') return '₩' + value.toLocaleString('en-US');
   return value.toLocaleString('ko-KR') + '원';
