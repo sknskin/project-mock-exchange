@@ -8,6 +8,7 @@
 'use client';
 
 import { useCallback, useRef, useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -68,6 +69,25 @@ export default function AddressSearch({
     setShowEmbed(true);
   }, [loadScript]);
 
+  // 모달 열릴 때 배경 스크롤 완전 차단 (iOS 포함) / Fully lock body scroll (iOS safe)
+  useEffect(() => {
+    if (!showEmbed) return;
+    const scrollY = window.scrollY;
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.left = '0';
+    document.body.style.right = '0';
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.left = '';
+      document.body.style.right = '';
+      document.body.style.overflow = '';
+      window.scrollTo(0, scrollY);
+    };
+  }, [showEmbed]);
+
   useEffect(() => {
     if (!showEmbed || !embedRef.current || !window.daum?.Postcode) return;
 
@@ -103,12 +123,12 @@ export default function AddressSearch({
         </Button>
       </div>
 
-      {/* 주소 검색: 모바일/데스크톱 모두 화면 중앙 모달 */}
-      {/* Address search: centered modal on both mobile and desktop */}
-      {showEmbed && (
+      {/* 주소 검색: Portal로 body에 직접 렌더 (부모 overflow/stacking context 영향 방지) */}
+      {/* Address search: Portal to body (avoids parent overflow/stacking context clipping) */}
+      {showEmbed && createPortal(
         <>
           <div className="fixed inset-0 z-[60] bg-black/60" onClick={() => setShowEmbed(false)} />
-          <div className="fixed inset-0 z-[60] flex items-center justify-center pointer-events-none px-4">
+          <div className="fixed inset-0 z-[61] flex items-center justify-center pointer-events-none px-4">
             <div className="relative w-full max-w-[500px] rounded-2xl shadow-2xl pointer-events-auto bg-bg-primary border border-border overflow-hidden">
               <div className="flex items-center justify-between px-4 py-3 border-b border-border">
                 <span className="text-[14px] font-bold text-text-primary">{t('auth.register.addressSearch')}</span>
@@ -120,10 +140,11 @@ export default function AddressSearch({
                   X
                 </button>
               </div>
-              <div ref={embedRef} className="w-full h-[400px] md:h-[450px]" />
+              <div ref={embedRef} className="w-full h-[60vh] md:h-[450px]" />
             </div>
           </div>
-        </>
+        </>,
+        document.body,
       )}
 
       {address && (

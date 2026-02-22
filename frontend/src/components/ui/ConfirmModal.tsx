@@ -35,21 +35,25 @@ export default function ConfirmModal({
 }: ConfirmModalProps) {
   const { t } = useTranslation();
 
-  // ESC 키로 닫기 / Close on Escape key
+  // ESC 키로 닫기 + 배경 스크롤 방지 / Close on Escape key + lock body scroll
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
     document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = '';
+    };
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
   const confirmBg = confirmVariant === 'danger'
-    ? 'bg-danger hover:bg-danger/85'
-    : 'bg-accent hover:bg-accent/85';
+    ? 'bg-danger hover:bg-danger/90'
+    : 'bg-accent hover:bg-accent/90';
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center">

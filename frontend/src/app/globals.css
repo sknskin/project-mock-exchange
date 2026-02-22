@@ -246,6 +246,11 @@ nextjs-portal,
     user-select: none;
   }
 
+  /* 라이트 모드에서 흰색 아이콘 반전 / Invert white icons in light mode */
+  html.light .icon-invert-light {
+    filter: invert(1);
+  }
+
   /* 시장 지수 마키 – 푸터 마키와 동일 로직, 느린 속도 + 호버 시 일시정지 */
   /* Market index marquee – same logic as footer, slower speed + pause on hover */
   .animate-marquee-index {

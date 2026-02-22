@@ -12,6 +12,7 @@ import { usePathname } from 'next/navigation';
 import { useTranslation } from '@/hooks/useTranslation';
 import { techItems } from '@/lib/constants';
 import VirtuExLogo from '@/components/ui/VirtuExLogo';
+import { cn } from '@/lib/format';
 
 
 const MailIcon = () => (
@@ -70,60 +71,66 @@ export default function Footer() {
 
   return (
     <footer className="border-t border-border mt-12 md:mt-20">
-      <div className="max-w-[1080px] mx-auto px-5 sm:px-8 lg:px-10 pt-10 md:pt-14">
+      <div className="max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-10 pt-10 md:pt-14">
         {/* 상단: 브랜드 + 설명 + 연락처 / Top: Brand + Description + Contact */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-          <div className="flex flex-col gap-1.5">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 shrink-0">
-                <VirtuExLogo size={20} />
-                <span className="font-extrabold text-[18px] text-text-primary tracking-tight">
-                  VirtuEx
-                </span>
-              </div>
-              <span className="text-[13px] text-text-tertiary">
-                — {t('footer.description')}
-              </span>
-            </div>
-            <p className="text-[11px] text-text-quaternary pl-[28px]">
+        <div className="flex flex-col gap-4 mb-8">
+          {/* 브랜드 / Brand */}
+          <div className="flex items-center gap-2">
+            <VirtuExLogo size={20} />
+            <span className="font-extrabold text-[18px] text-text-primary tracking-tight">
+              VirtuEx
+            </span>
+            <span className="hidden sm:inline text-[13px] text-text-tertiary">
+              — {t('footer.description')}
+            </span>
+          </div>
+          <p className="sm:hidden text-[12px] text-text-tertiary leading-relaxed">
+            {t('footer.description')}
+          </p>
+
+          {/* 설명 / Description */}
+          <div className="flex flex-col gap-1 sm:pl-[28px]">
+            <p className="text-[11px] text-text-quaternary leading-relaxed">
               {t('market.dataSourceDesc')}
             </p>
-            <p className="text-[11px] text-text-quaternary pl-[28px]">
+            <p className="text-[11px] text-text-quaternary leading-relaxed">
               {t('footer.about')}
-            </p>
-            <p className="text-[11px] text-text-quaternary pl-[28px]">
-              {t('footer.rights')}
             </p>
           </div>
 
-          {/* 연락처 링크 / Contact Links */}
-          <div className="flex items-center gap-4">
-            <button
-              onClick={(e) => copyToClipboard('sknskin@naver.com', e)}
-              className="flex items-center gap-1.5 text-[12px] text-text-quaternary hover:text-text-secondary transition-colors cursor-pointer"
-              title="sknskin@naver.com"
-            >
-              <MailIcon />
-              <span className="hidden lg:inline">sknskin@naver.com</span>
-            </button>
-            <a
-              href="https://github.com/sknskin/project-mock-exchange"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-[12px] text-text-quaternary hover:text-text-secondary transition-colors"
-              title="GitHub"
-            >
-              <GitHubIcon />
-              <span className="hidden lg:inline">GitHub</span>
-            </a>
-            <button
-              onClick={(e) => copyToClipboard('010-7455-4829', e)}
-              className="flex items-center gap-1.5 text-[12px] text-text-quaternary hover:text-text-secondary transition-colors cursor-pointer"
-              title="010-7455-4829"
-            >
-              <PhoneIcon />
-              <span className="hidden lg:inline">010-7455-4829</span>
-            </button>
+          {/* 연락처 링크 + 저작권 / Contact Links + Copyright */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-2 border-t border-border/40">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={(e) => copyToClipboard('sknskin@naver.com', e)}
+                className="flex items-center gap-1.5 text-[12px] text-text-quaternary hover:text-text-secondary transition-colors cursor-pointer"
+                title="sknskin@naver.com"
+              >
+                <MailIcon />
+                <span className="hidden sm:inline">sknskin@naver.com</span>
+              </button>
+              <a
+                href="https://github.com/sknskin/project-mock-exchange"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 text-[12px] text-text-quaternary hover:text-text-secondary transition-colors"
+                title="GitHub"
+              >
+                <GitHubIcon />
+                <span className="hidden sm:inline">GitHub</span>
+              </a>
+              <button
+                onClick={(e) => copyToClipboard('010-7455-4829', e)}
+                className="flex items-center gap-1.5 text-[12px] text-text-quaternary hover:text-text-secondary transition-colors cursor-pointer"
+                title="010-7455-4829"
+              >
+                <PhoneIcon />
+                <span className="hidden sm:inline">010-7455-4829</span>
+              </button>
+            </div>
+            <p className="text-[11px] text-text-quaternary">
+              {t('footer.rights')}
+            </p>
           </div>
         </div>
 
@@ -142,7 +149,7 @@ export default function Footer() {
                   <img
                     src={tech.icon}
                     alt={tech.name}
-                    className="w-5 h-5 object-contain"
+                    className={cn('w-5 h-5 object-contain', tech.invertInLight && 'icon-invert-light')}
                     loading="eager"
                   />
                 </div>
