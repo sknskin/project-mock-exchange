@@ -12,7 +12,7 @@ export interface User {
   name: string;
   role: string;
   isActive: boolean;
-  isApproved: boolean;
+  approvalStatus: string;
   createdAt: string;
 }
 
@@ -156,7 +156,7 @@ export interface AdminUser {
   name: string;
   role: string;
   isActive: boolean;
-  isApproved: boolean;
+  approvalStatus: string;
   phone: string;
   createdAt: string;
 }
@@ -166,6 +166,10 @@ export interface AdminUserDetail extends AdminUser {
   approvedBy: string | null;
   approvedByUsername: string | null;
   approvalNote: string | null;
+  rejectedAt: string | null;
+  rejectedBy: string | null;
+  rejectedByUsername: string | null;
+  rejectionNote: string | null;
   address: string;
   addressDetail: string | null;
   zipCode: string;
@@ -235,6 +239,7 @@ export interface AnnouncementDetail {
   comments: CommentItem[];
   createdAt: string;
   updatedAt: string;
+  editedAt: string | null;
 }
 
 // Notifications
@@ -261,7 +266,7 @@ export interface UserProfile {
   addressDetail: string | null;
   zipCode: string;
   isActive: boolean;
-  isApproved: boolean;
+  approvalStatus: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -292,7 +297,7 @@ export interface UserStatByRole {
 }
 
 export interface UserStatByStatus {
-  isApproved: boolean;
+  approvalStatus: string;
   isActive: boolean;
   count: number;
 }

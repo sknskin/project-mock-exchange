@@ -10,7 +10,7 @@
 import { use, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, MessageSquare, Trash2, Reply, Pin, Paperclip, Download, FileText, Heart, Eye, Pencil } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Trash2, Reply, Pin, Paperclip, Download, FileText, Heart, Eye, Pencil, ChevronLeft, ChevronRight } from 'lucide-react';
 import {
   useAnnouncementDetail,
   useDeleteAnnouncement,
@@ -19,6 +19,7 @@ import {
   useToggleAnnouncementLike,
   useToggleCommentLike,
   useIncrementViewCount,
+  useAdjacentAnnouncements,
 } from '@/hooks/useAdmin';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuthStore } from '@/stores/auth';
@@ -37,6 +38,7 @@ export default function AnnouncementDetailPage({
   const user = useAuthStore((s) => s.user);
 
   const { data, isLoading } = useAnnouncementDetail(id);
+  const { data: adjacent } = useAdjacentAnnouncements(id);
 
   const deleteAnnouncement = useDeleteAnnouncement();
   const addComment = useAddComment();
@@ -248,30 +250,26 @@ export default function AnnouncementDetailPage({
                 )}
 
                 {/* Author info + date */}
-                <div className="flex items-center gap-2 mb-4">
-                  <span
-                    className={cn(
-                      'text-[11px] font-semibold px-1.5 py-0.5 rounded',
-                      getRoleBadgeClass(data.author.role),
+                <div className="flex flex-col gap-1.5 mb-4">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={cn(
+                        'text-[11px] font-semibold px-1.5 py-0.5 rounded',
+                        getRoleBadgeClass(data.author.role),
+                      )}
+                    >
+                      {getRoleLabel(data.author.role)}
+                    </span>
+                    <span className="text-[13px] text-text-secondary font-medium">
+                      {data.author.name}
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-0.5 text-[12px] text-text-quaternary">
+                    <span>{t('announce.createdDate')} {formatDate(data.createdAt)}</span>
+                    {data.editedAt && (
+                      <span>{t('announce.editedDate')} {formatDate(data.editedAt)}</span>
                     )}
-                  >
-                    {getRoleLabel(data.author.role)}
-                  </span>
-                  <span className="text-[13px] text-text-secondary font-medium">
-                    {data.author.name}
-                  </span>
-                  <span className="text-text-quaternary text-[11px]">·</span>
-                  <span className="text-[12px] text-text-quaternary">
-                    {formatDate(data.createdAt)}
-                  </span>
-                  {data.updatedAt !== data.createdAt && (
-                    <>
-                      <span className="text-text-quaternary text-[11px]">·</span>
-                      <span className="text-[11px] text-text-quaternary italic">
-                        {formatDate(data.updatedAt)}
-                      </span>
-                    </>
-                  )}
+                  </div>
                 </div>
 
                 {/* Divider */}
@@ -551,6 +549,40 @@ export default function AnnouncementDetailPage({
               </div>
             )}
           </div>
+
+          {/* ── Prev / Next navigation ─────────────────────────────────────── */}
+          {adjacent && (adjacent.prev || adjacent.next) && (
+            <div className="bg-bg-secondary rounded-2xl border border-border/50 divide-y divide-border/40 overflow-hidden">
+              {adjacent.next && (
+                <Link
+                  href={`/announcements/${adjacent.next.id}`}
+                  className="flex items-center gap-3 px-5 py-3.5 hover:bg-bg-tertiary/50 transition-colors group"
+                >
+                  <div className="flex items-center gap-1.5 shrink-0 text-text-quaternary">
+                    <ChevronLeft className="w-4 h-4" />
+                    <span className="text-[12px] font-semibold w-[42px]">{t('announce.nextPost')}</span>
+                  </div>
+                  <span className="text-[13px] text-text-secondary group-hover:text-text-primary transition-colors truncate">
+                    {adjacent.next.title}
+                  </span>
+                </Link>
+              )}
+              {adjacent.prev && (
+                <Link
+                  href={`/announcements/${adjacent.prev.id}`}
+                  className="flex items-center gap-3 px-5 py-3.5 hover:bg-bg-tertiary/50 transition-colors group"
+                >
+                  <div className="flex items-center gap-1.5 shrink-0 text-text-quaternary">
+                    <ChevronRight className="w-4 h-4" />
+                    <span className="text-[12px] font-semibold w-[42px]">{t('announce.prevPost')}</span>
+                  </div>
+                  <span className="text-[13px] text-text-secondary group-hover:text-text-primary transition-colors truncate">
+                    {adjacent.prev.title}
+                  </span>
+                </Link>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -572,9 +604,9 @@ export default function AnnouncementDetailPage({
         isOpen={!!commentToDelete}
         onClose={() => setCommentToDelete(null)}
         onConfirm={handleDeleteComment}
-        title={t('announce.deleteComment')}
-        message={t('announce.deleteComment')}
-        confirmLabel={t('announce.deleteComment')}
+        title={t('announce.deleteCommentTitle')}
+        message={t('announce.deleteCommentConfirm')}
+        confirmLabel={t('announce.deleteCommentTitle')}
         cancelLabel={t('modal.cancel')}
         confirmVariant="danger"
         loading={deleteComment.isPending}

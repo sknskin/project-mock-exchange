@@ -106,6 +106,8 @@ const translations = {
 
     // Toast
     'toast.copied': '복사됨!',
+    'toast.watchlistAdded': '관심종목에 추가되었습니다',
+    'toast.watchlistRemoved': '관심종목에서 삭제되었습니다',
 
     // ScrollTop
     'scrollTop': '맨 위로',
@@ -158,6 +160,7 @@ const translations = {
     'auth.login.loading': '로그인 중...',
     'auth.login.error': '이메일/아이디 또는 비밀번호가 올바르지 않습니다.',
     'auth.login.pendingApproval': '승인 대기 중인 계정입니다. 관리자 승인 후 로그인할 수 있습니다.',
+    'auth.login.rejected': '가입이 반려된 계정입니다. 관리자에게 문의하세요.',
     'auth.login.deactivated': '비활성화된 계정입니다. 관리자에게 문의하세요.',
     'auth.login.noAccount': '계정이 없으신가요?',
     'auth.login.register': '회원가입',
@@ -286,6 +289,7 @@ const translations = {
     'admin.users.filterAll': '전체',
     'admin.users.filterPending': '승인대기',
     'admin.users.filterApproved': '승인완료',
+    'admin.users.filterRejected': '반려',
     'admin.users.filterInactive': '비활성',
     'admin.users.name': '이름',
     'admin.users.email': '이메일',
@@ -296,6 +300,7 @@ const translations = {
     'admin.users.updatedAt': '최근 수정일',
     'admin.users.approved': '승인됨',
     'admin.users.pending': '대기중',
+    'admin.users.rejected': '반려됨',
     'admin.users.inactive': '비활성',
     'admin.users.noUsers': '회원이 없습니다',
     'admin.users.detail': '회원 상세',
@@ -315,6 +320,9 @@ const translations = {
     'admin.users.approvedAt': '승인일',
     'admin.users.approvedBy': '승인자',
     'admin.users.approvalNote': '승인 메모',
+    'admin.users.rejectedAt': '반려일',
+    'admin.users.rejectedBy': '반려자',
+    'admin.users.rejectionNote': '반려 사유',
     'admin.users.basicInfo': '기본 정보',
     'admin.users.accountInfo': '계정 정보',
     'admin.users.actions': '관리',
@@ -359,6 +367,13 @@ const translations = {
     'announce.like': '좋아요',
     'announce.views': '조회',
     'announce.likes': '좋아요',
+    'announce.prevPost': '이전글',
+    'announce.nextPost': '다음글',
+    'announce.edited': '수정됨',
+    'announce.createdDate': '작성일',
+    'announce.editedDate': '수정일',
+    'announce.deleteCommentTitle': '댓글 삭제',
+    'announce.deleteCommentConfirm': '이 댓글을 삭제하시겠습니까?',
 
     // My Page
     'mypage.title': '마이페이지',
@@ -611,6 +626,8 @@ const translations = {
 
     // Toast
     'toast.copied': 'Copied!',
+    'toast.watchlistAdded': 'Added to watchlist',
+    'toast.watchlistRemoved': 'Removed from watchlist',
 
     // ScrollTop
     'scrollTop': 'Back to top',
@@ -663,6 +680,7 @@ const translations = {
     'auth.login.loading': 'Logging in...',
     'auth.login.error': 'Invalid email/username or password.',
     'auth.login.pendingApproval': 'Your account is pending approval. You can log in after admin approval.',
+    'auth.login.rejected': 'Your registration has been rejected. Please contact the administrator.',
     'auth.login.deactivated': 'Your account has been deactivated. Please contact the administrator.',
     'auth.login.noAccount': "Don't have an account?",
     'auth.login.register': 'Sign Up',
@@ -791,6 +809,7 @@ const translations = {
     'admin.users.filterAll': 'All',
     'admin.users.filterPending': 'Pending',
     'admin.users.filterApproved': 'Approved',
+    'admin.users.filterRejected': 'Rejected',
     'admin.users.filterInactive': 'Inactive',
     'admin.users.name': 'Name',
     'admin.users.email': 'Email',
@@ -801,6 +820,7 @@ const translations = {
     'admin.users.updatedAt': 'Last Updated',
     'admin.users.approved': 'Approved',
     'admin.users.pending': 'Pending',
+    'admin.users.rejected': 'Rejected',
     'admin.users.inactive': 'Inactive',
     'admin.users.noUsers': 'No users found',
     'admin.users.detail': 'User Detail',
@@ -820,6 +840,9 @@ const translations = {
     'admin.users.approvedAt': 'Approved At',
     'admin.users.approvedBy': 'Approved By',
     'admin.users.approvalNote': 'Approval Note',
+    'admin.users.rejectedAt': 'Rejected At',
+    'admin.users.rejectedBy': 'Rejected By',
+    'admin.users.rejectionNote': 'Rejection Reason',
     'admin.users.basicInfo': 'Basic Info',
     'admin.users.accountInfo': 'Account Info',
     'admin.users.actions': 'Actions',
@@ -864,6 +887,13 @@ const translations = {
     'announce.like': 'Like',
     'announce.views': 'Views',
     'announce.likes': 'Likes',
+    'announce.prevPost': 'Previous',
+    'announce.nextPost': 'Next',
+    'announce.edited': 'Edited',
+    'announce.createdDate': 'Created',
+    'announce.editedDate': 'Edited',
+    'announce.deleteCommentTitle': 'Delete Comment',
+    'announce.deleteCommentConfirm': 'Are you sure you want to delete this comment?',
 
     // My Page
     'mypage.title': 'My Page',
