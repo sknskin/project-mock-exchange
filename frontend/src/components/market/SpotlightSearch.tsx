@@ -86,11 +86,6 @@ export default function SpotlightSearch({ isOpen, onClose, assets, onLoginRequir
 
   // 선택 시 상세 이동 / Navigate to detail on select
   const handleSelect = (asset: Asset) => {
-    if (!isAuthenticated) {
-      onClose();
-      onLoginRequired?.();
-      return;
-    }
     onClose();
     router.push(`/asset/${asset.symbol}`);
   };
