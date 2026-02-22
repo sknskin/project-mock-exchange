@@ -96,14 +96,26 @@ export function useCandlesticks(
         { params: { interval: '1m', limit: fetchLimit } },
       );
       const raw = data.data ?? data;
-      const candles1m: Candlestick[] = raw.map((d: any) => ({
-        time: new Date(d.openTime).getTime(),
-        open: Number(d.openPrice),
-        high: Number(d.highPrice),
-        low: Number(d.lowPrice),
-        close: Number(d.closePrice),
-        volume: Number(d.volume),
-      }));
+      const seen = new Set<number>();
+      const candles1m: Candlestick[] = [];
+
+      for (const d of raw) {
+        const time = new Date(d.openTime).getTime();
+        if (seen.has(time)) continue;
+        seen.add(time);
+
+        const open = Number(d.openPrice);
+        const high = Number(d.highPrice);
+        const low = Number(d.lowPrice);
+        const close = Number(d.closePrice);
+        const volume = Number(d.volume);
+
+        // 유효하지 않은 캔들 필터링 / Filter invalid candles
+        if (!open || !high || !low || !close || !isFinite(open) || !isFinite(high) || !isFinite(low) || !isFinite(close)) continue;
+
+        candles1m.push({ time, open, high, low, close, volume: isFinite(volume) ? volume : 0 });
+      }
+
       return aggregateCandles(candles1m, interval);
     },
     enabled: !!symbol,
