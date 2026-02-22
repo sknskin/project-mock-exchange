@@ -26,7 +26,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts';
-import { Users, LogIn, Eye, FileText, TrendingUp, Activity, ShoppingCart, ArrowUpRight, ArrowDownRight, Minus, BarChart2 } from 'lucide-react';
+import { Users, LogIn, Eye, FileText, TrendingUp, Activity, ShoppingCart, ArrowUpRight, ArrowDownRight, Minus, BarChart2, BarChart3 } from 'lucide-react';
 import {
   useStatOverview,
   useStatOverviewTrend,
@@ -278,10 +278,13 @@ export default function AdminStatsPage() {
   const statusData = (users?.byStatus ?? []).map((s) => {
     let statusLabel: string;
     let color: string;
-    if (s.isActive && s.isApproved) {
+    if (s.approvalStatus === 'APPROVED' && s.isActive) {
       statusLabel = t('admin.users.approved');
       color = CHART_COLORS.green;
-    } else if (!s.isApproved) {
+    } else if (s.approvalStatus === 'REJECTED') {
+      statusLabel = t('admin.users.rejected');
+      color = CHART_COLORS.red;
+    } else if (s.approvalStatus === 'PENDING') {
       statusLabel = t('admin.users.pending');
       color = CHART_COLORS.yellow;
     } else {
@@ -314,15 +317,15 @@ export default function AdminStatsPage() {
       : '0';
 
   return (
-    <div className="overflow-x-hidden">
+    <div className="overflow-hidden">
       {/* Page header */}
       <div className="py-6 flex items-center gap-2.5">
-        <TrendingUp className="w-5 h-5 text-accent" />
+        <BarChart3 className="w-5 h-5 text-accent" />
         <h1 className="text-[20px] font-extrabold text-text-primary">{t('stats.title')}</h1>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-5 border-b border-border overflow-x-auto">
+      <div className="flex gap-1 mb-5 border-b border-border overflow-x-auto scrollbar-hide">
         {STAT_TABS.map((t_) => {
           const Icon = t_.icon;
           const isActive = tab === t_.key;
@@ -331,18 +334,22 @@ export default function AdminStatsPage() {
               key={t_.key}
               onClick={() => setTab(t_.key)}
               className={cn(
-                'flex items-center gap-1.5 px-4 py-2.5 text-[13px] font-semibold transition-colors whitespace-nowrap border-b-2 -mb-px',
+                'flex items-center gap-1.5 px-2.5 sm:px-4 py-2.5 text-[12px] sm:text-[13px] font-semibold transition-colors whitespace-nowrap border-b-2 -mb-px',
                 isActive
                   ? 'border-accent text-accent'
                   : 'border-transparent text-text-quaternary hover:text-text-secondary',
               )}
             >
-              <Icon className="w-4 h-4" />
+              <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
               {t(t_.labelKey)}
             </button>
           );
         })}
       </div>
+      <style jsx>{`
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+      `}</style>
 
       {/* Period / Days selectors - show only for non-overview tabs */}
       {tab !== 'overview' && (
@@ -491,7 +498,7 @@ export default function AdminStatsPage() {
                     data={roleData}
                     cx="50%"
                     cy="50%"
-                    innerRadius={70}
+                    innerRadius={50}
                     outerRadius={110}
                     paddingAngle={3}
                     dataKey="value"
@@ -501,15 +508,7 @@ export default function AdminStatsPage() {
                       <Cell key={`role-${index}`} fill={entry.color} strokeWidth={0} />
                     ))}
                   </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: TOOLTIP_STYLE.backgroundColor,
-                      border: `1px solid ${TOOLTIP_STYLE.borderColor}`,
-                      borderRadius: '8px',
-                      color: '#fff',
-                      fontSize: 13,
-                    }}
-                  />
+                  <Tooltip content={<CustomTooltip />} />
                   <Legend
                     wrapperStyle={{ fontSize: 12, color: AXIS_TICK_FILL, paddingTop: 8 }}
                     formatter={(value) => (
@@ -532,7 +531,7 @@ export default function AdminStatsPage() {
                     data={statusData}
                     cx="50%"
                     cy="50%"
-                    innerRadius={70}
+                    innerRadius={50}
                     outerRadius={110}
                     paddingAngle={3}
                     dataKey="value"
@@ -542,15 +541,7 @@ export default function AdminStatsPage() {
                       <Cell key={`status-${index}`} fill={entry.color} strokeWidth={0} />
                     ))}
                   </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: TOOLTIP_STYLE.backgroundColor,
-                      border: `1px solid ${TOOLTIP_STYLE.borderColor}`,
-                      borderRadius: '8px',
-                      color: '#fff',
-                      fontSize: 13,
-                    }}
-                  />
+                  <Tooltip content={<CustomTooltip />} />
                   <Legend
                     wrapperStyle={{ fontSize: 12, color: AXIS_TICK_FILL, paddingTop: 8 }}
                     formatter={(value) => (
@@ -663,15 +654,7 @@ export default function AdminStatsPage() {
                     axisLine={{ stroke: AXIS_LINE_STROKE }}
                     tickLine={false}
                   />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: TOOLTIP_STYLE.backgroundColor,
-                      border: `1px solid ${TOOLTIP_STYLE.borderColor}`,
-                      borderRadius: '8px',
-                      color: '#fff',
-                      fontSize: 13,
-                    }}
-                  />
+                  <Tooltip content={<CustomTooltip />} />
                   <Bar
                     dataKey="views"
                     name={t('stats.pageViews')}
@@ -822,15 +805,7 @@ export default function AdminStatsPage() {
                     axisLine={{ stroke: AXIS_LINE_STROKE }}
                     tickLine={false}
                   />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: TOOLTIP_STYLE.backgroundColor,
-                      border: `1px solid ${TOOLTIP_STYLE.borderColor}`,
-                      borderRadius: '8px',
-                      color: '#fff',
-                      fontSize: 13,
-                    }}
-                  />
+                  <Tooltip content={<CustomTooltip />} />
                   <Bar
                     dataKey="volume"
                     name={t('stats.totalVolume')}
@@ -853,7 +828,7 @@ export default function AdminStatsPage() {
                     data={buySellData}
                     cx="50%"
                     cy="50%"
-                    innerRadius={70}
+                    innerRadius={50}
                     outerRadius={110}
                     paddingAngle={3}
                     dataKey="value"
@@ -863,15 +838,7 @@ export default function AdminStatsPage() {
                       <Cell key={`bs-${index}`} fill={entry.color} strokeWidth={0} />
                     ))}
                   </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: TOOLTIP_STYLE.backgroundColor,
-                      border: `1px solid ${TOOLTIP_STYLE.borderColor}`,
-                      borderRadius: '8px',
-                      color: '#fff',
-                      fontSize: 13,
-                    }}
-                  />
+                  <Tooltip content={<CustomTooltip />} />
                   <Legend
                     wrapperStyle={{ fontSize: 12, color: AXIS_TICK_FILL, paddingTop: 8 }}
                     formatter={(value) => (

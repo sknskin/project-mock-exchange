@@ -7,7 +7,7 @@
  */
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import AuthGuard from '@/components/layout/AuthGuard';
 import TransactionList from '@/components/portfolio/TransactionList';
 import Skeleton from '@/components/ui/Skeleton';
@@ -15,7 +15,7 @@ import Button from '@/components/ui/Button';
 import { useOrders, useCancelOrder } from '@/hooks/useOrders';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn, formatPrice, formatQuantity, formatDate } from '@/lib/format';
-import { Search, ChevronDown } from 'lucide-react';
+import { Search, ChevronDown, ClipboardList, Check } from 'lucide-react';
 import type { TranslationKey } from '@/lib/i18n';
 
 const STATUS_OPTIONS: { key: string; labelKey: TranslationKey }[] = [
@@ -23,6 +23,71 @@ const STATUS_OPTIONS: { key: string; labelKey: TranslationKey }[] = [
   { key: 'PENDING', labelKey: 'orders.pending' },
   { key: 'FILLED', labelKey: 'orders.filled' },
 ];
+
+function StatusDropdown({
+  value,
+  onChange,
+  options,
+  t,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: typeof STATUS_OPTIONS;
+  t: (key: TranslationKey) => string;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  const selectedLabel = options.find((o) => o.key === value);
+
+  return (
+    <div className="relative shrink-0" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className={cn(
+          'flex items-center gap-1.5 bg-bg-secondary border border-border rounded-xl pl-3 pr-2 sm:pl-4 sm:pr-3 py-2.5',
+          'text-[13px] sm:text-[14px] font-medium transition-colors',
+          open && 'border-accent/60',
+          value !== 'all' ? 'text-text-primary' : 'text-text-tertiary',
+        )}
+      >
+        <span className="whitespace-nowrap">{selectedLabel ? t(selectedLabel.labelKey) : ''}</span>
+        <ChevronDown className={cn('w-4 h-4 text-text-quaternary transition-transform', open && 'rotate-180')} />
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-full mt-1.5 z-50 min-w-[140px] bg-bg-secondary border border-border rounded-xl shadow-2xl overflow-hidden">
+          {options.map((opt) => (
+            <button
+              key={opt.key}
+              type="button"
+              onClick={() => { onChange(opt.key); setOpen(false); }}
+              className={cn(
+                'flex items-center justify-between w-full px-3.5 py-2.5 text-left text-[13px] sm:text-[14px] font-medium transition-colors',
+                opt.key === value
+                  ? 'text-accent bg-accent/10'
+                  : 'text-text-secondary hover:text-text-primary hover:bg-bg-tertiary',
+              )}
+            >
+              {t(opt.labelKey)}
+              {opt.key === value && <Check className="w-3.5 h-3.5 text-accent shrink-0" />}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function OrdersPage() {
   const { t } = useTranslation();
@@ -53,7 +118,8 @@ export default function OrdersPage() {
   return (
     <AuthGuard>
       <div>
-        <div className="py-6">
+        <div className="py-6 flex items-center gap-2.5">
+          <ClipboardList className="w-5 h-5 text-accent" />
           <h1 className="text-[20px] font-extrabold text-text-primary">{t('orders.title')}</h1>
         </div>
 
@@ -70,26 +136,13 @@ export default function OrdersPage() {
               className="w-full bg-bg-secondary border border-border rounded-xl pl-9 pr-4 py-2.5 text-[14px] text-text-primary placeholder:text-text-quaternary focus:outline-none focus:border-accent/60 transition-colors"
             />
           </div>
-          {/* Status filter select */}
-          <div className="relative shrink-0">
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className={cn(
-                'appearance-none bg-bg-secondary border border-border rounded-xl pl-4 pr-9 py-2.5',
-                'text-[14px] font-medium transition-colors cursor-pointer',
-                'focus:outline-none focus:border-accent/60',
-                statusFilter !== 'all' ? 'text-text-primary' : 'text-text-tertiary',
-              )}
-            >
-              {STATUS_OPTIONS.map((opt) => (
-                <option key={opt.key} value={opt.key}>
-                  {t(opt.labelKey)}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-quaternary pointer-events-none" />
-          </div>
+          {/* Status filter – custom dropdown */}
+          <StatusDropdown
+            value={statusFilter}
+            onChange={setStatusFilter}
+            options={STATUS_OPTIONS}
+            t={t}
+          />
         </div>
 
         <div>

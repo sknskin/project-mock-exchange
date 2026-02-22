@@ -60,15 +60,22 @@ export default function Pagination({
   );
 
   const perPageEl = onLimitChange ? (
-    <select
-      value={limit}
-      onChange={(e) => onLimitChange(Number(e.target.value))}
-      className="bg-bg-secondary border border-border rounded px-1.5 py-0.5 text-[12px] text-text-secondary whitespace-nowrap"
-    >
-      {[10, 20, 50, 100].map((n) => (
-        <option key={n} value={n}>{n}{t('pagination.perPage')}</option>
+    <div className="flex items-center gap-1 bg-bg-secondary border border-border rounded-lg p-0.5">
+      {[10, 20, 50].map((n) => (
+        <button
+          key={n}
+          onClick={() => onLimitChange(n)}
+          className={cn(
+            'px-2 py-0.5 rounded text-[11px] font-medium transition-colors whitespace-nowrap',
+            limit === n
+              ? 'bg-accent text-white'
+              : 'text-text-quaternary hover:text-text-secondary',
+          )}
+        >
+          {n}{t('pagination.perPage')}
+        </button>
       ))}
-    </select>
+    </div>
   ) : (
     <span className="text-[12px] text-text-quaternary whitespace-nowrap">
       {limit}{t('pagination.perPage')}
