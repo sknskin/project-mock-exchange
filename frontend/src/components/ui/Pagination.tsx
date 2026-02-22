@@ -32,7 +32,7 @@ export default function Pagination({
 
   const getPageNumbers = () => {
     const pages: (number | '...')[] = [];
-    const range = 5;
+    const range = 2;
     const start = Math.max(1, page - range);
     const end = Math.min(totalPages, page + range);
 
@@ -53,19 +53,45 @@ export default function Pagination({
     return pages;
   };
 
+  const totalLabel = (
+    <span className="text-[12px] text-text-quaternary whitespace-nowrap">
+      {t('pagination.total')} {total}{t('pagination.count')}
+    </span>
+  );
+
+  const perPageEl = onLimitChange ? (
+    <select
+      value={limit}
+      onChange={(e) => onLimitChange(Number(e.target.value))}
+      className="bg-bg-secondary border border-border rounded px-1.5 py-0.5 text-[12px] text-text-secondary whitespace-nowrap"
+    >
+      {[10, 20, 50, 100].map((n) => (
+        <option key={n} value={n}>{n}{t('pagination.perPage')}</option>
+      ))}
+    </select>
+  ) : (
+    <span className="text-[12px] text-text-quaternary whitespace-nowrap">
+      {limit}{t('pagination.perPage')}
+    </span>
+  );
+
   return (
-    <div className="flex items-center justify-between gap-2 py-3">
-      {/* Total count — left */}
-      <span className="text-[12px] text-text-quaternary whitespace-nowrap">
-        {t('pagination.total')} {total}{t('pagination.count')}
-      </span>
+    <div className="flex flex-col items-center gap-2 py-3 sm:flex-row sm:justify-between">
+      {/* Mobile: total + per-page row */}
+      <div className="flex items-center justify-between w-full sm:hidden">
+        {totalLabel}
+        {perPageEl}
+      </div>
+
+      {/* Total count — desktop only (left) */}
+      <div className="hidden sm:block">{totalLabel}</div>
 
       {/* Page numbers — center */}
       <div className="flex items-center gap-0.5">
         <button
           onClick={() => onPageChange(1)}
           disabled={page === 1}
-          className="p-2 rounded text-text-quaternary hover:text-text-primary hover:bg-bg-secondary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          className="hidden sm:block p-2 rounded text-text-quaternary hover:text-text-primary hover:bg-bg-secondary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
         >
           <ChevronsLeft className="w-4 h-4" />
         </button>
@@ -106,28 +132,14 @@ export default function Pagination({
         <button
           onClick={() => onPageChange(totalPages)}
           disabled={page >= totalPages}
-          className="p-2 rounded text-text-quaternary hover:text-text-primary hover:bg-bg-secondary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          className="hidden sm:block p-2 rounded text-text-quaternary hover:text-text-primary hover:bg-bg-secondary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
         >
           <ChevronsRight className="w-4 h-4" />
         </button>
       </div>
 
-      {/* Per-page selector — right */}
-      {onLimitChange ? (
-        <select
-          value={limit}
-          onChange={(e) => onLimitChange(Number(e.target.value))}
-          className="bg-bg-secondary border border-border rounded px-1.5 py-0.5 text-[12px] text-text-secondary whitespace-nowrap"
-        >
-          {[10, 20, 50, 100].map((n) => (
-            <option key={n} value={n}>{n}{t('pagination.perPage')}</option>
-          ))}
-        </select>
-      ) : (
-        <span className="text-[12px] text-text-quaternary whitespace-nowrap">
-          {limit}{t('pagination.perPage')}
-        </span>
-      )}
+      {/* Per-page — desktop only (right) */}
+      <div className="hidden sm:block">{perPageEl}</div>
     </div>
   );
 }
