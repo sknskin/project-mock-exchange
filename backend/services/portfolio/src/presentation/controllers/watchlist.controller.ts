@@ -1,3 +1,10 @@
+/**
+ * @file 관심종목 컨트롤러
+ * @description 사용자별 관심종목 조회/추가/삭제 API
+ *
+ * @file Watchlist Controller
+ * @description API for user watchlist retrieval, addition, and removal
+ */
 import {
   Controller,
   Get,
@@ -13,6 +20,7 @@ import { WatchlistService } from '../../domain/services/watchlist.service';
 export class WatchlistController {
   constructor(private readonly watchlistService: WatchlistService) {}
 
+  // 관심종목 목록 조회 / Get watchlist symbols
   @Get()
   async getWatchlist(@Headers('x-user-id') userId: string) {
     this.validateUserId(userId);
@@ -20,6 +28,7 @@ export class WatchlistController {
     return { success: true, data: symbols };
   }
 
+  // 관심종목 추가 / Add symbol to watchlist
   @Post(':symbol')
   async addSymbol(
     @Headers('x-user-id') userId: string,
@@ -30,6 +39,7 @@ export class WatchlistController {
     return { success: true };
   }
 
+  // 관심종목 삭제 / Remove symbol from watchlist
   @Delete(':symbol')
   async removeSymbol(
     @Headers('x-user-id') userId: string,

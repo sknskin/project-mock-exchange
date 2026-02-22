@@ -225,13 +225,21 @@ Next.js 15 App Router 기반의 프론트엔드가 포트 4000에서 시작됩�
 | URL | 설명 |
 |---|---|
 | http://localhost:4000 | 랜딩 페이지 (프로젝트 소개) |
-| http://localhost:4000/dashboard | 마켓 대시보드 (실시간 가격) |
+| http://localhost:4000/dashboard | 마켓 대시보드 (실시간 가격, 관심종목 탭) |
 | http://localhost:4000/login | 로그인 |
 | http://localhost:4000/register | 회원가입 |
 | http://localhost:4000/portfolio | 포트폴리오 (보유자산/잔고) |
 | http://localhost:4000/orders | 주문 내역 |
 | http://localhost:4000/leaderboard | 리더보드 (수익률 랭킹) |
 | http://localhost:4000/asset/BTC-USD | 종목 상세 (차트, 주문, 호가) |
+| http://localhost:4000/news | 뉴스 목록 |
+| http://localhost:4000/announcements | 공지사항 목록 |
+| http://localhost:4000/announcements/:id | 공지사항 상세 (조회수, 좋아요) |
+| http://localhost:4000/mypage | 마이페이지 (프로필, 설정) |
+| http://localhost:4000/admin/users | 관리자 - 사용자 관리 (ADMIN 전용) |
+| http://localhost:4000/admin/users/:id | 관리자 - 사용자 상세 (ADMIN 전용) |
+| http://localhost:4000/admin/stats | 관리자 - 통계 (ADMIN 전용) |
+| http://localhost:4000/admin/announcements | 관리자 - 공지사항 관리 (ADMIN 전용) |
 | http://localhost:3000/api-docs | Swagger API 문서 |
 
 ---

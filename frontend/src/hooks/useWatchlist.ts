@@ -1,3 +1,10 @@
+/**
+ * @file 관심종목 훅
+ * @description 관심종목 조회/추가/삭제를 위한 TanStack Query 훅
+ *
+ * @file Watchlist Hooks
+ * @description TanStack Query hooks for watchlist retrieval, addition, and removal
+ */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { useAuthStore } from '@/stores/auth';

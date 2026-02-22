@@ -9,21 +9,35 @@ Mock Exchange(VirtuEx)는 실시간 모의 주식/암호화폐 거래 플랫폼�
 ## 주요 기능
 
 ### 거래 기능
-- **실시간 시세**: 200개 이상 종목(주식, 암호화폐, ETF, 외환, 원자재)의 실시간 가격 시뮬레이션
+- **실시간 시세**: 20개 종목(주식 10개, 암호화폐 10개)의 Yahoo Finance 기반 실시간 가격 데이터
 - **주문 시스템**: 시장가/지정가 주문, 부분 체결, 주문 취소 지원
 - **매칭 엔진**: Price-Time Priority 알고리즘 기반의 주문 매칭
 - **포트폴리오**: 보유 자산 현황, 실현/미실현 손익(P&L) 계산, 거래 내역 조회
+- **관심종목**: 종목별 즐겨찾기 등록/해제, 대시보드 관심종목 탭
 
 ### 데이터 시각화
-- **캔들스틱 차트**: 1분/5분/15분/1시간/1일 간격의 OHLCV 차트
+- **캔들스틱 차트**: 1분/5분/15분/1시간/1일 간격의 OHLCV 차트 (Lightweight Charts)
 - **호가창**: 실시간 매수/매도 주문 현황
 - **리더보드**: 사용자 수익률 랭킹
+- **시장 지수 마키**: 24개 글로벌 시장 지수 실시간 표시
+- **거래대금 Top 5**: 대시보드 상단 거래대금 상위 종목 표시
 
 ### 사용자 경험
-- **회원가입/로그인**: JWT 기반 인증 (Access Token + Refresh Token)
+- **회원가입/로그인**: JWT 기반 인증 (Access Token + Refresh Token), 승인 대기/비활성 에러 분기
 - **다크/라이트 테마**: 시스템 설정 연동 및 수동 전환
 - **다국어 지원**: 한국어/영어 UI
-- **반응형 디자인**: 모바일/태블릿/데스크톱 대응
+- **반응형 디자인**: 모바일/태블릿/데스크톱 대응 (하단 네비게이션, 반응형 페이지네이션)
+- **검색**: 대시보드 상단 스포트라이트 검색 (종목 즉시 이동)
+
+### 관리자 기능
+- **사용자 관리**: 전체 사용자 조회, 승인/거부, 역할 변경, 활성/비활성 전환
+- **관리자 통계**: 사용자/주문/거래 통계 대시보드
+- **공지사항 관리**: 공지사항 CRUD, 조회수/좋아요 기능
+
+### 콘텐츠
+- **뉴스**: Yahoo Finance 뉴스 피드 표시
+- **공지사항**: 공지 목록/상세, 조회수, 좋아요 토글
+- **마이페이지**: 사용자 프로필 및 설정
 
 ---
 
@@ -445,34 +459,30 @@ PostgreSQL 기반을 선택한 이유: 기존 인프라 활용, 운영 단순화
 ### 모노레포 구성 (Turborepo + pnpm)
 
 ```
-/Users/dohee/Documents/workspace/mock-exchange/
-├── packages/          # 공유 라이브러리
-│   ├── common/        # 이벤트, DTO, 유틸리티
-│   ├── event-store/   # Event Store 라이브러리
-│   ├── saga/          # Saga 프레임워크
-│   └── observability/ # OpenTelemetry 설정
-├── services/          # 마이크로서비스 (각각 Clean Architecture)
-│   ├── api-gateway/
-│   ├── user-auth/
-│   ├── market-data/
-│   ├── order-engine/
-│   ├── portfolio/
-│   ├── notification/
-│   ├── chat/
-│   └── ai-service/
-├── apps/              # 프론트엔드
-│   └── web/           # Next.js (App Router)
-├── infrastructure/    # 인프라 설정
-│   ├── docker/
-│   ├── k8s/
-│   └── helm/
-├── scripts/           # 개발/운영 스크립트
-├── tests/             # 통합/부하/카오스 테스트
-│   ├── e2e/
-│   ├── load/
-│   └── chaos/
-├── docs/              # 문서 (ADR, API, 런북, 다이어그램)
-└── .github/workflows/ # CI/CD 파이프라인
+project-mock-exchange/
+├── backend/
+│   ├── packages/          # 공유 라이브러리
+│   │   ├── common/        # 이벤트, DTO, 유틸리티
+│   │   └── event-store/   # Event Store 라이브러리
+│   └── services/          # 마이크로서비스 (각각 Clean Architecture)
+│       ├── api-gateway/   # JWT 인증, 프록시, Swagger
+│       ├── user-auth/     # 인증, 관리자 기능
+│       ├── market-data/   # Yahoo Finance 시세, 뉴스
+│       ├── order-engine/  # 주문 매칭 (이벤트 소싱 + CQRS)
+│       ├── portfolio/     # 잔고, 보유 자산, 관심종목
+│       ├── notification/  # 알림 (스켈레톤)
+│       ├── chat/          # 채팅 (스켈레톤)
+│       └── ai-service/    # AI (스켈레톤)
+├── frontend/              # Next.js 15 (App Router)
+│   ├── src/app/           # 페이지 라우트
+│   ├── src/components/    # UI 컴포넌트
+│   ├── src/hooks/         # TanStack Query 커스텀 훅
+│   ├── src/stores/        # Zustand 상태 관리
+│   └── src/lib/           # API 클라이언트, i18n
+├── infrastructure/        # Docker, Kafka 스크립트
+├── scripts/               # 개발 환경 스크립트
+├── docs/                  # 문서
+└── docker-compose.yml     # PostgreSQL, Redis, Kafka
 ```
 
 ### 각 서비스 내부 구조 (Clean Architecture)

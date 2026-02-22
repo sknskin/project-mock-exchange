@@ -7,7 +7,7 @@
 | 계층 | 기술 |
 |------|------|
 | 백엔드 | NestJS (TypeScript) |
-| 프론트엔드 | Next.js (예정) |
+| 프론트엔드 | Next.js 15 (App Router) |
 | 데이터베이스 | PostgreSQL 16 (서비스별 독립 DB) |
 | 캐시 | Redis 7 |
 | 메시지 브로커 | Apache Kafka (KRaft 모드) |
@@ -18,19 +18,24 @@
 ## 시스템 아키텍처
 
 ```
-                    +-----------------+
-                    |   API Gateway   |  :3000
-                    | (JWT + 프록시)  |
-                    +--------+--------+
-                             |
++-----------------+
+|   Frontend      |  :4000
+| (Next.js 15)    |
++--------+--------+
+         |
++--------v--------+
+|   API Gateway   |  :3000
+| (JWT + 프록시)  |
++--------+--------+
+         |
          +-------------------+-------------------+
          |                   |                   |
 +--------v------+  +---------v-------+  +--------v--------+
 | User/Auth     |  | Market Data     |  | Order Engine     |
 | :3007         |  | :3001           |  | :3002            |
-| - 회원가입    |  | - GBM 가격 엔진 |  | - 이벤트 소싱    |
+| - 회원가입    |  | - Yahoo Finance |  | - 이벤트 소싱    |
 | - 로그인/JWT  |  | - 가격 캐시     |  | - 매칭 엔진      |
-| - 토큰 관리   |  | - 캔들스틱      |  | - CQRS 읽기 모델 |
+| - 관리자 기능 |  | - 캔들스틱      |  | - CQRS 읽기 모델 |
 +---------------+  +-----------------+  +--------+--------+
                                                  |
                                         +--------v--------+
@@ -38,7 +43,7 @@
                                         | :3003            |
                                         | - 잔고 관리      |
                                         | - 보유 자산      |
-                                        | - 거래 정산      |
+                                        | - 관심종목       |
                                         +-----------------+
 ```
 
@@ -46,23 +51,29 @@
 
 ```
 mock-exchange/
-├── packages/                   # 공유 라이브러리
-│   ├── common/                 # 상수, DTO, 이벤트 타입, 유틸리티
-│   └── event-store/            # PostgreSQL 이벤트 스토어 + AggregateRoot 베이스
-├── services/                   # 마이크로서비스
-│   ├── api-gateway/            # API Gateway (JWT 인증, 레이트 리미팅, 프록시)
-│   ├── user-auth/              # 사용자 인증 및 권한 관리
-│   ├── market-data/            # 가격 시뮬레이션 및 시장 데이터
-│   ├── order-engine/           # 주문 매칭 (이벤트 소싱 + CQRS)
-│   ├── portfolio/              # 잔고, 보유 자산, 거래 정산
-│   ├── notification/           # 알림 서비스 (스켈레톤)
-│   ├── chat/                   # 채팅 서비스 (스켈레톤)
-│   └── ai-service/             # AI 서비스 (스켈레톤)
-├── apps/                       # 프론트엔드 애플리케이션 (예정)
-├── infrastructure/             # Docker, Kafka 스크립트, Prometheus
-├── scripts/                    # 개발 환경 설정, 마이그레이션 스크립트
-├── docker-compose.yml          # PostgreSQL, Redis, Kafka
-└── ARCHITECTURE_SUMMARY_KR.md  # 전체 시스템 설계 문서
+├── backend/
+│   ├── packages/                 # 공유 라이브러리
+│   │   ├── common/               # 상수, DTO, 이벤트 타입, 유틸리티
+│   │   └── event-store/          # PostgreSQL 이벤트 스토어 + AggregateRoot 베이스
+│   └── services/                 # 마이크로서비스
+│       ├── api-gateway/          # API Gateway (JWT 인증, 레이트 리미팅, 프록시)
+│       ├── user-auth/            # 사용자 인증, 권한 관리, 관리자 기능
+│       ├── market-data/          # Yahoo Finance 가격 데이터, 캔들스틱, 뉴스
+│       ├── order-engine/         # 주문 매칭 (이벤트 소싱 + CQRS)
+│       ├── portfolio/            # 잔고, 보유 자산, 관심종목, 거래 정산
+│       ├── notification/         # 알림 서비스 (스켈레톤)
+│       ├── chat/                 # 채팅 서비스 (스켈레톤)
+│       └── ai-service/           # AI 서비스 (스켈레톤)
+├── frontend/                     # Next.js 15 프론트엔드 (App Router)
+│   ├── src/app/                  # 페이지 라우트
+│   ├── src/components/           # UI 컴포넌트
+│   ├── src/hooks/                # 커스텀 훅 (TanStack Query)
+│   ├── src/stores/               # Zustand 상태 관리
+│   └── src/lib/                  # API 클라이언트, i18n, 유틸리티
+├── infrastructure/               # Docker, Kafka 스크립트, Prometheus
+├── scripts/                      # 개발 환경 설정, 실행 스크립트
+├── docker-compose.yml            # PostgreSQL, Redis, Kafka
+└── docs/                         # 문서 (로컬 실행 가이드 등)
 ```
 
 ## 시작하기
@@ -100,12 +111,8 @@ cd services/portfolio && npx prisma db push && cd ../..
 # 6. 전체 빌드
 pnpm turbo build
 
-# 7. 서비스 실행 (각각 별도 터미널에서)
-pnpm --filter @mock-exchange/market-data dev     # :3001 시장 데이터
-pnpm --filter @mock-exchange/order-engine dev    # :3002 주문 엔진
-pnpm --filter @mock-exchange/portfolio dev       # :3003 포트폴리오
-pnpm --filter @mock-exchange/user-auth dev       # :3007 인증
-pnpm --filter @mock-exchange/api-gateway dev     # :3000 API Gateway (마지막에 실행)
+# 7. 전체 서비스 실행 (백엔드 5개 + 프론트엔드)
+bash scripts/start-all.sh
 ```
 
 ### API 테스트 예시 (curl)
@@ -167,6 +174,8 @@ curl http://localhost:3000/api/portfolio/valuation \
 | GET | `/api/market/prices/:symbol` | 불필요 | 특정 자산 가격 |
 | GET | `/api/market/prices/:symbol/history` | 불필요 | 가격 이력 |
 | GET | `/api/market/prices/:symbol/candlesticks` | 불필요 | 캔들스틱 데이터 |
+| GET | `/api/market/news` | 불필요 | 뉴스 목록 |
+| GET | `/api/market/indices` | 불필요 | 글로벌 시장 지수 (24개) |
 
 ### 주문 (`/api/orders`)
 | 메서드 | 엔드포인트 | 인증 | 설명 |
@@ -189,6 +198,30 @@ curl http://localhost:3000/api/portfolio/valuation \
 | GET | `/api/portfolio/valuation` | JWT | 실시간 P&L 평가 |
 | GET | `/api/portfolio/leaderboard` | 불필요 | 리더보드 |
 | GET | `/api/portfolio/transactions` | JWT | 거래 내역 |
+| GET | `/api/portfolio/watchlist` | JWT | 관심종목 목록 조회 |
+| POST | `/api/portfolio/watchlist/:symbol` | JWT | 관심종목 추가 |
+| DELETE | `/api/portfolio/watchlist/:symbol` | JWT | 관심종목 삭제 |
+
+### 관리자 (`/api/admin`)
+| 메서드 | 엔드포인트 | 인증 | 설명 |
+|--------|-----------|------|------|
+| GET | `/api/admin/users` | JWT (ADMIN) | 전체 사용자 목록 |
+| GET | `/api/admin/users/:id` | JWT (ADMIN) | 사용자 상세 조회 |
+| PATCH | `/api/admin/users/:id/approve` | JWT (ADMIN) | 사용자 승인 |
+| PATCH | `/api/admin/users/:id/reject` | JWT (ADMIN) | 사용자 거부 |
+| PATCH | `/api/admin/users/:id/role` | JWT (ADMIN) | 역할 변경 |
+| PATCH | `/api/admin/users/:id/toggle-active` | JWT (ADMIN) | 활성/비활성 전환 |
+| GET | `/api/admin/stats` | JWT (ADMIN) | 관리자 통계 |
+
+### 공지사항 (`/api/announcements`)
+| 메서드 | 엔드포인트 | 인증 | 설명 |
+|--------|-----------|------|------|
+| GET | `/api/announcements` | 불필요 | 공지사항 목록 |
+| GET | `/api/announcements/:id` | 불필요 | 공지사항 상세 |
+| POST | `/api/announcements` | JWT (ADMIN) | 공지사항 작성 |
+| PATCH | `/api/announcements/:id` | JWT (ADMIN) | 공지사항 수정 |
+| DELETE | `/api/announcements/:id` | JWT (ADMIN) | 공지사항 삭제 |
+| POST | `/api/announcements/:id/like` | JWT | 좋아요 토글 |
 
 ### WebSocket 실시간 스트리밍
 | 네임스페이스 | 이벤트 | 설명 |
@@ -201,44 +234,47 @@ curl http://localhost:3000/api/portfolio/valuation \
 
 | 서비스 | 포트 | 설명 |
 |--------|------|------|
-| API Gateway | 3000 | 통합 진입점 (JWT 인증, 프록시) |
-| Market Data | 3001 | 가격 시뮬레이션, 시장 데이터 |
+| Frontend | 4000 | Next.js 15 웹 UI |
+| API Gateway | 3000 | 통합 진입점 (JWT 인증, 프록시, Swagger) |
+| Market Data | 3001 | Yahoo Finance 시세, 캔들스틱, 뉴스 |
 | Order Engine | 3002 | 주문 처리, 매칭 엔진 |
-| Portfolio | 3003 | 잔고, 보유 자산, 정산 |
+| Portfolio | 3003 | 잔고, 보유 자산, 관심종목, 정산 |
 | Notification | 3004 | 알림 (스켈레톤) |
 | Chat | 3005 | 채팅 (스켈레톤) |
 | AI Service | 3006 | AI 분석 (스켈레톤) |
-| User/Auth | 3007 | 회원가입, 로그인, JWT |
+| User/Auth | 3007 | 회원가입, 로그인, JWT, 관리자 |
 
 ## 지원 자산 (20개)
 
 ### 암호화폐 (10개)
-| 심볼 | 이름 | 기준 가격 | 연간 변동성 |
-|------|------|-----------|------------|
-| BTC-USD | Bitcoin | $42,000 | 65% |
-| ETH-USD | Ethereum | $2,500 | 75% |
-| SOL-USD | Solana | $95 | 85% |
-| XRP-USD | Ripple | $0.55 | 80% |
-| DOGE-USD | Dogecoin | $0.08 | 90% |
-| ADA-USD | Cardano | $0.45 | 82% |
-| DOT-USD | Polkadot | $7.20 | 78% |
-| AVAX-USD | Avalanche | $35 | 88% |
-| LINK-USD | Chainlink | $14 | 75% |
-| MATIC-USD | Polygon | $0.85 | 80% |
+| 심볼 | 이름 |
+|------|------|
+| BTC-USD | Bitcoin |
+| ETH-USD | Ethereum |
+| SOL-USD | Solana |
+| XRP-USD | Ripple |
+| DOGE-USD | Dogecoin |
+| ADA-USD | Cardano |
+| DOT-USD | Polkadot |
+| AVAX-USD | Avalanche |
+| LINK-USD | Chainlink |
+| MATIC-USD | Polygon |
 
 ### 주식 (10개)
-| 심볼 | 이름 | 기준 가격 | 연간 변동성 |
-|------|------|-----------|------------|
-| AAPL | Apple | $185 | 25% |
-| GOOGL | Alphabet | $140 | 28% |
-| TSLA | Tesla | $250 | 55% |
-| MSFT | Microsoft | $380 | 22% |
-| NVDA | NVIDIA | $720 | 50% |
-| AMZN | Amazon | $155 | 30% |
-| META | Meta | $380 | 38% |
-| NFLX | Netflix | $480 | 40% |
-| AMD | AMD | $145 | 48% |
-| INTC | Intel | $44 | 35% |
+| 심볼 | 이름 |
+|------|------|
+| AAPL | Apple |
+| GOOGL | Alphabet |
+| TSLA | Tesla |
+| MSFT | Microsoft |
+| NVDA | NVIDIA |
+| AMZN | Amazon |
+| META | Meta |
+| NFLX | Netflix |
+| AMD | AMD |
+| INTC | Intel |
+
+> 가격 데이터는 Yahoo Finance API에서 실시간으로 제공됩니다.
 
 ## 핵심 설계 패턴
 
@@ -247,14 +283,14 @@ curl http://localhost:3000/api/portfolio/valuation \
 - **서비스별 독립 DB**: 각 마이크로서비스가 자체 데이터베이스 스키마 소유
 - **API Gateway 패턴**: JWT 인증 검증, 레이트 리미팅(100req/min), 라우팅을 중앙 관리
 - **Saga 패턴**: 주문 → 자금 예약 → 매칭 → 정산 흐름을 오케스트레이션
-- **GBM 가격 엔진**: 기하 브라운 운동(dS = uSdt + oSdW)으로 현실적 가격 시뮬레이션
-- **변동성 이벤트**: 랜덤으로 2-4배 변동성이 30초간 적용되어 극적인 가격 변동 재현
+- **실시간 시세**: Yahoo Finance API 기반 실시간 가격 데이터 + 캔들스틱 생성
 
 ## 개발 단계
 
 - [x] **Phase 0**: 기반 구축 (모노레포, Docker, 공유 패키지, 인증, Gateway, CI)
 - [x] **Phase 1**: 핵심 거래 MVP (시장 데이터, 주문 엔진, 포트폴리오, Gateway 연동)
-- [x] **Phase 2**: 고급 거래 (지정가 크로싱, 주문 수정, P&L, WebSocket 스트리밍, 자산 확장)
+- [x] **Phase 2**: 고급 거래 + 프론트엔드 (지정가, P&L, WebSocket, Next.js 15 UI)
+- [x] **Phase 2.5**: 관리자/UX (사용자 관리, 공지사항, 관심종목, 뉴스, 다국어, 반응형)
 - [ ] **Phase 3**: 소셜 기능 (채팅, 알림)
 - [ ] **Phase 4**: AI 통합 (매매 추천, 포트폴리오 분석)
 - [ ] **Phase 5**: 프로덕션 강화 (K8s, 관측성, 부하 테스트)
