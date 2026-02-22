@@ -8,6 +8,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { Bell } from 'lucide-react';
 import {
@@ -215,8 +216,8 @@ export default function NotificationBell() {
           </div>
         </div>
       )}
-      {/* 승인/반려 알림 모달 */}
-      {modalNotification && (
+      {/* 승인/반려 알림 모달 — 헤더 stacking context에서 벗어나도록 portal 사용 */}
+      {modalNotification && createPortal(
         <div className="fixed inset-0 z-[60] flex items-center justify-center">
           <div className="absolute inset-0 bg-black/60" onClick={() => setModalNotification(null)} />
           <div className="relative bg-bg-primary border border-border rounded-2xl p-6 w-[340px] shadow-2xl">
@@ -227,7 +228,14 @@ export default function NotificationBell() {
               {modalNotification.title}
             </h3>
             <div className="mt-4 space-y-2">
-              {modalNotification.message.split('\n').map((line, i) => (
+              {(() => {
+                const msg = modalNotification.message;
+                // 200자 이하 짧은 메시지는 문장 단위 줄바꿈 / Split short messages by sentence
+                const text = msg.length <= 200
+                  ? msg.replace(/(?<=[.!?다요죠음습])\s+/g, '\n')
+                  : msg;
+                return text.split('\n').filter(Boolean);
+              })().map((line, i) => (
                 <p key={i} className={cn(
                   'text-[14px] text-center',
                   i === 0 ? 'text-text-primary font-medium' : 'text-text-secondary',
@@ -243,7 +251,8 @@ export default function NotificationBell() {
               {t('common.confirm')}
             </button>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );
