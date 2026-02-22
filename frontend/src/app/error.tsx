@@ -9,7 +9,6 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
-import VirtuExLogo from '@/components/ui/VirtuExLogo';
 
 
 const MailIcon = () => (
@@ -133,12 +132,6 @@ export default function ErrorPage({
         >
           {t('error.goHome')}
         </a>
-      </div>
-
-      {/* 로고 */}
-      <div className="mt-12 flex items-center gap-2 opacity-30">
-        <VirtuExLogo size={16} />
-        <span className="text-[11px] font-semibold text-text-quaternary">VirtuEx</span>
       </div>
 
       {/* 커서 기준 토스트 알림 / Cursor-relative toast notifications */}
