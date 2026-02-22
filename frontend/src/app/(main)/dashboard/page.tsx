@@ -163,7 +163,7 @@ export default function DashboardPage() {
         </>
       )}
 
-      <div className="flex items-end gap-4 sm:gap-7 pt-7 pb-0 border-b border-border">
+      <div className="flex items-end gap-3 sm:gap-7 pt-7 pb-0 border-b border-border">
         {mainTabs.map((tab) => (
           <button
             key={tab.key}

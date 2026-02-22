@@ -8,6 +8,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { useAuthStore } from '@/stores/auth';
+import { useToastStore } from '@/stores/toast';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export function useWatchlist() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -24,6 +26,7 @@ export function useWatchlist() {
 
 export function useAddWatchlist() {
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async (symbol: string) => {
@@ -32,12 +35,14 @@ export function useAddWatchlist() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['portfolio', 'watchlist'] });
+      useToastStore.getState().addToast(t('toast.watchlistAdded'));
     },
   });
 }
 
 export function useRemoveWatchlist() {
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async (symbol: string) => {
@@ -46,6 +51,7 @@ export function useRemoveWatchlist() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['portfolio', 'watchlist'] });
+      useToastStore.getState().addToast(t('toast.watchlistRemoved'));
     },
   });
 }

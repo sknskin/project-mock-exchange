@@ -291,6 +291,20 @@ export function useIncrementViewCount() {
   });
 }
 
+export function useAdjacentAnnouncements(id: string) {
+  return useQuery({
+    queryKey: ['announcement-adjacent', id],
+    queryFn: async () => {
+      const { data } = await api.get(`/api/announcements/${id}/adjacent`);
+      return data.data as {
+        prev: { id: string; title: string } | null;
+        next: { id: string; title: string } | null;
+      };
+    },
+    enabled: !!id,
+  });
+}
+
 // ===== Profile =====
 export function useProfile() {
   return useQuery({
