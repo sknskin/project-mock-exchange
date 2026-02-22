@@ -23,10 +23,7 @@ export class UserRepository implements IUserRepository {
         passwordHash: user.passwordHash,
         name: user.name,
         role: user.role,
-        isApproved: user.isApproved,
-        approvedAt: user.approvedAt ?? undefined,
-        approvedBy: user.approvedBy ?? undefined,
-        approvalNote: user.approvalNote ?? undefined,
+        approvalStatus: user.approvalStatus as never,
         phone: user.phone,
         encryptedRrn: user.encryptedRrn,
         address: user.address,
@@ -65,10 +62,13 @@ export class UserRepository implements IUserRepository {
     name: string;
     role: string;
     isActive: boolean;
-    isApproved: boolean;
+    approvalStatus: string;
     approvedAt: Date | null;
     approvedBy: string | null;
     approvalNote: string | null;
+    rejectedAt: Date | null;
+    rejectedBy: string | null;
+    rejectionNote: string | null;
     createdAt: Date;
     updatedAt: Date;
     phone: string;
@@ -85,10 +85,13 @@ export class UserRepository implements IUserRepository {
       raw.name,
       raw.role as UserRole,
       raw.isActive,
-      raw.isApproved,
+      raw.approvalStatus,
       raw.approvedAt,
       raw.approvedBy,
       raw.approvalNote,
+      raw.rejectedAt,
+      raw.rejectedBy,
+      raw.rejectionNote,
       raw.createdAt,
       raw.updatedAt,
       raw.phone,

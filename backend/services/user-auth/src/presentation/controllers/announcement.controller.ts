@@ -57,6 +57,13 @@ export class AnnouncementController {
     return res.sendFile(filePath);
   }
 
+  @Get(':id/adjacent')
+  @Public()
+  async getAdjacent(@Param('id') id: string) {
+    const result = await this.announcementService.getAdjacent(id);
+    return { success: true, data: result };
+  }
+
   @Get(':id')
   @OptionalAuth()
   async detail(@Param('id') id: string, @CurrentUser() user?: UserDto) {

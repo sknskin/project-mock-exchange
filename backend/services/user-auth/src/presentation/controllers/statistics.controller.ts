@@ -40,8 +40,8 @@ export class StatisticsController {
     const [totalUsers, activeUsers, pendingUsers, totalAnnouncements, totalPageViews, todayLogins] =
       await Promise.all([
         this.prisma.user.count(),
-        this.prisma.user.count({ where: { isActive: true, isApproved: true } }),
-        this.prisma.user.count({ where: { isApproved: false } }),
+        this.prisma.user.count({ where: { isActive: true, approvalStatus: 'APPROVED' } }),
+        this.prisma.user.count({ where: { approvalStatus: { not: 'APPROVED' } } }),
         this.prisma.announcement.count(),
         this.prisma.pageView.count(),
         this.prisma.loginLog.count({
@@ -262,7 +262,7 @@ export class StatisticsController {
         _count: true,
       }),
       this.prisma.user.groupBy({
-        by: ['isApproved', 'isActive'],
+        by: ['approvalStatus', 'isActive'],
         _count: true,
       }),
     ]);
@@ -272,7 +272,7 @@ export class StatisticsController {
       data: {
         byRole: byRole.map((r) => ({ role: r.role, count: r._count })),
         byStatus: byStatus.map((s) => ({
-          isApproved: s.isApproved,
+          approvalStatus: s.approvalStatus,
           isActive: s.isActive,
           count: s._count,
         })),

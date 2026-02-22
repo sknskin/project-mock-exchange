@@ -14,6 +14,12 @@ enum UserRole {
   USER
 }
 
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model User {
   id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   email         String   @unique @db.VarChar(255)
@@ -22,10 +28,13 @@ model User {
   name          String   @db.VarChar(50)
   role          UserRole @default(USER)
   isActive      Boolean  @default(true) @map("is_active")
-  isApproved    Boolean  @default(false) @map("is_approved")
-  approvedAt    DateTime? @map("approved_at") @db.Timestamptz()
-  approvedBy    String?  @map("approved_by") @db.Uuid
-  approvalNote  String?  @map("approval_note") @db.VarChar(500)
+  approvalStatus ApprovalStatus @default(PENDING) @map("approval_status")
+  approvedAt     DateTime?      @map("approved_at") @db.Timestamptz()
+  approvedBy     String?        @map("approved_by") @db.Uuid
+  approvalNote   String?        @map("approval_note") @db.VarChar(500)
+  rejectedAt     DateTime?      @map("rejected_at") @db.Timestamptz()
+  rejectedBy     String?        @map("rejected_by") @db.Uuid
+  rejectionNote  String?        @map("rejection_note") @db.VarChar(500)
   phone         String   @unique @db.VarChar(20)
   encryptedRrn  String   @map("encrypted_rrn") @db.VarChar(512)
   address       String   @db.VarChar(500)
@@ -64,9 +73,10 @@ model Announcement {
   content   String   @db.Text
   authorId  String   @map("author_id") @db.Uuid
   isPinned  Boolean  @default(false) @map("is_pinned")
-  viewCount Int      @default(0) @map("view_count")
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
-  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+  viewCount Int       @default(0) @map("view_count")
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz()
+  editedAt  DateTime? @map("edited_at") @db.Timestamptz()
 
   author      User               @relation(fields: [authorId], references: [id], onDelete: Cascade)
   comments    Comment[]

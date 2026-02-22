@@ -67,6 +67,41 @@ export class AnnouncementService {
     };
   }
 
+  async getAdjacent(id: string) {
+    const current = await this.prisma.announcement.findUnique({
+      where: { id },
+      select: { createdAt: true },
+    });
+    if (!current) throw new NotFoundException('Announcement not found');
+
+    const [prev, next] = await Promise.all([
+      this.prisma.announcement.findFirst({
+        where: {
+          id: { not: id },
+          OR: [
+            { createdAt: { lt: current.createdAt } },
+            { createdAt: current.createdAt, id: { lt: id } },
+          ],
+        },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        select: { id: true, title: true },
+      }),
+      this.prisma.announcement.findFirst({
+        where: {
+          id: { not: id },
+          OR: [
+            { createdAt: { gt: current.createdAt } },
+            { createdAt: current.createdAt, id: { gt: id } },
+          ],
+        },
+        orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+        select: { id: true, title: true },
+      }),
+    ]);
+
+    return { prev, next };
+  }
+
   async detail(id: string, userId?: string) {
     const announcement = await this.prisma.announcement.findUnique({
       where: { id },
@@ -108,6 +143,7 @@ export class AnnouncementService {
       attachments: announcement.attachments,
       createdAt: announcement.createdAt,
       updatedAt: announcement.updatedAt,
+      editedAt: announcement.editedAt,
       comments: announcement.comments.map((c: any) => ({
         id: c.id,
         content: c.content,
@@ -217,7 +253,7 @@ export class AnnouncementService {
       throw new ForbiddenException('Only SYSTEM or the author can edit');
     }
 
-    const updateData: Record<string, unknown> = { title, content };
+    const updateData: Record<string, unknown> = { title, content, editedAt: new Date() };
     if (isPinned !== undefined) {
       updateData.isPinned = isPinned;
     }

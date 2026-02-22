@@ -56,6 +56,19 @@ export class AnnouncementProxyController {
     return res.send(Buffer.from(result.data as ArrayBuffer));
   }
 
+  @Get(':id/adjacent')
+  @Public()
+  async getAdjacent(
+    @Param('id') id: string,
+    @Res() res: Response,
+  ) {
+    const result = await this.proxyService.forward('user-auth', {
+      method: 'GET',
+      url: `/announcements/${id}/adjacent`,
+    });
+    return res.status(result.status).json(result.data);
+  }
+
   @Get(':id')
   @OptionalAuth()
   async detail(@Param('id') id: string, @Req() req: Request, @Res() res: Response) {

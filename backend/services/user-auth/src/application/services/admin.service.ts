@@ -11,7 +11,6 @@ import {
   ForbiddenException,
   Logger,
 } from '@nestjs/common';
-import { USER_ROLE } from '@mock-exchange/common';
 import { PrismaService } from '../../infrastructure/persistence/prisma/prisma.service';
 
 @Injectable()
@@ -20,7 +19,7 @@ export class AdminService {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  private readonly ROLE_ORDER = { SYSTEM: 0, ADMIN: 1, USER: 2 };
+  private readonly ROLE_ORDER: Record<string, number> = { SYSTEM: 0, ADMIN: 1, USER: 2 };
 
   async listUsers(params: {
     page: number;
@@ -28,9 +27,8 @@ export class AdminService {
     search?: string;
     role?: string;
     status?: string;
-    currentUserRole: string;
   }) {
-    const { page, limit, search, role, status, currentUserRole } = params;
+    const { page, limit, search, role, status } = params;
     const skip = (page - 1) * limit;
 
     const where: Record<string, unknown> = {};
@@ -48,17 +46,10 @@ export class AdminService {
       where.role = role;
     }
 
-    if (status === 'approved') where.isApproved = true;
-    else if (status === 'pending') where.isApproved = false;
+    if (status === 'approved') where.approvalStatus = 'APPROVED';
+    else if (status === 'pending') where.approvalStatus = 'PENDING';
+    else if (status === 'rejected') where.approvalStatus = 'REJECTED';
     else if (status === 'inactive') where.isActive = false;
-
-    // ADMIN can't see SYSTEM users
-    if (currentUserRole === USER_ROLE.ADMIN) {
-      where.role = where.role || { not: USER_ROLE.SYSTEM };
-      if (where.role === USER_ROLE.SYSTEM) {
-        return { items: [], total: 0, page, limit, totalPages: 0 };
-      }
-    }
 
     const [items, total] = await Promise.all([
       this.prisma.user.findMany({
@@ -66,7 +57,7 @@ export class AdminService {
         skip,
         take: limit,
         orderBy: [
-          { role: 'asc' }, // SYSTEM first (alphabetically: ADMIN > SYSTEM > USER, so we handle differently)
+          { role: 'asc' },
           { createdAt: 'desc' },
         ],
         select: {
@@ -76,7 +67,7 @@ export class AdminService {
           name: true,
           role: true,
           isActive: true,
-          isApproved: true,
+          approvalStatus: true,
           phone: true,
           createdAt: true,
         },
@@ -111,10 +102,13 @@ export class AdminService {
         name: true,
         role: true,
         isActive: true,
-        isApproved: true,
+        approvalStatus: true,
         approvedAt: true,
         approvedBy: true,
         approvalNote: true,
+        rejectedAt: true,
+        rejectedBy: true,
+        rejectionNote: true,
         phone: true,
         address: true,
         addressDetail: true,
@@ -135,7 +129,17 @@ export class AdminService {
       approvedByUsername = approver?.username ?? null;
     }
 
-    return { ...user, approvedByUsername };
+    // Resolve rejectedBy UUID to username
+    let rejectedByUsername: string | null = null;
+    if (user.rejectedBy) {
+      const rejector = await this.prisma.user.findUnique({
+        where: { id: user.rejectedBy },
+        select: { username: true },
+      });
+      rejectedByUsername = rejector?.username ?? null;
+    }
+
+    return { ...user, approvedByUsername, rejectedByUsername };
   }
 
   async approveUser(id: string, approvedById: string, currentRole: string, note?: string) {
@@ -146,12 +150,16 @@ export class AdminService {
     const updated = await this.prisma.user.update({
       where: { id },
       data: {
-        isApproved: true,
+        approvalStatus: 'APPROVED',
         approvedAt: new Date(),
         approvedBy: approvedById,
         approvalNote: note || null,
+        // Clear rejection fields
+        rejectedAt: null,
+        rejectedBy: null,
+        rejectionNote: null,
       },
-      select: { id: true, username: true, isApproved: true, approvedAt: true },
+      select: { id: true, username: true, approvalStatus: true, approvedAt: true },
     });
 
     // Create notification for the user
@@ -183,11 +191,12 @@ export class AdminService {
     const updated = await this.prisma.user.update({
       where: { id },
       data: {
-        isApproved: false,
-        approvedBy: rejectedById,
-        approvalNote: note || 'Rejected',
+        approvalStatus: 'REJECTED',
+        rejectedAt: new Date(),
+        rejectedBy: rejectedById,
+        rejectionNote: note || null,
       },
-      select: { id: true, username: true, isApproved: true },
+      select: { id: true, username: true, approvalStatus: true },
     });
 
     await this.prisma.notification.create({
@@ -195,7 +204,7 @@ export class AdminService {
         userId: id,
         type: 'REGISTRATION_REJECTED',
         title: '가입 반려',
-        message: note ? `가입이 반려되었습니다: ${note}` : '가입이 반려되었습니다.',
+        message: note ? `가입이 반려되었습니다.\n사유: ${note}` : '가입이 반려되었습니다.',
       },
     });
 
@@ -237,10 +246,11 @@ export class AdminService {
   }
 
   private checkPermission(currentRole: string, targetRole: string) {
-    // ADMIN cannot manage SYSTEM or other ADMIN users
-    if (currentRole === USER_ROLE.ADMIN && targetRole !== USER_ROLE.USER) {
+    const currentLevel = this.ROLE_ORDER[currentRole] ?? 99;
+    const targetLevel = this.ROLE_ORDER[targetRole] ?? 99;
+    // Cannot manage users with same or higher role
+    if (currentLevel >= targetLevel) {
       throw new ForbiddenException('Insufficient permissions for this user role');
     }
-    // SYSTEM can manage everyone
   }
 }

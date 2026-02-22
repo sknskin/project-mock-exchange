@@ -46,7 +46,7 @@ async function main() {
       name: '한도희',
       role: 'SYSTEM',
       isActive: true,
-      isApproved: true,
+      approvalStatus: 'APPROVED',
       approvedAt: new Date(),
       phone: '01074554829',
       encryptedRrn,
@@ -67,7 +67,7 @@ async function main() {
   console.log(`  Username: ${systemUser.username}`);
   console.log(`  Email:    ${systemUser.email}`);
   console.log(`  Role:     ${systemUser.role}`);
-  console.log(`  Approved: ${systemUser.isApproved}`);
+  console.log(`  Status:   ${systemUser.approvalStatus}`);
   console.log(`\nDone!`);
 }
 

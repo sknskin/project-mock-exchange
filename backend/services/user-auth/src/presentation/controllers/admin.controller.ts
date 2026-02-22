@@ -50,7 +50,6 @@ export class AdminController {
       search,
       role,
       status,
-      currentUserRole: user.role,
     });
     return { success: true, data: result };
   }

@@ -39,6 +39,6 @@ export interface UserDto {
   name: string;
   role: UserRole;
   isActive: boolean;
-  isApproved: boolean;
+  approvalStatus: string;
   createdAt: string;
 }

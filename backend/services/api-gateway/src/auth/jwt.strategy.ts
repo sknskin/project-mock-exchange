@@ -33,7 +33,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       name: '',
       role: payload.role,
       isActive: true,
-      isApproved: true,
+      approvalStatus: 'APPROVED',
       createdAt: '',
     };
   }

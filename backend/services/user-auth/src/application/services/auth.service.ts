@@ -138,8 +138,11 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    // 미승인 회원 로그인 거부 (SYSTEM 계정 예외) / Deny unapproved users (except SYSTEM)
-    if (!user.isApproved && user.role !== USER_ROLE.SYSTEM) {
+    // 미승인/반려 회원 로그인 거부 (SYSTEM 계정 예외) / Deny unapproved/rejected users (except SYSTEM)
+    if (user.approvalStatus !== 'APPROVED' && user.role !== USER_ROLE.SYSTEM) {
+      if (user.approvalStatus === 'REJECTED') {
+        throw new UnauthorizedException('Account has been rejected');
+      }
       throw new UnauthorizedException('Account not yet approved');
     }
 
@@ -195,10 +198,13 @@ export class AuthService {
       stored.user.name,
       stored.user.role as JwtPayload['role'],
       stored.user.isActive,
-      stored.user.isApproved,
+      stored.user.approvalStatus,
       stored.user.approvedAt,
       stored.user.approvedBy,
       stored.user.approvalNote,
+      stored.user.rejectedAt ?? null,
+      stored.user.rejectedBy ?? null,
+      stored.user.rejectionNote ?? null,
       stored.user.createdAt,
       stored.user.updatedAt,
       stored.user.phone,
@@ -304,7 +310,7 @@ export class AuthService {
       name: user.name,
       role: user.role,
       isActive: user.isActive,
-      isApproved: user.isApproved,
+      approvalStatus: user.approvalStatus,
       createdAt: user.createdAt.toISOString(),
     };
   }
