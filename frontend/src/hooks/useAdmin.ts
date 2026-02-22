@@ -7,6 +7,8 @@
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { useToastStore } from '@/stores/toast';
+import { useTranslation } from '@/hooks/useTranslation';
 import type {
   AdminUser,
   AdminUserDetail,
@@ -55,6 +57,7 @@ export function useAdminUserDetail(id: string) {
 
 export function useApproveUser() {
   const qc = useQueryClient();
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: async ({ id, note }: { id: string; note?: string }) => {
       const { data } = await api.post(`/api/admin/users/${id}/approve`, { note });
@@ -63,12 +66,14 @@ export function useApproveUser() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin-users'] });
       qc.invalidateQueries({ queryKey: ['admin-user'] });
+      useToastStore.getState().addToast(t('toast.userApproved'));
     },
   });
 }
 
 export function useRejectUser() {
   const qc = useQueryClient();
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: async ({ id, note }: { id: string; note?: string }) => {
       const { data } = await api.post(`/api/admin/users/${id}/reject`, { note });
@@ -77,12 +82,14 @@ export function useRejectUser() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin-users'] });
       qc.invalidateQueries({ queryKey: ['admin-user'] });
+      useToastStore.getState().addToast(t('toast.userRejected'));
     },
   });
 }
 
 export function useDeactivateUser() {
   const qc = useQueryClient();
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: async (id: string) => {
       const { data } = await api.post(`/api/admin/users/${id}/deactivate`);
@@ -91,12 +98,14 @@ export function useDeactivateUser() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin-users'] });
       qc.invalidateQueries({ queryKey: ['admin-user'] });
+      useToastStore.getState().addToast(t('toast.userDeactivated'));
     },
   });
 }
 
 export function useActivateUser() {
   const qc = useQueryClient();
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: async (id: string) => {
       const { data } = await api.post(`/api/admin/users/${id}/activate`);
@@ -105,12 +114,14 @@ export function useActivateUser() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin-users'] });
       qc.invalidateQueries({ queryKey: ['admin-user'] });
+      useToastStore.getState().addToast(t('toast.userActivated'));
     },
   });
 }
 
 export function useDeleteUser() {
   const qc = useQueryClient();
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: async (id: string) => {
       const { data } = await api.delete(`/api/admin/users/${id}`);
@@ -118,6 +129,7 @@ export function useDeleteUser() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin-users'] });
+      useToastStore.getState().addToast(t('toast.userDeleted'));
     },
   });
 }
@@ -146,17 +158,22 @@ export function useAnnouncementDetail(id: string) {
 
 export function useCreateAnnouncement() {
   const qc = useQueryClient();
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: async (body: { title: string; content: string; isPinned?: boolean }) => {
       const { data } = await api.post('/api/announcements', body);
       return data.data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['announcements'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['announcements'] });
+      useToastStore.getState().addToast(t('toast.announcementCreated'));
+    },
   });
 }
 
 export function useUpdateAnnouncement() {
   const qc = useQueryClient();
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: async ({ id, ...body }: { id: string; title: string; content: string; isPinned?: boolean }) => {
       const { data } = await api.put(`/api/announcements/${id}`, body);
@@ -165,6 +182,7 @@ export function useUpdateAnnouncement() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['announcements'] });
       qc.invalidateQueries({ queryKey: ['announcement'] });
+      useToastStore.getState().addToast(t('toast.announcementUpdated'));
     },
   });
 }
@@ -216,12 +234,16 @@ export function useDeleteAttachment() {
 
 export function useDeleteAnnouncement() {
   const qc = useQueryClient();
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: async (id: string) => {
       const { data } = await api.delete(`/api/announcements/${id}`);
       return data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['announcements'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['announcements'] });
+      useToastStore.getState().addToast(t('toast.announcementDeleted'));
+    },
   });
 }
 
@@ -318,16 +340,21 @@ export function useProfile() {
 
 export function useUpdateProfile() {
   const qc = useQueryClient();
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: async (body: Partial<UserProfile>) => {
       const { data } = await api.put('/api/profile', body);
       return data.data as UserProfile;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['profile'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['profile'] });
+      useToastStore.getState().addToast(t('toast.profileUpdated'));
+    },
   });
 }
 
 export function useChangePassword() {
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: async (body: {
       currentPassword: string;
@@ -336,6 +363,9 @@ export function useChangePassword() {
     }) => {
       const { data } = await api.post('/api/profile/change-password', body);
       return data;
+    },
+    onSuccess: () => {
+      useToastStore.getState().addToast(t('toast.passwordChanged'));
     },
   });
 }

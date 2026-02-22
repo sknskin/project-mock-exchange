@@ -9,13 +9,14 @@
  */
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth';
+import { useSettingsStore } from '@/stores/settings';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/format';
-import { LogOut, Search, Menu, X, Megaphone, Newspaper, Users, BarChart3, LayoutDashboard, Briefcase, ClipboardList, Trophy } from 'lucide-react';
+import { LogOut, Search, Menu, X, Megaphone, Newspaper, Users, BarChart3, LayoutDashboard, Briefcase, ClipboardList, Trophy, ChevronDown, User, Sun, Moon, Globe } from 'lucide-react';
 import VirtuExLogo from '@/components/ui/VirtuExLogo';
 import NotificationBell from '@/components/layout/NotificationBell';
 
@@ -26,6 +27,9 @@ export default function Header() {
   const { t } = useTranslation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [logoutModalOpen, setLogoutModalOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+  const { theme, toggleTheme, locale, toggleLocale } = useSettingsStore();
 
   // Zustand 상태 변경 시 html data 속성 동기화 (로그인/로그아웃 시 CSS 즉시 반영)
   // Sync html data attributes with Zustand state for CSS-based visibility
@@ -45,6 +49,7 @@ export default function Header() {
   const isAdmin = user?.role === 'SYSTEM' || user?.role === 'ADMIN';
   const mobileNavItems = [
     { href: '/dashboard', label: t('nav.dashboard'), icon: LayoutDashboard },
+    { href: '/news', label: t('nav.news'), icon: Newspaper },
     ...(isAuthenticated
       ? [
           { href: '/portfolio', label: t('nav.portfolio'), icon: Briefcase },
@@ -52,7 +57,6 @@ export default function Header() {
           { href: '/leaderboard', label: t('nav.leaderboard'), icon: Trophy },
         ]
       : []),
-    { href: '/news', label: t('nav.news'), icon: Newspaper },
     ...(isAuthenticated ? [{ href: '/announcements', label: t('nav.announcements'), icon: Megaphone }] : []),
     ...(isAdmin
       ? [
@@ -62,7 +66,16 @@ export default function Header() {
       : []),
   ];
 
-  useEffect(() => { setMobileMenuOpen(false); }, [pathname]);
+  useEffect(() => { setMobileMenuOpen(false); setUserMenuOpen(false); }, [pathname]);
+
+  useEffect(() => {
+    if (!userMenuOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) setUserMenuOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [userMenuOpen]);
   useEffect(() => {
     document.body.style.overflow = mobileMenuOpen ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
@@ -79,7 +92,7 @@ export default function Header() {
   return (
     <>
       <header className="sticky top-0 z-40 bg-bg-primary/95 backdrop-blur-md border-b border-border">
-        <div className="max-w-[1080px] mx-auto px-5 sm:px-8 lg:px-10 h-[60px] flex items-center justify-between">
+        <div className="max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-10 h-[60px] flex items-center justify-between">
           <div className="flex items-center gap-10">
             <Link href="/" className="flex items-center gap-2">
               <VirtuExLogo size={24} />
@@ -210,19 +223,55 @@ export default function Header() {
                 <div className="relative">
                   <NotificationBell />
                 </div>
-                <Link
-                  href="/mypage"
-                  className="text-[13px] text-text-secondary font-medium hover:text-accent transition-colors"
-                  suppressHydrationWarning
-                >
-                  {user?.username}
-                </Link>
-                <button
-                  onClick={() => setLogoutModalOpen(true)}
-                  className="p-2.5 text-danger hover:text-danger/80 transition-colors rounded-lg hover:bg-bg-secondary translate-y-[1px]"
-                >
-                  <LogOut className="w-[18px] h-[18px]" />
-                </button>
+                <div className="relative" ref={userMenuRef}>
+                  <button
+                    onClick={() => setUserMenuOpen(!userMenuOpen)}
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[13px] text-text-secondary font-medium hover:text-text-primary hover:bg-bg-secondary transition-colors min-w-[80px] justify-center"
+                    suppressHydrationWarning
+                  >
+                    {user?.username}
+                    <ChevronDown className={cn('w-3.5 h-3.5 text-text-quaternary transition-transform', userMenuOpen && 'rotate-180')} />
+                  </button>
+
+                  {userMenuOpen && (
+                    <div className="absolute right-0 top-full mt-2 z-50 w-[200px] bg-bg-secondary border border-border rounded-xl shadow-2xl overflow-hidden">
+                      <Link
+                        href="/mypage"
+                        className="flex items-center gap-3 w-full px-4 py-3 text-[13px] font-medium text-text-primary hover:bg-bg-tertiary transition-colors"
+                      >
+                        <User className="w-4 h-4 text-text-tertiary" />
+                        {t('nav.mypage')}
+                      </Link>
+                      <div className="border-t border-border" />
+                      <button
+                        onClick={() => { toggleTheme(); }}
+                        className="flex items-center gap-3 w-full px-4 py-3 text-[13px] font-medium text-text-primary hover:bg-bg-tertiary transition-colors"
+                      >
+                        {theme === 'dark' ? (
+                          <Sun className="w-4 h-4 text-warning" />
+                        ) : (
+                          <Moon className="w-4 h-4 text-accent" />
+                        )}
+                        {theme === 'dark' ? t('settings.lightMode') : t('settings.darkMode')}
+                      </button>
+                      <button
+                        onClick={() => { toggleLocale(); }}
+                        className="flex items-center gap-3 w-full px-4 py-3 text-[13px] font-medium text-text-primary hover:bg-bg-tertiary transition-colors"
+                      >
+                        <Globe className="w-4 h-4 text-accent" />
+                        {locale === 'ko' ? 'English' : '한국어'}
+                      </button>
+                      <div className="border-t border-border" />
+                      <button
+                        onClick={() => { setUserMenuOpen(false); setLogoutModalOpen(true); }}
+                        className="flex items-center gap-3 w-full px-4 py-3 text-[13px] font-medium text-danger hover:bg-bg-tertiary transition-colors"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        {t('nav.logout')}
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -230,7 +279,7 @@ export default function Header() {
             <div className="auth-hide">
               <Link
                 href="/login"
-                className="hidden lg:inline-flex h-10 px-6 items-center text-[14px] font-bold text-white bg-accent rounded-lg hover:bg-accent/85 transition-colors"
+                className="hidden lg:inline-flex h-10 px-6 items-center text-[14px] font-bold text-white bg-accent rounded-xl hover:bg-accent/90 transition-colors"
               >
                 {t('nav.login')}
               </Link>
@@ -282,17 +331,44 @@ export default function Header() {
             </nav>
             <div className="px-6 pt-4 mt-2 border-t border-border">
               {isAuthenticated ? (
-                <div className="space-y-4">
-                  <Link href="/mypage" className="block text-[14px] text-text-secondary hover:text-accent transition-colors">
-                    <span className="text-text-primary font-bold">{user?.username}</span>
-                    <span className="ml-2 text-[12px] text-text-quaternary">{t('nav.mypage')}</span>
+                <div className="space-y-1">
+                  <div className="px-4 py-2 text-[14px] font-bold text-text-primary">
+                    {user?.username}
+                  </div>
+                  <Link
+                    href="/mypage"
+                    className="flex items-center gap-3 px-4 py-3 text-[13px] font-medium text-text-primary hover:bg-bg-secondary rounded-xl transition-colors"
+                  >
+                    <User className="w-4 h-4 text-text-tertiary" />
+                    {t('nav.mypage')}
                   </Link>
                   <button
-                    onClick={() => { setLogoutModalOpen(true); setMobileMenuOpen(false); }}
-                    className="flex items-center gap-2.5 w-full px-4 py-3.5 text-[14px] font-medium text-danger bg-bg-secondary rounded-xl"
+                    onClick={() => { toggleTheme(); }}
+                    className="flex items-center gap-3 w-full px-4 py-3 text-[13px] font-medium text-text-primary hover:bg-bg-secondary rounded-xl transition-colors"
                   >
-                    <LogOut className="w-4 h-4" /> {t('nav.logout')}
+                    {theme === 'dark' ? (
+                      <Sun className="w-4 h-4 text-warning" />
+                    ) : (
+                      <Moon className="w-4 h-4 text-accent" />
+                    )}
+                    {theme === 'dark' ? t('settings.lightMode') : t('settings.darkMode')}
                   </button>
+                  <button
+                    onClick={() => { toggleLocale(); }}
+                    className="flex items-center gap-3 w-full px-4 py-3 text-[13px] font-medium text-text-primary hover:bg-bg-secondary rounded-xl transition-colors"
+                  >
+                    <Globe className="w-4 h-4 text-accent" />
+                    {locale === 'ko' ? 'English' : '한국어'}
+                  </button>
+                  <div className="border-t border-border mt-2 pt-2">
+                    <button
+                      onClick={() => { setLogoutModalOpen(true); setMobileMenuOpen(false); }}
+                      className="flex items-center gap-3 w-full px-4 py-3 text-[13px] font-medium text-danger hover:bg-bg-secondary rounded-xl transition-colors"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      {t('nav.logout')}
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <Link href="/login" className="flex items-center justify-center w-full h-12 text-[14px] font-bold text-white bg-accent rounded-xl">

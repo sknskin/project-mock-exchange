@@ -8,23 +8,24 @@
 export interface TechItem {
   name: string;
   icon: string;
+  invertInLight?: boolean;
 }
 
 export const techItems: TechItem[] = [
-  { name: 'Next.js', icon: 'https://cdn.simpleicons.org/nextdotjs/FFFFFF' },
+  { name: 'Next.js', icon: 'https://cdn.simpleicons.org/nextdotjs/FFFFFF', invertInLight: true },
   { name: 'React', icon: 'https://cdn.simpleicons.org/react/61DAFB' },
   { name: 'TypeScript', icon: 'https://cdn.simpleicons.org/typescript/3178C6' },
   { name: 'Tailwind CSS', icon: 'https://cdn.simpleicons.org/tailwindcss/06B6D4' },
   { name: 'Zustand', icon: 'https://cdn.simpleicons.org/react/FFD43B' },
   { name: 'TanStack Query', icon: 'https://cdn.simpleicons.org/reactquery/FF4154' },
-  { name: 'Socket.IO', icon: 'https://cdn.simpleicons.org/socketdotio/FFFFFF' },
+  { name: 'Socket.IO', icon: 'https://cdn.simpleicons.org/socketdotio/FFFFFF', invertInLight: true },
   { name: 'NestJS', icon: 'https://cdn.simpleicons.org/nestjs/E0234E' },
-  { name: 'Prisma', icon: 'https://cdn.simpleicons.org/prisma/FFFFFF' },
+  { name: 'Prisma', icon: 'https://cdn.simpleicons.org/prisma/FFFFFF', invertInLight: true },
   { name: 'PostgreSQL', icon: 'https://cdn.simpleicons.org/postgresql/4169E1' },
   { name: 'Redis', icon: 'https://cdn.simpleicons.org/redis/FF4438' },
-  { name: 'Apache Kafka', icon: 'https://cdn.simpleicons.org/apachekafka/FFFFFF' },
+  { name: 'Apache Kafka', icon: 'https://cdn.simpleicons.org/apachekafka/FFFFFF', invertInLight: true },
   { name: 'Docker', icon: 'https://cdn.simpleicons.org/docker/2496ED' },
-  { name: 'Turborepo', icon: 'https://cdn.simpleicons.org/turborepo/FFFFFF' },
+  { name: 'Turborepo', icon: 'https://cdn.simpleicons.org/turborepo/FFFFFF', invertInLight: true },
   { name: 'pnpm', icon: 'https://cdn.simpleicons.org/pnpm/F69220' },
   { name: 'Passport', icon: 'https://cdn.simpleicons.org/passport/34E27A' },
 ];
