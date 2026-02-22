@@ -246,6 +246,21 @@ nextjs-portal,
     user-select: none;
   }
 
+  /* 시장 지수 마키 – 푸터 마키와 동일 로직, 느린 속도 + 호버 시 일시정지 */
+  /* Market index marquee – same logic as footer, slower speed + pause on hover */
+  .animate-marquee-index {
+    display: flex;
+    width: max-content;
+    will-change: transform;
+    animation: marquee 80s linear infinite;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    user-select: none;
+  }
+  .animate-marquee-index:hover {
+    animation-play-state: paused;
+  }
+
   /* 가격 변동 플래시: 상승=빨간 배경, 하락=파란 배경 → 1초 후 사라짐 */
   /* Price tick flash: rise=red bg, fall=blue bg → fades out over 1s */
   @keyframes tick-flash-rise {
