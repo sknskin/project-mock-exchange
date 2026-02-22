@@ -80,7 +80,7 @@ export default function AssetListItem({ asset, rank, isWatchlisted, onToggleWatc
             e.stopPropagation();
             onToggleWatchlist(asset.symbol);
           }}
-          className="shrink-0 mr-1 sm:mr-1.5 p-0.5 rounded transition-colors hover:bg-bg-secondary/80"
+          className="shrink-0 mr-2 sm:mr-2.5 p-0.5 rounded transition-colors hover:bg-bg-secondary/80"
         >
           <Star
             className={cn(
