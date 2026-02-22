@@ -64,7 +64,7 @@ export default function Header() {
               </span>
             </Link>
 
-            <nav className="hidden md:flex items-center gap-6">
+            <nav className="hidden lg:flex items-center gap-6">
               {navItems.map((item) => (
                 <Link
                   key={item.href}
@@ -83,8 +83,8 @@ export default function Header() {
           </div>
 
           <div className="flex items-center gap-3">
-            {/* 홈(/)에서는 검색란 숨김 / Hide search on home page */}
-            {pathname !== '/' && (
+            {/* 대시보드에서만 검색란 표시 / Show search only on dashboard */}
+            {pathname === '/dashboard' && (
               <button
                 onClick={() => window.dispatchEvent(new CustomEvent('open-spotlight'))}
                 className="hidden lg:flex items-center gap-2.5 text-text-quaternary hover:text-text-tertiary transition-colors cursor-pointer"
@@ -100,20 +100,20 @@ export default function Header() {
             {isAuthenticated ? (
               <>
                 {/* 알림 벨 / Notification Bell */}
-                <div className="relative hidden md:block">
+                <div className="relative hidden lg:block">
                   <NotificationBell />
                 </div>
 
                 {/* 사용자명 → 마이페이지 / Username → My Page */}
                 <Link
                   href="/mypage"
-                  className="text-[13px] text-text-secondary font-medium hidden md:block hover:text-accent transition-colors"
+                  className="text-[13px] text-text-secondary font-medium hidden lg:block hover:text-accent transition-colors"
                 >
                   {user?.username}
                 </Link>
                 <button
                   onClick={() => setLogoutModalOpen(true)}
-                  className="hidden md:flex p-2.5 text-danger hover:text-danger/80 transition-colors rounded-lg hover:bg-bg-secondary translate-y-[1px]"
+                  className="hidden lg:flex p-2.5 text-danger hover:text-danger/80 transition-colors rounded-lg hover:bg-bg-secondary translate-y-[1px]"
                 >
                   <LogOut className="w-[18px] h-[18px]" />
                 </button>
@@ -121,7 +121,7 @@ export default function Header() {
             ) : (
               <Link
                 href="/login"
-                className="hidden md:inline-flex h-10 px-6 items-center text-[14px] font-bold text-white bg-accent rounded-lg hover:bg-accent/85 transition-colors"
+                className="hidden lg:inline-flex h-10 px-6 items-center text-[14px] font-bold text-white bg-accent rounded-lg hover:bg-accent/85 transition-colors"
               >
                 {t('nav.login')}
               </Link>
@@ -130,7 +130,7 @@ export default function Header() {
             {!isAuthenticated && (
               <Link
                 href="/login"
-                className="md:hidden text-[13px] font-bold text-accent"
+                className="lg:hidden text-[13px] font-bold text-accent"
               >
                 {t('nav.login')}
               </Link>
@@ -138,7 +138,7 @@ export default function Header() {
 
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2.5 text-text-secondary hover:text-text-primary transition-colors"
+              className="lg:hidden p-2.5 text-text-secondary hover:text-text-primary transition-colors"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
@@ -147,7 +147,7 @@ export default function Header() {
       </header>
 
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-50 md:hidden">
+        <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-black/60" onClick={() => setMobileMenuOpen(false)} />
           <div className="absolute top-0 right-0 w-[280px] h-full bg-bg-primary border-l border-border animate-slide-in-right">
             <div className="flex items-center justify-between px-6 h-[60px] border-b border-border">
