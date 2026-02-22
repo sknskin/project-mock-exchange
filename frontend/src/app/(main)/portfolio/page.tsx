@@ -17,6 +17,7 @@ import BottomSheet from '@/components/ui/BottomSheet';
 import Skeleton from '@/components/ui/Skeleton';
 import { usePortfolio, useDeposit } from '@/hooks/usePortfolio';
 import { useTranslation } from '@/hooks/useTranslation';
+import { Briefcase } from 'lucide-react';
 
 export default function PortfolioPage() {
   const { t } = useTranslation();
@@ -41,8 +42,12 @@ export default function PortfolioPage() {
   return (
     <AuthGuard>
       <div>
+        <div className="py-6 flex items-center gap-2.5">
+          <Briefcase className="w-5 h-5 text-accent" />
+          <h1 className="text-[20px] font-extrabold text-text-primary">{t('nav.portfolio')}</h1>
+        </div>
         {isLoading || !portfolio ? (
-          <div className="py-7 space-y-4">
+          <div className="space-y-4">
             <Skeleton className="w-16 h-3" />
             <Skeleton className="w-44 h-9" />
             <Skeleton className="w-28 h-5" />

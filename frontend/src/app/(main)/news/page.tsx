@@ -68,7 +68,8 @@ export default function NewsPage() {
   return (
     <div>
       {/* Header */}
-      <div className="py-6">
+      <div className="py-6 flex items-center gap-2.5">
+        <Newspaper className="w-5 h-5 text-accent" />
         <h1 className="text-[20px] font-extrabold text-text-primary">
           {t('news.title')}
         </h1>

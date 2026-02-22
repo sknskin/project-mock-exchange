@@ -62,10 +62,12 @@ export default function AdminUserDetailPage({
     return null;
   }
 
-  // ADMIN cannot manage SYSTEM or ADMIN users; SYSTEM can manage anyone
-  const isCurrentUserAdmin = currentUser?.role === 'ADMIN';
-  const isTargetPrivileged = user?.role === 'SYSTEM' || user?.role === 'ADMIN';
-  const canManage = !(isCurrentUserAdmin && isTargetPrivileged);
+  // Role hierarchy: SYSTEM(0) > ADMIN(1) > USER(2)
+  // Can only manage users with strictly lower role
+  const ROLE_LEVEL: Record<string, number> = { SYSTEM: 0, ADMIN: 1, USER: 2 };
+  const currentLevel = ROLE_LEVEL[currentUser?.role ?? ''] ?? 99;
+  const targetLevel = ROLE_LEVEL[user?.role ?? ''] ?? 99;
+  const canManage = user ? currentLevel < targetLevel : false;
 
   // Modals with a note textarea: approve, reject
   const hasNoteField = activeModal === 'approve' || activeModal === 'reject';
@@ -169,14 +171,43 @@ export default function AdminUserDetailPage({
   );
 
   const statusBadge = user && (() => {
-    if (!user.isApproved) {
+    if (!user.isActive) {
+      return (
+        <span className="text-[13px] font-semibold px-2.5 py-0.5 rounded-full bg-danger/15 text-danger">
+          {t('admin.users.inactive')}
+        </span>
+      );
+    }
+    if (user.approvalStatus === 'REJECTED') {
+      return (
+        <span className="text-[13px] font-semibold px-2.5 py-0.5 rounded-full bg-orange-500/15 text-orange-400">
+          {t('admin.users.rejected')}
+        </span>
+      );
+    }
+    if (user.approvalStatus === 'PENDING') {
       return (
         <span className="text-[13px] font-semibold px-2.5 py-0.5 rounded-full bg-yellow-500/15 text-yellow-400">
           {t('admin.users.pending')}
         </span>
       );
     }
-    if (user.isActive) {
+    return (
+      <span className="text-[13px] font-semibold px-2.5 py-0.5 rounded-full bg-green-500/15 text-green-400">
+        {t('admin.users.approved')}
+      </span>
+    );
+  })();
+
+  const approvalBadge = user && (() => {
+    if (user.approvalStatus === 'REJECTED') {
+      return (
+        <span className="text-[13px] font-semibold px-2.5 py-0.5 rounded-full bg-orange-500/15 text-orange-400">
+          {t('admin.users.rejected')}
+        </span>
+      );
+    }
+    if (user.approvalStatus === 'APPROVED') {
       return (
         <span className="text-[13px] font-semibold px-2.5 py-0.5 rounded-full bg-green-500/15 text-green-400">
           {t('admin.users.approved')}
@@ -184,24 +215,11 @@ export default function AdminUserDetailPage({
       );
     }
     return (
-      <span className="text-[13px] font-semibold px-2.5 py-0.5 rounded-full bg-danger/15 text-danger">
-        {t('admin.users.inactive')}
+      <span className="text-[13px] font-semibold px-2.5 py-0.5 rounded-full bg-yellow-500/15 text-yellow-400">
+        {t('admin.users.pending')}
       </span>
     );
   })();
-
-  const approvalBadge = user && (
-    <span
-      className={cn(
-        'text-[13px] font-semibold px-2.5 py-0.5 rounded-full',
-        user.isApproved
-          ? 'bg-green-500/15 text-green-400'
-          : 'bg-yellow-500/15 text-yellow-400',
-      )}
-    >
-      {user.isApproved ? t('admin.users.approved') : t('admin.users.pending')}
-    </span>
-  );
 
   return (
     <div className="pb-16">
@@ -243,7 +261,12 @@ export default function AdminUserDetailPage({
               <InfoRow label={t('admin.users.username')}>{user.username || '-'}</InfoRow>
               <InfoRow label={t('admin.users.phone')}>{user.phone || '-'}</InfoRow>
               <InfoRow label={t('admin.users.address')}>
-                {[user.address, user.addressDetail].filter(Boolean).join(' ') || '-'}
+                {user.address || user.addressDetail ? (
+                  <span className="flex flex-col gap-0.5">
+                    {user.address && <span>{user.address}{user.zipCode ? ` (${user.zipCode})` : ''}</span>}
+                    {user.addressDetail && <span className="text-text-secondary">{user.addressDetail}</span>}
+                  </span>
+                ) : '-'}
               </InfoRow>
             </div>
           </div>
@@ -260,6 +283,13 @@ export default function AdminUserDetailPage({
               <InfoRow label={t('admin.users.approvedAt')}>{formatDateValue(user.approvedAt)}</InfoRow>
               <InfoRow label={t('admin.users.approvedBy')}>{user.approvedByUsername || user.approvedBy || '-'}</InfoRow>
               <InfoRow label={t('admin.users.approvalNote')}>{user.approvalNote || '-'}</InfoRow>
+              {user.approvalStatus === 'REJECTED' && (
+                <>
+                  <InfoRow label={t('admin.users.rejectedAt')}>{formatDateValue(user.rejectedAt)}</InfoRow>
+                  <InfoRow label={t('admin.users.rejectedBy')}>{user.rejectedByUsername || user.rejectedBy || '-'}</InfoRow>
+                  <InfoRow label={t('admin.users.rejectionNote')}>{user.rejectionNote || '-'}</InfoRow>
+                </>
+              )}
               <InfoRow label={t('admin.users.joinDate')}>{formatDateValue(user.createdAt)}</InfoRow>
               <InfoRow label={t('admin.users.updatedAt')}>{formatDateValue(user.updatedAt)}</InfoRow>
             </div>
@@ -272,7 +302,7 @@ export default function AdminUserDetailPage({
                 {t('admin.users.actions')}
               </h2>
               <div className="flex flex-wrap gap-3">
-                {!user.isApproved && (
+                {user.approvalStatus !== 'APPROVED' && (
                   <button
                     onClick={() => openModal('approve')}
                     className="h-10 px-6 rounded-xl bg-green-600 hover:bg-green-600/85 text-white text-[14px] font-semibold transition-colors"
@@ -280,7 +310,7 @@ export default function AdminUserDetailPage({
                     {t('admin.users.approve')}
                   </button>
                 )}
-                {!user.isApproved && (
+                {user.approvalStatus !== 'REJECTED' && user.approvalStatus !== 'APPROVED' && (
                   <button
                     onClick={() => openModal('reject')}
                     className="h-10 px-6 rounded-xl bg-orange-500 hover:bg-orange-500/85 text-white text-[14px] font-semibold transition-colors"
@@ -288,7 +318,7 @@ export default function AdminUserDetailPage({
                     {t('admin.users.reject')}
                   </button>
                 )}
-                {user.isApproved && user.isActive && (
+                {user.approvalStatus === 'APPROVED' && user.isActive && (
                   <button
                     onClick={() => openModal('deactivate')}
                     className="h-10 px-6 rounded-xl bg-yellow-500 hover:bg-yellow-500/85 text-white text-[14px] font-semibold transition-colors"
@@ -296,7 +326,7 @@ export default function AdminUserDetailPage({
                     {t('admin.users.deactivate')}
                   </button>
                 )}
-                {user.isApproved && !user.isActive && (
+                {user.approvalStatus === 'APPROVED' && !user.isActive && (
                   <button
                     onClick={() => openModal('activate')}
                     className="h-10 px-6 rounded-xl bg-yellow-500 hover:bg-yellow-500/85 text-white text-[14px] font-semibold transition-colors"
@@ -304,7 +334,7 @@ export default function AdminUserDetailPage({
                     {t('admin.users.activate')}
                   </button>
                 )}
-                {user.isApproved && (
+                {user.approvalStatus === 'APPROVED' && (
                   <button
                     onClick={() => openModal('delete')}
                     className="h-10 px-6 rounded-xl bg-danger hover:bg-danger/85 text-white text-[14px] font-semibold transition-colors"

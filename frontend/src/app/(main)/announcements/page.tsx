@@ -9,7 +9,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Search, Plus, MessageSquare, Pin, Paperclip, Eye, Heart } from 'lucide-react';
+import { Search, Plus, MessageSquare, Pin, Paperclip, Eye, Heart, Megaphone } from 'lucide-react';
 import { useAnnouncements } from '@/hooks/useAdmin';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuthStore } from '@/stores/auth';
@@ -65,9 +65,12 @@ export default function AnnouncementsPage() {
     <div>
       {/* Header */}
       <div className="flex items-center justify-between py-6">
-        <h1 className="text-[20px] font-extrabold text-text-primary">
-          {t('announce.title')}
-        </h1>
+        <div className="flex items-center gap-2.5">
+          <Megaphone className="w-5 h-5 text-accent" />
+          <h1 className="text-[20px] font-extrabold text-text-primary">
+            {t('announce.title')}
+          </h1>
+        </div>
         {isAdminOrSystem && (
           <Link
             href="/announcements/new"

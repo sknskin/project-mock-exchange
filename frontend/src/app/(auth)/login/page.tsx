@@ -52,6 +52,8 @@ export default function LoginPage() {
       const msg = axiosErr.response?.data?.message;
       if (msg === 'Account not yet approved') {
         setError(t('auth.login.pendingApproval'));
+      } else if (msg === 'Account has been rejected') {
+        setError(t('auth.login.rejected'));
       } else if (msg === 'Account is deactivated') {
         setError(t('auth.login.deactivated'));
       } else {
