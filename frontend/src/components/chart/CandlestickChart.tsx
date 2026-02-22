@@ -23,12 +23,14 @@ interface CandlestickChartProps {
   data: Candlestick[];
   chartType: 'candle' | 'line';
   exchangeRate?: number;
+  interval?: string;
 }
 
 export default function CandlestickChart({
   data,
   chartType,
   exchangeRate,
+  interval,
 }: CandlestickChartProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
@@ -170,12 +172,17 @@ export default function CandlestickChart({
     }));
     volumeSeriesRef.current.setData(volumeData);
 
-    // Only fitContent on first render
+    // fitContent on first render or interval change
     if (isFirstRenderRef.current && chartRef.current) {
       chartRef.current.timeScale().fitContent();
       isFirstRenderRef.current = false;
     }
   }, [data, exchangeRate, chartType]);
+
+  // Effect 4: Reset view on interval change
+  useEffect(() => {
+    isFirstRenderRef.current = true;
+  }, [interval]);
 
   return <div ref={chartContainerRef} className="w-full overflow-hidden" />;
 }

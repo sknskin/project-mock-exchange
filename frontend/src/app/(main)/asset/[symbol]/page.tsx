@@ -253,7 +253,7 @@ export default function AssetDetailPage({
             {t('detail.noChart')}
           </div>
         ) : (
-          <CandlestickChart data={candlesticks} chartType={chartType} exchangeRate={currencyMode === 'krw' && rate ? rate : undefined} />
+          <CandlestickChart data={candlesticks} chartType={chartType} exchangeRate={currencyMode === 'krw' && rate ? rate : undefined} interval={chartInterval} />
         )}
       </div>
 
@@ -337,8 +337,8 @@ export default function AssetDetailPage({
         </div>
       )}
 
-      {/* 탭 / Tabs */}
-      <div className="mt-5">
+      {/* 탭 — 로그인 시에만 표시 / Tabs — only visible when authenticated */}
+      {isAuthenticated && <div className="mt-5">
         <Tabs tabs={detailTabs} activeTab={activeTab} onChange={setActiveTab} />
 
         <div className="mt-3">
@@ -397,7 +397,7 @@ export default function AssetDetailPage({
           )}
 
         </div>
-      </div>
+      </div>}
 
       {/* 주문 모달 / Order Modal */}
       <OrderSheet
