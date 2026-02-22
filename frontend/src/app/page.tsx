@@ -13,6 +13,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { techItems } from '@/lib/constants';
 import ContentModal from '@/components/ui/ContentModal';
 import { ArrowRight, Boxes, Radio, MessageSquare, Cpu, Terminal, FileText, Globe } from 'lucide-react';
+import { cn } from '@/lib/format';
 import VirtuExLogo from '@/components/ui/VirtuExLogo';
 
 
@@ -95,7 +96,7 @@ export default function LandingPage() {
         <div className="mt-6">
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-2 h-12 px-8 text-[15px] font-bold text-white bg-accent rounded-xl hover:bg-accent/85 transition-colors"
+            className="inline-flex items-center gap-2 h-12 px-8 text-[15px] font-bold text-white bg-accent rounded-xl hover:bg-accent/90 transition-colors"
           >
             {t('landing.cta')}
             <ArrowRight className="w-4 h-4" />
@@ -126,7 +127,7 @@ export default function LandingPage() {
                   <img
                     src={tech.icon}
                     alt={tech.name}
-                    className="w-5 h-5 object-contain"
+                    className={cn('w-5 h-5 object-contain', tech.invertInLight && 'icon-invert-light')}
                     loading="eager"
                   />
                 </div>

@@ -124,9 +124,9 @@ export default function OrdersPage() {
         </div>
 
         {/* Search + Status filter bar */}
-        <div className="flex flex-col sm:flex-row gap-3 mb-5">
+        <div className="flex gap-2 sm:gap-3 mb-5">
           {/* Search input */}
-          <div className="relative flex-1">
+          <div className="relative flex-1 min-w-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-quaternary pointer-events-none" />
             <input
               type="text"

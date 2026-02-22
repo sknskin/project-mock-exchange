@@ -8,6 +8,7 @@
 'use client';
 
 import { cn, formatPrice, formatQuantity } from '@/lib/format';
+import { useTranslation } from '@/hooks/useTranslation';
 import type { OrderBook as OrderBookType } from '@/types';
 
 interface OrderBookProps {
@@ -15,6 +16,7 @@ interface OrderBookProps {
 }
 
 export default function OrderBook({ orderBook }: OrderBookProps) {
+  const { t } = useTranslation();
   const maxTotal = Math.max(
     ...orderBook.asks.map((a) => a.total),
     ...orderBook.bids.map((b) => b.total),
@@ -23,8 +25,8 @@ export default function OrderBook({ orderBook }: OrderBookProps) {
   return (
     <div className="">
       <div className="flex text-[12px] text-text-quaternary py-2.5 font-medium">
-        <span className="flex-1">가격</span>
-        <span className="flex-1 text-right">수량</span>
+        <span className="flex-1">{t('orderbook.price')}</span>
+        <span className="flex-1 text-right">{t('orderbook.quantity')}</span>
       </div>
 
       {/* 매도 호가 / Asks (sell orders) */}
@@ -48,7 +50,7 @@ export default function OrderBook({ orderBook }: OrderBookProps) {
       {/* 스프레드 / Spread */}
       <div className="py-3.5 text-center">
         <span className="text-[12px] text-text-quaternary font-medium">
-          스프레드{' '}
+          {t('orderbook.spread')}{' '}
           <span className="text-text-secondary font-semibold">
             {formatPrice(orderBook.spread ?? 0)}
           </span>

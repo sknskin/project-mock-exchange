@@ -54,13 +54,17 @@ export default function SpotlightSearch({ isOpen, onClose, assets, onLoginRequir
 
   const displayList = query.trim() ? searchResults : top5;
 
-  // 모달 열릴 때 포커스 / Focus on open
+  // 모달 열릴 때 포커스 + 배경 스크롤 방지 / Focus on open + lock body scroll
   useEffect(() => {
     if (isOpen) {
       setQuery('');
       setSelectedIndex(0);
+      document.body.style.overflow = 'hidden';
       setTimeout(() => inputRef.current?.focus(), 50);
+    } else {
+      document.body.style.overflow = '';
     }
+    return () => { document.body.style.overflow = ''; };
   }, [isOpen]);
 
   // ESC 키 닫기 + 키보드 네비게이션 / ESC close + keyboard navigation
@@ -184,15 +188,15 @@ export default function SpotlightSearch({ isOpen, onClose, assets, onLoginRequir
         <div className="flex items-center gap-4 px-5 py-2.5 border-t border-border text-[11px] text-text-quaternary">
           <span className="flex items-center gap-1">
             <kbd className="px-1 py-0.5 border border-border rounded font-mono text-[10px]">↑↓</kbd>
-            이동
+            {t('spotlight.navigate')}
           </span>
           <span className="flex items-center gap-1">
             <kbd className="px-1 py-0.5 border border-border rounded font-mono text-[10px]">Enter</kbd>
-            선택
+            {t('spotlight.select')}
           </span>
           <span className="flex items-center gap-1">
             <kbd className="px-1 py-0.5 border border-border rounded font-mono text-[10px]">ESC</kbd>
-            닫기
+            {t('spotlight.close')}
           </span>
         </div>
       </div>

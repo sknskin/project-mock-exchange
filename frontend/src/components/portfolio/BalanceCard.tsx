@@ -8,6 +8,7 @@
 'use client';
 
 import { cn, formatCurrency, formatPercent } from '@/lib/format';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface BalanceCardProps {
   totalValue: number;
@@ -22,11 +23,12 @@ export default function BalanceCard({
   totalPnlPercent,
   cashBalance,
 }: BalanceCardProps) {
+  const { t } = useTranslation();
   const isPositive = totalPnl >= 0;
 
   return (
     <div className="py-6 sm:py-7">
-      <div className="text-[13px] text-text-tertiary font-medium mb-2">총 자산</div>
+      <div className="text-[13px] text-text-tertiary font-medium mb-2">{t('portfolio.totalAssets')}</div>
       <div className="text-[28px] sm:text-[32px] font-extrabold text-text-primary tabular-nums leading-tight">
         {formatCurrency(totalValue)}
       </div>
@@ -51,7 +53,7 @@ export default function BalanceCard({
       </div>
       <div className="mt-6 pt-4 border-t border-border/50">
         <div className="flex justify-between text-[14px]">
-          <span className="text-text-tertiary">예수금</span>
+          <span className="text-text-tertiary">{t('portfolio.cashBalance')}</span>
           <span className="text-text-primary font-bold tabular-nums">
             {formatCurrency(cashBalance)}
           </span>

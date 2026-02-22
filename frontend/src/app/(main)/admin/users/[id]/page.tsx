@@ -305,7 +305,7 @@ export default function AdminUserDetailPage({
                 {user.approvalStatus !== 'APPROVED' && (
                   <button
                     onClick={() => openModal('approve')}
-                    className="h-10 px-6 rounded-xl bg-green-600 hover:bg-green-600/85 text-white text-[14px] font-semibold transition-colors"
+                    className="px-5 py-2.5 rounded-xl text-[14px] font-semibold text-green-600 border border-green-600/30 hover:bg-green-600/10 transition-colors"
                   >
                     {t('admin.users.approve')}
                   </button>
@@ -313,7 +313,7 @@ export default function AdminUserDetailPage({
                 {user.approvalStatus !== 'REJECTED' && user.approvalStatus !== 'APPROVED' && (
                   <button
                     onClick={() => openModal('reject')}
-                    className="h-10 px-6 rounded-xl bg-orange-500 hover:bg-orange-500/85 text-white text-[14px] font-semibold transition-colors"
+                    className="px-5 py-2.5 rounded-xl text-[14px] font-semibold text-orange-500 border border-orange-500/30 hover:bg-orange-500/10 transition-colors"
                   >
                     {t('admin.users.reject')}
                   </button>
@@ -321,7 +321,7 @@ export default function AdminUserDetailPage({
                 {user.approvalStatus === 'APPROVED' && user.isActive && (
                   <button
                     onClick={() => openModal('deactivate')}
-                    className="h-10 px-6 rounded-xl bg-yellow-500 hover:bg-yellow-500/85 text-white text-[14px] font-semibold transition-colors"
+                    className="px-5 py-2.5 rounded-xl text-[14px] font-semibold text-yellow-600 border border-yellow-600/30 hover:bg-yellow-600/10 transition-colors"
                   >
                     {t('admin.users.deactivate')}
                   </button>
@@ -329,7 +329,7 @@ export default function AdminUserDetailPage({
                 {user.approvalStatus === 'APPROVED' && !user.isActive && (
                   <button
                     onClick={() => openModal('activate')}
-                    className="h-10 px-6 rounded-xl bg-yellow-500 hover:bg-yellow-500/85 text-white text-[14px] font-semibold transition-colors"
+                    className="px-5 py-2.5 rounded-xl text-[14px] font-semibold text-green-600 border border-green-600/30 hover:bg-green-600/10 transition-colors"
                   >
                     {t('admin.users.activate')}
                   </button>
@@ -337,7 +337,7 @@ export default function AdminUserDetailPage({
                 {user.approvalStatus === 'APPROVED' && (
                   <button
                     onClick={() => openModal('delete')}
-                    className="h-10 px-6 rounded-xl bg-danger hover:bg-danger/85 text-white text-[14px] font-semibold transition-colors"
+                    className="px-5 py-2.5 rounded-xl text-[14px] font-semibold text-danger border border-danger/30 hover:bg-danger/10 transition-colors"
                   >
                     {t('admin.users.delete')}
                   </button>
@@ -392,7 +392,7 @@ export default function AdminUserDetailPage({
                 <button
                   onClick={handleConfirm}
                   disabled={isActionLoading}
-                  className="flex-1 h-11 rounded-xl bg-accent hover:bg-accent/85 text-white text-[14px] font-semibold transition-colors disabled:opacity-50"
+                  className="flex-1 h-11 rounded-xl bg-accent hover:bg-accent/90 text-white text-[14px] font-semibold transition-colors disabled:opacity-50"
                 >
                   {isActionLoading ? '...' : getModalConfirmLabel()}
                 </button>

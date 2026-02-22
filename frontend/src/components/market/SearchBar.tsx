@@ -8,6 +8,7 @@
 'use client';
 
 import { Search } from 'lucide-react';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface SearchBarProps {
   value: string;
@@ -18,14 +19,16 @@ interface SearchBarProps {
 export default function SearchBar({
   value,
   onChange,
-  placeholder = '종목 검색',
+  placeholder,
 }: SearchBarProps) {
+  const { t } = useTranslation();
+  const resolvedPlaceholder = placeholder ?? t('search.asset');
   return (
     <div className="relative px-6 py-3">
       <Search className="absolute left-9 top-1/2 -translate-y-1/2 w-4 h-4 text-text-quaternary" />
       <input
         type="text"
-        placeholder={placeholder}
+        placeholder={resolvedPlaceholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="w-full pl-9 pr-4 py-2.5 bg-bg-secondary border-none rounded-lg text-[14px] text-text-primary placeholder-text-quaternary focus:outline-none focus:ring-1 focus:ring-accent/30 transition-all font-medium"

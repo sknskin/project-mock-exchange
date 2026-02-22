@@ -8,7 +8,6 @@
 'use client';
 
 import { useTranslation } from '@/hooks/useTranslation';
-import VirtuExLogo from '@/components/ui/VirtuExLogo';
 
 export default function NotFoundPage() {
   const { t } = useTranslation();
@@ -22,10 +21,10 @@ export default function NotFoundPage() {
       </div>
 
       <h1 className="text-[22px] font-extrabold text-text-primary mb-3">
-        페이지를 찾을 수 없습니다
+        {t('error.notFound')}
       </h1>
       <p className="text-[14px] text-text-secondary max-w-[360px] leading-relaxed mb-8">
-        요청하신 페이지가 존재하지 않거나 이동되었습니다.
+        {t('error.notFoundDesc')}
       </p>
 
       <a
@@ -34,11 +33,6 @@ export default function NotFoundPage() {
       >
         {t('error.goHome')}
       </a>
-
-      <div className="mt-12 flex items-center gap-2 opacity-30">
-        <VirtuExLogo size={16} />
-        <span className="text-[11px] font-semibold text-text-quaternary">VirtuEx</span>
-      </div>
     </div>
   );
 }

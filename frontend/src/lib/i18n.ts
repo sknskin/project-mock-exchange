@@ -101,13 +101,59 @@ const translations = {
     'error.persistent': '지속적으로 오류가 발생하는 경우 관리자에게 연락해주세요.',
     'error.retry': '다시 시도',
     'error.goHome': '홈으로',
+    'error.notFound': '페이지를 찾을 수 없습니다',
+    'error.notFoundDesc': '요청하신 페이지가 존재하지 않거나 이동되었습니다.',
     'error.connectionFailed': '서버 연결 실패',
     'error.connectionDesc': '서버에 연결할 수 없습니다. 서비스가 점검 중이거나 네트워크 상태를 확인해주세요.',
+
+    // Exchange Rate
+    'exchange.unit': '원',
+    'exchange.showingKRW': '현재: 원화 표시 중',
+    'exchange.showingUSD': '현재: 달러 표시 중',
+    'exchange.rateNote': 'ECB 기준 평일 1회 갱신 (당일 내 동일 환율)',
 
     // Toast
     'toast.copied': '복사됨!',
     'toast.watchlistAdded': '관심종목에 추가되었습니다',
     'toast.watchlistRemoved': '관심종목에서 삭제되었습니다',
+    'toast.userApproved': '회원이 승인되었습니다',
+    'toast.userRejected': '회원이 반려되었습니다',
+    'toast.userDeactivated': '회원이 비활성화되었습니다',
+    'toast.userActivated': '회원이 활성화되었습니다',
+    'toast.userDeleted': '회원이 삭제되었습니다',
+    'toast.announcementCreated': '공지사항이 등록되었습니다',
+    'toast.announcementUpdated': '공지사항이 수정되었습니다',
+    'toast.announcementDeleted': '공지사항이 삭제되었습니다',
+    'toast.profileUpdated': '내 정보가 수정되었습니다',
+    'toast.passwordChanged': '비밀번호가 변경되었습니다',
+
+    // Spotlight
+    'spotlight.navigate': '이동',
+    'spotlight.select': '선택',
+    'spotlight.close': '닫기',
+
+    // Leaderboard
+    'leaderboard.title': '리더보드',
+    'leaderboard.rank': '순위',
+    'leaderboard.user': '사용자',
+    'leaderboard.totalAssets': '총 자산',
+    'leaderboard.returnRate': '수익률',
+    'leaderboard.refresh': '새로고침',
+    'leaderboard.loading': '데이터 로딩 중...',
+    'leaderboard.asOf': '기준',
+    'leaderboard.empty': '리더보드 데이터가 없습니다',
+
+    // Portfolio (additional)
+    'portfolio.totalAssets': '총 자산',
+    'portfolio.cashBalance': '예수금',
+
+    // OrderBook
+    'orderbook.price': '가격',
+    'orderbook.quantity': '수량',
+    'orderbook.spread': '스프레드',
+
+    // Search
+    'search.asset': '종목 검색',
 
     // ScrollTop
     'scrollTop': '맨 위로',
@@ -377,7 +423,7 @@ const translations = {
 
     // My Page
     'mypage.title': '마이페이지',
-    'mypage.editMode': '편집모드',
+    'mypage.edit': '내 정보 수정',
     'mypage.save': '저장',
     'mypage.cancel': '취소',
     'mypage.changePassword': '비밀번호 변경',
@@ -621,13 +667,59 @@ const translations = {
     'error.persistent': 'If the issue persists, please contact the administrator.',
     'error.retry': 'Retry',
     'error.goHome': 'Home',
+    'error.notFound': 'Page Not Found',
+    'error.notFoundDesc': 'The page you requested does not exist or has been moved.',
     'error.connectionFailed': 'Connection Failed',
     'error.connectionDesc': 'Unable to connect to the server. The service may be under maintenance or please check your network.',
+
+    // Exchange Rate
+    'exchange.unit': 'KRW',
+    'exchange.showingKRW': 'Showing: KRW',
+    'exchange.showingUSD': 'Showing: USD',
+    'exchange.rateNote': 'ECB rate, updated once on business days',
 
     // Toast
     'toast.copied': 'Copied!',
     'toast.watchlistAdded': 'Added to watchlist',
     'toast.watchlistRemoved': 'Removed from watchlist',
+    'toast.userApproved': 'User approved',
+    'toast.userRejected': 'User rejected',
+    'toast.userDeactivated': 'User deactivated',
+    'toast.userActivated': 'User activated',
+    'toast.userDeleted': 'User deleted',
+    'toast.announcementCreated': 'Announcement created',
+    'toast.announcementUpdated': 'Announcement updated',
+    'toast.announcementDeleted': 'Announcement deleted',
+    'toast.profileUpdated': 'Profile updated',
+    'toast.passwordChanged': 'Password changed',
+
+    // Spotlight
+    'spotlight.navigate': 'Navigate',
+    'spotlight.select': 'Select',
+    'spotlight.close': 'Close',
+
+    // Leaderboard
+    'leaderboard.title': 'Leaderboard',
+    'leaderboard.rank': 'Rank',
+    'leaderboard.user': 'User',
+    'leaderboard.totalAssets': 'Total Assets',
+    'leaderboard.returnRate': 'Return %',
+    'leaderboard.refresh': 'Refresh',
+    'leaderboard.loading': 'Loading data...',
+    'leaderboard.asOf': '',
+    'leaderboard.empty': 'No leaderboard data',
+
+    // Portfolio (additional)
+    'portfolio.totalAssets': 'Total Assets',
+    'portfolio.cashBalance': 'Cash Balance',
+
+    // OrderBook
+    'orderbook.price': 'Price',
+    'orderbook.quantity': 'Qty',
+    'orderbook.spread': 'Spread',
+
+    // Search
+    'search.asset': 'Search assets',
 
     // ScrollTop
     'scrollTop': 'Back to top',
@@ -897,7 +989,7 @@ const translations = {
 
     // My Page
     'mypage.title': 'My Page',
-    'mypage.editMode': 'Edit',
+    'mypage.edit': 'Edit Profile',
     'mypage.save': 'Save',
     'mypage.cancel': 'Cancel',
     'mypage.changePassword': 'Change Password',

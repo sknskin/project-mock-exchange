@@ -9,6 +9,7 @@
 
 import { useRef, useEffect, useCallback, useState } from 'react';
 import { useLeaderboard } from '@/hooks/useLeaderboard';
+import { useTranslation } from '@/hooks/useTranslation';
 import Skeleton from '@/components/ui/Skeleton';
 import { cn, formatCurrency, formatPercent } from '@/lib/format';
 import { Trophy, RefreshCw } from 'lucide-react';
@@ -21,8 +22,18 @@ const medalColors: Record<number, string> = {
 
 const ROW_HEIGHT = 52;
 
-function formatTimestamp(ts: number): string {
+function formatTimestamp(ts: number, locale: string): string {
   const d = new Date(ts);
+  if (locale === 'en') {
+    return d.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    });
+  }
   const month = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   const hours = String(d.getHours()).padStart(2, '0');
@@ -32,6 +43,7 @@ function formatTimestamp(ts: number): string {
 }
 
 export default function LeaderboardPage() {
+  const { t, locale } = useTranslation();
   const { data: leaderboard, isLoading, dataUpdatedAt, refetch } = useLeaderboard();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const prevRankMap = useRef<Map<string, number>>(new Map());
@@ -73,15 +85,17 @@ export default function LeaderboardPage() {
     <div>
       <div className="py-6 flex items-center gap-2.5">
         <Trophy className="w-5 h-5 text-yellow-400" />
-        <h1 className="text-[20px] font-extrabold text-text-primary">리더보드</h1>
+        <h1 className="text-[20px] font-extrabold text-text-primary">{t('leaderboard.title')}</h1>
       </div>
 
       {/* 기준 시간 + 새로고침 / Timestamp + Refresh */}
       <div className="flex items-center justify-between pb-4">
         <span className="text-[12px] text-text-quaternary">
           {dataUpdatedAt
-            ? `${formatTimestamp(dataUpdatedAt)} 기준`
-            : '데이터 로딩 중...'}
+            ? locale === 'ko'
+              ? `${formatTimestamp(dataUpdatedAt, locale)} ${t('leaderboard.asOf')}`
+              : formatTimestamp(dataUpdatedAt, locale)
+            : t('leaderboard.loading')}
         </span>
         <button
           onClick={handleRefresh}
@@ -89,16 +103,16 @@ export default function LeaderboardPage() {
           className="flex items-center gap-1.5 text-[12px] text-text-tertiary hover:text-text-primary transition-colors disabled:opacity-50"
         >
           <RefreshCw className={cn('w-3.5 h-3.5', isRefreshing && 'animate-spin')} />
-          새로고침
+          {t('leaderboard.refresh')}
         </button>
       </div>
 
       {/* 테이블 헤더 / Table header */}
       <div className="flex items-center py-2.5 text-[11px] text-text-quaternary font-medium border-b border-border/80">
-        <span className="w-10 sm:w-12 text-center shrink-0">순위</span>
-        <span className="flex-1 pl-2 min-w-0">사용자</span>
-        <span className="w-24 sm:w-36 text-right shrink-0">총 자산</span>
-        <span className="w-16 sm:w-24 text-right shrink-0">수익률</span>
+        <span className="w-10 sm:w-12 text-center shrink-0">{t('leaderboard.rank')}</span>
+        <span className="flex-1 pl-2 min-w-0">{t('leaderboard.user')}</span>
+        <span className="w-24 sm:w-36 text-right shrink-0">{t('leaderboard.totalAssets')}</span>
+        <span className="w-16 sm:w-24 text-right shrink-0">{t('leaderboard.returnRate')}</span>
       </div>
 
       {isLoading ? (
@@ -160,7 +174,7 @@ export default function LeaderboardPage() {
 
           {(!leaderboard || leaderboard.length === 0) && (
             <div className="py-24 text-center text-text-quaternary text-[14px]">
-              리더보드 데이터가 없습니다
+              {t('leaderboard.empty')}
             </div>
           )}
         </div>

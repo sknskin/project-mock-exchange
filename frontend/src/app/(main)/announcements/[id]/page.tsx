@@ -47,13 +47,19 @@ export default function AnnouncementDetailPage({
   const toggleCommentLike = useToggleCommentLike();
   const incrementViewCount = useIncrementViewCount();
 
-  // View count increment (once per page visit)
+  // View count increment (once per session, 30-min cooldown per announcement)
   const viewTracked = useRef(false);
   useEffect(() => {
-    if (id && !viewTracked.current) {
-      viewTracked.current = true;
-      incrementViewCount.mutate(id);
-    }
+    if (!id || viewTracked.current) return;
+    viewTracked.current = true;
+    const VIEW_COOLDOWN = 30 * 60 * 1000; // 30 minutes
+    const storageKey = `announce-viewed-${id}`;
+    try {
+      const lastViewed = sessionStorage.getItem(storageKey);
+      if (lastViewed && Date.now() - Number(lastViewed) < VIEW_COOLDOWN) return;
+      sessionStorage.setItem(storageKey, String(Date.now()));
+    } catch { /* sessionStorage unavailable */ }
+    incrementViewCount.mutate(id);
   }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Delete announcement modal

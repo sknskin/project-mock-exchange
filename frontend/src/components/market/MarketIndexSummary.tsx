@@ -9,7 +9,14 @@
 
 import { useMemo, useRef, useEffect } from 'react';
 import { cn, formatCompactPrice, formatPercent } from '@/lib/format';
+import { useSettingsStore } from '@/stores/settings';
 import type { Asset } from '@/types';
+
+const INDEX_NAME_EN: Record<string, string> = {
+  'SOX (반도체)': 'SOX (Semicon)',
+  'DAX (독일)': 'DAX (Germany)',
+  'WTI 원유': 'WTI Crude Oil',
+};
 
 interface MarketIndexSummaryProps {
   assets: Asset[];
@@ -204,6 +211,7 @@ function MiniSparkline({ data, isRise }: { data: number[]; isRise: boolean }) {
 /* ─── 메인 컴포넌트 / Main Component ─── */
 
 export default function MarketIndexSummary({ assets }: MarketIndexSummaryProps) {
+  const locale = useSettingsStore((s) => s.locale);
   const indices = useMemo((): IndexData[] => {
     if (assets.length === 0) return [];
 
@@ -254,7 +262,7 @@ export default function MarketIndexSummary({ assets }: MarketIndexSummaryProps) 
             >
               <div className="flex-1 min-w-0">
                 <div className="text-[11px] text-text-quaternary font-medium mb-0.5 truncate">
-                  {idx.name}
+                  {locale === 'en' ? (INDEX_NAME_EN[idx.name] ?? idx.name) : idx.name}
                 </div>
                 <div className="flex items-baseline gap-1.5">
                   <span className="text-[13px] font-bold text-text-primary tabular-nums">

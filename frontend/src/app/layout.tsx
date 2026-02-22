@@ -10,15 +10,14 @@ import './globals.css';
 import QueryProvider from '@/components/layout/QueryProvider';
 import Header from '@/components/layout/Header';
 import BottomNav from '@/components/layout/BottomNav';
-import FloatingActions from '@/components/layout/FloatingActions';
 import Footer from '@/components/layout/Footer';
 import ThemeProvider from '@/components/layout/ThemeProvider';
 import PageViewTracker from '@/components/layout/PageViewTracker';
 import ToastContainer from '@/components/ui/ToastContainer';
 
 export const metadata: Metadata = {
-  title: 'VirtuEx - 모의투자',
-  description: '실시간 모의 주식/암호화폐 거래 플랫폼',
+  title: 'VirtuEx - Mock Trading Platform',
+  description: 'Real-time mock stock & crypto trading platform',
 };
 
 export default function RootLayout({
@@ -42,12 +41,11 @@ export default function RootLayout({
           <ThemeProvider />
           <PageViewTracker />
           <Header />
-          <main className="pb-20 md:pb-0 max-w-[1080px] mx-auto px-5 sm:px-8 lg:px-10">
+          <main className="pb-20 md:pb-0 max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-10">
             {children}
           </main>
           <Footer />
           <BottomNav />
-          <FloatingActions />
           <ToastContainer />
         </QueryProvider>
       </body>

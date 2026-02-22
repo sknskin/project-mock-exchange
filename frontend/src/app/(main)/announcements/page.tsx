@@ -75,7 +75,7 @@ export default function AnnouncementsPage() {
           <Link
             href="/announcements/new"
             className={cn(
-              'flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13px] font-semibold',
+              'flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[13px] font-semibold',
               'bg-accent text-white hover:bg-accent/90 transition-colors',
             )}
           >

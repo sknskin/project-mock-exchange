@@ -8,11 +8,13 @@
 'use client';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
+import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/format';
 
 export default function ExchangeRateBar() {
   const { data, refetch, isFetching } = useExchangeRate();
   const { display, toggle } = useCurrencyDisplay();
+  const { t } = useTranslation();
   if (!data) {
     return (
       <div className="flex items-center justify-between py-2.5 px-1 border-b border-border text-[12px]">
@@ -45,7 +47,7 @@ export default function ExchangeRateBar() {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
           })}
-          원
+          {' '}{t('exchange.unit')}
         </span>
         <button
           onClick={toggle}
@@ -54,7 +56,7 @@ export default function ExchangeRateBar() {
           {isKRWMode ? '₩ → $' : '$ → ₩'}
         </button>
         <span className="text-[10px] text-text-quaternary hidden sm:inline whitespace-nowrap">
-          {isKRWMode ? '현재: 원화 표시 중' : '현재: 달러 표시 중'}
+          {isKRWMode ? t('exchange.showingKRW') : t('exchange.showingUSD')}
         </span>
       </div>
       <div className="flex flex-col items-end gap-0.5 text-text-quaternary">
@@ -80,7 +82,7 @@ export default function ExchangeRateBar() {
             </svg>
           </button>
         </div>
-        <span className="text-[9px] text-text-quaternary/60 hidden sm:block">ECB 기준 평일 1회 갱신 (당일 내 동일 환율)</span>
+        <span className="text-[9px] text-text-quaternary/60 hidden sm:block">{t('exchange.rateNote')}</span>
       </div>
     </div>
   );
