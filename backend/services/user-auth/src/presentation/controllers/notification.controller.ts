@@ -9,6 +9,7 @@ import {
   Controller,
   Get,
   Post,
+  Body,
   Param,
   Query,
   UseGuards,
@@ -21,11 +22,28 @@ import { UserDto } from '@mock-exchange/common';
 import { PrismaService } from '../../infrastructure/persistence/prisma/prisma.service';
 
 @Controller('notifications')
-@UseGuards(JwtAuthGuard)
 export class NotificationController {
   constructor(private readonly prisma: PrismaService) {}
 
+  /** Internal endpoint for service-to-service notification creation */
+  @Post()
+  async create(
+    @Body() body: { userId: string; type?: string; title: string; message: string; link?: string },
+  ) {
+    const notification = await this.prisma.notification.create({
+      data: {
+        userId: body.userId,
+        type: (body.type as any) || 'GENERAL',
+        title: body.title,
+        message: body.message,
+        link: body.link,
+      },
+    });
+    return { success: true, data: notification };
+  }
+
   @Get()
+  @UseGuards(JwtAuthGuard)
   async list(
     @CurrentUser() user: UserDto,
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
@@ -57,6 +75,7 @@ export class NotificationController {
   }
 
   @Get('unread-count')
+  @UseGuards(JwtAuthGuard)
   async unreadCount(@CurrentUser() user: UserDto) {
     const count = await this.prisma.notification.count({
       where: { userId: user.id, isRead: false },
@@ -65,6 +84,7 @@ export class NotificationController {
   }
 
   @Post(':id/read')
+  @UseGuards(JwtAuthGuard)
   async markAsRead(
     @CurrentUser() user: UserDto,
     @Param('id') id: string,
@@ -77,6 +97,7 @@ export class NotificationController {
   }
 
   @Post('read-all')
+  @UseGuards(JwtAuthGuard)
   async markAllAsRead(@CurrentUser() user: UserDto) {
     await this.prisma.notification.updateMany({
       where: { userId: user.id, isRead: false },

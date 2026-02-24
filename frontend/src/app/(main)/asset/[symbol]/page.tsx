@@ -23,8 +23,10 @@ import ConfirmModal from '@/components/ui/ConfirmModal';
 import Tabs from '@/components/ui/Tabs';
 import { ChartSkeleton } from '@/components/ui/Skeleton';
 import { cn, formatPriceDisplay, formatAmountDisplay, formatPercent, formatQuantity, formatTime, formatVolumeDisplay } from '@/lib/format';
-import { ArrowLeft, Star } from 'lucide-react';
+import { ArrowLeft, Star, Bell } from 'lucide-react';
 import { useWatchlist, useAddWatchlist, useRemoveWatchlist } from '@/hooks/useWatchlist';
+import { usePriceAlerts } from '@/hooks/usePriceAlert';
+import PriceAlertModal from '@/components/alerts/PriceAlertModal';
 import Link from 'next/link';
 import type { PriceUpdate } from '@/types';
 import type { TranslationKey } from '@/lib/i18n';
@@ -77,7 +79,10 @@ export default function AssetDetailPage({
   const [orderSheetOpen, setOrderSheetOpen] = useState(false);
   const [orderSide, setOrderSide] = useState<'BUY' | 'SELL'>('BUY');
   const [loginModalOpen, setLoginModalOpen] = useState(false);
+  const [alertModalOpen, setAlertModalOpen] = useState(false);
   const { data: watchlistSymbols } = useWatchlist();
+  const { data: priceAlerts } = usePriceAlerts(symbol);
+  const activeAlertCount = priceAlerts?.filter((a) => a.isActive).length ?? 0;
   const addWatchlist = useAddWatchlist();
   const removeWatchlist = useRemoveWatchlist();
   const isWatchlisted = watchlistSymbols?.includes(symbol) ?? false;
@@ -146,6 +151,25 @@ export default function AssetDetailPage({
                   isWatchlisted ? 'text-yellow-400 fill-yellow-400' : 'text-text-quaternary',
                 )}
               />
+            </button>
+            <button
+              onClick={() => {
+                if (!isAuthenticated) { setLoginModalOpen(true); return; }
+                setAlertModalOpen(true);
+              }}
+              className="shrink-0 p-0.5 rounded transition-colors hover:bg-bg-secondary/80 relative"
+            >
+              <Bell
+                className={cn(
+                  'w-[18px] h-[18px] transition-colors',
+                  activeAlertCount > 0 ? 'text-accent fill-accent/20' : 'text-text-quaternary',
+                )}
+              />
+              {activeAlertCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-accent text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                  {activeAlertCount}
+                </span>
+              )}
             </button>
           </div>
           <span className="text-[12px] text-text-quaternary">{symbol}</span>
@@ -406,6 +430,14 @@ export default function AssetDetailPage({
         symbol={symbol}
         currentPrice={currentPrice}
         initialSide={orderSide}
+      />
+
+      {/* 가격 알림 모달 / Price Alert Modal */}
+      <PriceAlertModal
+        isOpen={alertModalOpen}
+        onClose={() => setAlertModalOpen(false)}
+        symbol={symbol}
+        currentPrice={currentPrice}
       />
 
       {/* 로그인 필요 모달 / Login Required Modal */}

@@ -22,11 +22,15 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery }
 import { Request, Response } from 'express';
 import { ProxyService } from './proxy.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { ChatGateway } from '../gateway/chat.gateway';
 
 @ApiTags('Orders')
 @Controller('api/orders')
 export class OrderProxyController {
-  constructor(private readonly proxyService: ProxyService) {}
+  constructor(
+    private readonly proxyService: ProxyService,
+    private readonly chatGateway: ChatGateway,
+  ) {}
 
   @Post()
   @UseGuards(JwtAuthGuard)
@@ -43,7 +47,57 @@ export class OrderProxyController {
       data: body,
       headers: { 'x-user-id': userId },
     });
+
+    // WebSocket으로 거래 체결 알림 전송 (Send trade execution notification via WebSocket)
+    if (result.status < 400 && userId) {
+      this.sendTradeNotification(userId, result.data, req).catch(() => {});
+    }
+
     return res.status(result.status).json(result.data);
+  }
+
+  private async sendTradeNotification(userId: string, responseData: unknown, req: Request) {
+    try {
+      const data = responseData as { data?: { status?: string; symbol?: string; side?: string; filledQuantity?: string; price?: string; trades?: unknown[] } };
+      const order = data?.data;
+      if (!order) return;
+
+      const hasTrades = order.trades && Array.isArray(order.trades) && order.trades.length > 0;
+      const isFilled = order.status === 'FILLED' || order.status === 'PARTIALLY_FILLED';
+
+      if (hasTrades || isFilled) {
+        const sideLabel = order.side === 'BUY' ? 'Buy' : 'Sell';
+        const title = `${sideLabel} ${order.symbol}`;
+        const message = order.status === 'FILLED'
+          ? `${order.filledQuantity} @ ${order.price} - Filled`
+          : `${order.filledQuantity} @ ${order.price} - Partially Filled`;
+
+        // WebSocket으로 푸시 (Push via WebSocket)
+        this.chatGateway.notifyUser(userId, 'notification:trade', {
+          type: 'TRADE_EXECUTION',
+          title,
+          message,
+          symbol: order.symbol,
+          timestamp: new Date().toISOString(),
+        });
+
+        // 알림을 DB에 영구 저장 (Persist notification to DB)
+        await this.proxyService.forward('user-auth', {
+          method: 'POST',
+          url: '/notifications',
+          data: {
+            userId,
+            type: 'GENERAL',
+            title,
+            message,
+            link: `/orders`,
+          },
+          headers: { Authorization: req.headers.authorization || '' },
+        }).catch(() => {});
+      }
+    } catch {
+      // 최선의 노력 알림 (Best-effort notification)
+    }
   }
 
   // ── 구체적 경로를 :orderId 파라미터 경로보다 먼저 정의 ──
