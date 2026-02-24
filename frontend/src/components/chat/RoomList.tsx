@@ -1,6 +1,6 @@
 'use client';
 
-import { X, Plus } from 'lucide-react';
+import { X, Plus, PanelRightOpen } from 'lucide-react';
 import { useChatStore } from '@/stores/chat';
 import { useChatRooms } from '@/hooks/useChat';
 import { useAuthStore } from '@/stores/auth';
@@ -25,7 +25,7 @@ function formatRelativeTime(dateString: string, locale: string) {
 
 export default function RoomList() {
   const { t, locale } = useTranslation();
-  const { closeChat, openRoom, setView } = useChatStore();
+  const { closeChat, openRoom, setView, togglePin, isPinned } = useChatStore();
   const user = useAuthStore((s) => s.user);
   const { data: rooms, isLoading } = useChatRooms();
 
@@ -41,6 +41,18 @@ export default function RoomList() {
             aria-label={t('chat.newChat')}
           >
             <Plus className="w-4.5 h-4.5" />
+          </button>
+          <button
+            onClick={togglePin}
+            className={cn(
+              'hidden lg:block p-2 rounded-lg transition-colors',
+              isPinned
+                ? 'text-accent bg-accent/10 hover:bg-accent/20'
+                : 'text-text-tertiary hover:text-text-primary hover:bg-bg-secondary',
+            )}
+            aria-label="Pin chat"
+          >
+            <PanelRightOpen className="w-4.5 h-4.5" />
           </button>
           <button
             onClick={closeChat}
