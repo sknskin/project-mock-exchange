@@ -53,7 +53,7 @@ export class ChatService {
             message: { roomId: room.id },
           },
         });
-        // Messages I sent are implicitly read
+        // 내가 보낸 메시지는 자동으로 읽음 처리 (Messages I sent are implicitly read)
         const mySentCount = await this.prisma.message.count({
           where: { roomId: room.id, senderId: userId },
         });
@@ -151,7 +151,7 @@ export class ChatService {
   }
 
   async getMessages(roomId: string, userId: string, cursor?: string, limit = 30) {
-    // Verify user is participant
+    // 사용자가 참여자인지 확인 (Verify user is participant)
     await this.verifyParticipant(roomId, userId);
 
     const messages = await this.prisma.message.findMany({
@@ -175,13 +175,13 @@ export class ChatService {
     const hasMore = messages.length > limit;
     const items = hasMore ? messages.slice(0, limit) : messages;
 
-    // Get active participant count for unread calculation
+    // 안 읽은 메시지 수 계산을 위한 활성 참여자 수 조회 (Get active participant count for unread calculation)
     const participantCount = await this.prisma.participant.count({
       where: { roomId, leftAt: null },
     });
 
     const messagesWithUnread = items.map((msg) => {
-      // unreadCount = total active participants - sender - those who read
+      // 안읽음 수 = 전체 활성 참여자 - 발신자 - 읽은 사람 (unreadCount = total active participants - sender - those who read)
       const readUserIds = new Set(msg.readReceipts.map((r) => r.userId));
       const unreadCount = Math.max(0, participantCount - 1 - readUserIds.size);
       return {
@@ -221,20 +221,20 @@ export class ChatService {
       },
     });
 
-    // Update room's updatedAt
+    // 채팅방의 최근 업데이트 시간 갱신 (Update room's updatedAt)
     await this.prisma.room.update({
       where: { id: roomId },
       data: { updatedAt: new Date() },
     });
 
-    // Get participant count for unreadCount
+    // 안읽음 수 계산을 위한 참여자 수 조회 (Get participant count for unreadCount)
     const participantCount = await this.prisma.participant.count({
       where: { roomId, leftAt: null },
     });
 
     return {
       ...message,
-      unreadCount: participantCount - 1, // everyone except sender hasn't read yet
+      unreadCount: participantCount - 1, // 발신자를 제외한 모든 참여자가 아직 읽지 않음 (everyone except sender hasn't read yet)
     };
   }
 
@@ -255,7 +255,7 @@ export class ChatService {
       return { invited: [] };
     }
 
-    // For users who previously left, reactivate
+    // 이전에 퇴장한 사용자는 재활성화 (For users who previously left, reactivate)
     const leftParticipants = existingParticipants.filter((p) => p.leftAt !== null);
     for (const p of leftParticipants) {
       await this.prisma.participant.update({
@@ -264,7 +264,7 @@ export class ChatService {
       });
     }
 
-    // Create new participants
+    // 새 참여자 생성 (Create new participants)
     const trulyNew = newUserIds.filter(
       (id) => !leftParticipants.some((p) => p.userId === id),
     );
@@ -299,10 +299,26 @@ export class ChatService {
     return { success: true };
   }
 
+  async kickUser(roomId: string, targetUserId: string) {
+    const participant = await this.prisma.participant.findFirst({
+      where: { roomId, userId: targetUserId, leftAt: null },
+    });
+    if (!participant) {
+      throw new NotFoundException('User is not a participant of this room');
+    }
+
+    await this.prisma.participant.update({
+      where: { id: participant.id },
+      data: { leftAt: new Date() },
+    });
+
+    return { success: true, kickedUserId: targetUserId };
+  }
+
   async markAsRead(roomId: string, userId: string) {
     await this.verifyParticipant(roomId, userId);
 
-    // Get all unread messages (not sent by me, not already read)
+    // 모든 안 읽은 메시지 조회 (내가 보내지 않았고, 아직 읽지 않은 메시지) (Get all unread messages (not sent by me, not already read))
     const unreadMessages = await this.prisma.message.findMany({
       where: {
         roomId,

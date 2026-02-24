@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { Send } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/format';
@@ -8,12 +8,20 @@ import { cn } from '@/lib/format';
 interface MessageInputProps {
   onSend: (content: string) => void;
   disabled?: boolean;
+  focusRef?: React.MutableRefObject<(() => void) | null>;
 }
 
-export default function MessageInput({ onSend, disabled }: MessageInputProps) {
+export default function MessageInput({ onSend, disabled, focusRef }: MessageInputProps) {
   const { t } = useTranslation();
   const [text, setText] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // 부모 컴포넌트에 포커스 함수 노출 (Expose focus function to parent)
+  useEffect(() => {
+    if (focusRef) {
+      focusRef.current = () => textareaRef.current?.focus();
+    }
+  }, [focusRef]);
 
   const handleSend = useCallback(() => {
     const trimmed = text.trim();
@@ -22,6 +30,7 @@ export default function MessageInput({ onSend, disabled }: MessageInputProps) {
     setText('');
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
+      textareaRef.current.focus();
     }
   }, [text, disabled, onSend]);
 

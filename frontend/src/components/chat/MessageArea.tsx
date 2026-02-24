@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { ArrowLeft, UserPlus, LogOut, Users } from 'lucide-react';
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { ArrowLeft, UserPlus, LogOut, Users, PanelRightOpen, X, Ban } from 'lucide-react';
 import { useChatStore } from '@/stores/chat';
-import { useChatMessages, useSendMessage, useMarkRoomRead, useChatRooms } from '@/hooks/useChat';
+import { useChatMessages, useSendMessage, useMarkRoomRead, useChatRooms, useKickFromRoom } from '@/hooks/useChat';
 import { useAuthStore } from '@/stores/auth';
+import { usePresenceStore } from '@/stores/presence';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/format';
 import MessageBubble from './MessageBubble';
@@ -22,35 +23,57 @@ interface MessageAreaProps {
 export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeaveRoom }: MessageAreaProps) {
   const { t, locale } = useTranslation();
   const backToList = useChatStore((s) => s.backToList);
+  const togglePin = useChatStore((s) => s.togglePin);
+  const isPinned = useChatStore((s) => s.isPinned);
+  const closeChat = useChatStore((s) => s.closeChat);
   const user = useAuthStore((s) => s.user);
   const { data: rooms } = useChatRooms();
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = useChatMessages(roomId);
   const sendMessage = useSendMessage();
   const markRead = useMarkRoomRead();
+  const kickFromRoom = useKickFromRoom();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const inputFocusRef = useRef<(() => void) | null>(null);
   const [showInvite, setShowInvite] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [leaveConfirm, setLeaveConfirm] = useState(false);
   const prevMessageCountRef = useRef(0);
 
+  const isAdmin = user?.role === 'SYSTEM' || user?.role === 'ADMIN';
+
   const room: ChatRoom | undefined = rooms?.find((r) => r.id === roomId);
   const messages = data?.pages.flatMap((p) => p.items) ?? [];
 
-  // Join socket room on mount
+  // 메뉴 외부 클릭 시 닫기 (Close menu on outside click)
+  useEffect(() => {
+    if (!showMenu) return;
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setShowMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [showMenu]);
+
+  // 마운트 시 소켓 방 입장 + 입력란 포커스 (Join socket room on mount + focus input)
   useEffect(() => {
     joinRoom(roomId);
+    // 방 입장 후 입력란 포커스 (Focus input after entering room)
+    setTimeout(() => inputFocusRef.current?.(), 100);
     return () => leaveSocketRoom(roomId);
   }, [roomId, joinRoom, leaveSocketRoom]);
 
-  // Mark as read on mount and when new messages arrive
+  // 마운트 시 및 새 메시지 도착 시 읽음 처리 (Mark as read on mount and when new messages arrive)
   useEffect(() => {
     if (roomId) {
       markRead.mutate(roomId);
     }
   }, [roomId, messages.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-scroll on new message
+  // 새 메시지 시 자동 스크롤 (Auto-scroll on new message)
   useEffect(() => {
     if (messages.length > prevMessageCountRef.current) {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -58,7 +81,7 @@ export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeave
     prevMessageCountRef.current = messages.length;
   }, [messages.length]);
 
-  // Load more on scroll to top
+  // 상단 스크롤 시 이전 메시지 로드 (Load more on scroll to top)
   const handleScroll = () => {
     const el = scrollContainerRef.current;
     if (el && el.scrollTop < 50 && hasNextPage && !isFetchingNextPage) {
@@ -66,9 +89,20 @@ export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeave
     }
   };
 
-  const handleSend = (content: string) => {
-    sendMessage.mutate({ roomId, content });
-  };
+  const handleSend = useCallback((content: string) => {
+    sendMessage.mutate({ roomId, content }, {
+      onSuccess: () => {
+        // 전송 후 입력란 다시 포커스 (Re-focus input after sending)
+        setTimeout(() => inputFocusRef.current?.(), 50);
+      },
+    });
+  }, [roomId, sendMessage]);
+
+  const handleKick = useCallback((targetUserId: string, username: string) => {
+    if (!confirm(`${username} 을(를) 강제 퇴장시키겠습니까?`)) return;
+    kickFromRoom.mutate({ roomId, targetUserId });
+    setShowMenu(false);
+  }, [roomId, kickFromRoom]);
 
   const displayName = room
     ? room.type === 'DM'
@@ -76,9 +110,16 @@ export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeave
       : room.name || room.participants.filter((p) => p.userId !== user?.id).map((p) => p.username).join(', ') || ''
     : '';
 
+  const onlineUserIds = usePresenceStore((s) => s.onlineUserIds);
+  const otherUser = room?.type === 'DM' ? room.participants.find((p) => p.userId !== user?.id) : null;
+  const isOtherOnline = otherUser ? onlineUserIds.has(otherUser.userId) : false;
+  const onlineCount = room?.type === 'GROUP'
+    ? room.participants.filter((p) => onlineUserIds.has(p.userId)).length
+    : 0;
+
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
+      {/* 헤더 (Header) */}
       <div className="flex items-center gap-2 px-3 py-2.5 border-b border-border shrink-0">
         <button
           onClick={backToList}
@@ -87,14 +128,21 @@ export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeave
           <ArrowLeft className="w-4.5 h-4.5" />
         </button>
         <div className="flex-1 min-w-0">
-          <h3 className="text-[14px] font-bold text-text-primary truncate">{displayName}</h3>
+          <div className="flex items-center gap-1.5">
+            <h3 className="text-[14px] font-bold text-text-primary truncate">{displayName}</h3>
+            {room?.type === 'DM' && isOtherOnline && (
+              <span className="w-2 h-2 bg-green-500 rounded-full shrink-0" />
+            )}
+          </div>
           {room && (
             <p className="text-[11px] text-text-quaternary">
-              {t('chat.participants')} {room.participants.length}
+              {room.type === 'GROUP'
+                ? `${t('chat.participants')} ${room.participants.length} · ${onlineCount} online`
+                : isOtherOnline ? 'Online' : 'Offline'}
             </p>
           )}
         </div>
-        <div className="relative">
+        <div className="relative" ref={menuRef}>
           <button
             onClick={() => setShowMenu(!showMenu)}
             className="p-1.5 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-secondary transition-colors"
@@ -102,16 +150,45 @@ export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeave
             <Users className="w-4 h-4" />
           </button>
           {showMenu && (
-            <div className="absolute right-0 top-full mt-1 w-[140px] bg-bg-secondary border border-border rounded-xl shadow-2xl overflow-hidden z-10">
-              {room?.type === 'GROUP' && (
-                <button
-                  onClick={() => { setShowMenu(false); setShowInvite(true); }}
-                  className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-[12px] font-medium text-text-primary hover:bg-bg-tertiary transition-colors"
-                >
-                  <UserPlus className="w-3.5 h-3.5 text-text-tertiary" />
-                  {t('chat.invite')}
-                </button>
+            <div className="absolute right-0 top-full mt-1 w-[220px] bg-bg-secondary border border-border rounded-xl shadow-2xl overflow-hidden z-10">
+              {/* 관리자/시스템용 참여자 목록 (Participant list for admin/system) */}
+              {isAdmin && room && (
+                <div className="border-b border-border">
+                  <p className="px-3.5 pt-2 pb-1 text-[10px] font-bold text-text-quaternary uppercase tracking-wider">Participants</p>
+                  {room.participants.map((p) => (
+                    <div key={p.userId} className="flex items-center gap-2 px-3.5 py-1.5">
+                      <div className="relative shrink-0">
+                        <div className="w-6 h-6 rounded-full bg-bg-tertiary flex items-center justify-center text-[10px] font-bold text-text-tertiary">
+                          {p.username.charAt(0).toUpperCase()}
+                        </div>
+                        {onlineUserIds.has(p.userId) && (
+                          <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border border-bg-secondary" />
+                        )}
+                      </div>
+                      <span className="flex-1 text-[12px] text-text-primary truncate">
+                        {p.username}
+                        {p.userId === user?.id && <span className="text-text-quaternary ml-1">(me)</span>}
+                      </span>
+                      {p.userId !== user?.id && (
+                        <button
+                          onClick={() => handleKick(p.userId, p.username)}
+                          className="p-1 rounded text-text-quaternary hover:text-danger transition-colors"
+                          title="Kick"
+                        >
+                          <Ban className="w-3 h-3" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
               )}
+              <button
+                onClick={() => { setShowMenu(false); setShowInvite(true); }}
+                className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-[12px] font-medium text-text-primary hover:bg-bg-tertiary transition-colors"
+              >
+                <UserPlus className="w-3.5 h-3.5 text-text-tertiary" />
+                {t('chat.invite')}
+              </button>
               <button
                 onClick={() => { setShowMenu(false); setLeaveConfirm(true); }}
                 className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-[12px] font-medium text-danger hover:bg-bg-tertiary transition-colors"
@@ -122,9 +199,26 @@ export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeave
             </div>
           )}
         </div>
+        <button
+          onClick={togglePin}
+          className={cn(
+            'hidden lg:block p-1.5 rounded-lg transition-colors',
+            isPinned
+              ? 'text-accent bg-accent/10 hover:bg-accent/20'
+              : 'text-text-tertiary hover:text-text-primary hover:bg-bg-secondary',
+          )}
+        >
+          <PanelRightOpen className="w-4 h-4" />
+        </button>
+        <button
+          onClick={closeChat}
+          className="p-1.5 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-secondary transition-colors"
+        >
+          <X className="w-4 h-4" />
+        </button>
       </div>
 
-      {/* Messages */}
+      {/* 메시지 영역 (Messages) */}
       <div
         ref={scrollContainerRef}
         onScroll={handleScroll}
@@ -157,10 +251,10 @@ export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeave
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
-      <MessageInput onSend={handleSend} disabled={sendMessage.isPending} />
+      {/* 입력란 (Input) */}
+      <MessageInput onSend={handleSend} disabled={sendMessage.isPending} focusRef={inputFocusRef} />
 
-      {/* Invite Modal */}
+      {/* 초대 모달 (Invite Modal) */}
       {showInvite && room && (
         <InviteModal
           roomId={room.id}
@@ -169,7 +263,7 @@ export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeave
         />
       )}
 
-      {/* Leave Confirm */}
+      {/* 퇴장 확인 (Leave Confirm) */}
       {leaveConfirm && (
         <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 rounded-2xl">
           <div className="bg-bg-primary border border-border rounded-2xl p-5 w-[260px] shadow-2xl">

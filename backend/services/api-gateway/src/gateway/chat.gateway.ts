@@ -24,9 +24,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   private readonly logger = new Logger(ChatGateway.name);
 
-  // userId -> Set<socketId> for multi-tab support
+  // 사용자ID -> 소켓ID 집합 (멀티 탭 지원) (userId -> Set<socketId> for multi-tab support)
   private userSockets = new Map<string, Set<string>>();
-  // socketId -> userId for quick lookup on disconnect
+  // 소켓ID -> 사용자ID (연결 해제 시 빠른 조회용) (socketId -> userId for quick lookup on disconnect)
   private socketUser = new Map<string, string>();
 
   constructor(private readonly jwtService: JwtService) {}
@@ -45,7 +45,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const payload = await this.jwtService.verifyAsync(token);
       const userId = payload.sub as string;
 
-      // Store mapping
+      // 사용자-소켓 매핑 저장 (Store mapping)
       client.data.userId = userId;
       client.data.username = payload.username;
       this.socketUser.set(client.id, userId);
@@ -54,6 +54,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         this.userSockets.set(userId, new Set());
       }
       this.userSockets.get(userId)!.add(client.id);
+
+      // 사용자의 첫 번째 연결이면 온라인 상태 브로드캐스트 (Broadcast online status if this is the user's first connection)
+      if (this.userSockets.get(userId)!.size === 1) {
+        this.server.emit('presence:online', { userId });
+      }
 
       this.logger.log(`Chat client connected: ${client.id} (user: ${userId})`);
     } catch {
@@ -67,10 +72,18 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.userSockets.get(userId)?.delete(client.id);
       if (this.userSockets.get(userId)?.size === 0) {
         this.userSockets.delete(userId);
+        // 모든 탭이 닫히면 오프라인 상태 브로드캐스트 (Broadcast offline status when all tabs closed)
+        this.server.emit('presence:offline', { userId });
       }
       this.socketUser.delete(client.id);
     }
     this.logger.log(`Chat client disconnected: ${client.id}`);
+  }
+
+  @SubscribeMessage('presence:get-online')
+  handleGetOnline(@ConnectedSocket() client: Socket) {
+    const onlineUserIds = Array.from(this.userSockets.keys());
+    client.emit('presence:online-list', { userIds: onlineUserIds });
   }
 
   @SubscribeMessage('chat:join-room')
@@ -129,11 +142,15 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     return this.userSockets.has(userId) && this.userSockets.get(userId)!.size > 0;
   }
 
+  getOnlineUserIds(): string[] {
+    return Array.from(this.userSockets.keys());
+  }
+
   async joinUserToRoom(userId: string, roomId: string) {
     const sockets = this.userSockets.get(userId);
     if (sockets) {
       for (const socketId of sockets) {
-        // Use server.in(socketId) to emit join command
+        // server.in(socketId)으로 방 참가 명령 전송 (Use server.in(socketId) to emit join command)
         const matchingSockets = await this.server.in(socketId).fetchSockets();
         for (const s of matchingSockets) {
           s.join(`room:${roomId}`);

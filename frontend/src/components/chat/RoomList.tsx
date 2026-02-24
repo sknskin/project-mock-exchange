@@ -4,6 +4,7 @@ import { X, Plus, PanelRightOpen } from 'lucide-react';
 import { useChatStore } from '@/stores/chat';
 import { useChatRooms } from '@/hooks/useChat';
 import { useAuthStore } from '@/stores/auth';
+import { usePresenceStore } from '@/stores/presence';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/format';
 
@@ -28,6 +29,7 @@ export default function RoomList() {
   const { closeChat, openRoom, setView, togglePin, isPinned } = useChatStore();
   const user = useAuthStore((s) => s.user);
   const { data: rooms, isLoading } = useChatRooms();
+  const onlineUserIds = usePresenceStore((s) => s.onlineUserIds);
 
   return (
     <div className="flex flex-col h-full">
@@ -93,6 +95,13 @@ export default function RoomList() {
                 ? formatRelativeTime(room.lastMessage.createdAt, locale)
                 : formatRelativeTime(room.createdAt, locale);
 
+              const otherParticipant = room.participants.find((p) => p.userId !== user?.id);
+              const isOtherOnline = room.type === 'DM' && otherParticipant
+                ? onlineUserIds.has(otherParticipant.userId)
+                : room.type === 'GROUP'
+                  ? room.participants.some((p) => p.userId !== user?.id && onlineUserIds.has(p.userId))
+                  : false;
+
               return (
                 <li key={room.id}>
                   <button
@@ -100,8 +109,13 @@ export default function RoomList() {
                     className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-bg-secondary transition-colors border-b border-border last:border-b-0"
                   >
                     {/* Avatar */}
-                    <div className="shrink-0 w-10 h-10 rounded-full bg-bg-tertiary flex items-center justify-center text-[14px] font-bold text-text-tertiary">
-                      {displayName.charAt(0).toUpperCase()}
+                    <div className="relative shrink-0">
+                      <div className="w-10 h-10 rounded-full bg-bg-tertiary flex items-center justify-center text-[14px] font-bold text-text-tertiary">
+                        {displayName.charAt(0).toUpperCase()}
+                      </div>
+                      {isOtherOnline && (
+                        <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-bg-primary" />
+                      )}
                     </div>
 
                     {/* Content */}

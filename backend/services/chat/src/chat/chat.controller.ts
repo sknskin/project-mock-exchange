@@ -36,7 +36,7 @@ export class ChatController {
       try {
         participantUsernames = JSON.parse(participantUsernamesHeader);
       } catch {
-        // ignore parse errors
+        // 파싱 오류 무시 (ignore parse errors)
       }
     }
     const room = await this.chatService.createRoomWithUsernames(
@@ -82,7 +82,7 @@ export class ChatController {
       try {
         usernames = JSON.parse(usernamesHeader);
       } catch {
-        // ignore
+        // 파싱 오류 무시 (ignore)
       }
     }
     const result = await this.chatService.inviteUsers(roomId, userId, dto, usernames);
@@ -95,6 +95,15 @@ export class ChatController {
     @Headers('x-user-id') userId: string,
   ) {
     const result = await this.chatService.leaveRoom(roomId, userId);
+    return { success: true, data: result };
+  }
+
+  @Post(':id/kick')
+  async kickUser(
+    @Param('id') roomId: string,
+    @Body() body: { targetUserId: string },
+  ) {
+    const result = await this.chatService.kickUser(roomId, body.targetUserId);
     return { success: true, data: result };
   }
 

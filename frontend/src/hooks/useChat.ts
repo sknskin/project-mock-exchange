@@ -111,6 +111,19 @@ export function useLeaveRoom() {
   });
 }
 
+export function useKickFromRoom() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ roomId, targetUserId }: { roomId: string; targetUserId: string }) => {
+      const { data } = await api.post(`/api/chat/rooms/${roomId}/kick`, { targetUserId });
+      return data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['chat-rooms'] });
+    },
+  });
+}
+
 export function useSearchUsers(query: string) {
   return useQuery({
     queryKey: ['chat-user-search', query],

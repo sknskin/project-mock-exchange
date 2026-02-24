@@ -22,7 +22,7 @@ export default function ChatPanel() {
   const dragRef = useRef<{ startX: number; startY: number; origX: number; origY: number } | null>(null);
   const [dragging, setDragging] = useState(false);
 
-  // Close on ESC
+  // ESC 키로 닫기 (Close on ESC)
   useEffect(() => {
     if (!isOpen || isPinned) return;
     const handler = (e: KeyboardEvent) => {
@@ -32,7 +32,7 @@ export default function ChatPanel() {
     return () => document.removeEventListener('keydown', handler);
   }, [isOpen, isPinned, closeChat]);
 
-  // Drag handlers
+  // 드래그 핸들러 (Drag handlers)
   const onMouseDown = useCallback((e: React.MouseEvent) => {
     if (isPinned) return;
     const pos = position || { x: window.innerWidth - PANEL_W - 16, y: 76 };
@@ -79,17 +79,17 @@ export default function ChatPanel() {
     backToList();
   };
 
-  // Pinned mode: rendered by layout, not here
+  // 고정 모드: 레이아웃에서 렌더링, 여기서는 렌더링하지 않음 (Pinned mode: rendered by layout, not here)
   if (isPinned) return null;
 
-  // Clamp position within viewport
+  // 뷰포트 내로 위치 제한 (Clamp position within viewport)
   const pos = position || { x: window.innerWidth - PANEL_W - 16, y: 76 };
   const clampedX = Math.max(0, Math.min(pos.x, window.innerWidth - PANEL_W));
   const clampedY = Math.max(0, Math.min(pos.y, window.innerHeight - 100));
 
   const content = (
     <>
-      {/* Backdrop on mobile only */}
+      {/* 모바일에서만 배경 오버레이 (Backdrop on mobile only) */}
       <div
         className="fixed inset-0 z-[59] bg-black/40 lg:hidden"
         onClick={closeChat}
@@ -108,7 +108,7 @@ export default function ChatPanel() {
           dragging && 'select-none',
         )}
       >
-        {/* Drag handle */}
+        {/* 드래그 핸들 (Drag handle) */}
         <div
           onMouseDown={onMouseDown}
           className={cn(

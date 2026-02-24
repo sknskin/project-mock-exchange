@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Search, X, Check } from 'lucide-react';
 import { useInviteToRoom, useSearchUsers } from '@/hooks/useChat';
 import { useAuthStore } from '@/stores/auth';
+import { usePresenceStore } from '@/stores/presence';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/format';
 import type { ChatUserSearchResult } from '@/types';
@@ -24,6 +25,7 @@ export default function InviteModal({ roomId, existingParticipantIds, onClose }:
   const [selectedUsers, setSelectedUsers] = useState<ChatUserSearchResult[]>([]);
 
   const { data: searchResults, isLoading: searching } = useSearchUsers(debouncedQuery);
+  const onlineUserIds = usePresenceStore((s) => s.onlineUserIds);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(searchQuery), 300);
@@ -118,12 +120,24 @@ export default function InviteModal({ roomId, existingParticipantIds, onClose }:
                       isSelected ? 'bg-accent/10' : 'hover:bg-bg-secondary',
                     )}
                   >
-                    <div className="w-8 h-8 rounded-full bg-bg-tertiary flex items-center justify-center text-[12px] font-bold text-text-tertiary shrink-0">
-                      {u.username.charAt(0).toUpperCase()}
+                    <div className="relative shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-bg-tertiary flex items-center justify-center text-[12px] font-bold text-text-tertiary">
+                        {u.username.charAt(0).toUpperCase()}
+                      </div>
+                      {onlineUserIds.has(u.id) && (
+                        <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-bg-primary" />
+                      )}
                     </div>
                     <div className="flex-1 min-w-0 text-left">
                       <p className="text-[13px] font-medium text-text-primary truncate">{u.username}</p>
-                      <p className="text-[11px] text-text-tertiary truncate">{u.name}</p>
+                      <p className="text-[11px] text-text-tertiary truncate">
+                        {u.name}
+                        {onlineUserIds.has(u.id) ? (
+                          <span className="ml-1.5 text-green-500">Online</span>
+                        ) : (
+                          <span className="ml-1.5 text-text-quaternary">Offline</span>
+                        )}
+                      </p>
                     </div>
                     {isSelected && <Check className="w-4 h-4 text-accent shrink-0" />}
                   </button>

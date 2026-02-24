@@ -21,7 +21,7 @@ export default function PinnedChatPanel() {
   };
 
   return (
-    <div className="hidden lg:flex flex-col w-[380px] shrink-0 h-[calc(100vh-60px)] sticky top-[60px] bg-bg-primary border-l border-border">
+    <div className="hidden lg:flex flex-col w-[380px] shrink-0 h-[calc(100vh-60px)] sticky top-[60px] bg-[#141517] border-l border-[#2a2a2e]">
       {view === 'room-list' && <RoomList />}
       {view === 'room-view' && activeRoomId && (
         <MessageArea

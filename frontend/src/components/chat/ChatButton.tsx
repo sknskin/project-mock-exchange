@@ -21,9 +21,9 @@ export default function ChatButton() {
   const handleClick = useCallback(() => {
     if (!isOpen && btnRef.current && !isPinned) {
       const rect = btnRef.current.getBoundingClientRect();
-      // Position below the button, right-aligned
+      // 버튼 아래에 위치, 오른쪽 정렬 (8px 여백) (Position below the button, flush right with 8px margin)
       setPosition({
-        x: rect.right - 380, // panel width = 380
+        x: window.innerWidth - 380 - 8,
         y: rect.bottom + 8,
       });
     }

@@ -21,6 +21,7 @@ interface ChatState {
   setView: (view: ChatView) => void;
   setPosition: (pos: ChatPosition) => void;
   togglePin: () => void;
+  unpin: () => void;
 }
 
 export const useChatStore = create<ChatState>()((set) => ({
@@ -46,4 +47,17 @@ export const useChatStore = create<ChatState>()((set) => ({
       isOpen: !state.isPinned ? true : state.isOpen,
       position: null,
     })),
+  // 모바일 뷰포트 전환 시 사이드바 고정 해제
+  unpin: () => set({ isPinned: false }),
 }));
+
+// 모바일 뷰포트(lg 미만, 1024px)에서 자동으로 사이드바 고정 해제
+if (typeof window !== 'undefined') {
+  const mql = window.matchMedia('(min-width: 1024px)');
+  const handler = (e: MediaQueryListEvent) => {
+    if (!e.matches) {
+      useChatStore.getState().unpin();
+    }
+  };
+  mql.addEventListener('change', handler);
+}
