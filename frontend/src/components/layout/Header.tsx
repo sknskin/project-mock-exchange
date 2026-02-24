@@ -92,7 +92,7 @@ export default function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 bg-bg-primary/95 backdrop-blur-md border-b border-border">
+      <header className="fixed top-0 left-0 right-0 z-40 bg-bg-primary/95 backdrop-blur-md border-b border-border">
         <div className="max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-10 h-[60px] flex items-center justify-between">
           <div className="flex items-center gap-10">
             <Link href="/" className="flex items-center gap-2">

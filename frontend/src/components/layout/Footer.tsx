@@ -10,6 +10,7 @@
 import { useCallback, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useChatStore } from '@/stores/chat';
 import { techItems } from '@/lib/constants';
 import VirtuExLogo from '@/components/ui/VirtuExLogo';
 import { cn } from '@/lib/format';
@@ -46,6 +47,9 @@ let toastId = 0;
 export default function Footer() {
   const pathname = usePathname();
   const { t } = useTranslation();
+  const isPinned = useChatStore((s) => s.isPinned);
+  const isOpen = useChatStore((s) => s.isOpen);
+  const showPinned = isPinned && isOpen;
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   const copyToClipboard = useCallback(async (text: string, e: React.MouseEvent) => {
@@ -70,7 +74,7 @@ export default function Footer() {
   if (isAuthPage) return null;
 
   return (
-    <footer className="border-t border-border mt-12 md:mt-20">
+    <footer className={cn('border-t border-border mt-12 md:mt-20 transition-[margin] duration-300 ease-in-out', showPinned && 'lg:mr-[380px]')}>
       <div className="max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-10 pt-10 md:pt-14">
         {/* 상단: 브랜드 + 설명 + 연락처 / Top: Brand + Description + Contact */}
         <div className="flex flex-col gap-4 mb-8">
