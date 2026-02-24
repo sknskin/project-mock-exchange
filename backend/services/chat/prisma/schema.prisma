@@ -1,0 +1,74 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("CHAT_DATABASE_URL")
+}
+
+enum RoomType {
+  DM
+  GROUP
+}
+
+model Room {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String?  @db.VarChar(100)
+  type      RoomType
+  createdBy String   @map("created_by") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
+  participants Participant[]
+  messages     Message[]
+
+  @@index([createdBy])
+  @@index([updatedAt])
+  @@map("rooms")
+}
+
+model Participant {
+  id       String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  roomId   String    @map("room_id") @db.Uuid
+  userId   String    @map("user_id") @db.Uuid
+  username String    @db.VarChar(50)
+  joinedAt DateTime  @default(now()) @map("joined_at") @db.Timestamptz()
+  leftAt   DateTime? @map("left_at") @db.Timestamptz()
+
+  room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, userId])
+  @@index([userId])
+  @@map("participants")
+}
+
+model Message {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  roomId         String   @map("room_id") @db.Uuid
+  senderId       String   @map("sender_id") @db.Uuid
+  senderUsername String   @map("sender_username") @db.VarChar(50)
+  content        String   @db.VarChar(2000)
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  room         Room          @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  readReceipts ReadReceipt[]
+
+  @@index([roomId, createdAt])
+  @@index([senderId])
+  @@map("messages")
+}
+
+model ReadReceipt {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  messageId String   @map("message_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  readAt    DateTime @default(now()) @map("read_at") @db.Timestamptz()
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId])
+  @@index([userId])
+  @@map("read_receipts")
+}

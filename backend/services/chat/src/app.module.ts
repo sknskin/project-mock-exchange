@@ -10,6 +10,8 @@ import { ConfigModule } from '@nestjs/config';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TerminusModule } from '@nestjs/terminus';
 import { HealthController } from './health/health.controller';
+import { PrismaModule } from './prisma/prisma.module';
+import { ChatModule } from './chat/chat.module';
 
 @Module({
   imports: [
@@ -19,6 +21,8 @@ import { HealthController } from './health/health.controller';
     }),
     CqrsModule.forRoot(),
     TerminusModule,
+    PrismaModule,
+    ChatModule,
   ],
   controllers: [HealthController],
 })
