@@ -1,8 +1,8 @@
 #!/bin/bash
 #
 # ============================================================================
-# Mock Exchange - 전체 서비스 일괄 종료 스크립트
-# Mock Exchange - Full Service Shutdown Script
+# [VirtuEx] Mock Exchange - 전체 서비스 일괄 종료 스크립트
+# [VirtuEx] Mock Exchange - Full Service Shutdown Script
 # ============================================================================
 #
 # [사용법 / Usage]

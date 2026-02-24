@@ -1,8 +1,8 @@
 #!/bin/bash
 #
 # ============================================================================
-# Mock Exchange - 전체 서비스 일괄 실행 스크립트
-# Mock Exchange - Full Service Startup Script
+# [VirtuEx] Mock Exchange - 전체 서비스 일괄 실행 스크립트
+# [VirtuEx] Mock Exchange - Full Service Startup Script
 # ============================================================================
 #
 # [사용법 / Usage]
@@ -45,6 +45,7 @@
 #   - 3001: Market Data 서비스 / Market Data service
 #   - 3002: Order Engine 서비스 / Order Engine service
 #   - 3003: Portfolio 서비스 / Portfolio service
+#   - 3005: Chat 서비스 / Chat service
 #   - 3007: User Auth 서비스 / User Auth service
 #   - 5432: PostgreSQL (Docker) / PostgreSQL
 #   - 6379: Redis (Docker) / Redis
@@ -60,6 +61,7 @@
 #   tail -f logs/user-auth.log     # User Auth
 #   tail -f logs/order-engine.log  # Order Engine
 #   tail -f logs/portfolio.log     # Portfolio
+#   tail -f logs/chat.log          # Chat
 #
 # ============================================================================
 
@@ -188,7 +190,7 @@ echo ""
 # ─── 0. 기존 서비스 프로세스 종료 / Kill existing service processes ───
 # 이전 실행에서 남아있는 프로세스가 포트를 점유하고 있을 수 있으므로 정리
 # Clean up leftover processes from previous runs that may occupy ports
-SERVICE_PORTS="3000 3001 3002 3003 3007 4000"
+SERVICE_PORTS="3000 3001 3002 3003 3005 3007 4000"
 EXISTING_PIDS=$(lsof -ti :$(echo $SERVICE_PORTS | tr ' ' ',') 2>/dev/null || true)
 if [ -n "$EXISTING_PIDS" ]; then
   echo -e "${YELLOW}[0] 기존 서비스 프로세스 종료 중... / Killing existing service processes...${NC}"
