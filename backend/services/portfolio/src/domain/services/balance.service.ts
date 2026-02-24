@@ -52,6 +52,7 @@ export interface PortfolioValuation {
   totalMarketValue: string;
   totalUnrealizedPnL: string;
   totalUnrealizedPnLPercent: string;
+  totalRealizedPnL: string;
   totalPortfolioValue: string;
 }
 
@@ -442,6 +443,9 @@ export class BalanceService {
         },
       });
 
+      // 실현 손익 = 매도 대금 - 매도 비용(비례) / Realized P&L = proceeds - proportional cost
+      const realizedPnl = totalProceeds.minus(costReduction);
+
       // 거래 내역 기록 / Record transaction
       await tx.transaction.create({
         data: {
@@ -451,6 +455,7 @@ export class BalanceService {
           quantity: qty.toFixed(8),
           price: prc.toFixed(8),
           cashDelta: totalProceeds.toFixed(8),
+          realizedPnl: realizedPnl.toFixed(8),
           referenceId: tradeId,
         },
       });
@@ -520,6 +525,7 @@ export class BalanceService {
       quantity: t.quantity?.toString() ?? null,
       price: t.price?.toString() ?? null,
       cashDelta: t.cashDelta.toString(),
+      realizedPnl: t.realizedPnl?.toString() ?? null,
       referenceId: t.referenceId,
       createdAt: t.createdAt,
     }));
@@ -559,10 +565,16 @@ export class BalanceService {
    * Get portfolio valuation with real-time P&L using market prices.
    */
   async getPortfolioValuation(userId: string): Promise<PortfolioValuation> {
-    const [balance, holdings] = await Promise.all([
+    const [balance, holdings, realizedPnlAgg] = await Promise.all([
       this.getBalance(userId),
       this.getHoldings(userId),
+      this.prisma.transaction.aggregate({
+        where: { userId, type: 'SELL', realizedPnl: { not: null } },
+        _sum: { realizedPnl: true },
+      }),
     ]);
+
+    const totalRealizedPnL = new Decimal(realizedPnlAgg._sum.realizedPnl?.toString() || '0');
 
     // 보유 종목 전체의 현재 시장 가격 조회 / Fetch current market prices for all held symbols
     const symbols = holdings.map((h) => h.symbol);
@@ -610,6 +622,7 @@ export class BalanceService {
       totalMarketValue: totalMarketValue.toFixed(8),
       totalUnrealizedPnL: totalUnrealizedPnL.toFixed(8),
       totalUnrealizedPnLPercent: totalUnrealizedPnLPercent.toFixed(2),
+      totalRealizedPnL: totalRealizedPnL.toFixed(8),
       totalPortfolioValue: totalPortfolioValue.toFixed(8),
     };
   }

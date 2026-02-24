@@ -49,9 +49,10 @@ export default function BottomSheet({
         className="absolute inset-0 bg-black/50"
         onClick={onClose}
       />
+      {/* 바텀시트 컨테이너: 데스크탑에서 최대 너비 제한, 모바일에서는 전체 너비 */}
       <div
         className={cn(
-          'absolute bottom-0 left-0 right-0 bg-bg-elevated rounded-t-2xl',
+          'absolute bottom-0 left-1/2 -translate-x-1/2 w-full sm:max-w-[480px] bg-bg-elevated rounded-t-2xl',
           'max-h-[85vh] overflow-y-auto',
           'animate-slide-up',
         )}

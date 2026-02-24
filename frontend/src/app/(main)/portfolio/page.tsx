@@ -61,11 +61,12 @@ export default function PortfolioPage() {
               cashBalance={portfolio.cashBalance}
             />
 
+            {/* 입금 버튼: 모바일에서도 적절한 크기로 표시 */}
             <div className="mb-6">
               <Button
                 variant="secondary"
-                fullWidth
                 onClick={() => setDepositOpen(true)}
+                className="w-full sm:w-auto sm:min-w-[200px]"
               >
                 {t('portfolio.deposit')}
               </Button>
