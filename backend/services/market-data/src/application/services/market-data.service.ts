@@ -133,9 +133,10 @@ export class MarketDataService implements OnModuleInit {
       await this.persistPrices(ticks);
     }
 
-    // 60틱(1분)마다 캔들스틱 갱신 / Update candlesticks every 60 ticks (1 minute)
+    // 60틱(1분)마다 1m 캔들스틱 갱신 / Update 1m candlesticks every 60 ticks
     if (this.tickCount % 60 === 0) {
       await this.updateCandlesticks(ticks);
+      await this.aggregateHigherIntervals();
     }
   }
 
@@ -285,7 +286,7 @@ export class MarketDataService implements OnModuleInit {
 
           const data = await response.json() as number[][];
           if (data.length > 0) {
-            // kline: [openTime, open, high, low, close, ...]
+            // kline 데이터: [시가시간, 시가, 고가, 저가, 종가, ...] (kline: [openTime, open, high, low, close, ...])
             const openPrice = parseFloat(String(data[0][1]));
             if (openPrice > 0) {
               result.set(asset.symbol, openPrice);
@@ -370,6 +371,7 @@ export class MarketDataService implements OnModuleInit {
     for (const tick of ticks) {
       try {
         const vol = this.clampDecimal(tick.volume);
+        // 1분 캔들 upsert 후 조건부로 고가/저가 갱신 (Upsert 1m candle, then conditionally update high/low)
         await this.prisma.candlestick.upsert({
           where: {
             symbol_interval_openTime: {
@@ -394,8 +396,99 @@ export class MarketDataService implements OnModuleInit {
             volume: vol,
           },
         });
+        // 원자적 max/min을 위해 Raw SQL로 고가/저가 갱신 (Update high/low with raw SQL for atomic max/min)
+        await this.prisma.$executeRawUnsafe(
+          `UPDATE "Candlestick" SET "highPrice" = GREATEST("highPrice", $1), "lowPrice" = LEAST("lowPrice", $2) WHERE "symbol" = $3 AND "interval" = '1m' AND "openTime" = $4`,
+          tick.price,
+          tick.price,
+          tick.symbol,
+          minuteStart,
+        );
       } catch (error) {
         this.logger.error(`Failed to update candlestick for ${tick.symbol}`, error);
+      }
+    }
+  }
+
+  /**
+   * 1m 캔들스틱을 기반으로 5m/15m/1h/1d 캔들스틱을 집계합니다.
+   * Aggregates 1m candles into 5m/15m/1h/1d intervals.
+   */
+  private async aggregateHigherIntervals() {
+    const intervals: { name: string; minutes: number }[] = [
+      { name: '5m', minutes: 5 },
+      { name: '15m', minutes: 15 },
+      { name: '1h', minutes: 60 },
+      { name: '1d', minutes: 1440 },
+    ];
+
+    const now = new Date();
+
+    for (const { name, minutes } of intervals) {
+      try {
+        const periodMs = minutes * 60 * 1000;
+        const periodStart = new Date(Math.floor(now.getTime() / periodMs) * periodMs);
+        const periodEnd = new Date(periodStart.getTime() + periodMs);
+
+        // 해당 기간 내 모든 심볼의 1분 캔들을 일괄 집계 (Aggregate 1m candles within this period for all symbols at once)
+        const aggregated = await this.prisma.candlestick.groupBy({
+          by: ['symbol'],
+          where: {
+            interval: '1m',
+            openTime: { gte: periodStart, lt: periodEnd },
+          },
+          _min: { lowPrice: true, openTime: true },
+          _max: { highPrice: true },
+          _sum: { volume: true },
+          _count: true,
+        });
+
+        for (const agg of aggregated) {
+          if (agg._count === 0) continue;
+
+          // 첫 번째 1분 캔들의 시가와 마지막 캔들의 종가 조회 (Get open price from the first 1m candle and close from the last)
+          const firstCandle = await this.prisma.candlestick.findFirst({
+            where: { symbol: agg.symbol, interval: '1m', openTime: { gte: periodStart, lt: periodEnd } },
+            orderBy: { openTime: 'asc' },
+            select: { openPrice: true },
+          });
+          const lastCandle = await this.prisma.candlestick.findFirst({
+            where: { symbol: agg.symbol, interval: '1m', openTime: { gte: periodStart, lt: periodEnd } },
+            orderBy: { openTime: 'desc' },
+            select: { closePrice: true },
+          });
+
+          if (!firstCandle || !lastCandle) continue;
+
+          await this.prisma.candlestick.upsert({
+            where: {
+              symbol_interval_openTime: {
+                symbol: agg.symbol,
+                interval: name,
+                openTime: periodStart,
+              },
+            },
+            create: {
+              symbol: agg.symbol,
+              interval: name,
+              openPrice: firstCandle.openPrice,
+              highPrice: agg._max.highPrice!,
+              lowPrice: agg._min.lowPrice!,
+              closePrice: lastCandle.closePrice,
+              volume: agg._sum.volume ?? 0,
+              openTime: periodStart,
+              closeTime: periodEnd,
+            },
+            update: {
+              highPrice: agg._max.highPrice!,
+              lowPrice: agg._min.lowPrice!,
+              closePrice: lastCandle.closePrice,
+              volume: agg._sum.volume ?? 0,
+            },
+          });
+        }
+      } catch (error) {
+        this.logger.error(`Failed to aggregate ${name} candlesticks`, error);
       }
     }
   }

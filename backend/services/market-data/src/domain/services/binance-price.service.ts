@@ -101,10 +101,10 @@ export class BinancePriceService implements OnModuleInit, OnModuleDestroy {
   }
 
   private handleTickerMessage(data: any) {
-    // Binance 24hr ticker payload:
-    // s: symbol, c: last price, b: best bid, a: best ask
-    // v: 24h volume, p: price change, P: price change %
-    // h: 24h high, l: 24h low
+    // Binance 24시간 티커 데이터 (Binance 24hr ticker payload):
+    // s: 심볼(symbol), c: 최종가(last price), b: 최우선 매수호가(best bid), a: 최우선 매도호가(best ask)
+    // v: 24시간 거래량(24h volume), p: 가격 변동(price change), P: 가격 변동률(price change %)
+    // h: 24시간 고가(24h high), l: 24시간 저가(24h low)
     const binanceSymbol = (data.s as string)?.toLowerCase();
     if (!binanceSymbol) return;
 

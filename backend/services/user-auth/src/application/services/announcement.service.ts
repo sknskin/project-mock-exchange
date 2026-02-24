@@ -223,7 +223,7 @@ export class AnnouncementService {
       },
     });
 
-    // Notify all active users about new announcement
+    // 모든 활성 사용자에게 새 공지사항 알림 (Notify all active users about new announcement)
     const users = await this.prisma.user.findMany({
       where: { isActive: true, id: { not: user.id } },
       select: { id: true },
@@ -248,7 +248,7 @@ export class AnnouncementService {
     const announcement = await this.prisma.announcement.findUnique({ where: { id } });
     if (!announcement) throw new NotFoundException('Announcement not found');
 
-    // Only SYSTEM or the original author (if ADMIN) can edit
+    // SYSTEM 또는 원래 작성자(ADMIN인 경우)만 수정 가능 (Only SYSTEM or the original author (if ADMIN) can edit)
     if (user.role !== USER_ROLE.SYSTEM && announcement.authorId !== user.id) {
       throw new ForbiddenException('Only SYSTEM or the author can edit');
     }
@@ -267,7 +267,7 @@ export class AnnouncementService {
       },
     });
 
-    // Notify about update
+    // 수정에 대해 알림 (Notify about update)
     const users = await this.prisma.user.findMany({
       where: { isActive: true, id: { not: user.id } },
       select: { id: true },

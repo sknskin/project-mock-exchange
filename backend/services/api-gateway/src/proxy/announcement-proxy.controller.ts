@@ -117,7 +117,7 @@ export class AnnouncementProxyController {
     return res.status(result.status).json(result.data);
   }
 
-  // Pin toggle
+  // 고정 토글 (Pin toggle)
   @Post(':id/pin')
   async togglePin(
     @Param('id') id: string,
@@ -134,7 +134,7 @@ export class AnnouncementProxyController {
     return res.status(result.status).json(result.data);
   }
 
-  // Like
+  // 좋아요 (Like)
   @Post(':id/like')
   async toggleAnnouncementLike(
     @Param('id') id: string,
@@ -149,7 +149,7 @@ export class AnnouncementProxyController {
     return res.status(result.status).json(result.data);
   }
 
-  // View count
+  // 조회수 (View count)
   @Post(':id/view')
   @Public()
   async incrementViewCount(
@@ -163,7 +163,7 @@ export class AnnouncementProxyController {
     return res.status(result.status).json(result.data);
   }
 
-  // Comment like
+  // 댓글 좋아요 (Comment like)
   @Post('comments/:commentId/like')
   async toggleCommentLike(
     @Param('commentId') commentId: string,
@@ -178,7 +178,7 @@ export class AnnouncementProxyController {
     return res.status(result.status).json(result.data);
   }
 
-  // Attachments (base64 JSON body)
+  // 첨부파일 (base64 JSON 본문) (Attachments (base64 JSON body))
   @Post(':id/attachments')
   async uploadAttachment(
     @Param('id') id: string,

@@ -162,7 +162,7 @@ export class NewsService implements OnModuleInit {
             });
             totalInserted++;
           } catch {
-            // 개별 아이템 실패 시 skip
+            // 개별 아이템 실패 시 건너뛰기 (Skip on individual item failure)
           }
         }
       } catch (error) {
@@ -172,7 +172,7 @@ export class NewsService implements OnModuleInit {
       }
     }
 
-    // 스크래핑 로그 업데이트
+    // 스크래핑 로그 업데이트 (Update scrape log)
     await this.prisma.newsScrapeLog.upsert({
       where: { category },
       update: { scrapedAt: new Date(), count: totalInserted },

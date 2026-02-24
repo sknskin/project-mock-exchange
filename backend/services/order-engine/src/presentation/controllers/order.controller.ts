@@ -132,7 +132,7 @@ export class OrderController {
       select: { symbol: true, side: true, quantity: true, price: true, createdAt: true, status: true },
     });
 
-    // Daily volume
+    // 일별 거래량 (Daily volume)
     const dailyMap: Record<string, { buy: number; sell: number }> = {};
     orders.forEach((o) => {
       const d = new Date(o.createdAt);
@@ -146,7 +146,7 @@ export class OrderController {
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([date, v]) => ({ date, buy: v.buy, sell: v.sell, total: v.buy + v.sell }));
 
-    // Popular assets
+    // 인기 자산 (Popular assets)
     const symbolMap: Record<string, number> = {};
     orders.forEach((o) => {
       symbolMap[o.symbol] = (symbolMap[o.symbol] || 0) + Number(o.quantity);
@@ -156,7 +156,7 @@ export class OrderController {
       .slice(0, 10)
       .map(([symbol, volume]) => ({ symbol, volume }));
 
-    // Buy/sell ratio
+    // 매수/매도 비율 (Buy/sell ratio)
     let buyCount = 0;
     let sellCount = 0;
     orders.forEach((o) => {
@@ -164,7 +164,7 @@ export class OrderController {
       else sellCount++;
     });
 
-    // Average order size
+    // 평균 주문 크기 (Average order size)
     const totalQty = orders.reduce((sum, o) => sum + Number(o.quantity), 0);
     const avgOrderSize = orders.length > 0 ? totalQty / orders.length : 0;
 

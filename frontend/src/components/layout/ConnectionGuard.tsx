@@ -69,11 +69,11 @@ export default function ConnectionGuard({ children }: { children: React.ReactNod
         setStatus('connected');
         return true;
       }
-      // HTTP error but server responded — still "connected"
+      // HTTP 에러이지만 서버가 응답함 — "연결됨"으로 처리 (HTTP error but server responded — still "connected")
       setStatus('connected');
       return true;
     } catch {
-      // Network error — server unreachable
+      // 네트워크 에러 — 서버 접근 불가 (Network error — server unreachable)
       setStatus('disconnected');
       return false;
     }
@@ -93,11 +93,11 @@ export default function ConnectionGuard({ children }: { children: React.ReactNod
     setRetrying(false);
   }, [checkHealth]);
 
-  // Initial check — don't block rendering
+  // 초기 체크 — 렌더링 차단하지 않음 (Initial check — don't block rendering)
   if (status === 'checking') return <>{children}</>;
   if (status === 'connected') return <>{children}</>;
 
-  // Disconnected — show inline-styled error (CSS may be broken)
+  // 연결 끊김 — 인라인 스타일 에러 표시 (CSS가 깨졌을 수 있음) (Disconnected — show inline-styled error, CSS may be broken)
   const locale = getStoredLocale();
   const theme = getStoredTheme();
   const t = text[locale];
@@ -125,7 +125,7 @@ export default function ConnectionGuard({ children }: { children: React.ReactNod
         textAlign: 'center',
       }}
     >
-      {/* Icon */}
+      {/* 아이콘 (Icon) */}
       <div
         style={{
           width: 80,
@@ -153,7 +153,7 @@ export default function ConnectionGuard({ children }: { children: React.ReactNod
         </svg>
       </div>
 
-      {/* Title */}
+      {/* 제목 (Title) */}
       <h1
         style={{
           fontSize: 24,
@@ -165,7 +165,7 @@ export default function ConnectionGuard({ children }: { children: React.ReactNod
         {t.title}
       </h1>
 
-      {/* Description */}
+      {/* 설명 (Description) */}
       <p
         style={{
           fontSize: 14,
@@ -179,7 +179,7 @@ export default function ConnectionGuard({ children }: { children: React.ReactNod
         {t.description}
       </p>
 
-      {/* Retry button */}
+      {/* 재시도 버튼 (Retry button) */}
       <button
         onClick={handleRetry}
         disabled={retrying}

@@ -75,7 +75,7 @@ export class AdminService {
       this.prisma.user.count({ where: where as never }),
     ]);
 
-    // Sort by role priority: SYSTEM > ADMIN > USER
+    // 역할 우선순위로 정렬: SYSTEM > ADMIN > USER (Sort by role priority: SYSTEM > ADMIN > USER)
     const sorted = items.sort((a, b) => {
       const aOrder = this.ROLE_ORDER[a.role] ?? 99;
       const bOrder = this.ROLE_ORDER[b.role] ?? 99;
@@ -119,7 +119,7 @@ export class AdminService {
     });
     if (!user) throw new NotFoundException('User not found');
 
-    // Resolve approvedBy UUID to username
+    // 승인자 UUID를 사용자명으로 변환 (Resolve approvedBy UUID to username)
     let approvedByUsername: string | null = null;
     if (user.approvedBy) {
       const approver = await this.prisma.user.findUnique({
@@ -129,7 +129,7 @@ export class AdminService {
       approvedByUsername = approver?.username ?? null;
     }
 
-    // Resolve rejectedBy UUID to username
+    // 반려자 UUID를 사용자명으로 변환 (Resolve rejectedBy UUID to username)
     let rejectedByUsername: string | null = null;
     if (user.rejectedBy) {
       const rejector = await this.prisma.user.findUnique({
@@ -154,7 +154,7 @@ export class AdminService {
         approvedAt: new Date(),
         approvedBy: approvedById,
         approvalNote: note || null,
-        // Clear rejection fields
+        // 반려 필드 초기화 (Clear rejection fields)
         rejectedAt: null,
         rejectedBy: null,
         rejectionNote: null,
@@ -162,7 +162,7 @@ export class AdminService {
       select: { id: true, username: true, approvalStatus: true, approvedAt: true },
     });
 
-    // Create notification for the user
+    // 해당 사용자에게 알림 생성 (Create notification for the user)
     const approver = await this.prisma.user.findUnique({
       where: { id: approvedById },
       select: { name: true, username: true },
@@ -248,7 +248,7 @@ export class AdminService {
   private checkPermission(currentRole: string, targetRole: string) {
     const currentLevel = this.ROLE_ORDER[currentRole] ?? 99;
     const targetLevel = this.ROLE_ORDER[targetRole] ?? 99;
-    // Cannot manage users with same or higher role
+    // 동일하거나 더 높은 역할의 사용자는 관리 불가 (Cannot manage users with same or higher role)
     if (currentLevel >= targetLevel) {
       throw new ForbiddenException('Insufficient permissions for this user role');
     }

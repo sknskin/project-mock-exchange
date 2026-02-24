@@ -106,7 +106,7 @@ export class AuthService {
     const created = await this.userRepository.create(user);
     this.logger.log(`User registered: ${created.email}`);
 
-    // Notify SYSTEM/ADMIN users about new registration
+    // 새 회원가입에 대해 SYSTEM/ADMIN 사용자에게 알림 (Notify SYSTEM/ADMIN users about new registration)
     const admins = await this.prisma.user.findMany({
       where: { role: { in: ['SYSTEM', 'ADMIN'] }, isActive: true },
       select: { id: true },
@@ -158,7 +158,7 @@ export class AuthService {
     const tokens = await this.generateTokens(user);
     const refreshToken = await this.createRefreshToken(user.id);
 
-    // Log login for statistics
+    // 통계를 위한 로그인 기록 (Log login for statistics)
     await this.prisma.loginLog.create({ data: { userId: user.id } }).catch(() => {});
 
     this.logger.log(`User logged in: ${user.email}`);
@@ -271,7 +271,7 @@ export class AuthService {
 
   private parseExpiry(expiry: string): number {
     const match = expiry.match(/^(\d+)([smhd])$/);
-    if (!match) return 900; // 기본값 15분 / default 15min
+    if (!match) return 900; // 기본값 15분 (default 15min)
     const value = parseInt(match[1], 10);
     const unit = match[2];
     switch (unit) {

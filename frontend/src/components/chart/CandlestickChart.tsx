@@ -39,7 +39,7 @@ export default function CandlestickChart({
   const currentTypeRef = useRef<'candle' | 'line'>(chartType);
   const isFirstRenderRef = useRef(true);
 
-  // Effect 1: Chart creation (mount only)
+  // 이펙트 1: 차트 생성 (마운트 시에만) (Effect 1: Chart creation, mount only)
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
@@ -72,7 +72,7 @@ export default function CandlestickChart({
     chartRef.current = chart;
     isFirstRenderRef.current = true;
 
-    // Remove TradingView attribution logo
+    // TradingView 귀속 로고 제거 (Remove TradingView attribution logo)
     const links = chartContainerRef.current.querySelectorAll('a');
     links.forEach((a) => (a.style.display = 'none'));
 
@@ -95,12 +95,12 @@ export default function CandlestickChart({
     };
   }, []);
 
-  // Effect 2: Series type change
+  // 이펙트 2: 시리즈 타입 변경 (Effect 2: Series type change)
   useEffect(() => {
     const chart = chartRef.current;
     if (!chart) return;
 
-    // Remove existing series if type changed or first render
+    // 타입 변경 또는 첫 렌더 시 기존 시리즈 제거 (Remove existing series if type changed or first render)
     if (mainSeriesRef.current) {
       chart.removeSeries(mainSeriesRef.current);
       mainSeriesRef.current = null;
@@ -110,7 +110,7 @@ export default function CandlestickChart({
       volumeSeriesRef.current = null;
     }
 
-    // Create main series
+    // 메인 시리즈 생성 (Create main series)
     if (chartType === 'candle') {
       mainSeriesRef.current = chart.addCandlestickSeries({
         upColor: '#F04452',
@@ -127,7 +127,7 @@ export default function CandlestickChart({
       });
     }
 
-    // Create volume series
+    // 거래량 시리즈 생성 (Create volume series)
     volumeSeriesRef.current = chart.addHistogramSeries({
       priceFormat: { type: 'volume' },
       priceScaleId: 'volume',
@@ -141,7 +141,7 @@ export default function CandlestickChart({
     isFirstRenderRef.current = true;
   }, [chartType]);
 
-  // Effect 3: Data update (preserves pan/zoom)
+  // 이펙트 3: 데이터 업데이트 (팬/줌 유지) (Effect 3: Data update, preserves pan/zoom)
   useEffect(() => {
     if (!mainSeriesRef.current || !volumeSeriesRef.current || data.length === 0) return;
 
@@ -172,14 +172,14 @@ export default function CandlestickChart({
     }));
     volumeSeriesRef.current.setData(volumeData);
 
-    // fitContent on first render or interval change
+    // 첫 렌더 또는 인터벌 변경 시 콘텐츠 맞춤 (fitContent on first render or interval change)
     if (isFirstRenderRef.current && chartRef.current) {
       chartRef.current.timeScale().fitContent();
       isFirstRenderRef.current = false;
     }
   }, [data, exchangeRate, chartType]);
 
-  // Effect 4: Reset view on interval change
+  // 이펙트 4: 인터벌 변경 시 뷰 초기화 (Effect 4: Reset view on interval change)
   useEffect(() => {
     isFirstRenderRef.current = true;
   }, [interval]);

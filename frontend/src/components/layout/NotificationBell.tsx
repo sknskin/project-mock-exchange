@@ -63,7 +63,7 @@ export default function NotificationBell() {
 
   const notifications: NotificationItem[] = notificationsData?.items ?? [];
 
-  // Close on click outside
+  // 외부 클릭 시 닫기 (Close on click outside)
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
@@ -78,7 +78,7 @@ export default function NotificationBell() {
     };
   }, [open]);
 
-  // Close modal on ESC
+  // ESC 키로 모달 닫기 (Close modal on ESC)
   useEffect(() => {
     if (!modalNotification) return;
     const handleKey = (e: KeyboardEvent) => {
@@ -127,7 +127,7 @@ export default function NotificationBell() {
 
   return (
     <div ref={wrapperRef} className="relative">
-      {/* Bell button */}
+      {/* 알림 벨 버튼 (Bell button) */}
       <button
         onClick={handleBellClick}
         className={cn(
@@ -144,7 +144,7 @@ export default function NotificationBell() {
         )}
       </button>
 
-      {/* Dropdown panel */}
+      {/* 드롭다운 패널 (Dropdown panel) */}
       {open && (
         <div
           className={cn(
@@ -153,7 +153,7 @@ export default function NotificationBell() {
             'flex flex-col z-50 overflow-hidden',
           )}
         >
-          {/* Header row */}
+          {/* 헤더 행 (Header row) */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
             <span className="text-[15px] font-bold text-text-primary">
               {t('notification.title')}
@@ -172,7 +172,7 @@ export default function NotificationBell() {
             </button>
           </div>
 
-          {/* Notification list */}
+          {/* 알림 목록 (Notification list) */}
           <div className="overflow-y-auto flex-1">
             {notifications.length === 0 ? (
               <div className="flex items-center justify-center py-12 text-[14px] text-text-tertiary">
@@ -190,7 +190,7 @@ export default function NotificationBell() {
                         !notification.isRead && 'bg-bg-secondary/50',
                       )}
                     >
-                      {/* Unread indicator dot */}
+                      {/* 읽지 않음 표시 점 (Unread indicator dot) */}
                       <span className="shrink-0 mt-1.5">
                         {!notification.isRead ? (
                           <span className="block w-2 h-2 rounded-full bg-blue-500" />
@@ -199,7 +199,7 @@ export default function NotificationBell() {
                         )}
                       </span>
 
-                      {/* Content */}
+                      {/* 내용 (Content) */}
                       <div className="flex-1 min-w-0">
                         <p
                           className={cn(
