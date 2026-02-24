@@ -8,6 +8,7 @@ import { useAuthStore } from '@/stores/auth';
 import { usePresenceStore } from '@/stores/presence';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/format';
+import Tooltip from '@/components/ui/Tooltip';
 import MessageBubble from './MessageBubble';
 import MessageInput from './MessageInput';
 import InviteModal from './InviteModal';
@@ -39,7 +40,9 @@ export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeave
   const [showInvite, setShowInvite] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [leaveConfirm, setLeaveConfirm] = useState(false);
+  const [kickTarget, setKickTarget] = useState<{ userId: string; username: string } | null>(null);
   const prevMessageCountRef = useRef(0);
+  const lastMarkedLengthRef = useRef(0);
 
   const isAdmin = user?.role === 'SYSTEM' || user?.role === 'ADMIN';
 
@@ -68,7 +71,8 @@ export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeave
 
   // 마운트 시 및 새 메시지 도착 시 읽음 처리 (Mark as read on mount and when new messages arrive)
   useEffect(() => {
-    if (roomId) {
+    if (roomId && messages.length > lastMarkedLengthRef.current) {
+      lastMarkedLengthRef.current = messages.length;
       markRead.mutate(roomId);
     }
   }, [roomId, messages.length]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -98,16 +102,21 @@ export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeave
     });
   }, [roomId, sendMessage]);
 
-  const handleKick = useCallback((targetUserId: string, username: string) => {
-    if (!confirm(`${username} 을(를) 강제 퇴장시키겠습니까?`)) return;
-    kickFromRoom.mutate({ roomId, targetUserId });
+  const handleKick = useCallback((targetUserId: string, displayName: string) => {
+    setKickTarget({ userId: targetUserId, username: displayName });
     setShowMenu(false);
-  }, [roomId, kickFromRoom]);
+  }, []);
+
+  const confirmKick = useCallback(() => {
+    if (!kickTarget) return;
+    kickFromRoom.mutate({ roomId, targetUserId: kickTarget.userId });
+    setKickTarget(null);
+  }, [roomId, kickFromRoom, kickTarget]);
 
   const displayName = room
     ? room.type === 'DM'
-      ? room.participants.find((p) => p.userId !== user?.id)?.username ?? ''
-      : room.name || room.participants.filter((p) => p.userId !== user?.id).map((p) => p.username).join(', ') || ''
+      ? (room.participants.find((p) => p.userId !== user?.id)?.name || room.participants.find((p) => p.userId !== user?.id)?.username) ?? ''
+      : room.name || room.participants.filter((p) => p.userId !== user?.id).map((p) => p.name || p.username).join(', ') || ''
     : '';
 
   const onlineUserIds = usePresenceStore((s) => s.onlineUserIds);
@@ -121,12 +130,14 @@ export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeave
     <div className="flex flex-col h-full">
       {/* 헤더 (Header) */}
       <div className="flex items-center gap-2 px-3 py-2.5 border-b border-border shrink-0">
-        <button
-          onClick={backToList}
-          className="p-1.5 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-secondary transition-colors"
-        >
-          <ArrowLeft className="w-4.5 h-4.5" />
-        </button>
+        <Tooltip label={t('chat.tooltip.back')}>
+          <button
+            onClick={backToList}
+            className="p-1.5 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-secondary transition-colors"
+          >
+            <ArrowLeft className="w-4.5 h-4.5" />
+          </button>
+        </Tooltip>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
             <h3 className="text-[14px] font-bold text-text-primary truncate">{displayName}</h3>
@@ -137,18 +148,20 @@ export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeave
           {room && (
             <p className="text-[11px] text-text-quaternary">
               {room.type === 'GROUP'
-                ? `${t('chat.participants')} ${room.participants.length} · ${onlineCount} online`
-                : isOtherOnline ? 'Online' : 'Offline'}
+                ? `${t('chat.participants')} ${room.participants.length} · ${onlineCount} ${t('chat.online')}`
+                : isOtherOnline ? t('chat.online') : t('chat.offline')}
             </p>
           )}
         </div>
         <div className="relative" ref={menuRef}>
-          <button
-            onClick={() => setShowMenu(!showMenu)}
-            className="p-1.5 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-secondary transition-colors"
-          >
-            <Users className="w-4 h-4" />
-          </button>
+          <Tooltip label={t('chat.tooltip.participants')}>
+            <button
+              onClick={() => setShowMenu(!showMenu)}
+              className="p-1.5 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-secondary transition-colors"
+            >
+              <Users className="w-4 h-4" />
+            </button>
+          </Tooltip>
           {showMenu && (
             <div className="absolute right-0 top-full mt-1 w-[220px] bg-bg-secondary border border-border rounded-xl shadow-2xl overflow-hidden z-10">
               {/* 관리자/시스템용 참여자 목록 (Participant list for admin/system) */}
@@ -159,19 +172,19 @@ export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeave
                     <div key={p.userId} className="flex items-center gap-2 px-3.5 py-1.5">
                       <div className="relative shrink-0">
                         <div className="w-6 h-6 rounded-full bg-bg-tertiary flex items-center justify-center text-[10px] font-bold text-text-tertiary">
-                          {p.username.charAt(0).toUpperCase()}
+                          {(p.name || p.username).charAt(0).toUpperCase()}
                         </div>
                         {onlineUserIds.has(p.userId) && (
                           <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border border-bg-secondary" />
                         )}
                       </div>
                       <span className="flex-1 text-[12px] text-text-primary truncate">
-                        {p.username}
+                        {p.name || p.username}
                         {p.userId === user?.id && <span className="text-text-quaternary ml-1">(me)</span>}
                       </span>
                       {p.userId !== user?.id && (
                         <button
-                          onClick={() => handleKick(p.userId, p.username)}
+                          onClick={() => handleKick(p.userId, p.name || p.username)}
                           className="p-1 rounded text-text-quaternary hover:text-danger transition-colors"
                           title="Kick"
                         >
@@ -199,23 +212,27 @@ export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeave
             </div>
           )}
         </div>
-        <button
-          onClick={togglePin}
-          className={cn(
-            'hidden lg:block p-1.5 rounded-lg transition-colors',
-            isPinned
-              ? 'text-accent bg-accent/10 hover:bg-accent/20'
-              : 'text-text-tertiary hover:text-text-primary hover:bg-bg-secondary',
-          )}
-        >
-          <PanelRightOpen className="w-4 h-4" />
-        </button>
-        <button
-          onClick={closeChat}
-          className="p-1.5 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-secondary transition-colors"
-        >
-          <X className="w-4 h-4" />
-        </button>
+        <Tooltip label={isPinned ? t('chat.tooltip.unpin') : t('chat.tooltip.pin')}>
+          <button
+            onClick={togglePin}
+            className={cn(
+              'hidden lg:block p-1.5 rounded-lg transition-colors',
+              isPinned
+                ? 'text-accent bg-accent/10 hover:bg-accent/20'
+                : 'text-text-tertiary hover:text-text-primary hover:bg-bg-secondary',
+            )}
+          >
+            <PanelRightOpen className="w-4 h-4" />
+          </button>
+        </Tooltip>
+        <Tooltip label={t('chat.tooltip.close')}>
+          <button
+            onClick={closeChat}
+            className="p-1.5 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-secondary transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </Tooltip>
       </div>
 
       {/* 메시지 영역 (Messages) */}
@@ -244,6 +261,7 @@ export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeave
                 isMine={msg.senderId === user?.id}
                 showSender={showSender}
                 locale={locale}
+                isAdmin={isAdmin}
               />
             );
           })
@@ -252,7 +270,13 @@ export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeave
       </div>
 
       {/* 입력란 (Input) */}
-      <MessageInput onSend={handleSend} disabled={sendMessage.isPending} focusRef={inputFocusRef} />
+      <MessageInput
+        onSend={handleSend}
+        disabled={sendMessage.isPending}
+        focusRef={inputFocusRef}
+        participants={room?.participants}
+        currentUserId={user?.id}
+      />
 
       {/* 초대 모달 (Invite Modal) */}
       {showInvite && room && (
@@ -263,7 +287,7 @@ export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeave
         />
       )}
 
-      {/* 퇴장 확인 (Leave Confirm) */}
+      {/* 퇴장 확인 모달 (Leave Confirm Modal) */}
       {leaveConfirm && (
         <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 rounded-2xl">
           <div className="bg-bg-primary border border-border rounded-2xl p-5 w-[260px] shadow-2xl">
@@ -279,6 +303,31 @@ export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeave
               </button>
               <button
                 onClick={() => setLeaveConfirm(false)}
+                className="flex-1 h-9 rounded-xl border border-border text-[13px] font-semibold text-text-secondary hover:bg-bg-secondary transition-colors"
+              >
+                {t('modal.cancel')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 강퇴 확인 모달 (Kick Confirm Modal) */}
+      {kickTarget && (
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 rounded-2xl">
+          <div className="bg-bg-primary border border-border rounded-2xl p-5 w-[260px] shadow-2xl">
+            <p className="text-[13px] text-text-primary text-center leading-relaxed">
+              <span className="font-bold">{kickTarget.username}</span> {t('chat.kickConfirm')}
+            </p>
+            <div className="flex gap-2.5 mt-4">
+              <button
+                onClick={confirmKick}
+                className="flex-1 h-9 rounded-xl bg-danger text-white text-[13px] font-semibold hover:bg-danger/85 transition-colors"
+              >
+                {t('chat.kick')}
+              </button>
+              <button
+                onClick={() => setKickTarget(null)}
                 className="flex-1 h-9 rounded-xl border border-border text-[13px] font-semibold text-text-secondary hover:bg-bg-secondary transition-colors"
               >
                 {t('modal.cancel')}

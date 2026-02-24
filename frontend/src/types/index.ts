@@ -359,6 +359,7 @@ export interface ChatParticipant {
   id: string;
   userId: string;
   username: string;
+  name: string;
   joinedAt: string;
 }
 
@@ -367,6 +368,7 @@ export interface ChatMessage {
   roomId: string;
   senderId: string;
   senderUsername: string;
+  senderName: string;
   content: string;
   createdAt: string;
   unreadCount: number;
@@ -377,6 +379,7 @@ export interface ChatLastMessage {
   content: string;
   senderId: string;
   senderUsername: string;
+  senderName: string;
   createdAt: string;
 }
 

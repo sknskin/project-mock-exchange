@@ -26,7 +26,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts';
-import { Users, LogIn, Eye, FileText, TrendingUp, Activity, ShoppingCart, ArrowUpRight, ArrowDownRight, Minus, BarChart2, BarChart3, Heart } from 'lucide-react';
+import { Users, LogIn, Eye, FileText, TrendingUp, Activity, ShoppingCart, ArrowUpRight, ArrowDownRight, Minus, BarChart2, BarChart3, Heart, MessageSquare } from 'lucide-react';
 import {
   useStatOverview,
   useStatOverviewTrend,
@@ -38,6 +38,7 @@ import {
   useStatTrading,
   useStatPopularAnnouncements,
   useStatLikes,
+  useStatChat,
 } from '@/hooks/useAdmin';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuthStore } from '@/stores/auth';
@@ -87,6 +88,7 @@ const STAT_TABS = [
   { key: 'activity', labelKey: 'stats.tab.activity' as const, icon: Activity },
   { key: 'trading', labelKey: 'stats.tab.trading' as const, icon: ShoppingCart },
   { key: 'content', labelKey: 'stats.tab.content' as const, icon: FileText },
+  { key: 'chat', labelKey: 'stats.tab.chat' as const, icon: MessageSquare },
 ];
 
 // ===== Shared chart card wrapper =====
@@ -221,15 +223,18 @@ export default function AdminStatsPage() {
   const [days, setDays] = useState(30);
   const tabsRef = useRef<HTMLDivElement>(null);
 
-  // Prevent vertical page scroll when hovering tabs — convert Y scroll to horizontal
+  // 탭 영역에서 수평 스크롤만 변환, 수직 페이지 스크롤은 통과시킴
+  // (Convert horizontal scroll in tabs, pass vertical page scroll through)
   useEffect(() => {
     const el = tabsRef.current;
     if (!el) return;
     const handler = (e: WheelEvent) => {
-      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
-        el.scrollLeft += e.deltaY;
+      // 수평 스크롤이 더 클 때만 변환 (탭이 넘칠 때) (Only convert when horizontal delta is larger)
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+        el.scrollLeft += e.deltaX;
         e.preventDefault();
       }
+      // 수직 스크롤은 브라우저 기본 동작으로 통과 (Vertical scroll passes through to page)
     };
     el.addEventListener('wheel', handler, { passive: false });
     return () => el.removeEventListener('wheel', handler);
@@ -254,6 +259,7 @@ export default function AdminStatsPage() {
   const { data: trading } = useStatTrading(days);
   const { data: popularAnnouncements } = useStatPopularAnnouncements();
   const { data: likeStats } = useStatLikes(days);
+  const { data: chatStats } = useStatChat(days);
 
   // Guard: non-admin
   if (user && user.role !== 'SYSTEM' && user.role !== 'ADMIN') {
@@ -1143,6 +1149,109 @@ export default function AdminStatsPage() {
               </div>
             ) : (
               <EmptyChart height={200} />
+            )}
+          </ChartCard>
+        </div>
+      )}
+
+      {/* ===== 채팅 탭 (Chat Tab) ===== */}
+      {tab === 'chat' && (
+        <div className="space-y-6">
+          {/* 요약 카드 (Summary Cards) */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-bg-secondary rounded-2xl p-4 border border-border">
+              <p className="text-[11px] font-bold text-text-quaternary uppercase">{t('stats.chatRooms')}</p>
+              <p className="text-[22px] font-extrabold text-text-primary mt-1">{chatStats?.totalRooms ?? '-'}</p>
+              <p className="text-[11px] text-text-quaternary mt-0.5">
+                {t('stats.dm')} {chatStats?.dmCount ?? 0} · {t('stats.group')} {chatStats?.groupCount ?? 0}
+              </p>
+            </div>
+            <div className="bg-bg-secondary rounded-2xl p-4 border border-border">
+              <p className="text-[11px] font-bold text-text-quaternary uppercase">{t('stats.messages')}</p>
+              <p className="text-[22px] font-extrabold text-text-primary mt-1">{chatStats?.totalMessages?.toLocaleString() ?? '-'}</p>
+            </div>
+            <div className="bg-bg-secondary rounded-2xl p-4 border border-border">
+              <p className="text-[11px] font-bold text-text-quaternary uppercase">{t('stats.todayMessages')}</p>
+              <p className="text-[22px] font-extrabold text-text-primary mt-1">{chatStats?.todayMessages ?? '-'}</p>
+              {chatStats && chatStats.yesterdayMessages > 0 && (
+                <p className={cn('text-[11px] mt-0.5 flex items-center gap-0.5',
+                  chatStats.todayMessages >= chatStats.yesterdayMessages ? 'text-success' : 'text-danger')}>
+                  {chatStats.todayMessages >= chatStats.yesterdayMessages
+                    ? <ArrowUpRight className="w-3 h-3" />
+                    : <ArrowDownRight className="w-3 h-3" />}
+                  {Math.abs(((chatStats.todayMessages - chatStats.yesterdayMessages) / chatStats.yesterdayMessages) * 100).toFixed(0)}%
+                </p>
+              )}
+            </div>
+            <div className="bg-bg-secondary rounded-2xl p-4 border border-border">
+              <p className="text-[11px] font-bold text-text-quaternary uppercase">{t('stats.activeParticipants')}</p>
+              <p className="text-[22px] font-extrabold text-text-primary mt-1">{chatStats?.activeParticipants ?? '-'}</p>
+            </div>
+          </div>
+
+          {/* 차트 영역 (Charts) */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* 일별 메시지 수 (Daily Messages) */}
+            <ChartCard title={t('stats.dailyMessages')}>
+              {chatStats?.dailyMessages?.length ? (
+                <ResponsiveContainer width="100%" height={240}>
+                  <AreaChart data={chatStats.dailyMessages}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                    <XAxis dataKey="label" tick={{ fill: 'var(--text-quaternary)', fontSize: 11 }} tickFormatter={(v) => v.slice(5)} />
+                    <YAxis tick={{ fill: 'var(--text-quaternary)', fontSize: 11 }} />
+                    <Tooltip contentStyle={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 12, fontSize: 12 }} />
+                    <Area type="monotone" dataKey="count" stroke={CHART_COLORS.blue} fill={CHART_COLORS.blue} fillOpacity={0.15} name={t('stats.messages')} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <EmptyChart height={240} />
+              )}
+            </ChartCard>
+
+            {/* 채팅방 유형 분포 (Room Type Distribution) */}
+            <ChartCard title={t('stats.roomDistribution')}>
+              {chatStats && chatStats.totalRooms > 0 ? (
+                <ResponsiveContainer width="100%" height={240}>
+                  <PieChart>
+                    <Pie
+                      data={[
+                        { name: t('stats.dm'), value: chatStats.dmCount },
+                        { name: t('stats.group'), value: chatStats.groupCount },
+                      ]}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={80}
+                      paddingAngle={4}
+                      dataKey="value"
+                      label={({ name, percent }: any) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
+                    >
+                      <Cell fill={CHART_COLORS.blue} />
+                      <Cell fill={CHART_COLORS.green} />
+                    </Pie>
+                    <Tooltip contentStyle={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 12, fontSize: 12 }} />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <EmptyChart height={240} />
+              )}
+            </ChartCard>
+          </div>
+
+          {/* 활발한 채팅방 TOP 10 (Top Active Rooms) */}
+          <ChartCard title={t('stats.topActiveRooms')}>
+            {chatStats?.topRooms?.length ? (
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart data={chatStats.topRooms} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                  <XAxis type="number" tick={{ fill: 'var(--text-quaternary)', fontSize: 11 }} />
+                  <YAxis dataKey="name" type="category" tick={{ fill: 'var(--text-quaternary)', fontSize: 11 }} width={100} />
+                  <Tooltip contentStyle={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 12, fontSize: 12 }} />
+                  <Bar dataKey="messageCount" fill={CHART_COLORS.blue} radius={[0, 4, 4, 0]} name={t('stats.messages')} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <EmptyChart height={280} />
             )}
           </ChartCard>
         </div>

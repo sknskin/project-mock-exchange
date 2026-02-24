@@ -34,6 +34,7 @@ model Participant {
   roomId   String    @map("room_id") @db.Uuid
   userId   String    @map("user_id") @db.Uuid
   username String    @db.VarChar(50)
+  name     String    @default("") @db.VarChar(50)
   joinedAt DateTime  @default(now()) @map("joined_at") @db.Timestamptz()
   leftAt   DateTime? @map("left_at") @db.Timestamptz()
 
@@ -49,6 +50,7 @@ model Message {
   roomId         String   @map("room_id") @db.Uuid
   senderId       String   @map("sender_id") @db.Uuid
   senderUsername String   @map("sender_username") @db.VarChar(50)
+  senderName     String   @default("") @map("sender_name") @db.VarChar(50)
   content        String   @db.VarChar(2000)
   createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz()
 

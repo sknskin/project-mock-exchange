@@ -50,13 +50,16 @@ export default function InviteModal({ roomId, existingParticipantIds, onClose }:
   const handleInvite = async () => {
     if (selectedUsers.length === 0) return;
     const usernames: Record<string, string> = {};
+    const names: Record<string, string> = {};
     selectedUsers.forEach((u) => {
       usernames[u.id] = u.username;
+      names[u.id] = u.name;
     });
     await invite.mutateAsync({
       roomId,
       userIds: selectedUsers.map((u) => u.id),
       usernames,
+      names,
     });
     onClose();
   };
@@ -83,7 +86,7 @@ export default function InviteModal({ roomId, existingParticipantIds, onClose }:
                 key={u.id}
                 className="inline-flex items-center gap-1 px-2.5 py-1 bg-accent/10 text-accent rounded-full text-[12px] font-medium"
               >
-                {u.username}
+                {u.name || u.username}
                 <button onClick={() => toggleUser(u)}>
                   <X className="w-3 h-3" />
                 </button>
@@ -122,16 +125,16 @@ export default function InviteModal({ roomId, existingParticipantIds, onClose }:
                   >
                     <div className="relative shrink-0">
                       <div className="w-8 h-8 rounded-full bg-bg-tertiary flex items-center justify-center text-[12px] font-bold text-text-tertiary">
-                        {u.username.charAt(0).toUpperCase()}
+                        {(u.name || u.username).charAt(0).toUpperCase()}
                       </div>
                       {onlineUserIds.has(u.id) && (
                         <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-bg-primary" />
                       )}
                     </div>
                     <div className="flex-1 min-w-0 text-left">
-                      <p className="text-[13px] font-medium text-text-primary truncate">{u.username}</p>
+                      <p className="text-[13px] font-medium text-text-primary truncate">{u.name || u.username}</p>
                       <p className="text-[11px] text-text-tertiary truncate">
-                        {u.name}
+                        @{u.username}
                         {onlineUserIds.has(u.id) ? (
                           <span className="ml-1.5 text-green-500">Online</span>
                         ) : (

@@ -8,6 +8,7 @@ import { useAuthStore } from '@/stores/auth';
 import { usePresenceStore } from '@/stores/presence';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/format';
+import Tooltip from '@/components/ui/Tooltip';
 import type { ChatUserSearchResult } from '@/types';
 
 export default function CreateRoomModal() {
@@ -50,8 +51,10 @@ export default function CreateRoomModal() {
     const type = isGroup ? 'GROUP' : 'DM';
 
     const participantUsernames: Record<string, string> = {};
+    const participantNames: Record<string, string> = {};
     selectedUsers.forEach((u) => {
       participantUsernames[u.id] = u.username;
+      participantNames[u.id] = u.name;
     });
 
     const room = await createRoom.mutateAsync({
@@ -59,6 +62,7 @@ export default function CreateRoomModal() {
       name: isGroup ? (groupName.trim() || undefined) : undefined,
       participantIds: selectedUsers.map((u) => u.id),
       participantUsernames,
+      participantNames,
     });
 
     openRoom(room.id);
@@ -70,30 +74,36 @@ export default function CreateRoomModal() {
     <div className="flex flex-col h-full">
       {/* 헤더 (Header) */}
       <div className="flex items-center gap-2 px-3 py-2.5 border-b border-border shrink-0">
-        <button
-          onClick={backToList}
-          className="p-1.5 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-secondary transition-colors"
-        >
-          <ArrowLeft className="w-4.5 h-4.5" />
-        </button>
+        <Tooltip label={t('chat.tooltip.back')}>
+          <button
+            onClick={backToList}
+            className="p-1.5 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-secondary transition-colors"
+          >
+            <ArrowLeft className="w-4.5 h-4.5" />
+          </button>
+        </Tooltip>
         <h3 className="flex-1 text-[14px] font-bold text-text-primary">{t('chat.newChat')}</h3>
-        <button
-          onClick={togglePin}
-          className={cn(
-            'hidden lg:block p-1.5 rounded-lg transition-colors',
-            isPinned
-              ? 'text-accent bg-accent/10 hover:bg-accent/20'
-              : 'text-text-tertiary hover:text-text-primary hover:bg-bg-secondary',
-          )}
-        >
-          <PanelRightOpen className="w-4 h-4" />
-        </button>
-        <button
-          onClick={closeChat}
-          className="p-1.5 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-secondary transition-colors"
-        >
-          <X className="w-4 h-4" />
-        </button>
+        <Tooltip label={isPinned ? t('chat.tooltip.unpin') : t('chat.tooltip.pin')}>
+          <button
+            onClick={togglePin}
+            className={cn(
+              'hidden lg:block p-1.5 rounded-lg transition-colors',
+              isPinned
+                ? 'text-accent bg-accent/10 hover:bg-accent/20'
+                : 'text-text-tertiary hover:text-text-primary hover:bg-bg-secondary',
+            )}
+          >
+            <PanelRightOpen className="w-4 h-4" />
+          </button>
+        </Tooltip>
+        <Tooltip label={t('chat.tooltip.close')}>
+          <button
+            onClick={closeChat}
+            className="p-1.5 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-secondary transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </Tooltip>
       </div>
 
       <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
@@ -117,7 +127,7 @@ export default function CreateRoomModal() {
                 key={u.id}
                 className="inline-flex items-center gap-1 px-2.5 py-1 bg-accent/10 text-accent rounded-full text-[12px] font-medium"
               >
-                {u.username}
+                {u.name || u.username}
                 <button onClick={() => setSelectedUsers((prev) => prev.filter((s) => s.id !== u.id))}>
                   <X className="w-3 h-3" />
                 </button>
@@ -158,20 +168,20 @@ export default function CreateRoomModal() {
                   >
                     <div className="relative shrink-0">
                       <div className="w-8 h-8 rounded-full bg-bg-tertiary flex items-center justify-center text-[12px] font-bold text-text-tertiary">
-                        {u.username.charAt(0).toUpperCase()}
+                        {(u.name || u.username).charAt(0).toUpperCase()}
                       </div>
                       {onlineUserIds.has(u.id) && (
                         <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-bg-primary" />
                       )}
                     </div>
                     <div className="flex-1 min-w-0 text-left">
-                      <p className="text-[13px] font-medium text-text-primary truncate">{u.username}</p>
+                      <p className="text-[13px] font-medium text-text-primary truncate">{u.name || u.username}</p>
                       <p className="text-[11px] text-text-tertiary truncate">
-                        {u.name}
+                        @{u.username}
                         {onlineUserIds.has(u.id) ? (
-                          <span className="ml-1.5 text-green-500">Online</span>
+                          <span className="ml-1.5 text-green-500">{t('chat.online')}</span>
                         ) : (
-                          <span className="ml-1.5 text-text-quaternary">Offline</span>
+                          <span className="ml-1.5 text-text-quaternary">{t('chat.offline')}</span>
                         )}
                       </p>
                     </div>

@@ -1,20 +1,40 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { Send } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/format';
+import type { ChatParticipant } from '@/types';
 
 interface MessageInputProps {
   onSend: (content: string) => void;
   disabled?: boolean;
   focusRef?: React.MutableRefObject<(() => void) | null>;
+  participants?: ChatParticipant[];
+  currentUserId?: string;
 }
 
-export default function MessageInput({ onSend, disabled, focusRef }: MessageInputProps) {
+export default function MessageInput({ onSend, disabled, focusRef, participants, currentUserId }: MessageInputProps) {
   const { t } = useTranslation();
   const [text, setText] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [mentionQuery, setMentionQuery] = useState<string | null>(null);
+  const [mentionIndex, setMentionIndex] = useState(0);
+  const [mentionStart, setMentionStart] = useState(-1);
+  const mentionRef = useRef<HTMLDivElement>(null);
+
+  // 멘션 대상 목록 (본인 제외) (Mention candidates, excluding self)
+  const mentionCandidates = useMemo(() => {
+    if (!participants || mentionQuery === null) return [];
+    const q = mentionQuery.toLowerCase();
+    return participants
+      .filter((p) => p.userId !== currentUserId)
+      .filter((p) => {
+        const name = (p.name || p.username).toLowerCase();
+        return name.includes(q) || p.username.toLowerCase().includes(q);
+      })
+      .slice(0, 5);
+  }, [participants, mentionQuery, currentUserId]);
 
   // 부모 컴포넌트에 포커스 함수 노출 (Expose focus function to parent)
   useEffect(() => {
@@ -23,11 +43,55 @@ export default function MessageInput({ onSend, disabled, focusRef }: MessageInpu
     }
   }, [focusRef]);
 
+  // 멘션 자동완성 위치 계산 (Calculate mention autocomplete position)
+  const detectMention = useCallback((value: string, cursorPos: number) => {
+    // 커서 앞에서 가장 가까운 @ 찾기 (Find nearest @ before cursor)
+    const beforeCursor = value.slice(0, cursorPos);
+    const atIndex = beforeCursor.lastIndexOf('@');
+    if (atIndex === -1) {
+      setMentionQuery(null);
+      return;
+    }
+    // @ 앞이 공백이거나 시작이어야 유효 (Must be preceded by space or start of text)
+    if (atIndex > 0 && beforeCursor[atIndex - 1] !== ' ' && beforeCursor[atIndex - 1] !== '\n') {
+      setMentionQuery(null);
+      return;
+    }
+    const query = beforeCursor.slice(atIndex + 1);
+    // 공백 포함 시 멘션 종료 (End mention on space)
+    if (query.includes(' ') || query.includes('\n')) {
+      setMentionQuery(null);
+      return;
+    }
+    setMentionStart(atIndex);
+    setMentionQuery(query);
+    setMentionIndex(0);
+  }, []);
+
+  const insertMention = useCallback((participant: ChatParticipant) => {
+    const displayName = participant.name || participant.username;
+    const before = text.slice(0, mentionStart);
+    const after = text.slice(textareaRef.current?.selectionStart ?? text.length);
+    const newText = `${before}@${displayName} ${after}`;
+    setText(newText);
+    setMentionQuery(null);
+    // 포커스 복원 및 커서 위치 설정 (Restore focus and set cursor position)
+    setTimeout(() => {
+      const ta = textareaRef.current;
+      if (ta) {
+        const cursorPos = before.length + displayName.length + 2; // @name + space
+        ta.focus();
+        ta.setSelectionRange(cursorPos, cursorPos);
+      }
+    }, 0);
+  }, [text, mentionStart]);
+
   const handleSend = useCallback(() => {
     const trimmed = text.trim();
     if (!trimmed || disabled) return;
     onSend(trimmed);
     setText('');
+    setMentionQuery(null);
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
       textareaRef.current.focus();
@@ -35,6 +99,30 @@ export default function MessageInput({ onSend, disabled, focusRef }: MessageInpu
   }, [text, disabled, onSend]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    // 멘션 목록이 표시 중일 때 키 처리 (Handle keys when mention list is visible)
+    if (mentionQuery !== null && mentionCandidates.length > 0) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setMentionIndex((prev) => Math.min(prev + 1, mentionCandidates.length - 1));
+        return;
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setMentionIndex((prev) => Math.max(prev - 1, 0));
+        return;
+      }
+      if (e.key === 'Enter' || e.key === 'Tab') {
+        e.preventDefault();
+        insertMention(mentionCandidates[mentionIndex]);
+        return;
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setMentionQuery(null);
+        return;
+      }
+    }
+
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();
@@ -49,12 +137,51 @@ export default function MessageInput({ onSend, disabled, focusRef }: MessageInpu
     }
   };
 
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    setText(value);
+    detectMention(value, e.target.selectionStart ?? value.length);
+  };
+
   return (
-    <div className="flex items-end gap-2 px-3 py-2.5 border-t border-border bg-bg-primary">
+    <div className="relative flex items-end gap-2 px-3 py-2.5 border-t border-border bg-bg-primary">
+      {/* @ 멘션 자동완성 목록 (@ mention autocomplete list) */}
+      {mentionQuery !== null && mentionCandidates.length > 0 && (
+        <div
+          ref={mentionRef}
+          className="absolute bottom-full left-3 right-3 mb-1 bg-bg-elevated border border-border rounded-xl shadow-2xl overflow-hidden z-10 animate-dropdown-in"
+        >
+          {mentionCandidates.map((p, i) => (
+            <button
+              key={p.userId}
+              onClick={() => insertMention(p)}
+              className={cn(
+                'w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors',
+                i === mentionIndex ? 'bg-accent/10' : 'hover:bg-bg-secondary',
+              )}
+            >
+              <div className="w-6 h-6 rounded-full bg-bg-tertiary flex items-center justify-center text-[10px] font-bold text-text-tertiary shrink-0">
+                {(p.name || p.username).charAt(0).toUpperCase()}
+              </div>
+              <div className="flex-1 min-w-0">
+                <span className="text-[12px] font-medium text-text-primary truncate block">
+                  {p.name || p.username}
+                </span>
+                {p.name && (
+                  <span className="text-[10px] text-text-quaternary truncate block">
+                    @{p.username}
+                  </span>
+                )}
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+
       <textarea
         ref={textareaRef}
         value={text}
-        onChange={(e) => setText(e.target.value)}
+        onChange={handleChange}
         onKeyDown={handleKeyDown}
         onInput={handleInput}
         placeholder={t('chat.messagePlaceholder')}

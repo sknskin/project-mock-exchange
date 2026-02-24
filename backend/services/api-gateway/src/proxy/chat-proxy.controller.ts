@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Delete,
   Param,
   Req,
   Res,
@@ -35,13 +36,14 @@ export class ChatProxyController {
   // 채팅방 목록 (Room list)
   @Get('rooms')
   async getRooms(@Req() req: Request, @Res() res: Response) {
-    const user = req.user as { id: string; username: string };
+    const user = req.user as { id: string; username: string; name?: string };
     const result = await this.proxyService.forward('chat', {
       method: 'GET',
       url: '/rooms',
       headers: {
         'x-user-id': user.id,
         'x-user-username': user.username,
+        'x-user-name': user.name || '',
       },
     });
     return res.status(result.status).json(result.data);
@@ -50,13 +52,15 @@ export class ChatProxyController {
   // 채팅방 생성 (Create room)
   @Post('rooms')
   async createRoom(@Req() req: Request, @Res() res: Response) {
-    const user = req.user as { id: string; username: string };
+    const user = req.user as { id: string; username: string; name?: string };
     const { participantIds } = req.body;
 
-    // 프론트엔드가 요청과 함께 참여자 사용자명을 전송 (The frontend sends participantUsernames along with the request)
+    // 프론트엔드가 요청과 함께 참여자 사용자명/이름을 전송 (The frontend sends participantUsernames/Names along with the request)
     let participantUsernames: Record<string, string> = {};
-    if (participantIds?.length > 0 && req.body.participantUsernames) {
-      participantUsernames = req.body.participantUsernames;
+    let participantNames: Record<string, string> = {};
+    if (participantIds?.length > 0) {
+      if (req.body.participantUsernames) participantUsernames = req.body.participantUsernames;
+      if (req.body.participantNames) participantNames = req.body.participantNames;
     }
 
     const result = await this.proxyService.forward('chat', {
@@ -70,7 +74,9 @@ export class ChatProxyController {
       headers: {
         'x-user-id': user.id,
         'x-user-username': user.username,
+        'x-user-name': user.name || '',
         'x-participant-usernames': JSON.stringify(participantUsernames),
+        'x-participant-names': JSON.stringify(participantNames),
       },
     });
 
@@ -115,7 +121,7 @@ export class ChatProxyController {
   // 메시지 전송 (Send message)
   @Post('rooms/:id/messages')
   async sendMessage(@Param('id') id: string, @Req() req: Request, @Res() res: Response) {
-    const user = req.user as { id: string; username: string };
+    const user = req.user as { id: string; username: string; name?: string };
     const result = await this.proxyService.forward('chat', {
       method: 'POST',
       url: `/rooms/${id}/messages`,
@@ -123,6 +129,7 @@ export class ChatProxyController {
       headers: {
         'x-user-id': user.id,
         'x-user-username': user.username,
+        'x-user-name': user.name || '',
       },
     });
 
@@ -141,9 +148,10 @@ export class ChatProxyController {
   // 사용자 초대 (Invite users)
   @Post('rooms/:id/invite')
   async inviteUsers(@Param('id') id: string, @Req() req: Request, @Res() res: Response) {
-    const user = req.user as { id: string; username: string };
+    const user = req.user as { id: string; username: string; name?: string };
 
     const inviteUsernames: Record<string, string> = req.body.usernames || {};
+    const inviteNames: Record<string, string> = req.body.names || {};
 
     const result = await this.proxyService.forward('chat', {
       method: 'POST',
@@ -153,6 +161,7 @@ export class ChatProxyController {
         'x-user-id': user.id,
         'x-user-username': user.username,
         'x-invite-usernames': JSON.stringify(inviteUsernames),
+        'x-invite-names': JSON.stringify(inviteNames),
       },
     });
 
@@ -207,6 +216,53 @@ export class ChatProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  // 채팅방 이름 수정 (Rename room)
+  @Post('rooms/:id/rename')
+  async renameRoom(@Param('id') id: string, @Req() req: Request, @Res() res: Response) {
+    const user = req.user as { id: string; username: string };
+    const result = await this.proxyService.forward('chat', {
+      method: 'POST',
+      url: `/rooms/${id}/rename`,
+      data: { name: req.body.name },
+      headers: {
+        'x-user-id': user.id,
+        'x-user-username': user.username,
+      },
+    });
+    return res.status(result.status).json(result.data);
+  }
+
+  // 메시지 삭제 (Delete message)
+  @Delete('rooms/:roomId/messages/:messageId')
+  async deleteMessage(
+    @Param('roomId') roomId: string,
+    @Param('messageId') messageId: string,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    const user = req.user as { id: string; username: string; role?: string };
+    const result = await this.proxyService.forward('chat', {
+      method: 'DELETE',
+      url: `/rooms/${roomId}/messages/${messageId}`,
+      headers: {
+        'x-user-id': user.id,
+        'x-user-username': user.username,
+        'x-user-role': user.role || '',
+      },
+    });
+
+    // WebSocket으로 메시지 삭제 브로드캐스트 (Broadcast message deletion via WebSocket)
+    if (result.status < 400) {
+      this.chatGateway.broadcastMessage(roomId, {
+        type: 'message-deleted',
+        messageId,
+        roomId,
+      });
+    }
+
+    return res.status(result.status).json(result.data);
+  }
+
   // 읽음 처리 (Mark as read)
   @Post('rooms/:id/read')
   async markAsRead(@Param('id') id: string, @Req() req: Request, @Res() res: Response) {
@@ -229,7 +285,7 @@ export class ChatProxyController {
 
   private async notifyOfflineParticipants(
     roomId: string,
-    sender: { id: string; username: string },
+    sender: { id: string; username: string; name?: string },
     req: Request,
   ) {
     try {
@@ -247,6 +303,7 @@ export class ChatProxyController {
       const room = rooms.find((r) => r.id === roomId);
       if (!room) return;
 
+      const senderDisplayName = sender.name || sender.username;
       const roomLabel = room.type === 'GROUP'
         ? room.name || room.participants.map((p) => p.username).join(', ')
         : undefined;
@@ -256,8 +313,8 @@ export class ChatProxyController {
         if (this.chatGateway.isUserOnline(p.userId)) continue;
 
         const title = roomLabel
-          ? `${sender.username} (${roomLabel})`
-          : `${sender.username}`;
+          ? `${senderDisplayName} (${roomLabel})`
+          : `${senderDisplayName}`;
 
         // 오프라인 사용자에게 알림 생성 (Create notification for offline user)
         await this.proxyService.forward('user-auth', {

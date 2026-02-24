@@ -23,7 +23,7 @@ export class ChatService {
       include: {
         participants: {
           where: { leftAt: null },
-          select: { id: true, userId: true, username: true, joinedAt: true },
+          select: { id: true, userId: true, username: true, name: true, joinedAt: true },
         },
         messages: {
           orderBy: { createdAt: 'desc' },
@@ -33,6 +33,7 @@ export class ChatService {
             content: true,
             senderId: true,
             senderUsername: true,
+            senderName: true,
             createdAt: true,
           },
         },
@@ -80,6 +81,8 @@ export class ChatService {
     username: string,
     dto: CreateRoomDto,
     participantUsernames: Record<string, string>,
+    creatorName?: string,
+    participantNames?: Record<string, string>,
   ) {
     if (dto.type === RoomTypeDto.DM) {
       if (dto.participantIds.length !== 1) {
@@ -101,7 +104,7 @@ export class ChatService {
         include: {
           participants: {
             where: { leftAt: null },
-            select: { id: true, userId: true, username: true, joinedAt: true },
+            select: { id: true, userId: true, username: true, name: true, joinedAt: true },
           },
         },
       });
@@ -132,13 +135,14 @@ export class ChatService {
           create: allParticipantIds.map((pid) => ({
             userId: pid,
             username: pid === userId ? username : (participantUsernames[pid] || 'unknown'),
+            name: pid === userId ? (creatorName || '') : (participantNames?.[pid] || ''),
           })),
         },
       },
       include: {
         participants: {
           where: { leftAt: null },
-          select: { id: true, userId: true, username: true, joinedAt: true },
+          select: { id: true, userId: true, username: true, name: true, joinedAt: true },
         },
       },
     });
@@ -164,6 +168,7 @@ export class ChatService {
         roomId: true,
         senderId: true,
         senderUsername: true,
+        senderName: true,
         content: true,
         createdAt: true,
         readReceipts: {
@@ -189,6 +194,7 @@ export class ChatService {
         roomId: msg.roomId,
         senderId: msg.senderId,
         senderUsername: msg.senderUsername,
+        senderName: msg.senderName,
         content: msg.content,
         createdAt: msg.createdAt,
         unreadCount,
@@ -201,7 +207,7 @@ export class ChatService {
     };
   }
 
-  async sendMessage(roomId: string, userId: string, username: string, dto: SendMessageDto) {
+  async sendMessage(roomId: string, userId: string, username: string, dto: SendMessageDto, name?: string) {
     await this.verifyParticipant(roomId, userId);
 
     const message = await this.prisma.message.create({
@@ -209,6 +215,7 @@ export class ChatService {
         roomId,
         senderId: userId,
         senderUsername: username,
+        senderName: name || '',
         content: dto.content,
       },
       select: {
@@ -216,6 +223,7 @@ export class ChatService {
         roomId: true,
         senderId: true,
         senderUsername: true,
+        senderName: true,
         content: true,
         createdAt: true,
       },
@@ -238,7 +246,7 @@ export class ChatService {
     };
   }
 
-  async inviteUsers(roomId: string, userId: string, dto: InviteUserDto, usernames: Record<string, string>) {
+  async inviteUsers(roomId: string, userId: string, dto: InviteUserDto, usernames: Record<string, string>, names?: Record<string, string>) {
     const room = await this.prisma.room.findUnique({ where: { id: roomId } });
     if (!room) throw new NotFoundException('Room not found');
 
@@ -260,7 +268,7 @@ export class ChatService {
     for (const p of leftParticipants) {
       await this.prisma.participant.update({
         where: { id: p.id },
-        data: { leftAt: null, username: usernames[p.userId] || p.username },
+        data: { leftAt: null, username: usernames[p.userId] || p.username, name: names?.[p.userId] || '' },
       });
     }
 
@@ -274,6 +282,7 @@ export class ChatService {
           roomId,
           userId: uid,
           username: usernames[uid] || 'unknown',
+          name: names?.[uid] || '',
         })),
       });
     }
@@ -343,11 +352,111 @@ export class ChatService {
     return { read: unreadMessages.length };
   }
 
+  async renameRoom(roomId: string, userId: string, name: string) {
+    const room = await this.prisma.room.findUnique({ where: { id: roomId } });
+    if (!room) throw new NotFoundException('Room not found');
+    if (room.type !== 'GROUP') {
+      throw new BadRequestException('Only GROUP rooms can be renamed');
+    }
+    await this.verifyParticipant(roomId, userId);
+
+    const updated = await this.prisma.room.update({
+      where: { id: roomId },
+      data: { name },
+    });
+    return { id: updated.id, name: updated.name };
+  }
+
+  async deleteMessage(roomId: string, messageId: string, userId: string, isAdmin: boolean) {
+    const message = await this.prisma.message.findUnique({
+      where: { id: messageId },
+    });
+    if (!message) throw new NotFoundException('Message not found');
+    if (message.roomId !== roomId) {
+      throw new BadRequestException('Message does not belong to this room');
+    }
+    if (!isAdmin && message.senderId !== userId) {
+      throw new ForbiddenException('You can only delete your own messages');
+    }
+
+    // 연결된 읽음 확인 삭제 후 메시지 삭제 (Delete read receipts then delete message)
+    await this.prisma.readReceipt.deleteMany({
+      where: { messageId },
+    });
+    await this.prisma.message.delete({
+      where: { id: messageId },
+    });
+
+    return { success: true, deletedMessageId: messageId };
+  }
+
   async getRoomParticipants(roomId: string) {
     return this.prisma.participant.findMany({
       where: { roomId, leftAt: null },
-      select: { userId: true, username: true },
+      select: { userId: true, username: true, name: true },
     });
+  }
+
+  // 채팅 통계 (Chat Statistics)
+  async getStatistics(days: number) {
+    const since = new Date();
+    since.setDate(since.getDate() - days);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    const [
+      totalRooms,
+      dmCount,
+      groupCount,
+      totalMessages,
+      todayMessages,
+      yesterdayMessages,
+      activeParticipants,
+      dailyMessages,
+      topRooms,
+    ] = await Promise.all([
+      this.prisma.room.count(),
+      this.prisma.room.count({ where: { type: 'DM' } }),
+      this.prisma.room.count({ where: { type: 'GROUP' } }),
+      this.prisma.message.count(),
+      this.prisma.message.count({ where: { createdAt: { gte: today } } }),
+      this.prisma.message.count({ where: { createdAt: { gte: yesterday, lt: today } } }),
+      this.prisma.participant.groupBy({
+        by: ['userId'],
+        where: { leftAt: null },
+      }).then((r) => r.length),
+      this.prisma.$queryRaw<{ label: string; count: bigint }[]>`
+        SELECT TO_CHAR("created_at", 'YYYY-MM-DD') AS label, COUNT(*)::bigint AS count
+        FROM "Message"
+        WHERE "created_at" >= ${since}
+        GROUP BY label ORDER BY label
+      `,
+      this.prisma.$queryRaw<{ room_id: string; name: string | null; type: string; count: bigint }[]>`
+        SELECT r.id AS room_id, r.name, r.type, COUNT(m.id)::bigint AS count
+        FROM "Room" r JOIN "Message" m ON m."room_id" = r.id
+        WHERE m."created_at" >= ${since}
+        GROUP BY r.id ORDER BY count DESC LIMIT 10
+      `,
+    ]);
+
+    return {
+      totalRooms,
+      dmCount,
+      groupCount,
+      totalMessages,
+      todayMessages,
+      yesterdayMessages,
+      activeParticipants,
+      dailyMessages: dailyMessages.map((d) => ({ label: d.label, count: Number(d.count) })),
+      topRooms: topRooms.map((r) => ({
+        roomId: r.room_id,
+        name: r.name || (r.type === 'DM' ? 'DM' : 'Group'),
+        type: r.type,
+        messageCount: Number(r.count),
+      })),
+    };
   }
 
   private async verifyParticipant(roomId: string, userId: string) {

@@ -41,6 +41,7 @@ export function useCreateRoom() {
       name?: string;
       participantIds: string[];
       participantUsernames: Record<string, string>;
+      participantNames?: Record<string, string>;
     }) => {
       const { data } = await api.post('/api/chat/rooms', body);
       return data.data as ChatRoom;
@@ -58,8 +59,15 @@ export function useSendMessage() {
       const { data } = await api.post(`/api/chat/rooms/${roomId}/messages`, { content });
       return data.data as ChatMessage;
     },
-    onSuccess: (_, variables) => {
-      qc.invalidateQueries({ queryKey: ['chat-messages', variables.roomId] });
+    onSuccess: (newMessage, variables) => {
+      // 전체 리페치 대신 캐시에 직접 추가하여 스크롤 위치 유지
+      // (Append to cache instead of full refetch to preserve scroll position)
+      qc.setQueryData(['chat-messages', variables.roomId], (old: any) => {
+        if (!old?.pages?.length) return old;
+        const pages = [...old.pages];
+        pages[0] = { ...pages[0], items: [...pages[0].items, newMessage] };
+        return { ...old, pages };
+      });
       qc.invalidateQueries({ queryKey: ['chat-rooms'] });
     },
   });
@@ -84,14 +92,17 @@ export function useInviteToRoom() {
       roomId,
       userIds,
       usernames,
+      names,
     }: {
       roomId: string;
       userIds: string[];
       usernames: Record<string, string>;
+      names?: Record<string, string>;
     }) => {
       const { data } = await api.post(`/api/chat/rooms/${roomId}/invite`, {
         userIds,
         usernames,
+        names: names || {},
       });
       return data;
     },
@@ -119,6 +130,41 @@ export function useKickFromRoom() {
       return data;
     },
     onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['chat-rooms'] });
+    },
+  });
+}
+
+export function useRenameRoom() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ roomId, name }: { roomId: string; name: string }) => {
+      const { data } = await api.post(`/api/chat/rooms/${roomId}/rename`, { name });
+      return data.data as { id: string; name: string };
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['chat-rooms'] });
+    },
+  });
+}
+
+export function useDeleteMessage() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ roomId, messageId }: { roomId: string; messageId: string }) => {
+      const { data } = await api.delete(`/api/chat/rooms/${roomId}/messages/${messageId}`);
+      return data.data as { success: boolean; deletedMessageId: string };
+    },
+    onSuccess: (result, variables) => {
+      // 캐시에서 삭제된 메시지 제거 (Remove deleted message from cache)
+      qc.setQueryData(['chat-messages', variables.roomId], (old: any) => {
+        if (!old?.pages?.length) return old;
+        const pages = old.pages.map((page: any) => ({
+          ...page,
+          items: page.items.filter((msg: ChatMessage) => msg.id !== result.deletedMessageId),
+        }));
+        return { ...old, pages };
+      });
       qc.invalidateQueries({ queryKey: ['chat-rooms'] });
     },
   });

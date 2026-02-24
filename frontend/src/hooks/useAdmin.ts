@@ -556,6 +556,27 @@ export function useStatLikes(days: number) {
   });
 }
 
+// 채팅 통계 훅 (Chat statistics hook)
+export function useStatChat(days: number) {
+  return useQuery({
+    queryKey: ['stat-chat', days],
+    queryFn: async () => {
+      const { data } = await api.get('/api/statistics/chat', { params: { days } });
+      return data.data as {
+        totalRooms: number;
+        dmCount: number;
+        groupCount: number;
+        totalMessages: number;
+        todayMessages: number;
+        yesterdayMessages: number;
+        activeParticipants: number;
+        dailyMessages: TimelineEntry[];
+        topRooms: { roomId: string; name: string; type: string; messageCount: number }[];
+      };
+    },
+  });
+}
+
 // ===== 페이지 뷰 추적 (Page View Tracking) =====
 export function useTrackPageView() {
   return useMutation({

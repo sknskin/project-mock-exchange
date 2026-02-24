@@ -137,4 +137,16 @@ export class StatisticsProxyController {
     });
     return res.status(result.status).json(result.data);
   }
+
+  // 채팅 통계 프록시 (Chat statistics proxy)
+  @Get('chat')
+  @UseGuards(JwtAuthGuard)
+  async chat(@Req() req: Request, @Res() res: Response) {
+    const result = await this.proxyService.forward('chat', {
+      method: 'GET',
+      url: '/statistics',
+      params: req.query,
+    });
+    return res.status(result.status).json(result.data);
+  }
 }
