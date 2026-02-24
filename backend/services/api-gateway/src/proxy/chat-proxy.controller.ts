@@ -221,13 +221,21 @@ export class ChatProxyController {
         },
       });
 
-      const rooms = (roomResult.data as { data?: { id: string; participants: { userId: string }[] }[] }).data || [];
+      const rooms = (roomResult.data as { data?: { id: string; name?: string; type: string; participants: { userId: string; username: string }[] }[] }).data || [];
       const room = rooms.find((r) => r.id === roomId);
       if (!room) return;
+
+      const roomLabel = room.type === 'GROUP'
+        ? room.name || room.participants.map((p) => p.username).join(', ')
+        : undefined;
 
       for (const p of room.participants) {
         if (p.userId === sender.id) continue;
         if (this.chatGateway.isUserOnline(p.userId)) continue;
+
+        const title = roomLabel
+          ? `${sender.username} (${roomLabel})`
+          : `${sender.username}`;
 
         // Create notification for offline user
         await this.proxyService.forward('user-auth', {
@@ -236,7 +244,7 @@ export class ChatProxyController {
           data: {
             userId: p.userId,
             type: 'CHAT_MESSAGE',
-            title: `${sender.username}`,
+            title,
             message: req.body.content?.substring(0, 100) || '',
             link: `chat:${roomId}`,
           },

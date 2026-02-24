@@ -14,6 +14,14 @@ import { HealthCheck, HealthCheckService } from '@nestjs/terminus';
 export class HealthController {
   constructor(private health: HealthCheckService) {}
 
+  @Get()
+  @HealthCheck()
+  @ApiOperation({ summary: '기본 헬스 체크', description: 'API Gateway가 정상인지 확인합니다' })
+  @ApiResponse({ status: 200, description: '서비스 정상' })
+  check() {
+    return this.health.check([]);
+  }
+
   @Get('live')
   @HealthCheck()
   @ApiOperation({ summary: 'Liveness 체크', description: '프로세스가 살아있는지 확인합니다' })
