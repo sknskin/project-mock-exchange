@@ -314,7 +314,7 @@ echo -e "${YELLOW}[6/7] DB 마이그레이션... / Running DB migrations...${NC}
 # set +e: 개별 마이그레이션 실패가 전체 스크립트를 중단하지 않도록
 # set +e: prevent individual migration failures from stopping the entire script
 set +e
-for svc in user-auth market-data order-engine portfolio; do
+for svc in user-auth market-data order-engine portfolio chat; do
   if [ -f "backend/services/$svc/prisma/schema.prisma" ]; then
     cd "backend/services/$svc"
     if npx prisma db push --skip-generate --accept-data-loss 2>&1 | tail -1; then
@@ -341,6 +341,7 @@ start_service "user-auth"    "node backend/services/user-auth/dist/main.js"
 start_service "market-data"  "node backend/services/market-data/dist/main.js"
 start_service "order-engine" "node backend/services/order-engine/dist/main.js"
 start_service "portfolio"    "node backend/services/portfolio/dist/main.js"
+start_service "chat"         "node backend/services/chat/dist/main.js"
 
 echo ""
 echo "  백엔드 서비스 준비 대기 중... / Waiting for backend services..."
@@ -351,6 +352,7 @@ wait_for_port 3007 "user-auth"    15
 wait_for_port 3001 "market-data"  15
 wait_for_port 3002 "order-engine" 15
 wait_for_port 3003 "portfolio"    15
+wait_for_port 3005 "chat"         15
 
 # API Gateway는 백엔드 서비스가 모두 준비된 후 시작 (의존성 존재)
 # Start API Gateway after all backend services are ready (has dependencies)
