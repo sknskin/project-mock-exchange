@@ -73,7 +73,7 @@ export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeave
   const displayName = room
     ? room.type === 'DM'
       ? room.participants.find((p) => p.userId !== user?.id)?.username ?? ''
-      : room.name ?? ''
+      : room.name || room.participants.filter((p) => p.userId !== user?.id).map((p) => p.username).join(', ') || ''
     : '';
 
   return (

@@ -15,7 +15,6 @@ export default function CreateRoomModal() {
   const user = useAuthStore((s) => s.user);
   const createRoom = useCreateRoom();
 
-  const [tab, setTab] = useState<'DM' | 'GROUP'>('DM');
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [selectedUsers, setSelectedUsers] = useState<ChatUserSearchResult[]>([]);
@@ -33,21 +32,20 @@ export default function CreateRoomModal() {
     (u) => u.id !== user?.id && !selectedUsers.some((s) => s.id === u.id),
   );
 
+  const isGroup = selectedUsers.length > 1;
+
   const toggleUser = (u: ChatUserSearchResult) => {
-    if (tab === 'DM') {
-      setSelectedUsers([u]);
-    } else {
-      setSelectedUsers((prev) =>
-        prev.some((s) => s.id === u.id)
-          ? prev.filter((s) => s.id !== u.id)
-          : [...prev, u],
-      );
-    }
+    setSelectedUsers((prev) =>
+      prev.some((s) => s.id === u.id)
+        ? prev.filter((s) => s.id !== u.id)
+        : [...prev, u],
+    );
   };
 
   const handleCreate = async () => {
     if (selectedUsers.length === 0) return;
-    if (tab === 'GROUP' && !groupName.trim()) return;
+
+    const type = isGroup ? 'GROUP' : 'DM';
 
     const participantUsernames: Record<string, string> = {};
     selectedUsers.forEach((u) => {
@@ -55,8 +53,8 @@ export default function CreateRoomModal() {
     });
 
     const room = await createRoom.mutateAsync({
-      type: tab,
-      name: tab === 'GROUP' ? groupName.trim() : undefined,
+      type,
+      name: isGroup ? (groupName.trim() || undefined) : undefined,
       participantIds: selectedUsers.map((u) => u.id),
       participantUsernames,
     });
@@ -64,8 +62,7 @@ export default function CreateRoomModal() {
     openRoom(room.id);
   };
 
-  const canCreate =
-    selectedUsers.length > 0 && (tab === 'DM' || groupName.trim().length > 0);
+  const canCreate = selectedUsers.length > 0;
 
   return (
     <div className="flex flex-col h-full">
@@ -80,35 +77,9 @@ export default function CreateRoomModal() {
         <h3 className="text-[14px] font-bold text-text-primary">{t('chat.newChat')}</h3>
       </div>
 
-      {/* Tabs */}
-      <div className="flex border-b border-border shrink-0">
-        <button
-          onClick={() => { setTab('DM'); setSelectedUsers([]); }}
-          className={cn(
-            'flex-1 py-2.5 text-[13px] font-semibold transition-colors',
-            tab === 'DM'
-              ? 'text-accent border-b-2 border-accent'
-              : 'text-text-tertiary hover:text-text-primary',
-          )}
-        >
-          {t('chat.createDM')}
-        </button>
-        <button
-          onClick={() => { setTab('GROUP'); setSelectedUsers([]); }}
-          className={cn(
-            'flex-1 py-2.5 text-[13px] font-semibold transition-colors',
-            tab === 'GROUP'
-              ? 'text-accent border-b-2 border-accent'
-              : 'text-text-tertiary hover:text-text-primary',
-          )}
-        >
-          {t('chat.createGroup')}
-        </button>
-      </div>
-
       <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
-        {/* Group name input */}
-        {tab === 'GROUP' && (
+        {/* Group name input (shown when 2+ users selected) */}
+        {isGroup && (
           <input
             type="text"
             value={groupName}
