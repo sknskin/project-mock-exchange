@@ -7,6 +7,7 @@
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { useAuthStore } from '@/stores/auth';
 import { useToastStore } from '@/stores/toast';
 import { useTranslation } from '@/hooks/useTranslation';
 import type {
@@ -372,6 +373,7 @@ export function useChangePassword() {
 
 // ===== Notifications =====
 export function useNotifications(params: { page: number; limit: number }) {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   return useQuery({
     queryKey: ['notifications', params],
     queryFn: async () => {
@@ -385,10 +387,12 @@ export function useNotifications(params: { page: number; limit: number }) {
         totalPages: number;
       };
     },
+    enabled: isAuthenticated,
   });
 }
 
 export function useUnreadCount() {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   return useQuery({
     queryKey: ['unread-count'],
     queryFn: async () => {
@@ -396,6 +400,7 @@ export function useUnreadCount() {
       return data.data.count as number;
     },
     refetchInterval: 30000,
+    enabled: isAuthenticated,
   });
 }
 

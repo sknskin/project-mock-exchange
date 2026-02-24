@@ -2,9 +2,11 @@
 
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { useAuthStore } from '@/stores/auth';
 import type { ChatRoom, ChatMessage, ChatUserSearchResult } from '@/types';
 
 export function useChatRooms() {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   return useQuery({
     queryKey: ['chat-rooms'],
     queryFn: async () => {
@@ -12,6 +14,7 @@ export function useChatRooms() {
       return data.data as ChatRoom[];
     },
     refetchInterval: 30000,
+    enabled: isAuthenticated,
   });
 }
 
