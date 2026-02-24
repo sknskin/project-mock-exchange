@@ -116,8 +116,8 @@ export class ChatService {
     }
 
     if (dto.type === RoomTypeDto.GROUP) {
-      if (!dto.name?.trim()) {
-        throw new BadRequestException('Group room requires a name');
+      if (dto.participantIds.length < 1) {
+        throw new BadRequestException('Group room requires at least 1 other participant');
       }
     }
 
