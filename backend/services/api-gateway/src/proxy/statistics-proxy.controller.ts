@@ -124,4 +124,17 @@ export class StatisticsProxyController {
     });
     return res.status(result.status).json(result.data);
   }
+
+  // 좋아요 통계 프록시
+  @Get('likes')
+  @UseGuards(JwtAuthGuard)
+  async likes(@Req() req: Request, @Res() res: Response) {
+    const result = await this.proxyService.forward('user-auth', {
+      method: 'GET',
+      url: '/statistics/likes',
+      params: req.query,
+      headers: { Authorization: req.headers.authorization || '' },
+    });
+    return res.status(result.status).json(result.data);
+  }
 }

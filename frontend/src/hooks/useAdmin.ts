@@ -29,7 +29,7 @@ import type {
   UserStatByStatus,
 } from '@/types';
 
-// ===== User Management =====
+// ===== 사용자 관리 (User Management) =====
 export function useAdminUsers(params: {
   page: number;
   limit: number;
@@ -135,7 +135,7 @@ export function useDeleteUser() {
   });
 }
 
-// ===== Announcements =====
+// ===== 공지사항 (Announcements) =====
 export function useAnnouncements(params: { page: number; limit: number; search?: string }) {
   return useQuery({
     queryKey: ['announcements', params],
@@ -328,7 +328,7 @@ export function useAdjacentAnnouncements(id: string) {
   });
 }
 
-// ===== Profile =====
+// ===== 프로필 (Profile) =====
 export function useProfile() {
   return useQuery({
     queryKey: ['profile'],
@@ -371,7 +371,7 @@ export function useChangePassword() {
   });
 }
 
-// ===== Notifications =====
+// ===== 알림 (Notifications) =====
 export function useNotifications(params: { page: number; limit: number }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   return useQuery({
@@ -430,7 +430,7 @@ export function useMarkAllAsRead() {
   });
 }
 
-// ===== Statistics =====
+// ===== 통계 (Statistics) =====
 export function useStatOverview() {
   return useQuery({
     queryKey: ['stat-overview'],
@@ -539,7 +539,24 @@ export function useStatPopularAnnouncements() {
   });
 }
 
-// ===== Page View Tracking =====
+// 좋아요 통계 훅
+export function useStatLikes(days: number) {
+  return useQuery({
+    queryKey: ['stat-likes', days],
+    queryFn: async () => {
+      const { data } = await api.get('/api/statistics/likes', { params: { days } });
+      return data.data as {
+        announcementLikes: TimelineEntry[];
+        commentLikes: TimelineEntry[];
+        totalAnnouncementLikes: number;
+        totalCommentLikes: number;
+        topLikedAnnouncements: PopularAnnouncement[];
+      };
+    },
+  });
+}
+
+// ===== 페이지 뷰 추적 (Page View Tracking) =====
 export function useTrackPageView() {
   return useMutation({
     mutationFn: async (path: string) => {

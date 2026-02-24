@@ -7,7 +7,7 @@
  */
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   LineChart,
@@ -26,7 +26,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts';
-import { Users, LogIn, Eye, FileText, TrendingUp, Activity, ShoppingCart, ArrowUpRight, ArrowDownRight, Minus, BarChart2, BarChart3 } from 'lucide-react';
+import { Users, LogIn, Eye, FileText, TrendingUp, Activity, ShoppingCart, ArrowUpRight, ArrowDownRight, Minus, BarChart2, BarChart3, Heart } from 'lucide-react';
 import {
   useStatOverview,
   useStatOverviewTrend,
@@ -37,6 +37,7 @@ import {
   useStatUsers,
   useStatTrading,
   useStatPopularAnnouncements,
+  useStatLikes,
 } from '@/hooks/useAdmin';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuthStore } from '@/stores/auth';
@@ -218,6 +219,21 @@ export default function AdminStatsPage() {
   const [tab, setTab] = useState('overview');
   const [period, setPeriod] = useState('daily');
   const [days, setDays] = useState(30);
+  const tabsRef = useRef<HTMLDivElement>(null);
+
+  // Prevent vertical page scroll when hovering tabs — convert Y scroll to horizontal
+  useEffect(() => {
+    const el = tabsRef.current;
+    if (!el) return;
+    const handler = (e: WheelEvent) => {
+      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+        el.scrollLeft += e.deltaY;
+        e.preventDefault();
+      }
+    };
+    el.addEventListener('wheel', handler, { passive: false });
+    return () => el.removeEventListener('wheel', handler);
+  }, []);
 
   // Non-admin redirect
   useEffect(() => {
@@ -237,6 +253,7 @@ export default function AdminStatsPage() {
   const { data: users } = useStatUsers();
   const { data: trading } = useStatTrading(days);
   const { data: popularAnnouncements } = useStatPopularAnnouncements();
+  const { data: likeStats } = useStatLikes(days);
 
   // Guard: non-admin
   if (user && user.role !== 'SYSTEM' && user.role !== 'ADMIN') {
@@ -259,6 +276,19 @@ export default function AdminStatsPage() {
       date,
       announcements: announcementMap.get(date) ?? 0,
       comments: commentMap.get(date) ?? 0,
+    }));
+  })();
+
+  // 좋아요 타임라인 데이터 병합 (공지사항 좋아요 + 댓글 좋아요)
+  const likeChartData = (() => {
+    if (!likeStats) return [];
+    const aMap = new Map((likeStats.announcementLikes ?? []).map((e) => [e.label, e.count]));
+    const cMap = new Map((likeStats.commentLikes ?? []).map((e) => [e.label, e.count]));
+    const allDates = Array.from(new Set([...aMap.keys(), ...cMap.keys()])).sort();
+    return allDates.map((date) => ({
+      date,
+      announcementLikes: aMap.get(date) ?? 0,
+      commentLikes: cMap.get(date) ?? 0,
     }));
   })();
 
@@ -325,7 +355,7 @@ export default function AdminStatsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-5 border-b border-border overflow-x-auto scrollbar-hide">
+      <div className="flex gap-1 mb-5 border-b border-border overflow-x-auto overflow-y-hidden overscroll-x-contain scrollbar-hide" ref={tabsRef}>
         {STAT_TABS.map((t_) => {
           const Icon = t_.icon;
           const isActive = tab === t_.key;
@@ -394,60 +424,187 @@ export default function AdminStatsPage() {
         </div>
       )}
 
-      {/* ── Overview Tab ── */}
+      {/* ── Overview Tab: KPI 카드 + 주요 그래프 6개 ── */}
       {tab === 'overview' && (
-        <section>
-          <h2 className="text-[12px] font-semibold text-text-quaternary uppercase tracking-wider mb-3">
-            {t('stats.overview')}
-          </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            <OverviewCard
-              icon={Users}
-              value={overview?.totalUsers}
-              label={t('stats.totalUsers')}
-              iconColor={CHART_COLORS.blue}
-              changePercent={trend?.newUsers.changePercent}
-            />
-            <OverviewCard
-              icon={Activity}
-              value={overview?.activeUsers}
-              label={t('stats.activeUsers')}
-              iconColor={CHART_COLORS.green}
-            />
-            <OverviewCard
-              icon={Users}
-              value={overview?.pendingUsers}
-              label={t('stats.pendingUsers')}
-              iconColor={CHART_COLORS.red}
-            />
-            <OverviewCard
-              icon={FileText}
-              value={overview?.totalAnnouncements}
-              label={t('stats.totalAnnouncements')}
-              iconColor={CHART_COLORS.purple}
-              changePercent={trend?.announcements.changePercent}
-            />
-            <OverviewCard
-              icon={Eye}
-              value={overview?.totalPageViews}
-              label={t('stats.totalPageViews')}
-              iconColor={CHART_COLORS.gray}
-              changePercent={trend?.pageViews.changePercent}
-            />
-            <OverviewCard
-              icon={LogIn}
-              value={overview?.todayLogins}
-              label={t('stats.todayLogins')}
-              iconColor={CHART_COLORS.green}
-              changePercent={trend?.logins.changePercent}
-            />
+        <section className="space-y-6">
+          {/* KPI 요약 카드 */}
+          <div>
+            <h2 className="text-[12px] font-semibold text-text-quaternary uppercase tracking-wider mb-3">
+              {t('stats.overview')}
+            </h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <OverviewCard
+                icon={Users}
+                value={overview?.totalUsers}
+                label={t('stats.totalUsers')}
+                iconColor={CHART_COLORS.blue}
+                changePercent={trend?.newUsers.changePercent}
+              />
+              <OverviewCard
+                icon={Activity}
+                value={overview?.activeUsers}
+                label={t('stats.activeUsers')}
+                iconColor={CHART_COLORS.green}
+              />
+              <OverviewCard
+                icon={Users}
+                value={overview?.pendingUsers}
+                label={t('stats.pendingUsers')}
+                iconColor={CHART_COLORS.red}
+              />
+              <OverviewCard
+                icon={FileText}
+                value={overview?.totalAnnouncements}
+                label={t('stats.totalAnnouncements')}
+                iconColor={CHART_COLORS.purple}
+                changePercent={trend?.announcements.changePercent}
+              />
+              <OverviewCard
+                icon={Eye}
+                value={overview?.totalPageViews}
+                label={t('stats.totalPageViews')}
+                iconColor={CHART_COLORS.gray}
+                changePercent={trend?.pageViews.changePercent}
+              />
+              <OverviewCard
+                icon={LogIn}
+                value={overview?.todayLogins}
+                label={t('stats.todayLogins')}
+                iconColor={CHART_COLORS.green}
+                changePercent={trend?.logins.changePercent}
+              />
+            </div>
+          </div>
+
+          {/* 주요 그래프 6개 */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* 1) 가입자 추이 그래프 */}
+            <ChartCard title={t('stats.registrations')}>
+              {hasChartData(registrations) ? (
+                <ResponsiveContainer width="100%" height={240}>
+                  <AreaChart data={registrations ?? []} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="overviewRegGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor={CHART_COLORS.blue} stopOpacity={0.25} />
+                        <stop offset="95%" stopColor={CHART_COLORS.blue} stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
+                    <XAxis dataKey="label" tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} />
+                    <YAxis tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Area type="monotone" dataKey="count" name={t('stats.registrations')} stroke={CHART_COLORS.blue} strokeWidth={2} fill="url(#overviewRegGrad)" dot={false} activeDot={{ r: 4, fill: CHART_COLORS.blue }} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <EmptyChart height={240} />
+              )}
+            </ChartCard>
+
+            {/* 2) 로그인 추이 그래프 */}
+            <ChartCard title={t('stats.logins')}>
+              {hasChartData(logins) ? (
+                <ResponsiveContainer width="100%" height={240}>
+                  <LineChart data={logins ?? []} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
+                    <XAxis dataKey="label" tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} />
+                    <YAxis tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Line type="monotone" dataKey="count" name={t('stats.logins')} stroke={CHART_COLORS.red} strokeWidth={2} dot={false} activeDot={{ r: 4, fill: CHART_COLORS.red }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <EmptyChart height={240} />
+              )}
+            </ChartCard>
+
+            {/* 3) 페이지뷰 추이 그래프 */}
+            <ChartCard title={t('stats.pageViews')}>
+              {hasChartData(pageViews?.timeline) ? (
+                <ResponsiveContainer width="100%" height={240}>
+                  <BarChart data={pageViews?.timeline ?? []} margin={{ top: 4, right: 4, left: -20, bottom: 0 }} barSize={6}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
+                    <XAxis dataKey="label" tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} />
+                    <YAxis tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Bar dataKey="count" name={t('stats.pageViews')} fill={CHART_COLORS.green} radius={[3, 3, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <EmptyChart height={240} />
+              )}
+            </ChartCard>
+
+            {/* 4) 일별 거래량 그래프 */}
+            <ChartCard title={t('stats.dailyVolume')}>
+              {hasChartData(trading?.dailyVolume) ? (
+                <ResponsiveContainer width="100%" height={240}>
+                  <BarChart data={trading?.dailyVolume ?? []} margin={{ top: 4, right: 4, left: -20, bottom: 0 }} barSize={8}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
+                    <XAxis dataKey="date" tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} />
+                    <YAxis tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend wrapperStyle={{ fontSize: 11, color: AXIS_TICK_FILL, paddingTop: 8 }} />
+                    <Bar dataKey="buy" name={t('stats.buy')} fill={CHART_COLORS.red} radius={[3, 3, 0, 0]} stackId="a" />
+                    <Bar dataKey="sell" name={t('stats.sell')} fill={CHART_COLORS.blue} radius={[3, 3, 0, 0]} stackId="a" />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <EmptyChart height={240} />
+              )}
+            </ChartCard>
+
+            {/* 5) 공지사항/댓글 추이 그래프 */}
+            <ChartCard title={t('stats.announcementStats')}>
+              {hasChartData(announcementChartData) ? (
+                <ResponsiveContainer width="100%" height={240}>
+                  <BarChart data={announcementChartData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }} barSize={6}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
+                    <XAxis dataKey="date" tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} />
+                    <YAxis tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend wrapperStyle={{ fontSize: 11, color: AXIS_TICK_FILL, paddingTop: 8 }} />
+                    <Bar dataKey="announcements" name={t('stats.announcementStats')} fill={CHART_COLORS.blue} radius={[3, 3, 0, 0]} />
+                    <Bar dataKey="comments" name={t('stats.comments')} fill={CHART_COLORS.red} radius={[3, 3, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <EmptyChart height={240} />
+              )}
+            </ChartCard>
+
+            {/* 6) 매수/매도 비율 파이 차트 */}
+            <ChartCard title={t('stats.buySellDist')}>
+              {buySellData.reduce((sum, d) => sum + d.value, 0) > 0 ? (
+                <ResponsiveContainer width="100%" height={240}>
+                  <PieChart>
+                    <Pie data={buySellData} cx="50%" cy="50%" innerRadius={40} outerRadius={90} paddingAngle={3} dataKey="value" nameKey="name">
+                      {buySellData.map((entry, index) => (
+                        <Cell key={`overview-bs-${index}`} fill={entry.color} strokeWidth={0} />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend wrapperStyle={{ fontSize: 12, color: AXIS_TICK_FILL, paddingTop: 8 }} formatter={(value) => (<span style={{ color: '#9CA3AF', fontSize: 12 }}>{value}</span>)} />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <EmptyChart height={240} />
+              )}
+            </ChartCard>
           </div>
         </section>
       )}
 
-      {/* ── Users Tab ── */}
+      {/* ── Users Tab: 요약 카드 + 등록 추이 + 역할/상태 분포 ── */}
       {tab === 'users' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* 사용자 요약 카드 */}
+          <div className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <OverviewCard icon={Users} value={overview?.totalUsers} label={t('stats.totalUsers')} iconColor={CHART_COLORS.blue} changePercent={trend?.newUsers.changePercent} />
+            <OverviewCard icon={Activity} value={overview?.activeUsers} label={t('stats.activeUsers')} iconColor={CHART_COLORS.green} />
+            <OverviewCard icon={Users} value={overview?.pendingUsers} label={t('stats.pendingUsers')} iconColor={CHART_COLORS.red} />
+          </div>
+
           {/* Registration Timeline - AreaChart */}
           <ChartCard title={t('stats.registrations')} description={t('stats.desc.registrations')}>
             {hasChartData(registrations) ? (
@@ -557,9 +714,16 @@ export default function AdminStatsPage() {
         </div>
       )}
 
-      {/* ── Activity Tab ── */}
+      {/* ── Activity Tab: 요약 카드 + 로그인/페이지뷰/인기 페이지/시간대별 ── */}
       {tab === 'activity' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* 활동 요약 카드 */}
+          <div className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <OverviewCard icon={LogIn} value={overview?.todayLogins} label={t('stats.todayLogins')} iconColor={CHART_COLORS.red} changePercent={trend?.logins.changePercent} />
+            <OverviewCard icon={Eye} value={overview?.totalPageViews} label={t('stats.totalPageViews')} iconColor={CHART_COLORS.green} changePercent={trend?.pageViews.changePercent} />
+            <OverviewCard icon={Activity} value={topPagesData.length} label={t('stats.topPages')} iconColor={CHART_COLORS.blue} />
+          </div>
+
           {/* Login Timeline - LineChart */}
           <ChartCard title={t('stats.logins')} description={t('stats.desc.logins')}>
             {hasChartData(logins) ? (
@@ -854,11 +1018,11 @@ export default function AdminStatsPage() {
         </div>
       )}
 
-      {/* ── Content Tab ── */}
+      {/* ── Content Tab: 공지사항/댓글/좋아요 통계 ── */}
       {tab === 'content' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Summary cards */}
-          <div className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {/* 요약 카드 */}
+          <div className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-4 gap-3">
             <OverviewCard
               icon={FileText}
               value={announcements?.totalAnnouncements}
@@ -872,6 +1036,12 @@ export default function AdminStatsPage() {
               iconColor={CHART_COLORS.red}
             />
             <OverviewCard
+              icon={Heart}
+              value={likeStats ? likeStats.totalAnnouncementLikes + likeStats.totalCommentLikes : undefined}
+              label={t('stats.totalLikes')}
+              iconColor={CHART_COLORS.purple}
+            />
+            <OverviewCard
               icon={Activity}
               value={parseFloat(participationRate)}
               label={t('stats.commentsPerAnnouncement')}
@@ -879,43 +1049,18 @@ export default function AdminStatsPage() {
             />
           </div>
 
-          {/* Announcement + Comments - BarChart */}
+          {/* 공지사항 + 댓글 추이 차트 */}
           <ChartCard title={t('stats.announcementStats')} description={t('stats.desc.announcementStats')}>
             {hasChartData(announcementChartData) ? (
               <ResponsiveContainer width="100%" height={280}>
-                <BarChart
-                  data={announcementChartData}
-                  margin={{ top: 4, right: 4, left: -20, bottom: 0 }}
-                  barSize={6}
-                >
+                <BarChart data={announcementChartData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }} barSize={6}>
                   <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
-                  <XAxis
-                    dataKey="date"
-                    tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }}
-                    axisLine={{ stroke: AXIS_LINE_STROKE }}
-                    tickLine={false}
-                  />
-                  <YAxis
-                    tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }}
-                    axisLine={{ stroke: AXIS_LINE_STROKE }}
-                    tickLine={false}
-                  />
+                  <XAxis dataKey="date" tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} />
+                  <YAxis tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} />
                   <Tooltip content={<CustomTooltip />} />
-                  <Legend
-                    wrapperStyle={{ fontSize: 11, color: AXIS_TICK_FILL, paddingTop: 8 }}
-                  />
-                  <Bar
-                    dataKey="announcements"
-                    name={t('stats.announcementStats')}
-                    fill={CHART_COLORS.blue}
-                    radius={[3, 3, 0, 0]}
-                  />
-                  <Bar
-                    dataKey="comments"
-                    name={t('stats.comments')}
-                    fill={CHART_COLORS.red}
-                    radius={[3, 3, 0, 0]}
-                  />
+                  <Legend wrapperStyle={{ fontSize: 11, color: AXIS_TICK_FILL, paddingTop: 8 }} />
+                  <Bar dataKey="announcements" name={t('stats.announcementStats')} fill={CHART_COLORS.blue} radius={[3, 3, 0, 0]} />
+                  <Bar dataKey="comments" name={t('stats.comments')} fill={CHART_COLORS.red} radius={[3, 3, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
@@ -923,22 +1068,77 @@ export default function AdminStatsPage() {
             )}
           </ChartCard>
 
-          {/* Popular Announcements */}
+          {/* 좋아요 추이 차트 */}
+          <ChartCard title={t('stats.likeStats')} description={t('stats.desc.likeStats')}>
+            {hasChartData(likeChartData) ? (
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart data={likeChartData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }} barSize={6}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
+                  <XAxis dataKey="date" tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} />
+                  <YAxis tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend wrapperStyle={{ fontSize: 11, color: AXIS_TICK_FILL, paddingTop: 8 }} />
+                  <Bar dataKey="announcementLikes" name={t('stats.announcementLikes')} fill={CHART_COLORS.purple} radius={[3, 3, 0, 0]} />
+                  <Bar dataKey="commentLikes" name={t('stats.commentLikes')} fill={CHART_COLORS.yellow} radius={[3, 3, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <EmptyChart />
+            )}
+          </ChartCard>
+
+          {/* 인기 공지사항 Top 10 (댓글 수 기준, 클릭하면 상세 이동) */}
           <ChartCard title={t('stats.popularAnnouncements')} description={t('stats.desc.popularAnnouncements')}>
             {popularAnnouncements && popularAnnouncements.length > 0 ? (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {popularAnnouncements.map((a, i) => (
-                  <div key={a.id} className="flex items-center gap-3">
+                  <button
+                    key={a.id}
+                    onClick={() => router.push(`/announcements/${a.id}`)}
+                    className="flex items-center gap-3 w-full text-left px-2 py-1.5 rounded-lg hover:bg-bg-tertiary transition-colors"
+                  >
                     <span className="text-[13px] font-bold text-text-quaternary w-5 shrink-0 text-center">
                       {i + 1}
                     </span>
                     <span className="text-[13px] text-text-primary truncate flex-1">
                       {a.title}
                     </span>
-                    <span className="text-[12px] text-text-quaternary shrink-0">
-                      {a.commentCount} {t('stats.comments')}
+                    <span className="text-[12px] text-text-quaternary shrink-0 flex items-center gap-2">
+                      {a.likeCount !== undefined && (
+                        <span className="flex items-center gap-0.5">
+                          <Heart className="w-3 h-3" /> {a.likeCount}
+                        </span>
+                      )}
+                      <span>{a.commentCount} {t('stats.comments')}</span>
                     </span>
-                  </div>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <EmptyChart height={200} />
+            )}
+          </ChartCard>
+
+          {/* 좋아요가 가장 많은 공지사항 Top 10 */}
+          <ChartCard title={t('stats.topLikedAnnouncements')} description={t('stats.desc.topLikedAnnouncements')}>
+            {likeStats?.topLikedAnnouncements && likeStats.topLikedAnnouncements.length > 0 ? (
+              <div className="space-y-2">
+                {likeStats.topLikedAnnouncements.map((a, i) => (
+                  <button
+                    key={a.id}
+                    onClick={() => router.push(`/announcements/${a.id}`)}
+                    className="flex items-center gap-3 w-full text-left px-2 py-1.5 rounded-lg hover:bg-bg-tertiary transition-colors"
+                  >
+                    <span className="text-[13px] font-bold text-text-quaternary w-5 shrink-0 text-center">
+                      {i + 1}
+                    </span>
+                    <span className="text-[13px] text-text-primary truncate flex-1">
+                      {a.title}
+                    </span>
+                    <span className="text-[12px] text-text-quaternary shrink-0 flex items-center gap-0.5">
+                      <Heart className="w-3 h-3" /> {a.likeCount ?? 0}
+                    </span>
+                  </button>
                 ))}
               </div>
             ) : (

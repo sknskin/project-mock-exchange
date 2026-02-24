@@ -148,7 +148,7 @@ export interface PriceUpdate {
   timestamp: number;
 }
 
-// Admin User Management
+// 관리자 사용자 관리 (Admin User Management)
 export interface AdminUser {
   id: string;
   email: string;
@@ -184,7 +184,7 @@ export interface PaginatedResponse<T> {
   totalPages: number;
 }
 
-// Announcements
+// 공지사항 (Announcements)
 export interface AnnouncementAuthor {
   id: string;
   username: string;
@@ -242,7 +242,7 @@ export interface AnnouncementDetail {
   editedAt: string | null;
 }
 
-// Notifications
+// 알림 (Notifications)
 export interface NotificationItem {
   id: string;
   userId: string;
@@ -254,7 +254,7 @@ export interface NotificationItem {
   createdAt: string;
 }
 
-// Profile
+// 프로필 (Profile)
 export interface UserProfile {
   id: string;
   email: string;
@@ -271,7 +271,7 @@ export interface UserProfile {
   updatedAt: string;
 }
 
-// Statistics
+// 통계 (Statistics)
 export interface StatOverview {
   totalUsers: number;
   activeUsers: number;
@@ -302,7 +302,7 @@ export interface UserStatByStatus {
   count: number;
 }
 
-// Overview Trend (today vs yesterday)
+// 개요 추이 (오늘 vs 어제) (Overview Trend, today vs yesterday)
 export interface OverviewTrendItem {
   today: number;
   yesterday: number;
@@ -316,7 +316,7 @@ export interface OverviewTrend {
   announcements: OverviewTrendItem;
 }
 
-// Trading Stats
+// 거래 통계 (Trading Stats)
 export interface TradingStats {
   totalOrders: number;
   totalVolume: number;
@@ -327,7 +327,7 @@ export interface TradingStats {
   popularAssets: { symbol: string; volume: number }[];
 }
 
-// News
+// 뉴스 (News)
 export interface NewsItem {
   id: string;
   category: 'CRYPTO' | 'DOMESTIC_STOCK' | 'FOREIGN_STOCK';
@@ -346,14 +346,15 @@ export interface ScrapeStatus {
   count: number;
 }
 
-// Popular Announcements
+// 인기 공지사항 (Popular Announcements)
 export interface PopularAnnouncement {
   id: string;
   title: string;
   commentCount: number;
+  likeCount?: number;
 }
 
-// Chat
+// 채팅 (Chat)
 export interface ChatParticipant {
   id: string;
   userId: string;
@@ -394,4 +395,16 @@ export interface ChatUserSearchResult {
   id: string;
   username: string;
   name: string;
+}
+
+// 가격 알림 (Price Alerts)
+export interface PriceAlert {
+  id: string;
+  userId: string;
+  symbol: string;
+  targetPrice: string;
+  condition: 'ABOVE' | 'BELOW';
+  isActive: boolean;
+  triggeredAt: string | null;
+  createdAt: string;
 }

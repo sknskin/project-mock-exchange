@@ -126,6 +126,21 @@ const translations = {
     'toast.announcementDeleted': '공지사항이 삭제되었습니다',
     'toast.profileUpdated': '내 정보가 수정되었습니다',
     'toast.passwordChanged': '비밀번호가 변경되었습니다',
+    'toast.alertCreated': '가격 알림이 설정되었습니다',
+    'toast.alertDeleted': '가격 알림이 삭제되었습니다',
+
+    // Price Alert
+    'alert.title': '가격 알림',
+    'alert.setAlert': '알림 설정',
+    'alert.targetPrice': '목표 가격',
+    'alert.above': '이상 상승 시',
+    'alert.below': '이하 하락 시',
+    'alert.create': '알림 생성',
+    'alert.cancel': '취소',
+    'alert.active': '활성',
+    'alert.triggered': '발동됨',
+    'alert.noAlerts': '설정된 알림이 없습니다',
+    'alert.maxReached': '최대 20개까지 설정할 수 있습니다',
 
     // Spotlight
     'spotlight.navigate': '이동',
@@ -491,7 +506,12 @@ const translations = {
     'stats.sell': '매도',
     'stats.participation': '참여율',
     'stats.commentsPerAnnouncement': '공지당 댓글',
-    'stats.popularAnnouncements': '인기 공지 TOP 5',
+    'stats.popularAnnouncements': '인기 공지 TOP 10',
+    'stats.totalLikes': '총 좋아요',
+    'stats.likeStats': '좋아요 추이',
+    'stats.announcementLikes': '공지 좋아요',
+    'stats.commentLikes': '댓글 좋아요',
+    'stats.topLikedAnnouncements': '좋아요 TOP 10',
     'stats.desc.registrations': '기간별 신규 가입자 수 추이',
     'stats.desc.userRole': '역할별 사용자 분포 (시스템/관리자/일반)',
     'stats.desc.userStatus': '승인 및 활성화 상태별 사용자 분포',
@@ -503,7 +523,9 @@ const translations = {
     'stats.desc.popularAssets': '거래량 기준 인기 자산 TOP 10',
     'stats.desc.buySellDist': '전체 거래 중 매수/매도 비율',
     'stats.desc.announcementStats': '기간별 공지사항 및 댓글 수 추이',
-    'stats.desc.popularAnnouncements': '댓글이 가장 많은 공지사항 TOP 5',
+    'stats.desc.popularAnnouncements': '댓글이 가장 많은 공지사항 TOP 10',
+    'stats.desc.likeStats': '기간별 공지사항 좋아요 및 댓글 좋아요 추이',
+    'stats.desc.topLikedAnnouncements': '좋아요가 가장 많은 공지사항 TOP 10',
     'stats.noChartData': '표시할 데이터가 없습니다',
 
     // Orders
@@ -715,6 +737,21 @@ const translations = {
     'toast.announcementDeleted': 'Announcement deleted',
     'toast.profileUpdated': 'Profile updated',
     'toast.passwordChanged': 'Password changed',
+    'toast.alertCreated': 'Price alert set',
+    'toast.alertDeleted': 'Price alert removed',
+
+    // Price Alert
+    'alert.title': 'Price Alert',
+    'alert.setAlert': 'Set Alert',
+    'alert.targetPrice': 'Target Price',
+    'alert.above': 'Above',
+    'alert.below': 'Below',
+    'alert.create': 'Create Alert',
+    'alert.cancel': 'Cancel',
+    'alert.active': 'Active',
+    'alert.triggered': 'Triggered',
+    'alert.noAlerts': 'No alerts set',
+    'alert.maxReached': 'Maximum 20 alerts allowed',
 
     // Spotlight
     'spotlight.navigate': 'Navigate',
@@ -1080,7 +1117,12 @@ const translations = {
     'stats.sell': 'Sell',
     'stats.participation': 'Participation',
     'stats.commentsPerAnnouncement': 'Comments per Announcement',
-    'stats.popularAnnouncements': 'Top 5 Popular Announcements',
+    'stats.popularAnnouncements': 'Top 10 Popular Announcements',
+    'stats.totalLikes': 'Total Likes',
+    'stats.likeStats': 'Likes Trend',
+    'stats.announcementLikes': 'Announcement Likes',
+    'stats.commentLikes': 'Comment Likes',
+    'stats.topLikedAnnouncements': 'Top 10 Most Liked',
     'stats.desc.registrations': 'New user registration trend over time',
     'stats.desc.userRole': 'User distribution by role (System/Admin/User)',
     'stats.desc.userStatus': 'User distribution by approval and activation status',
@@ -1092,7 +1134,9 @@ const translations = {
     'stats.desc.popularAssets': 'Most traded assets by volume (Top 10)',
     'stats.desc.buySellDist': 'Buy vs Sell ratio of all trades',
     'stats.desc.announcementStats': 'Announcement and comment count over time',
-    'stats.desc.popularAnnouncements': 'Announcements with most comments (Top 5)',
+    'stats.desc.popularAnnouncements': 'Announcements with most comments (Top 10)',
+    'stats.desc.likeStats': 'Announcement and comment likes trend over time',
+    'stats.desc.topLikedAnnouncements': 'Most liked announcements (Top 10)',
     'stats.noChartData': 'No data available',
 
     // Orders

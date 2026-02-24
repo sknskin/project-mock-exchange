@@ -226,6 +226,7 @@ export class StatisticsController {
     };
   }
 
+  // 인기 공지사항 Top 10 (댓글 수 기준)
   @Get('popular-announcements')
   @UseGuards(JwtAuthGuard)
   async popularAnnouncements(@CurrentUser() user: UserDto) {
@@ -235,10 +236,10 @@ export class StatisticsController {
       select: {
         id: true,
         title: true,
-        _count: { select: { comments: true } },
+        _count: { select: { comments: true, likes: true } },
       },
       orderBy: { comments: { _count: 'desc' } },
-      take: 5,
+      take: 10,
     });
 
     return {
@@ -247,7 +248,68 @@ export class StatisticsController {
         id: a.id,
         title: a.title,
         commentCount: a._count.comments,
+        likeCount: a._count.likes,
       })),
+    };
+  }
+
+  // 좋아요 통계 (공지사항 좋아요, 댓글 좋아요 타임라인 + 합계)
+  @Get('likes')
+  @UseGuards(JwtAuthGuard)
+  async likeStats(
+    @CurrentUser() user: UserDto,
+    @Query('days') days: string = '30',
+  ) {
+    this.assertAdmin(user);
+    const daysNum = parseInt(days) || 30;
+    const since = new Date(Date.now() - daysNum * 86400000);
+
+    const [announcementLikes, commentLikes] = await Promise.all([
+      this.prisma.announcementLike.findMany({
+        where: { createdAt: { gte: since } },
+        select: { createdAt: true },
+        orderBy: { createdAt: 'asc' },
+      }),
+      this.prisma.commentLike.findMany({
+        where: { createdAt: { gte: since } },
+        select: { createdAt: true },
+        orderBy: { createdAt: 'asc' },
+      }),
+    ]);
+
+    const announcementLikeTimeline = groupByPeriod(
+      announcementLikes.map((l) => ({ date: l.createdAt, value: 1 })),
+      'daily',
+    );
+    const commentLikeTimeline = groupByPeriod(
+      commentLikes.map((l) => ({ date: l.createdAt, value: 1 })),
+      'daily',
+    );
+
+    // 좋아요가 가장 많은 공지사항 Top 10
+    const topLikedAnnouncements = await this.prisma.announcement.findMany({
+      select: {
+        id: true,
+        title: true,
+        _count: { select: { likes: true } },
+      },
+      orderBy: { likes: { _count: 'desc' } },
+      take: 10,
+    });
+
+    return {
+      success: true,
+      data: {
+        announcementLikes: announcementLikeTimeline,
+        commentLikes: commentLikeTimeline,
+        totalAnnouncementLikes: announcementLikes.length,
+        totalCommentLikes: commentLikes.length,
+        topLikedAnnouncements: topLikedAnnouncements.map((a) => ({
+          id: a.id,
+          title: a.title,
+          likeCount: a._count.likes,
+        })),
+      },
     };
   }
 
