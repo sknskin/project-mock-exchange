@@ -150,7 +150,7 @@ export default function NotificationBell() {
           className={cn(
             'absolute right-0 top-full mt-2 w-[360px] max-h-[480px]',
             'bg-bg-primary border border-border rounded-xl shadow-2xl',
-            'flex flex-col z-50 overflow-hidden',
+            'flex flex-col z-50 overflow-hidden animate-dropdown-in origin-top-right',
           )}
         >
           {/* 헤더 행 (Header row) */}

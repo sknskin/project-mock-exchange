@@ -35,7 +35,7 @@ export default function ChatButton() {
       ref={btnRef}
       onClick={handleClick}
       className={cn(
-        'relative p-2.5 rounded-lg transition-colors',
+        'relative p-2.5 rounded-lg transition-colors -translate-y-[1px] sm:translate-x-0 translate-x-[2px]',
         'text-text-tertiary hover:text-text-primary hover:bg-bg-secondary',
       )}
       aria-label={t('chat.title')}

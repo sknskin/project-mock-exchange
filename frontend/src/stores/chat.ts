@@ -42,11 +42,23 @@ export const useChatStore = create<ChatState>()((set) => ({
   setView: (view: ChatView) => set({ view }),
   setPosition: (pos: ChatPosition) => set({ position: pos }),
   togglePin: () =>
-    set((state) => ({
-      isPinned: !state.isPinned,
-      isOpen: !state.isPinned ? true : state.isOpen,
-      position: null,
-    })),
+    set((state) => {
+      const willPin = !state.isPinned;
+      if (willPin) {
+        // 고정 시 position 초기화 (Clear position when pinning)
+        return { isPinned: true, isOpen: true, position: null };
+      }
+      // 고정 해제 시 ChatButton 기준 위치 설정 (Set position relative to ChatButton on unpin)
+      const btn = document.querySelector('[aria-label]')?.closest('[aria-label*="Chat"], [aria-label*="채팅"]');
+      let pos: ChatPosition | null = null;
+      if (btn) {
+        const rect = btn.getBoundingClientRect();
+        pos = { x: window.innerWidth - 380 - 8, y: rect.bottom + 8 };
+      } else {
+        pos = { x: window.innerWidth - 380 - 8, y: 76 };
+      }
+      return { isPinned: false, isOpen: state.isOpen, position: pos };
+    }),
   // 모바일 뷰포트 전환 시 사이드바 고정 해제
   unpin: () => set({ isPinned: false }),
 }));

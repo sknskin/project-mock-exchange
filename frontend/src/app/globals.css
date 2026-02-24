@@ -308,4 +308,22 @@ nextjs-portal,
   .animate-toast-fade {
     animation: toast-fade 1.5s ease-out forwards;
   }
+
+  /* 채팅 패널 열림 애니메이션 / Chat panel open animation */
+  @keyframes chat-panel-in {
+    0% { opacity: 0; transform: scale(0.95) translateY(8px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  .animate-chat-panel-in {
+    animation: chat-panel-in 0.2s ease-out;
+  }
+
+  /* 드롭다운 열림 애니메이션 / Dropdown open animation */
+  @keyframes dropdown-in {
+    0% { opacity: 0; transform: scale(0.92); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  .animate-dropdown-in {
+    animation: dropdown-in 0.15s ease-out;
+  }
 }
