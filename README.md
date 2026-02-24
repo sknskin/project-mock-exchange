@@ -25,26 +25,31 @@
          |
 +--------v--------+
 |   API Gateway   |  :3000
-| (JWT + 프록시)  |
+| (JWT + 프록시   |
+|  + WebSocket)   |
 +--------+--------+
          |
-         +-------------------+-------------------+
-         |                   |                   |
-+--------v------+  +---------v-------+  +--------v--------+
-| User/Auth     |  | Market Data     |  | Order Engine     |
-| :3007         |  | :3001           |  | :3002            |
-| - 회원가입    |  | - Yahoo Finance |  | - 이벤트 소싱    |
-| - 로그인/JWT  |  | - 가격 캐시     |  | - 매칭 엔진      |
-| - 관리자 기능 |  | - 캔들스틱      |  | - CQRS 읽기 모델 |
-+---------------+  +-----------------+  +--------+--------+
-                                                 |
-                                        +--------v--------+
-                                        | Portfolio        |
-                                        | :3003            |
-                                        | - 잔고 관리      |
-                                        | - 보유 자산      |
-                                        | - 관심종목       |
-                                        +-----------------+
+    +----+-------+-------------------+-------------------+
+    |            |                   |                   |
++---v-----------v-+  +---------v-------+  +--------v--------+
+| User/Auth       |  | Market Data     |  | Order Engine     |
+| :3007           |  | :3001           |  | :3002            |
+| - 회원가입      |  | - Binance/Yahoo |  | - 이벤트 소싱    |
+| - 로그인/JWT    |  | - 가격 캐시     |  | - 매칭 엔진      |
+| - 관리자 기능   |  | - 캔들스틱      |  | - CQRS 읽기 모델 |
+| - 공지사항/좋아요|  | - 뉴스         |  +---------+--------+
+| - 알림          |  +-----------------+            |
+| - 통계          |                        +--------v--------+
+| - 가격 알림     |                        | Portfolio        |
++---------+-------+                        | :3003            |
+          |                                | - 잔고 관리      |
+  +-------v-------+                        | - 보유 자산      |
+  | Chat          |                        | - 관심종목       |
+  | :3005         |                        +-----------------+
+  | - 1:1/그룹 채팅|
+  | - 초대/퇴장   |
+  | - 읽음 확인   |
+  +---------------+
 ```
 
 ## 프로젝트 구조
@@ -61,9 +66,8 @@ mock-exchange/
 │       ├── market-data/          # Yahoo Finance 가격 데이터, 캔들스틱, 뉴스
 │       ├── order-engine/         # 주문 매칭 (이벤트 소싱 + CQRS)
 │       ├── portfolio/            # 잔고, 보유 자산, 관심종목, 거래 정산
-│       ├── notification/         # 알림 서비스 (스켈레톤)
-│       ├── chat/                 # 채팅 서비스 (스켈레톤)
-│       └── ai-service/           # AI 서비스 (스켈레톤)
+│       ├── chat/                 # 1:1/그룹 채팅, 초대, 퇴장, 읽음 확인
+│       └── ai-service/           # AI 서비스 (예정)
 ├── frontend/                     # Next.js 15 프론트엔드 (App Router)
 │   ├── src/app/                  # 페이지 라우트
 │   ├── src/components/           # UI 컴포넌트
@@ -223,26 +227,80 @@ curl http://localhost:3000/api/portfolio/valuation \
 | DELETE | `/api/announcements/:id` | JWT (ADMIN) | 공지사항 삭제 |
 | POST | `/api/announcements/:id/like` | JWT | 좋아요 토글 |
 
+### 채팅 (`/api/chat`)
+| 메서드 | 엔드포인트 | 인증 | 설명 |
+|--------|-----------|------|------|
+| GET | `/api/chat/rooms` | JWT | 내 채팅방 목록 |
+| POST | `/api/chat/rooms` | JWT | 채팅방 생성 (DM/GROUP) |
+| GET | `/api/chat/rooms/:id/messages` | JWT | 메시지 목록 (커서 페이지네이션) |
+| POST | `/api/chat/rooms/:id/messages` | JWT | 메시지 전송 |
+| POST | `/api/chat/rooms/:id/read` | JWT | 읽음 확인 |
+| POST | `/api/chat/rooms/:id/invite` | JWT | 채팅방 초대 |
+| POST | `/api/chat/rooms/:id/leave` | JWT | 채팅방 나가기 |
+| POST | `/api/chat/rooms/:id/kick` | JWT (ADMIN) | 사용자 강제 퇴장 |
+| GET | `/api/chat/users/search` | JWT | 사용자 검색 (초대용) |
+
+### 알림 (`/api/notifications`)
+| 메서드 | 엔드포인트 | 인증 | 설명 |
+|--------|-----------|------|------|
+| GET | `/api/notifications` | JWT | 알림 목록 (페이지네이션) |
+| GET | `/api/notifications/unread-count` | JWT | 읽지 않은 알림 수 |
+| POST | `/api/notifications/:id/read` | JWT | 알림 읽음 처리 |
+| POST | `/api/notifications/read-all` | JWT | 전체 읽음 처리 |
+
+### 가격 알림 (`/api/price-alerts`)
+| 메서드 | 엔드포인트 | 인증 | 설명 |
+|--------|-----------|------|------|
+| POST | `/api/price-alerts` | JWT | 가격 알림 생성 (최대 20개) |
+| GET | `/api/price-alerts` | JWT | 내 알림 목록 |
+| DELETE | `/api/price-alerts/:id` | JWT | 가격 알림 삭제 |
+
+### 통계 (`/api/statistics`)
+| 메서드 | 엔드포인트 | 인증 | 설명 |
+|--------|-----------|------|------|
+| GET | `/api/statistics/overview` | JWT (ADMIN) | 통계 개요 (KPI) |
+| GET | `/api/statistics/registrations` | JWT (ADMIN) | 가입자 추이 |
+| GET | `/api/statistics/logins` | JWT (ADMIN) | 로그인 추이 |
+| GET | `/api/statistics/page-views` | JWT (ADMIN) | 페이지뷰 추이 + TOP 페이지 |
+| GET | `/api/statistics/announcements` | JWT (ADMIN) | 공지사항/댓글 추이 |
+| GET | `/api/statistics/users` | JWT (ADMIN) | 사용자 분포 (역할/상태) |
+| GET | `/api/statistics/likes` | JWT (ADMIN) | 좋아요 통계 |
+| GET | `/api/statistics/overview-trend` | JWT (ADMIN) | 전일 대비 추이 |
+| GET | `/api/statistics/popular-announcements` | JWT (ADMIN) | 인기 공지 TOP 10 |
+| POST | `/api/statistics/page-view` | 불필요 | 페이지 방문 기록 |
+
 ### WebSocket 실시간 스트리밍
 | 네임스페이스 | 이벤트 | 설명 |
 |-------------|--------|------|
 | `/prices` | `subscribe` | 가격 채널 구독 (`{ channel: "prices:BTC-USD" }`) |
 | `/prices` | `unsubscribe` | 채널 구독 해제 |
 | `/prices` | `price:update` | 실시간 가격 수신 (서버 → 클라이언트) |
+| `/chat` | `chat:join-room` | 채팅방 입장 |
+| `/chat` | `chat:leave-room` | 채팅방 퇴장 |
+| `/chat` | `chat:message` | 새 메시지 수신 |
+| `/chat` | `chat:read` | 읽음 상태 변경 |
+| `/chat` | `chat:room-created` | 채팅방 생성 알림 |
+| `/chat` | `chat:invited` | 채팅방 초대 알림 |
+| `/chat` | `chat:kicked` | 강제 퇴장 알림 |
+| `/chat` | `chat:typing` | 타이핑 표시 |
+| `/chat` | `presence:online` | 사용자 접속 알림 |
+| `/chat` | `presence:offline` | 사용자 접속 해제 알림 |
+| `/chat` | `presence:online-list` | 온라인 사용자 목록 |
+| `/chat` | `notification:trade` | 체결 알림 |
+| `/chat` | `notification:price-alert` | 가격 알림 트리거 |
 
 ## 서비스 포트
 
 | 서비스 | 포트 | 설명 |
 |--------|------|------|
 | Frontend | 4000 | Next.js 15 웹 UI |
-| API Gateway | 3000 | 통합 진입점 (JWT 인증, 프록시, Swagger) |
-| Market Data | 3001 | Yahoo Finance 시세, 캔들스틱, 뉴스 |
+| API Gateway | 3000 | 통합 진입점 (JWT 인증, 프록시, WebSocket, Swagger) |
+| Market Data | 3001 | Binance/Yahoo Finance 시세, 캔들스틱, 뉴스 |
 | Order Engine | 3002 | 주문 처리, 매칭 엔진 |
 | Portfolio | 3003 | 잔고, 보유 자산, 관심종목, 정산 |
-| Notification | 3004 | 알림 (스켈레톤) |
-| Chat | 3005 | 채팅 (스켈레톤) |
-| AI Service | 3006 | AI 분석 (스켈레톤) |
-| User/Auth | 3007 | 회원가입, 로그인, JWT, 관리자 |
+| Chat | 3005 | 1:1/그룹 채팅, 초대, 퇴장, 읽음 확인 |
+| AI Service | 3006 | AI 분석 (예정) |
+| User/Auth | 3007 | 회원가입, 로그인, JWT, 관리자, 공지사항, 알림, 통계, 가격 알림 |
 
 ## 지원 자산 (20개)
 
@@ -274,7 +332,7 @@ curl http://localhost:3000/api/portfolio/valuation \
 | AMD | AMD |
 | INTC | Intel |
 
-> 가격 데이터는 Yahoo Finance API에서 실시간으로 제공됩니다.
+> 암호화폐 시세는 Binance WebSocket에서 실시간 제공, 주식 시세는 Yahoo Finance API 기반 시뮬레이션 데이터입니다.
 
 ## 핵심 설계 패턴
 
@@ -283,7 +341,11 @@ curl http://localhost:3000/api/portfolio/valuation \
 - **서비스별 독립 DB**: 각 마이크로서비스가 자체 데이터베이스 스키마 소유
 - **API Gateway 패턴**: JWT 인증 검증, 레이트 리미팅(100req/min), 라우팅을 중앙 관리
 - **Saga 패턴**: 주문 → 자금 예약 → 매칭 → 정산 흐름을 오케스트레이션
-- **실시간 시세**: Yahoo Finance API 기반 실시간 가격 데이터 + 캔들스틱 생성
+- **실시간 시세**: Binance WebSocket(암호화폐) + Yahoo Finance(주식) 기반 실시간 가격 데이터
+- **Redis PubSub**: 가격 데이터 실시간 브로드캐스트 + 가격 알림 모니터링
+- **WebSocket 프레즌스**: Socket.IO 기반 온라인/오프라인 상태 추적
+- **실시간 채팅**: Socket.IO 네임스페이스 분리 (`/prices`, `/chat`)
+- **캔들스틱 집계**: 1m/5m/15m/1h/4h/1d 타임프레임 자동 생성
 
 ## 개발 단계
 
@@ -291,7 +353,16 @@ curl http://localhost:3000/api/portfolio/valuation \
 - [x] **Phase 1**: 핵심 거래 MVP (시장 데이터, 주문 엔진, 포트폴리오, Gateway 연동)
 - [x] **Phase 2**: 고급 거래 + 프론트엔드 (지정가, P&L, WebSocket, Next.js 15 UI)
 - [x] **Phase 2.5**: 관리자/UX (사용자 관리, 공지사항, 관심종목, 뉴스, 다국어, 반응형)
-- [ ] **Phase 3**: 소셜 기능 (채팅, 알림)
+- [x] **Phase 3**: 소셜 기능 + 고급 알림
+  - 실시간 1:1/그룹 채팅 (Socket.IO)
+  - 채팅방 생성/초대/퇴장/읽음 확인
+  - 관리자 강제 퇴장(kick) 기능
+  - 온라인/오프라인 상태 표시 (프레즌스)
+  - 거래 체결 알림 (WebSocket + DB)
+  - 가격 알림 시스템 (목표가 도달 시 자동 알림)
+  - 통계 대시보드 (가입자/로그인/페이지뷰/거래/공지/좋아요 추이)
+  - 우측 고정 사이드바 채팅 (토스증권 스타일)
+  - 반응형 레이아웃 (모바일 자동 언핀)
 - [ ] **Phase 4**: AI 통합 (매매 추천, 포트폴리오 분석)
 - [ ] **Phase 5**: 프로덕션 강화 (K8s, 관측성, 부하 테스트)
 
