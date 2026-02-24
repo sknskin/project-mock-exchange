@@ -17,9 +17,12 @@ import { ProfileProxyController } from './profile-proxy.controller';
 import { NotificationProxyController } from './notification-proxy.controller';
 import { StatisticsProxyController } from './statistics-proxy.controller';
 import { NewsProxyController } from './news-proxy.controller';
+import { ChatProxyController } from './chat-proxy.controller';
 import { ProxyService } from './proxy.service';
+import { GatewayModule } from '../gateway/gateway.module';
 
 @Module({
+  imports: [GatewayModule],
   controllers: [
     AuthProxyController,
     MarketProxyController,
@@ -31,6 +34,7 @@ import { ProxyService } from './proxy.service';
     NotificationProxyController,
     StatisticsProxyController,
     NewsProxyController,
+    ChatProxyController,
   ],
   providers: [ProxyService, ConfigService],
   exports: [ProxyService],

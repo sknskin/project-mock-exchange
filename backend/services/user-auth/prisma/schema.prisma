@@ -159,6 +159,7 @@ enum NotificationType {
   REGISTRATION_APPROVED
   REGISTRATION_REJECTED
   GENERAL
+  CHAT_MESSAGE
 }
 
 model Notification {

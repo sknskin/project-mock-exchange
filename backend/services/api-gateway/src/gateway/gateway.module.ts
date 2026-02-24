@@ -8,8 +8,12 @@
 import { Module } from '@nestjs/common';
 import { PriceGateway } from './price.gateway';
 import { PriceSubscriberService } from './price-subscriber.service';
+import { ChatGateway } from './chat.gateway';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
-  providers: [PriceGateway, PriceSubscriberService],
+  imports: [AuthModule],
+  providers: [PriceGateway, PriceSubscriberService, ChatGateway],
+  exports: [ChatGateway],
 })
 export class GatewayModule {}

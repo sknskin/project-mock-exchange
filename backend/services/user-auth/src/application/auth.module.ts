@@ -19,6 +19,7 @@ import { AnnouncementController } from '../presentation/controllers/announcement
 import { ProfileController } from '../presentation/controllers/profile.controller';
 import { NotificationController } from '../presentation/controllers/notification.controller';
 import { StatisticsController } from '../presentation/controllers/statistics.controller';
+import { UserController } from '../presentation/controllers/user.controller';
 import { JwtStrategy } from '../infrastructure/config/jwt.strategy';
 import { UserRepository } from '../infrastructure/persistence/prisma/user.repository';
 import { USER_REPOSITORY } from '../domain/repositories/user.repository.interface';
@@ -43,6 +44,7 @@ import { USER_REPOSITORY } from '../domain/repositories/user.repository.interfac
     ProfileController,
     NotificationController,
     StatisticsController,
+    UserController,
   ],
   providers: [
     AuthService,
