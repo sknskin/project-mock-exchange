@@ -30,6 +30,11 @@ export default function Pagination({
 }: PaginationProps) {
   const { t } = useTranslation();
 
+  const handlePageChange = (p: number) => {
+    onPageChange(p);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const getPageNumbers = () => {
     const pages: (number | '...')[] = [];
     const range = 2;
@@ -96,14 +101,14 @@ export default function Pagination({
       {/* Page numbers — center */}
       <div className="flex items-center gap-0.5">
         <button
-          onClick={() => onPageChange(1)}
+          onClick={() => handlePageChange(1)}
           disabled={page === 1}
           className="hidden sm:block p-2 rounded text-text-quaternary hover:text-text-primary hover:bg-bg-secondary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
         >
           <ChevronsLeft className="w-4 h-4" />
         </button>
         <button
-          onClick={() => onPageChange(page - 1)}
+          onClick={() => handlePageChange(page - 1)}
           disabled={page === 1}
           className="p-2 rounded text-text-quaternary hover:text-text-primary hover:bg-bg-secondary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
         >
@@ -116,7 +121,7 @@ export default function Pagination({
           ) : (
             <button
               key={p}
-              onClick={() => onPageChange(p)}
+              onClick={() => handlePageChange(p)}
               className={cn(
                 'min-w-[32px] h-8 px-1.5 rounded text-[13px] font-medium transition-colors',
                 p === page
@@ -130,14 +135,14 @@ export default function Pagination({
         )}
 
         <button
-          onClick={() => onPageChange(page + 1)}
+          onClick={() => handlePageChange(page + 1)}
           disabled={page >= totalPages}
           className="p-2 rounded text-text-quaternary hover:text-text-primary hover:bg-bg-secondary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
         >
           <ChevronRight className="w-4 h-4" />
         </button>
         <button
-          onClick={() => onPageChange(totalPages)}
+          onClick={() => handlePageChange(totalPages)}
           disabled={page >= totalPages}
           className="hidden sm:block p-2 rounded text-text-quaternary hover:text-text-primary hover:bg-bg-secondary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
         >
