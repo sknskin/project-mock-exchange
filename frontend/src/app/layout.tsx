@@ -15,6 +15,7 @@ import ThemeProvider from '@/components/layout/ThemeProvider';
 import PageViewTracker from '@/components/layout/PageViewTracker';
 import ToastContainer from '@/components/ui/ToastContainer';
 import ConnectionGuard from '@/components/layout/ConnectionGuard';
+import ChatPanel from '@/components/chat/ChatPanel';
 
 export const metadata: Metadata = {
   title: 'VirtuEx - Mock Trading Platform',
@@ -49,6 +50,7 @@ export default function RootLayout({
             <Footer />
             <BottomNav />
             <ToastContainer />
+            <ChatPanel />
           </ConnectionGuard>
         </QueryProvider>
       </body>

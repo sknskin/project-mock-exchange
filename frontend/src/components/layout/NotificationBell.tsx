@@ -19,6 +19,7 @@ import {
 } from '@/hooks/useAdmin';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/format';
+import { useChatStore } from '@/stores/chat';
 import type { NotificationItem } from '@/types';
 
 const DROPDOWN_LIMIT = 20;
@@ -102,6 +103,15 @@ export default function NotificationBell() {
     // 승인/반려 알림은 모달로 표시
     if (notification.type === 'REGISTRATION_APPROVED' || notification.type === 'REGISTRATION_REJECTED') {
       setModalNotification(notification);
+      return;
+    }
+
+    // 채팅 알림: 채팅 패널 열기
+    if (notification.type === 'CHAT_MESSAGE' && notification.link?.startsWith('chat:')) {
+      const roomId = notification.link.replace('chat:', '');
+      setOpen(false);
+      useChatStore.getState().openChat();
+      useChatStore.getState().openRoom(roomId);
       return;
     }
 

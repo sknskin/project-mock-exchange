@@ -19,6 +19,7 @@ import { cn } from '@/lib/format';
 import { LogOut, Search, Menu, X, Megaphone, Newspaper, Users, BarChart3, LayoutDashboard, Briefcase, ClipboardList, Trophy, ChevronDown, User, Sun, Moon, Globe } from 'lucide-react';
 import VirtuExLogo from '@/components/ui/VirtuExLogo';
 import NotificationBell from '@/components/layout/NotificationBell';
+import ChatButton from '@/components/chat/ChatButton';
 
 export default function Header() {
   const pathname = usePathname();
@@ -216,13 +217,17 @@ export default function Header() {
 
             {/* 인증 시: 알림 + 사용자명 + 로그아웃 / When authed: bell + username + logout */}
             <div className="auth-show">
-              <div className="lg:hidden relative">
-                <NotificationBell />
+              <div className="lg:hidden flex items-center gap-1">
+                <div className="relative">
+                  <NotificationBell />
+                </div>
+                <ChatButton />
               </div>
               <div className="hidden lg:flex items-center gap-3">
                 <div className="relative">
                   <NotificationBell />
                 </div>
+                <ChatButton />
                 <div className="relative" ref={userMenuRef}>
                   <button
                     onClick={() => setUserMenuOpen(!userMenuOpen)}

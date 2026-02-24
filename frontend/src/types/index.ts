@@ -352,3 +352,46 @@ export interface PopularAnnouncement {
   title: string;
   commentCount: number;
 }
+
+// Chat
+export interface ChatParticipant {
+  id: string;
+  userId: string;
+  username: string;
+  joinedAt: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  roomId: string;
+  senderId: string;
+  senderUsername: string;
+  content: string;
+  createdAt: string;
+  unreadCount: number;
+}
+
+export interface ChatLastMessage {
+  id: string;
+  content: string;
+  senderId: string;
+  senderUsername: string;
+  createdAt: string;
+}
+
+export interface ChatRoom {
+  id: string;
+  name: string | null;
+  type: 'DM' | 'GROUP';
+  participants: ChatParticipant[];
+  lastMessage: ChatLastMessage | null;
+  unreadCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ChatUserSearchResult {
+  id: string;
+  username: string;
+  name: string;
+}
