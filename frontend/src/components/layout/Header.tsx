@@ -104,7 +104,7 @@ export default function Header() {
 
             {/* 데스크톱 네비게이션: 모든 항목 렌더, CSS 클래스로 가시성 제어 */}
             {/* Desktop nav: all items rendered, CSS classes control visibility */}
-            <nav className="hidden lg:flex items-center gap-6">
+            <nav className="hidden xl:flex items-center gap-6">
               <Link
                 href="/dashboard"
                 className={cn(
@@ -205,7 +205,7 @@ export default function Header() {
             {pathname === '/dashboard' && (
               <button
                 onClick={() => window.dispatchEvent(new CustomEvent('open-spotlight'))}
-                className="hidden lg:flex items-center gap-2.5 text-text-quaternary hover:text-text-tertiary transition-colors cursor-pointer"
+                className="hidden xl:flex items-center gap-2.5 text-text-quaternary hover:text-text-tertiary transition-colors cursor-pointer"
               >
                 <Search className="w-4 h-4" />
                 <span className="text-[13px]">
@@ -217,13 +217,13 @@ export default function Header() {
 
             {/* 인증 시: 알림 + 사용자명 + 로그아웃 / When authed: bell + username + logout */}
             <div className="auth-show">
-              <div className="lg:hidden flex items-center gap-1">
+              <div className="xl:hidden flex items-center gap-1">
                 <div className="relative">
                   <NotificationBell />
                 </div>
                 <ChatButton />
               </div>
-              <div className="hidden lg:flex items-center gap-3">
+              <div className="hidden xl:flex items-center gap-3">
                 <div className="relative">
                   <NotificationBell />
                 </div>
@@ -284,13 +284,13 @@ export default function Header() {
             <div className="auth-hide">
               <Link
                 href="/login"
-                className="hidden lg:inline-flex h-10 px-6 items-center text-[14px] font-bold text-white bg-accent rounded-xl hover:bg-accent/90 transition-colors"
+                className="hidden xl:inline-flex h-10 px-6 items-center text-[14px] font-bold text-white bg-accent rounded-xl hover:bg-accent/90 transition-colors"
               >
                 {t('nav.login')}
               </Link>
               <Link
                 href="/login"
-                className="lg:hidden text-[13px] font-bold text-accent"
+                className="xl:hidden text-[13px] font-bold text-accent"
               >
                 {t('nav.login')}
               </Link>
@@ -298,7 +298,7 @@ export default function Header() {
 
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2.5 text-text-secondary hover:text-text-primary transition-colors"
+              className="xl:hidden p-2.5 text-text-secondary hover:text-text-primary transition-colors"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
@@ -308,7 +308,7 @@ export default function Header() {
 
       {/* 모바일 사이드 메뉴 (열릴 때만 렌더, hydration 이후이므로 조건부 OK) */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
+        <div className="fixed inset-0 z-50 xl:hidden">
           <div className="absolute inset-0 bg-black/60" onClick={() => setMobileMenuOpen(false)} />
           <div className="absolute top-0 right-0 w-[280px] h-full bg-bg-primary border-l border-border animate-slide-in-right">
             <div className="flex items-center justify-between px-6 h-[60px] border-b border-border">
