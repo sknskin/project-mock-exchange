@@ -173,7 +173,7 @@ export default function NotificationBell() {
           </div>
 
           {/* 알림 목록 (Notification list) */}
-          <div className="overflow-y-auto flex-1">
+          <div className="overflow-y-auto flex-1 overscroll-contain" onWheel={(e) => e.stopPropagation()}>
             {notifications.length === 0 ? (
               <div className="flex items-center justify-center py-12 text-[14px] text-text-tertiary">
                 {t('notification.empty')}

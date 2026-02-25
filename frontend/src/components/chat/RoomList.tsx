@@ -137,7 +137,7 @@ export default function RoomList() {
       </div>
 
       {/* Room list */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto overscroll-contain">
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <span className="text-[13px] text-text-quaternary">{t('common.loading')}</span>

@@ -24,7 +24,7 @@ export default function PinnedChatPanel() {
   return (
     <div
       className={cn(
-        'hidden lg:flex flex-col fixed top-[60px] right-0 h-[calc(100vh-60px)] bg-[#141517] border-l border-[#2a2a2e]',
+        'hidden lg:flex flex-col fixed top-[60px] right-0 h-[calc(100vh-60px)] bg-[#141517] border-l border-[#2a2a2e] overscroll-contain',
         'transition-transform duration-300 ease-in-out',
         visible ? 'translate-x-0' : 'translate-x-full',
       )}

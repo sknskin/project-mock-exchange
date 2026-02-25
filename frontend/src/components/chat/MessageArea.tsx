@@ -239,7 +239,7 @@ export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeave
       <div
         ref={scrollContainerRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto px-3 py-3"
+        className="flex-1 overflow-y-auto px-3 py-3 overscroll-contain"
       >
         {isFetchingNextPage && (
           <div className="text-center py-2">
