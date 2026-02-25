@@ -188,7 +188,7 @@ export default function AssetList({ assets, period, onPeriodChange, mainTab = 'r
       {/* 필터 / Filters */}
       <div className="pt-8 pb-4 flex flex-col gap-2">
         {/* 카테고리 그룹 / Category group */}
-        <div className="flex items-center gap-1.5 bg-bg-secondary/50 rounded-xl px-1.5 py-1.5 overflow-x-auto scrollbar-hide">
+        <div className="flex items-center gap-1.5 bg-bg-secondary/50 rounded-xl px-1.5 py-1.5 overflow-x-auto scrollbar-hide w-fit">
           {categoryTabs.map((tab) => (
             <button
               key={tab.key}
@@ -206,7 +206,7 @@ export default function AssetList({ assets, period, onPeriodChange, mainTab = 'r
         <div className="flex items-center gap-2">
           {/* 정렬 그룹 / Sort group — 실시간 차트 탭에서만 표시 */}
           {mainTab === 'realtime' && (
-            <div className="flex items-center gap-1 bg-bg-secondary/50 rounded-xl px-1.5 py-1.5 overflow-x-auto scrollbar-hide">
+            <div className="flex items-center gap-1 bg-bg-secondary/50 rounded-xl px-1.5 py-1.5 overflow-x-auto scrollbar-hide w-fit">
               {sortOptions.map((opt) => (
                 <button
                   key={opt.key}
@@ -224,7 +224,7 @@ export default function AssetList({ assets, period, onPeriodChange, mainTab = 'r
 
           {/* 기간 그룹 / Period group — 인기종목 탭에서는 숨김 */}
           {mainTab !== 'popular' && (
-            <div className="flex items-center gap-0.5 bg-bg-secondary/50 rounded-xl px-1.5 py-1.5 overflow-x-auto scrollbar-hide">
+            <div className="flex items-center gap-0.5 bg-bg-secondary/50 rounded-xl px-1.5 py-1.5 overflow-x-auto scrollbar-hide w-fit">
               {periodOptions.map((opt) => (
                 <button
                   key={opt.key}
