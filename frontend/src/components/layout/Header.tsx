@@ -16,7 +16,7 @@ import { useAuthStore } from '@/stores/auth';
 import { useSettingsStore } from '@/stores/settings';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/format';
-import { LogOut, Search, Menu, X, Megaphone, Newspaper, Users, BarChart3, LayoutDashboard, Briefcase, ClipboardList, Trophy, ChevronDown, User, Sun, Moon, Globe } from 'lucide-react';
+import { LogOut, Search, Menu, X, Megaphone, Newspaper, Users, BarChart3, LayoutDashboard, Briefcase, ClipboardList, Trophy, ChevronDown, User, Sun, Moon, Globe, HelpCircle } from 'lucide-react';
 import VirtuExLogo from '@/components/ui/VirtuExLogo';
 import NotificationBell from '@/components/layout/NotificationBell';
 import ChatButton from '@/components/chat/ChatButton';
@@ -210,7 +210,7 @@ export default function Header() {
                     className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[13px] text-text-secondary font-medium hover:text-text-primary hover:bg-bg-secondary transition-colors min-w-[80px] justify-center"
                     suppressHydrationWarning
                   >
-                    {user?.username}
+                    {user?.name || user?.username}
                     <ChevronDown className={cn('w-3.5 h-3.5 text-text-quaternary transition-transform', userMenuOpen && 'rotate-180')} />
                   </button>
 
@@ -247,6 +247,13 @@ export default function Header() {
                       >
                         <User className="w-4 h-4 text-text-tertiary" />
                         {t('nav.mypage')}
+                      </Link>
+                      <Link
+                        href="/help"
+                        className="flex items-center gap-3 w-full px-4 py-3 text-[13px] font-medium text-text-primary hover:bg-bg-tertiary transition-colors"
+                      >
+                        <HelpCircle className="w-4 h-4 text-text-tertiary" />
+                        {t('nav.help')}
                       </Link>
                       <div className="border-t border-border" />
                       <button
@@ -339,7 +346,7 @@ export default function Header() {
               {isAuthenticated ? (
                 <div className="space-y-1">
                   <div className="px-4 py-2 text-[14px] font-bold text-text-primary">
-                    {user?.username}
+                    {user?.name || user?.username}
                   </div>
                   <Link
                     href="/mypage"
@@ -347,6 +354,13 @@ export default function Header() {
                   >
                     <User className="w-4 h-4 text-text-tertiary" />
                     {t('nav.mypage')}
+                  </Link>
+                  <Link
+                    href="/help"
+                    className="flex items-center gap-3 px-4 py-3 text-[13px] font-medium text-text-primary hover:bg-bg-secondary rounded-xl transition-colors"
+                  >
+                    <HelpCircle className="w-4 h-4 text-text-tertiary" />
+                    {t('nav.help')}
                   </Link>
                   <button
                     onClick={() => { toggleTheme(); }}
