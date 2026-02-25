@@ -94,7 +94,7 @@ export default function BottomSheet({
           }
         }
         .animate-modal-in {
-          animation: modal-in 0.2s ease-out;
+          animation: modal-in 0.2s ease-out both;
         }
       `}</style>
     </div>
