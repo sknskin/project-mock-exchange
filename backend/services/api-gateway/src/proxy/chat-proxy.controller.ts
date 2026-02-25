@@ -43,7 +43,7 @@ export class ChatProxyController {
       headers: {
         'x-user-id': user.id,
         'x-user-username': user.username,
-        'x-user-name': user.name || '',
+        'x-user-name': encodeURIComponent(user.name || ''),
       },
     });
     return res.status(result.status).json(result.data);
@@ -74,9 +74,9 @@ export class ChatProxyController {
       headers: {
         'x-user-id': user.id,
         'x-user-username': user.username,
-        'x-user-name': user.name || '',
-        'x-participant-usernames': JSON.stringify(participantUsernames),
-        'x-participant-names': JSON.stringify(participantNames),
+        'x-user-name': encodeURIComponent(user.name || ''),
+        'x-participant-usernames': encodeURIComponent(JSON.stringify(participantUsernames)),
+        'x-participant-names': encodeURIComponent(JSON.stringify(participantNames)),
       },
     });
 
@@ -129,7 +129,7 @@ export class ChatProxyController {
       headers: {
         'x-user-id': user.id,
         'x-user-username': user.username,
-        'x-user-name': user.name || '',
+        'x-user-name': encodeURIComponent(user.name || ''),
       },
     });
 
@@ -157,8 +157,8 @@ export class ChatProxyController {
       headers: {
         'x-user-id': user.id,
         'x-user-username': user.username,
-        'x-invite-usernames': JSON.stringify(inviteUsernames),
-        'x-invite-names': JSON.stringify(inviteNames),
+        'x-invite-usernames': encodeURIComponent(JSON.stringify(inviteUsernames)),
+        'x-invite-names': encodeURIComponent(JSON.stringify(inviteNames)),
       },
     });
 

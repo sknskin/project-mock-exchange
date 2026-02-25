@@ -41,20 +41,21 @@ export class ChatController {
     @Headers('x-participant-usernames') participantUsernamesHeader?: string,
     @Headers('x-participant-names') participantNamesHeader?: string,
   ) {
+    const decodedName = name ? decodeURIComponent(name) : '';
     let participantUsernames: Record<string, string> = {};
     let participantNames: Record<string, string> = {};
     if (participantUsernamesHeader) {
-      try { participantUsernames = JSON.parse(participantUsernamesHeader); } catch { /* ignore */ }
+      try { participantUsernames = JSON.parse(decodeURIComponent(participantUsernamesHeader)); } catch { /* ignore */ }
     }
     if (participantNamesHeader) {
-      try { participantNames = JSON.parse(participantNamesHeader); } catch { /* ignore */ }
+      try { participantNames = JSON.parse(decodeURIComponent(participantNamesHeader)); } catch { /* ignore */ }
     }
     const room = await this.chatService.createRoomWithUsernames(
       userId,
       username,
       dto,
       participantUsernames,
-      name || '',
+      decodedName,
       participantNames,
     );
     return { success: true, data: room };
@@ -79,7 +80,8 @@ export class ChatController {
     @Headers('x-user-name') name: string,
     @Body() dto: SendMessageDto,
   ) {
-    const message = await this.chatService.sendMessage(roomId, userId, username, dto, name || '');
+    const decodedName = name ? decodeURIComponent(name) : '';
+    const message = await this.chatService.sendMessage(roomId, userId, username, dto, decodedName);
     return { success: true, data: message };
   }
 
@@ -94,10 +96,10 @@ export class ChatController {
     let usernames: Record<string, string> = {};
     let names: Record<string, string> = {};
     if (usernamesHeader) {
-      try { usernames = JSON.parse(usernamesHeader); } catch { /* ignore */ }
+      try { usernames = JSON.parse(decodeURIComponent(usernamesHeader)); } catch { /* ignore */ }
     }
     if (namesHeader) {
-      try { names = JSON.parse(namesHeader); } catch { /* ignore */ }
+      try { names = JSON.parse(decodeURIComponent(namesHeader)); } catch { /* ignore */ }
     }
     const result = await this.chatService.inviteUsers(roomId, userId, dto, usernames, names);
     return { success: true, data: result };
