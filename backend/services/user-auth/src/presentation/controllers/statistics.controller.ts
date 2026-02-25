@@ -16,7 +16,7 @@ import {
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../../infrastructure/config/jwt-auth.guard';
 import { CurrentUser } from '../../infrastructure/config/current-user.decorator';
-import { UserDto, USER_ROLE } from '@mock-exchange/common';
+import { UserDto, USER_ROLE } from '@virtuex/common';
 import { PrismaService } from '../../infrastructure/persistence/prisma/prisma.service';
 
 @Controller('statistics')

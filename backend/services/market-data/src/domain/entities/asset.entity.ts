@@ -5,7 +5,7 @@
  * @file Asset Domain Entity
  * @description Represents metadata of tradeable assets
  */
-import { AssetType } from '@mock-exchange/common';
+import { AssetType } from '@virtuex/common';
 
 export interface PriceTick {
   symbol: string;

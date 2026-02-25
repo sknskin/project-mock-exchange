@@ -25,7 +25,7 @@ import { LoginRequestDto } from '../dto/login.dto';
 import { SendCodeRequestDto, VerifyCodeRequestDto } from '../dto/sms-verification.dto';
 import { JwtAuthGuard } from '../../infrastructure/config/jwt-auth.guard';
 import { CurrentUser } from '../../infrastructure/config/current-user.decorator';
-import { UserDto } from '@mock-exchange/common';
+import { UserDto } from '@virtuex/common';
 
 const REFRESH_TOKEN_COOKIE = 'refresh_token';
 const COOKIE_OPTIONS = {

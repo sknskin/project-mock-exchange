@@ -5,8 +5,8 @@
  * @file Order Aggregate
  * @description Event-sourced order aggregate with state transitions and domain events
  */
-import { AggregateRoot } from '@mock-exchange/event-store';
-import { ORDER_EVENT_TYPES } from '@mock-exchange/common';
+import { AggregateRoot } from '@virtuex/event-store';
+import { ORDER_EVENT_TYPES } from '@virtuex/common';
 import Decimal from 'decimal.js';
 
 export type OrderSide = 'BUY' | 'SELL';

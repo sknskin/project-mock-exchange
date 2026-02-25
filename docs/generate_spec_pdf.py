@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Mock Exchange - 프로젝트 기획서 PDF 생성 스크립트
+VirtuEx - 프로젝트 기획서 PDF 생성 스크립트
 다이어그램, 그래프, 프로젝트 구조 등을 포함한 종합 기획서를 생성합니다.
 """
 
@@ -400,7 +400,7 @@ def create_db_schema_diagram():
 
 
 def build_pdf():
-    output_path = os.path.join(os.path.dirname(__file__), 'Mock_Exchange_Specification.pdf')
+    output_path = os.path.join(os.path.dirname(__file__), 'VirtuEx_Specification.pdf')
     doc = SimpleDocTemplate(
         output_path,
         pagesize=A4,
@@ -412,7 +412,7 @@ def build_pdf():
 
     # ═══════════════════ COVER PAGE ═══════════════════
     story.append(Spacer(1, 80))
-    story.append(Paragraph('Mock Exchange', styles['CoverTitle']))
+    story.append(Paragraph('VirtuEx', styles['CoverTitle']))
     story.append(Spacer(1, 10))
     story.append(Paragraph('Real-Time Trading Platform', styles['CoverSub']))
     story.append(Spacer(1, 6))
@@ -421,7 +421,7 @@ def build_pdf():
 
     # Cover info table
     cover_data = [
-        ['Project', 'Mock Exchange - Real-Time Trading Platform'],
+        ['Project', 'VirtuEx - Real-Time Trading Platform'],
         ['Version', '0.1.0 (Phase 1 Complete)'],
         ['Architecture', 'Microservices, Event Sourcing, CQRS'],
         ['Tech Stack', 'NestJS / PostgreSQL / Redis / Kafka'],
@@ -462,7 +462,7 @@ def build_pdf():
     # ═══════════════════ 1. PROJECT OVERVIEW ═══════════════════
     story.append(Paragraph('1. Project Overview', styles['SectionTitle']))
     story.append(Paragraph(
-        'Mock Exchange is a production-grade, real-time mock stock and crypto trading platform '
+        'VirtuEx is a production-grade, real-time mock stock and crypto trading platform '
         'designed as a comprehensive microservices architecture showcase. The system simulates '
         'realistic market conditions using Geometric Brownian Motion (GBM) for price generation, '
         'supports market and limit orders through an event-sourced order engine, and manages user '

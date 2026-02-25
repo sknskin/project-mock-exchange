@@ -15,7 +15,7 @@ const CHECK_INTERVAL = 30_000;
 
 function getStoredLocale(): 'ko' | 'en' {
   try {
-    const raw = localStorage.getItem('mock-exchange-settings');
+    const raw = localStorage.getItem('virtuex-settings');
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed?.state?.locale) return parsed.state.locale;
@@ -26,7 +26,7 @@ function getStoredLocale(): 'ko' | 'en' {
 
 function getStoredTheme(): 'dark' | 'light' {
   try {
-    const raw = localStorage.getItem('mock-exchange-settings');
+    const raw = localStorage.getItem('virtuex-settings');
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed?.state?.theme) return parsed.state.theme;

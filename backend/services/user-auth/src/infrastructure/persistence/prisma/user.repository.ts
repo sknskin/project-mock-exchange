@@ -6,7 +6,7 @@
  * @description Prisma-based user repository implementation (adapter)
  */
 import { Injectable } from '@nestjs/common';
-import { UserRole } from '@mock-exchange/common';
+import { UserRole } from '@virtuex/common';
 import { IUserRepository } from '../../../domain/repositories/user.repository.interface';
 import { UserEntity } from '../../../domain/entities/user.entity';
 import { PrismaService } from './prisma.service';

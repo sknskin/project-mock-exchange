@@ -33,7 +33,7 @@ export const useAuthStore = create<AuthState>()(
         set({ user: null, accessToken: null, isAuthenticated: false }),
     }),
     {
-      name: 'mock-exchange-auth',
+      name: 'virtuex-auth',
       partialize: (state) => ({
         user: state.user,
         accessToken: state.accessToken,

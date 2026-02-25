@@ -63,7 +63,7 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_LOG_RETENTION_HOURS: 168
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
-      CLUSTER_ID: 'mock-exchange-kafka-cluster-01'
+      CLUSTER_ID: 'virtuex-kafka-cluster-01'
     volumes:
       - kafka_data:/var/lib/kafka/data
     healthcheck:
@@ -86,7 +86,7 @@ services:
     ports:
       - '8080:8080'
     environment:
-      KAFKA_CLUSTERS_0_NAME: mock-exchange
+      KAFKA_CLUSTERS_0_NAME: virtuex
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
     depends_on:
       kafka:

@@ -114,7 +114,7 @@ export default function Footer() {
                 <span className="hidden sm:inline">sknskin@naver.com</span>
               </button>
               <a
-                href="https://github.com/sknskin/project-mock-exchange"
+                href="https://github.com/sknskin/project-virtuex"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-1.5 text-[12px] text-text-quaternary hover:text-text-secondary transition-colors"

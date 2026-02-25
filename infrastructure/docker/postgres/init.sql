@@ -1,5 +1,5 @@
 -- ===========================================
--- Mock Exchange - PostgreSQL Initialization
+-- VirtuEx - PostgreSQL Initialization
 -- ===========================================
 -- Creates separate databases for each service (Database per Service pattern)
 

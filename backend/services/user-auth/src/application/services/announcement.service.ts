@@ -11,7 +11,7 @@ import {
   ForbiddenException,
   Logger,
 } from '@nestjs/common';
-import { UserDto, USER_ROLE } from '@mock-exchange/common';
+import { UserDto, USER_ROLE } from '@virtuex/common';
 import { PrismaService } from '../../infrastructure/persistence/prisma/prisma.service';
 
 @Injectable()

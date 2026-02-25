@@ -6,7 +6,7 @@
  * @description Injects authenticated user info from JWT into controller parameters
  */
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
-import { UserDto } from '@mock-exchange/common';
+import { UserDto } from '@virtuex/common';
 
 export const CurrentUser = createParamDecorator(
   (data: keyof UserDto | undefined, ctx: ExecutionContext) => {

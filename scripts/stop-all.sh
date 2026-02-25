@@ -1,15 +1,15 @@
 #!/bin/bash
 #
 # ============================================================================
-# [VirtuEx] Mock Exchange - 전체 서비스 일괄 종료 스크립트
-# [VirtuEx] Mock Exchange - Full Service Shutdown Script
+# [VirtuEx] VirtuEx - 전체 서비스 일괄 종료 스크립트
+# [VirtuEx] VirtuEx - Full Service Shutdown Script
 # ============================================================================
 #
 # [사용법 / Usage]
 #   프로젝트 루트 디렉토리에서 실행합니다.
 #   Run this script from the project root directory.
 #
-#   cd /Users/dohee/Documents/workspace/project/project-mock-exchange
+#   cd /Users/dohee/Documents/workspace/project/project-virtuex
 #   bash scripts/stop-all.sh
 #
 # [종료 순서 / Shutdown Order]
@@ -38,8 +38,8 @@ NC='\033[0m'
 
 echo ""
 echo -e "${CYAN}=========================================${NC}"
-echo -e "${CYAN}  Mock Exchange - 전체 서비스 종료${NC}"
-echo -e "${CYAN}  Mock Exchange - Full Service Shutdown${NC}"
+echo -e "${CYAN}  VirtuEx - 전체 서비스 종료${NC}"
+echo -e "${CYAN}  VirtuEx - Full Service Shutdown${NC}"
 echo -e "${CYAN}=========================================${NC}"
 echo ""
 

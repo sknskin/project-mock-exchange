@@ -17,7 +17,7 @@ const KEY_LENGTH = 32;
 const IV_LENGTH = 16;
 
 function encryptRrn(raw: string, secret: string): string {
-  const key = scryptSync(secret, 'mock-exchange-salt', KEY_LENGTH);
+  const key = scryptSync(secret, 'virtuex-salt', KEY_LENGTH);
   const iv = randomBytes(IV_LENGTH);
   const cipher = createCipheriv(ALGORITHM, key, iv);
   let encrypted = cipher.update(raw, 'utf8', 'hex');
@@ -27,7 +27,7 @@ function encryptRrn(raw: string, secret: string): string {
 }
 
 async function main() {
-  console.log('=== Mock Exchange - System Account Seed ===\n');
+  console.log('=== VirtuEx - System Account Seed ===\n');
 
   // 1. 기존 회원 전부 삭제 / Delete all existing users
   const deleted = await prisma.user.deleteMany();

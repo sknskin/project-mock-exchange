@@ -11,13 +11,13 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { EventStoreService } from '@mock-exchange/event-store';
+import { EventStoreService } from '@virtuex/event-store';
 import {
   KAFKA_TOPICS,
   generateOrderId,
   generateEventId,
   generateCorrelationId,
-} from '@mock-exchange/common';
+} from '@virtuex/common';
 import Decimal from 'decimal.js';
 import axios from 'axios';
 import { OrderAggregate } from '../../domain/aggregates/order.aggregate';

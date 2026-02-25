@@ -37,7 +37,7 @@ export class ResidentNumber {
   }
 
   encrypt(secret: string): string {
-    const key = scryptSync(secret, 'mock-exchange-salt', KEY_LENGTH);
+    const key = scryptSync(secret, 'virtuex-salt', KEY_LENGTH);
     const iv = randomBytes(IV_LENGTH);
     const cipher = createCipheriv(ALGORITHM, key, iv);
 
@@ -51,7 +51,7 @@ export class ResidentNumber {
 
   static decrypt(encrypted: string, secret: string): string {
     const [ivHex, authTagHex, data] = encrypted.split(':');
-    const key = scryptSync(secret, 'mock-exchange-salt', KEY_LENGTH);
+    const key = scryptSync(secret, 'virtuex-salt', KEY_LENGTH);
     const iv = Buffer.from(ivHex, 'hex');
     const authTag = Buffer.from(authTagHex, 'hex');
 

@@ -1,5 +1,5 @@
 {
-  "name": "@mock-exchange/event-store",
+  "name": "@virtuex/event-store",
   "version": "0.1.0",
   "private": true,
   "main": "dist/index.js",
@@ -12,7 +12,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@mock-exchange/common": "workspace:*",
+    "@virtuex/common": "workspace:*",
     "@nestjs/common": "^11.0.0",
     "@nestjs/core": "^11.0.0",
     "pg": "^8.13.0",

@@ -1,6 +1,6 @@
 #!/bin/bash
 # ===========================================
-# Mock Exchange - Kafka Topic Creation
+# VirtuEx - Kafka Topic Creation
 # ===========================================
 
 KAFKA_BIN="/opt/kafka/bin"

@@ -1,5 +1,5 @@
 {
-  "name": "@mock-exchange/user-auth",
+  "name": "@virtuex/user-auth",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -22,7 +22,7 @@
     "seed": "npx tsx prisma/seed.ts"
   },
   "dependencies": {
-    "@mock-exchange/common": "workspace:*",
+    "@virtuex/common": "workspace:*",
     "@nestjs/common": "^11.0.0",
     "@nestjs/config": "^4.0.0",
     "@nestjs/core": "^11.0.0",

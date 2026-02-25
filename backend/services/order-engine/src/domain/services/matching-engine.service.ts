@@ -7,7 +7,7 @@
  */
 import { Injectable, Logger } from '@nestjs/common';
 import Decimal from 'decimal.js';
-import { generateTradeId } from '@mock-exchange/common';
+import { generateTradeId } from '@virtuex/common';
 
 export interface OrderBookEntry {
   orderId: string;

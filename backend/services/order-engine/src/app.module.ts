@@ -9,7 +9,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TerminusModule } from '@nestjs/terminus';
-import { EventStoreModule } from '@mock-exchange/event-store';
+import { EventStoreModule } from '@virtuex/event-store';
 import { PrismaModule } from './infrastructure/persistence/prisma/prisma.module';
 import { MatchingEngineService } from './domain/services/matching-engine.service';
 import { OrderService } from './application/services/order.service';

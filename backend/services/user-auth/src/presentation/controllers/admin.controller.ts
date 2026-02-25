@@ -21,7 +21,7 @@ import {
 import { JwtAuthGuard } from '../../infrastructure/config/jwt-auth.guard';
 import { CurrentUser } from '../../infrastructure/config/current-user.decorator';
 import { AdminService } from '../../application/services/admin.service';
-import { UserDto, USER_ROLE } from '@mock-exchange/common';
+import { UserDto, USER_ROLE } from '@virtuex/common';
 
 @Controller('admin')
 @UseGuards(JwtAuthGuard)

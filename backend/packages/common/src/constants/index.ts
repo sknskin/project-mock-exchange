@@ -83,12 +83,12 @@ export type AssetType = (typeof ASSET_TYPE)[keyof typeof ASSET_TYPE];
 
 // Service Names (for CloudEvent source)
 export const SERVICE_NAME = {
-  API_GATEWAY: 'mock-exchange/api-gateway',
-  USER_AUTH: 'mock-exchange/user-auth',
-  MARKET_DATA: 'mock-exchange/market-data',
-  ORDER_ENGINE: 'mock-exchange/order-engine',
-  PORTFOLIO: 'mock-exchange/portfolio',
-  NOTIFICATION: 'mock-exchange/notification',
-  CHAT: 'mock-exchange/chat',
-  AI_SERVICE: 'mock-exchange/ai-service',
+  API_GATEWAY: 'virtuex/api-gateway',
+  USER_AUTH: 'virtuex/user-auth',
+  MARKET_DATA: 'virtuex/market-data',
+  ORDER_ENGINE: 'virtuex/order-engine',
+  PORTFOLIO: 'virtuex/portfolio',
+  NOTIFICATION: 'virtuex/notification',
+  CHAT: 'virtuex/chat',
+  AI_SERVICE: 'virtuex/ai-service',
 } as const;

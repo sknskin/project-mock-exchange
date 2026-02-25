@@ -2,7 +2,7 @@
 set -e
 
 echo "========================================="
-echo "  Mock Exchange - Development Setup"
+echo "  VirtuEx - Development Setup"
 echo "========================================="
 
 # Check prerequisites

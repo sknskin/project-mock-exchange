@@ -41,7 +41,7 @@ export default function GlobalError({
 
   useEffect(() => {
     try {
-      const settings = JSON.parse(localStorage.getItem('mock-exchange-settings') || '{}');
+      const settings = JSON.parse(localStorage.getItem('virtuex-settings') || '{}');
       if (settings.state?.locale) setLocale(settings.state.locale);
       if (settings.state?.theme) setTheme(settings.state.theme);
     } catch {}

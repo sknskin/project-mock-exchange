@@ -1,5 +1,5 @@
 {
-  "name": "@mock-exchange/api-gateway",
+  "name": "@virtuex/api-gateway",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -15,7 +15,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@mock-exchange/common": "workspace:*",
+    "@virtuex/common": "workspace:*",
     "@nestjs/common": "^11.0.0",
     "@nestjs/config": "^4.0.0",
     "@nestjs/core": "^11.0.0",

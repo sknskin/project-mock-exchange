@@ -25,7 +25,7 @@ import * as path from 'path';
 import { JwtAuthGuard, Public, OptionalAuth } from '../../infrastructure/config/jwt-auth.guard';
 import { CurrentUser } from '../../infrastructure/config/current-user.decorator';
 import { AnnouncementService } from '../../application/services/announcement.service';
-import { UserDto } from '@mock-exchange/common';
+import { UserDto } from '@virtuex/common';
 
 @Controller('announcements')
 @UseGuards(JwtAuthGuard)

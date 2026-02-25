@@ -1,11 +1,11 @@
 #!/bin/bash
 set -e
 
-PROJECT_DIR="/Users/dohee/Documents/workspace/project/mock-exchange"
+PROJECT_DIR="/Users/dohee/Documents/workspace/project/virtuex"
 cd "$PROJECT_DIR"
 
 echo "============================================"
-echo "  Mock Exchange - Git 설정 및 Push 스크립트"
+echo "  VirtuEx - Git 설정 및 Push 스크립트"
 echo "============================================"
 
 # ── 0. 사전 정리 ──
@@ -72,8 +72,8 @@ git add packages/
 
 git commit -m "공유 패키지 구현 (common, event-store)
 
-- @mock-exchange/common: 상수, DTO, 이벤트 타입, 유틸리티
-- @mock-exchange/event-store: PostgreSQL 이벤트 스토어, AggregateRoot 베이스 클래스
+- @virtuex/common: 상수, DTO, 이벤트 타입, 유틸리티
+- @virtuex/event-store: PostgreSQL 이벤트 스토어, AggregateRoot 베이스 클래스
 - CloudEvent 스펙 기반 이벤트 스키마
 - Kafka 토픽 상수 및 DLQ 토픽 정의"
 echo "  ✓ 커밋 2 완료"
@@ -161,7 +161,7 @@ echo "============================================"
 # GitHub repo 생성
 echo ""
 echo "[Push] GitHub private 레포지토리 생성..."
-gh repo create mock-exchange --private --source=. --remote=origin \
+gh repo create virtuex --private --source=. --remote=origin \
   --description "Real-Time Mock Trading Platform - Microservices Architecture" \
   2>/dev/null || echo "  ⚠ 레포 이미 존재하거나 gh 인증 필요 - 수동 설정 필요할 수 있음"
 
@@ -213,7 +213,7 @@ elif [ -d "/Applications/Cursor.app" ]; then
     echo "  ✓ Cursor 실행됨"
 else
     echo "  ⚠ Cursor를 찾을 수 없습니다. 수동으로 열어주세요:"
-    echo "    cursor /Users/dohee/Documents/workspace/project/mock-exchange"
+    echo "    cursor /Users/dohee/Documents/workspace/project/virtuex"
 fi
 
 echo ""

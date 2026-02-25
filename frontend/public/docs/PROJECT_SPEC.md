@@ -1,8 +1,8 @@
-# Mock Exchange (VirtuEx) 프로젝트 기획서
+# VirtuEx (VirtuEx) 프로젝트 기획서
 
 ## 전체 개요
 
-Mock Exchange(VirtuEx)는 실시간 모의 주식/암호화폐 거래 플랫폼으로, 마이크로서비스 아키텍처 기반의 프로덕션급 시스템입니다. 1,000명 이상의 동시 트레이더를 지원하며, 수평 확장이 가능하고, Kubernetes 환경에 배포할 수 있도록 설계되었습니다.
+VirtuEx(VirtuEx)는 실시간 모의 주식/암호화폐 거래 플랫폼으로, 마이크로서비스 아키텍처 기반의 프로덕션급 시스템입니다. 1,000명 이상의 동시 트레이더를 지원하며, 수평 확장이 가능하고, Kubernetes 환경에 배포할 수 있도록 설계되었습니다.
 
 ---
 
@@ -459,7 +459,7 @@ PostgreSQL 기반을 선택한 이유: 기존 인프라 활용, 운영 단순화
 ### 모노레포 구성 (Turborepo + pnpm)
 
 ```
-project-mock-exchange/
+project-virtuex/
 ├── backend/
 │   ├── packages/          # 공유 라이브러리
 │   │   ├── common/        # 이벤트, DTO, 유틸리티
@@ -568,5 +568,5 @@ service/src/
 
 ---
 
-> 이 문서는 Mock Exchange 프로젝트의 전체 아키텍처 설계를 정리한 것입니다.
+> 이 문서는 VirtuEx 프로젝트의 전체 아키텍처 설계를 정리한 것입니다.
 > 다음 단계는 Phase 0부터 실제 코드 구현을 시작하는 것입니다.

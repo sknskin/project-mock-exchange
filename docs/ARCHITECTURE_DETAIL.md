@@ -1,4 +1,4 @@
-# Mock Exchange 아키텍처 상세 문서
+# VirtuEx 아키텍처 상세 문서
 
 ## 목차
 
@@ -19,7 +19,7 @@
 
 ## 1. 프로젝트 개요
 
-Mock Exchange는 토스증권 스타일의 모의 거래소 웹 애플리케이션입니다.
+VirtuEx는 토스증권 스타일의 모의 거래소 웹 애플리케이션입니다.
 
 ### 기술 스택
 
@@ -88,7 +88,7 @@ Mock Exchange는 토스증권 스타일의 모의 거래소 웹 애플리케이�
 ## 2. 프로젝트 구조
 
 ```
-mock-exchange/
+virtuex/
 ├── backend/
 │   ├── packages/
 │   │   ├── common/                    # 공유 라이브러리
@@ -734,7 +734,7 @@ interface AuthState {
 ```
 
 - `persist` 미들웨어로 `localStorage`에 저장
-- 키: `mock-exchange-auth`
+- 키: `virtuex-auth`
 
 #### TanStack React Query 훅
 

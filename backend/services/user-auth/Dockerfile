@@ -8,7 +8,7 @@ COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* turbo.json ./
 COPY packages/common/package.json ./packages/common/
 COPY packages/event-store/package.json ./packages/event-store/
 COPY services/user-auth/package.json ./services/user-auth/
-RUN pnpm install --frozen-lockfile --filter @mock-exchange/user-auth...
+RUN pnpm install --frozen-lockfile --filter @virtuex/user-auth...
 
 # Build stage
 FROM base AS builder
@@ -16,7 +16,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/packages/common/node_modules ./packages/common/node_modules
 COPY --from=deps /app/services/user-auth/node_modules ./services/user-auth/node_modules
 COPY . .
-RUN pnpm turbo run build --filter=@mock-exchange/user-auth...
+RUN pnpm turbo run build --filter=@virtuex/user-auth...
 RUN cd services/user-auth && npx prisma generate
 
 # Production stage

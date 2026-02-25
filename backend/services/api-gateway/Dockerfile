@@ -7,7 +7,7 @@ FROM base AS deps
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* turbo.json ./
 COPY packages/common/package.json ./packages/common/
 COPY services/api-gateway/package.json ./services/api-gateway/
-RUN pnpm install --frozen-lockfile --filter @mock-exchange/api-gateway...
+RUN pnpm install --frozen-lockfile --filter @virtuex/api-gateway...
 
 # Build stage
 FROM base AS builder
@@ -15,7 +15,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/packages/common/node_modules ./packages/common/node_modules
 COPY --from=deps /app/services/api-gateway/node_modules ./services/api-gateway/node_modules
 COPY . .
-RUN pnpm turbo run build --filter=@mock-exchange/api-gateway...
+RUN pnpm turbo run build --filter=@virtuex/api-gateway...
 
 # Production stage
 FROM node:20-alpine AS runner

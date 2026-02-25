@@ -1,4 +1,4 @@
-# Mock Exchange — Production-Grade Architecture Design
+# VirtuEx — Production-Grade Architecture Design
 
 > 실시간 모의 주식/암호화폐 거래 플랫폼의 전체 아키텍처 설계 문서입니다.
 > 한글 버전은 [ARCHITECTURE_SUMMARY_KR.md](./ARCHITECTURE_SUMMARY_KR.md)를 참고하세요.
@@ -250,7 +250,7 @@ Topics:
 {
   "specversion": "1.0",
   "id": "evt_01H8X9...",
-  "source": "mock-exchange/order-engine",
+  "source": "virtuex/order-engine",
   "type": "com.mockexchange.order.placed",
   "time": "2026-02-17T10:30:00.000Z",
   "datacontenttype": "application/json",
@@ -995,7 +995,7 @@ interface WsServerMessage {
 
 ```
 K8s Cluster
-├── Namespace: mock-exchange-prod
+├── Namespace: virtuex-prod
 │   ├── Deployments
 │   │   ├── api-gateway          (3 replicas, HPA 3-10)
 │   │   ├── market-data-service  (2 replicas, 1 writer + 1 reader)
@@ -1029,13 +1029,13 @@ K8s Cluster
 │       ├── pnl-snapshot           (every 5 min)
 │       └── stale-order-cleanup    (every 1 hour)
 │
-├── Namespace: mock-exchange-monitoring
+├── Namespace: virtuex-monitoring
 │   ├── Prometheus + Grafana       (metrics)
 │   ├── Loki                       (logs)
 │   ├── Tempo                      (distributed tracing)
 │   └── AlertManager               (alerts)
 │
-└── Namespace: mock-exchange-staging
+└── Namespace: virtuex-staging
     └── (mirror of prod with fewer replicas)
 ```
 
@@ -1161,10 +1161,10 @@ Affected-based builds:
 └── Multi-stage Dockerfile per service
 
 Docker Image Tags:
-├── PR: ghcr.io/org/mock-exchange/{service}:pr-{number}
-├── Staging: ghcr.io/org/mock-exchange/{service}:staging-{sha}
-├── Production: ghcr.io/org/mock-exchange/{service}:v{semver}
-└── Latest: ghcr.io/org/mock-exchange/{service}:latest
+├── PR: ghcr.io/org/virtuex/{service}:pr-{number}
+├── Staging: ghcr.io/org/virtuex/{service}:staging-{sha}
+├── Production: ghcr.io/org/virtuex/{service}:v{semver}
+└── Latest: ghcr.io/org/virtuex/{service}:latest
 ```
 
 ### 10.3 Deployment Strategy
@@ -1722,7 +1722,7 @@ Shared .env file at project root:
 ## 17. Folder Structure
 
 ```
-/Users/dohee/Documents/workspace/mock-exchange/
+/Users/dohee/Documents/workspace/virtuex/
 │
 ├── README.md
 ├── ARCHITECTURE.md                  # This document

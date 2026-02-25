@@ -1,8 +1,8 @@
-# Mock Exchange 로컬 실행 가이드
+# VirtuEx 로컬 실행 가이드
 
 ## 프로젝트 소개
 
-Mock Exchange(VirtuEx)는 실시간 모의 주식/암호화폐 거래 플랫폼입니다. NestJS 기반 마이크로서비스 백엔드와 Next.js 15 프론트엔드로 구성되어 있으며, PostgreSQL, Redis, Kafka를 인프라로 사용합니다.
+VirtuEx(VirtuEx)는 실시간 모의 주식/암호화폐 거래 플랫폼입니다. NestJS 기반 마이크로서비스 백엔드와 Next.js 15 프론트엔드로 구성되어 있으며, PostgreSQL, Redis, Kafka를 인프라로 사용합니다.
 
 ---
 
@@ -53,7 +53,7 @@ bash scripts/start-all.sh
 ### 1. 환경변수 설정
 
 ```bash
-cd /Users/dohee/Documents/workspace/project/project-mock-exchange
+cd /Users/dohee/Documents/workspace/project/project-virtuex
 
 # .env 파일이 없으면 예제에서 복사
 cp .env.example .env
@@ -170,7 +170,7 @@ docker exec mex-kafka /opt/kafka/bin/kafka-topics.sh \
 **각각 별도 터미널**에서 실행합니다. 모든 터미널에서 먼저 환경변수를 로드합니다:
 
 ```bash
-cd /Users/dohee/Documents/workspace/project/project-mock-exchange
+cd /Users/dohee/Documents/workspace/project/project-virtuex
 export $(grep -v '^#' .env | grep -v '^$' | xargs)
 ```
 

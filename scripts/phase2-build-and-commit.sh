@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-PROJECT_DIR="/Users/dohee/Documents/workspace/project/mock-exchange"
+PROJECT_DIR="/Users/dohee/Documents/workspace/project/virtuex"
 cd "$PROJECT_DIR"
 
 echo "============================================"

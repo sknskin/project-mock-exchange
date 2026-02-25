@@ -35,7 +35,7 @@ export default function RootLayout({
         {/* React보다 먼저 실행: localStorage에서 인증 상태를 읽어 CSS 속성으로 설정 */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{var d=JSON.parse(localStorage.getItem('mock-exchange-auth')||'{}');if(d.state&&d.state.isAuthenticated){var h=document.documentElement.dataset;h.authed='1';if(d.state.user){if(d.state.user.role)h.role=d.state.user.role;if(d.state.user.username)h.username=d.state.user.username}}}catch(e){}`,
+            __html: `try{var d=JSON.parse(localStorage.getItem('virtuex-auth')||'{}');if(d.state&&d.state.isAuthenticated){var h=document.documentElement.dataset;h.authed='1';if(d.state.user){if(d.state.user.role)h.role=d.state.user.role;if(d.state.user.username)h.username=d.state.user.username}}}catch(e){}`,
           }}
         />
       </head>

@@ -5,7 +5,7 @@
  * @file User Domain Entity
  * @description Domain entity representing user information
  */
-import { UserRole } from '@mock-exchange/common';
+import { UserRole } from '@virtuex/common';
 
 export class UserEntity {
   constructor(

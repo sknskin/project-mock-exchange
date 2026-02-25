@@ -1,5 +1,5 @@
 {
-  "name": "project-mock-exchange",
+  "name": "project-virtuex",
   "version": "0.1.0",
   "private": true,
   "description": "Production-grade real-time mock stock/crypto trading platform",
@@ -20,9 +20,9 @@
     "docker:reset": "docker compose down -v",
     "db:migrate": "turbo run db:migrate",
     "db:seed": "tsx scripts/seed.ts",
-    "dev:frontend": "turbo run dev --filter=@mock-exchange/web",
+    "dev:frontend": "turbo run dev --filter=@virtuex/web",
     "dev:backend": "turbo run dev --filter='./backend/**'",
-    "build:frontend": "turbo run build --filter=@mock-exchange/web",
+    "build:frontend": "turbo run build --filter=@virtuex/web",
     "build:backend": "turbo run build --filter='./backend/**'",
     "prepare": "husky"
   },

@@ -1,5 +1,5 @@
 {
-  "name": "@mock-exchange/order-engine",
+  "name": "@virtuex/order-engine",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -18,8 +18,8 @@
     "db:push": "prisma db push"
   },
   "dependencies": {
-    "@mock-exchange/common": "workspace:*",
-    "@mock-exchange/event-store": "workspace:*",
+    "@virtuex/common": "workspace:*",
+    "@virtuex/event-store": "workspace:*",
     "@nestjs/common": "^11.0.0",
     "@nestjs/config": "^4.0.0",
     "@nestjs/core": "^11.0.0",

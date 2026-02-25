@@ -1,21 +1,21 @@
 #!/bin/bash
 #
 # ============================================================================
-# [VirtuEx] Mock Exchange - 전체 서비스 일괄 실행 스크립트
-# [VirtuEx] Mock Exchange - Full Service Startup Script
+# [VirtuEx] VirtuEx - 전체 서비스 일괄 실행 스크립트
+# [VirtuEx] VirtuEx - Full Service Startup Script
 # ============================================================================
 #
 # [사용법 / Usage]
 #   프로젝트 루트 디렉토리에서 실행합니다.
 #   Run this script from the project root directory.
 #
-#   cd /Users/dohee/Documents/workspace/project/project-mock-exchange
+#   cd /Users/dohee/Documents/workspace/project/project-virtuex
 #   bash scripts/start-all.sh
 #
 #   또는 어디서든 절대 경로로 실행 가능:
 #   Or run from anywhere with an absolute path:
 #
-#   bash /Users/dohee/Documents/workspace/project/project-mock-exchange/scripts/start-all.sh
+#   bash /Users/dohee/Documents/workspace/project/project-virtuex/scripts/start-all.sh
 #
 # [사전 요구사항 / Prerequisites]
 #   - Node.js (v20+)
@@ -182,8 +182,8 @@ wait_for_port() {
 
 echo ""
 echo -e "${CYAN}=========================================${NC}"
-echo -e "${CYAN}  Mock Exchange - 전체 서비스 실행${NC}"
-echo -e "${CYAN}  Mock Exchange - Full Service Startup${NC}"
+echo -e "${CYAN}  VirtuEx - 전체 서비스 실행${NC}"
+echo -e "${CYAN}  VirtuEx - Full Service Startup${NC}"
 echo -e "${CYAN}=========================================${NC}"
 echo ""
 

@@ -45,15 +45,15 @@ importers:
 
   backend/packages/event-store:
     dependencies:
-      '@mock-exchange/common':
-        specifier: workspace:*
-        version: link:../common
       '@nestjs/common':
         specifier: ^11.0.0
         version: 11.1.13(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2)
       '@nestjs/core':
         specifier: ^11.0.0
         version: 11.1.13(@nestjs/common@11.1.13(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/microservices@11.1.13)(@nestjs/platform-express@11.1.13)(@nestjs/websockets@11.1.13)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@virtuex/common':
+        specifier: workspace:*
+        version: link:../common
       pg:
         specifier: ^8.13.0
         version: 8.18.0
@@ -70,9 +70,6 @@ importers:
 
   backend/services/ai-service:
     dependencies:
-      '@mock-exchange/common':
-        specifier: workspace:*
-        version: link:../../packages/common
       '@nestjs/common':
         specifier: ^10.4.0
         version: 10.4.22(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -91,6 +88,9 @@ importers:
       '@nestjs/terminus':
         specifier: ^10.2.0
         version: 10.3.0(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(@prisma/client@6.19.2(prisma@6.19.2(typescript@5.9.3))(typescript@5.9.3))(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@virtuex/common':
+        specifier: workspace:*
+        version: link:../../packages/common
       reflect-metadata:
         specifier: ^0.2.2
         version: 0.2.2
@@ -128,9 +128,6 @@ importers:
 
   backend/services/api-gateway:
     dependencies:
-      '@mock-exchange/common':
-        specifier: workspace:*
-        version: link:../../packages/common
       '@nestjs/common':
         specifier: ^11.0.0
         version: 11.1.13(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -164,6 +161,9 @@ importers:
       '@nestjs/websockets':
         specifier: ^11.0.0
         version: 11.1.13(@nestjs/common@11.1.13(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.13)(@nestjs/platform-socket.io@11.1.13)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@virtuex/common':
+        specifier: workspace:*
+        version: link:../../packages/common
       axios:
         specifier: ^1.7.0
         version: 1.13.5
@@ -240,9 +240,6 @@ importers:
 
   backend/services/chat:
     dependencies:
-      '@mock-exchange/common':
-        specifier: workspace:*
-        version: link:../../packages/common
       '@nestjs/common':
         specifier: ^10.4.0
         version: 10.4.22(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -264,6 +261,9 @@ importers:
       '@prisma/client':
         specifier: ^6.0.0
         version: 6.19.2(prisma@6.19.2(typescript@5.9.3))(typescript@5.9.3)
+      '@virtuex/common':
+        specifier: workspace:*
+        version: link:../../packages/common
       class-transformer:
         specifier: ^0.5.1
         version: 0.5.1
@@ -307,9 +307,6 @@ importers:
 
   backend/services/market-data:
     dependencies:
-      '@mock-exchange/common':
-        specifier: workspace:*
-        version: link:../../packages/common
       '@nestjs/common':
         specifier: ^11.0.0
         version: 11.1.13(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -337,6 +334,9 @@ importers:
       '@prisma/client':
         specifier: ^6.3.0
         version: 6.19.2(prisma@6.19.2(typescript@5.9.3))(typescript@5.9.3)
+      '@virtuex/common':
+        specifier: workspace:*
+        version: link:../../packages/common
       ioredis:
         specifier: ^5.4.0
         version: 5.9.3
@@ -392,9 +392,6 @@ importers:
 
   backend/services/notification:
     dependencies:
-      '@mock-exchange/common':
-        specifier: workspace:*
-        version: link:../../packages/common
       '@nestjs/common':
         specifier: ^10.4.0
         version: 10.4.22(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -413,6 +410,9 @@ importers:
       '@nestjs/terminus':
         specifier: ^10.2.0
         version: 10.3.0(@nestjs/common@10.4.22(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(@prisma/client@6.19.2(prisma@6.19.2(typescript@5.9.3))(typescript@5.9.3))(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@virtuex/common':
+        specifier: workspace:*
+        version: link:../../packages/common
       reflect-metadata:
         specifier: ^0.2.2
         version: 0.2.2
@@ -450,12 +450,6 @@ importers:
 
   backend/services/order-engine:
     dependencies:
-      '@mock-exchange/common':
-        specifier: workspace:*
-        version: link:../../packages/common
-      '@mock-exchange/event-store':
-        specifier: workspace:*
-        version: link:../../packages/event-store
       '@nestjs/common':
         specifier: ^11.0.0
         version: 11.1.13(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -480,6 +474,12 @@ importers:
       '@prisma/client':
         specifier: ^6.3.0
         version: 6.19.2(prisma@6.19.2(typescript@5.9.3))(typescript@5.9.3)
+      '@virtuex/common':
+        specifier: workspace:*
+        version: link:../../packages/common
+      '@virtuex/event-store':
+        specifier: workspace:*
+        version: link:../../packages/event-store
       axios:
         specifier: ^1.7.0
         version: 1.13.5
@@ -544,9 +544,6 @@ importers:
 
   backend/services/portfolio:
     dependencies:
-      '@mock-exchange/common':
-        specifier: workspace:*
-        version: link:../../packages/common
       '@nestjs/common':
         specifier: ^11.0.0
         version: 11.1.13(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -571,6 +568,9 @@ importers:
       '@prisma/client':
         specifier: ^6.3.0
         version: 6.19.2(prisma@6.19.2(typescript@5.9.3))(typescript@5.9.3)
+      '@virtuex/common':
+        specifier: workspace:*
+        version: link:../../packages/common
       axios:
         specifier: ^1.7.0
         version: 1.13.5
@@ -629,9 +629,6 @@ importers:
 
   backend/services/user-auth:
     dependencies:
-      '@mock-exchange/common':
-        specifier: workspace:*
-        version: link:../../packages/common
       '@nestjs/common':
         specifier: ^11.0.0
         version: 11.1.13(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -659,6 +656,9 @@ importers:
       '@prisma/client':
         specifier: ^6.3.0
         version: 6.19.2(prisma@6.19.2(typescript@5.9.3))(typescript@5.9.3)
+      '@virtuex/common':
+        specifier: workspace:*
+        version: link:../../packages/common
       bcrypt:
         specifier: ^5.1.1
         version: 5.1.1

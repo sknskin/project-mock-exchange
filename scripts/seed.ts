@@ -1,5 +1,5 @@
 /**
- * Mock Exchange - Database Seeder
+ * VirtuEx - Database Seeder
  *
  * Seeds initial data for development:
  * - Test users
@@ -11,7 +11,7 @@
 // For now, it serves as a placeholder.
 
 async function main() {
-  console.log('Mock Exchange - Database Seeder');
+  console.log('VirtuEx - Database Seeder');
   console.log('================================');
   console.log('');
   console.log('TODO: Implement seeding after service setup:');

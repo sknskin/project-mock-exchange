@@ -8,7 +8,7 @@
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Kafka, Producer } from 'kafkajs';
-import { KAFKA_TOPICS } from '@mock-exchange/common';
+import { KAFKA_TOPICS } from '@virtuex/common';
 import { PriceTick } from '../../domain/entities/asset.entity';
 
 @Injectable()

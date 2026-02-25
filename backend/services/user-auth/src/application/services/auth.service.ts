@@ -17,7 +17,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { randomBytes, createHash } from 'crypto';
-import { JwtPayload, AuthTokensDto, UserDto, USER_ROLE } from '@mock-exchange/common';
+import { JwtPayload, AuthTokensDto, UserDto, USER_ROLE } from '@virtuex/common';
 import {
   USER_REPOSITORY,
   IUserRepository,
