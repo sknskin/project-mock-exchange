@@ -69,9 +69,9 @@ export default function Footer() {
     }, 1500);
   }, [t]);
 
-  // 로그인/회원가입 페이지에서는 푸터 숨김 / Hide footer on auth pages
-  const isAuthPage = pathname === '/login' || pathname === '/register';
-  if (isAuthPage) return null;
+  // 홈, 대시보드에서만 푸터 표시 / Show footer only on home and dashboard pages
+  const showFooter = pathname === '/' || pathname === '/dashboard';
+  if (!showFooter) return null;
 
   return (
     <footer className={cn('border-t border-border mt-12 md:mt-20 transition-[margin] duration-300 ease-in-out', showPinned && 'lg:mr-[380px]')}>
