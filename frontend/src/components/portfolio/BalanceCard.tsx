@@ -51,13 +51,43 @@ export default function BalanceCard({
           {formatPercent(totalPnlPercent)}
         </span>
       </div>
-      <div className="mt-6 pt-4 border-t border-border/50">
+      <div className="mt-6 pt-4 border-t border-border/50 space-y-3">
         <div className="flex justify-between text-[14px]">
           <span className="text-text-tertiary">{t('portfolio.cashBalance')}</span>
           <span className="text-text-primary font-bold tabular-nums">
             {formatCurrency(cashBalance)}
           </span>
         </div>
+        <div className="flex justify-between text-[14px]">
+          <span className="text-text-tertiary">{t('portfolio.investedValue')}</span>
+          <span className="text-text-primary font-bold tabular-nums">
+            {formatCurrency(totalValue - cashBalance)}
+          </span>
+        </div>
+
+        {/* 현금/투자 비중 바 / Cash vs Invested ratio bar */}
+        {totalValue > 0 && (() => {
+          const investedRatio = ((totalValue - cashBalance) / totalValue) * 100;
+          const cashRatioVal = (cashBalance / totalValue) * 100;
+          return (
+            <div className="pt-1">
+              <div className="flex items-center justify-between text-[12px] mb-1.5">
+                <span className="text-text-quaternary">{t('portfolio.cashRatio')} {cashRatioVal.toFixed(1)}%</span>
+                <span className="text-text-quaternary">{t('portfolio.investedRatio')} {investedRatio.toFixed(1)}%</span>
+              </div>
+              <div className="h-2 rounded-full bg-bg-tertiary overflow-hidden flex">
+                <div
+                  className="h-full bg-accent/60 rounded-l-full transition-all"
+                  style={{ width: `${cashRatioVal}%` }}
+                />
+                <div
+                  className="h-full bg-accent rounded-r-full transition-all"
+                  style={{ width: `${investedRatio}%` }}
+                />
+              </div>
+            </div>
+          );
+        })()}
       </div>
     </div>
   );

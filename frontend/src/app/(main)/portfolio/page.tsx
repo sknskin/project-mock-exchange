@@ -72,6 +72,48 @@ export default function PortfolioPage() {
               </Button>
             </div>
 
+            {/* 투자 비중 / Investment Weight */}
+            {portfolio.holdings.length > 0 && (
+              <div className="mb-6 py-4 border-t border-border/60">
+                <h2 className="text-[14px] font-bold text-text-secondary mb-3">
+                  {t('portfolio.investmentWeight')}
+                </h2>
+                <div className="space-y-2">
+                  {portfolio.holdings
+                    .sort((a, b) => b.value - a.value)
+                    .map((holding) => {
+                      const weight = portfolio.totalValue > 0
+                        ? (holding.value / portfolio.totalValue) * 100
+                        : 0;
+                      return (
+                        <div key={holding.symbol} className="flex items-center gap-3">
+                          <span className="text-[13px] font-medium text-text-primary w-[100px] sm:w-[140px] truncate">
+                            {holding.name || holding.symbol}
+                          </span>
+                          <div className="flex-1 h-5 bg-bg-tertiary rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-accent rounded-full transition-all flex items-center justify-end pr-2"
+                              style={{ width: `${Math.max(weight, 3)}%` }}
+                            >
+                              {weight >= 8 && (
+                                <span className="text-[10px] font-bold text-white">
+                                  {weight.toFixed(1)}%
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          {weight < 8 && (
+                            <span className="text-[11px] font-medium text-text-tertiary tabular-nums shrink-0">
+                              {weight.toFixed(1)}%
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+            )}
+
             <div className="border-t border-border/60">
               <div className="py-4">
                 <h2 className="text-[14px] font-bold text-text-secondary">
