@@ -13,7 +13,7 @@ import Input from '@/components/ui/Input';
 import Tabs from '@/components/ui/Tabs';
 import { usePlaceOrder } from '@/hooks/useOrders';
 import { useTranslation } from '@/hooks/useTranslation';
-import { formatPrice } from '@/lib/format';
+import { formatPriceDisplay, isKRW } from '@/lib/format';
 import type { TranslationKey } from '@/lib/i18n';
 
 interface OrderFormProps {
@@ -51,6 +51,9 @@ export default function OrderForm({
       ? parseFloat(quantity || '0') * currentPrice
       : parseFloat(quantity || '0') * parseFloat(price || '0');
 
+  // 종목의 원래 통화로 표시 (Display in asset's native currency)
+  const fp = (p: number) => formatPriceDisplay(p, symbol, 'original');
+
   const handleSubmit = async () => {
     if (!quantity || parseFloat(quantity) <= 0) return;
 
@@ -80,7 +83,7 @@ export default function OrderForm({
 
       {orderType === 'LIMIT' && (
         <Input
-          label={t('order.price')}
+          label={`${t('order.price')} (${isKRW(symbol) ? 'KRW' : 'USD'})`}
           type="number"
           value={price}
           onChange={(e) => setPrice(e.target.value)}
@@ -99,7 +102,7 @@ export default function OrderForm({
       <div className="flex justify-between py-3 text-[14px]">
         <span className="text-text-tertiary">{t('order.estimatedTotal')}</span>
         <span className="text-text-primary font-bold tabular-nums">
-          {formatPrice(estimatedTotal)} {t('order.unit')}
+          {fp(estimatedTotal)}
         </span>
       </div>
 
@@ -115,8 +118,8 @@ export default function OrderForm({
         {placeOrder.isPending
           ? t('order.submitting')
           : isBuy
-            ? `${formatPrice(currentPrice)} ${t('detail.buy')}`
-            : `${formatPrice(currentPrice)} ${t('detail.sell')}`}
+            ? `${fp(currentPrice)} ${t('detail.buy')}`
+            : `${fp(currentPrice)} ${t('detail.sell')}`}
       </Button>
     </div>
   );
