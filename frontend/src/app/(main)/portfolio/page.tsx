@@ -11,20 +11,40 @@ import { useState } from 'react';
 import AuthGuard from '@/components/layout/AuthGuard';
 import BalanceCard from '@/components/portfolio/BalanceCard';
 import HoldingCard from '@/components/portfolio/HoldingCard';
+import ExchangeRateBar from '@/components/market/ExchangeRateBar';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import BottomSheet from '@/components/ui/BottomSheet';
 import Skeleton from '@/components/ui/Skeleton';
 import { usePortfolio, useDeposit } from '@/hooks/usePortfolio';
+import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useTranslation } from '@/hooks/useTranslation';
-import { Briefcase } from 'lucide-react';
+import { Briefcase, ArrowLeftRight } from 'lucide-react';
 
 export default function PortfolioPage() {
   const { t } = useTranslation();
   const { data: portfolio, isLoading } = usePortfolio();
+  const { data: rateData } = useExchangeRate();
   const deposit = useDeposit();
   const [depositOpen, setDepositOpen] = useState(false);
   const [depositAmount, setDepositAmount] = useState('');
+
+  // 환율 계산기 상태 (Exchange calculator state)
+  const [calcAmount, setCalcAmount] = useState('');
+  const [calcDirection, setCalcDirection] = useState<'krwToUsd' | 'usdToKrw'>('krwToUsd');
+
+  const rate = rateData?.rate ?? 0;
+
+  const calcResult = (() => {
+    const amount = parseFloat(calcAmount || '0');
+    if (!amount || !rate) return '';
+    if (calcDirection === 'krwToUsd') {
+      const usd = amount / rate;
+      return '$' + usd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    const krw = Math.round(amount * rate);
+    return krw.toLocaleString('ko-KR') + '원';
+  })();
 
   const handleDeposit = async () => {
     const amount = parseFloat(depositAmount);
@@ -59,22 +79,56 @@ export default function PortfolioPage() {
               totalPnl={portfolio.totalPnl}
               totalPnlPercent={portfolio.totalPnlPercent}
               cashBalance={portfolio.cashBalance}
+              onDeposit={() => setDepositOpen(true)}
             />
 
-            {/* 입금 버튼: 모바일에서도 적절한 크기로 표시 */}
-            <div className="mb-6">
-              <Button
-                variant="secondary"
-                onClick={() => setDepositOpen(true)}
-                className="w-full sm:w-auto sm:min-w-[200px]"
-              >
-                {t('portfolio.deposit')}
-              </Button>
-            </div>
+            {/* 환율 정보 / Exchange Rate */}
+            <ExchangeRateBar />
+
+            {/* 환율 계산기 / Exchange Calculator */}
+            {rate > 0 && (
+              <div className="py-4 border-b border-border/60">
+                <div className="flex items-center gap-2 mb-3">
+                  <ArrowLeftRight className="w-4 h-4 text-accent" />
+                  <h2 className="text-[14px] font-bold text-text-secondary">
+                    {t('exchange.calculator')}
+                  </h2>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1">
+                    <Input
+                      label={calcDirection === 'krwToUsd' ? t('exchange.fromKRW') : t('exchange.fromUSD')}
+                      type="number"
+                      value={calcAmount}
+                      onChange={(e) => setCalcAmount(e.target.value)}
+                      placeholder="0"
+                    />
+                  </div>
+                  <button
+                    onClick={() => {
+                      setCalcDirection((d) => d === 'krwToUsd' ? 'usdToKrw' : 'krwToUsd');
+                      setCalcAmount('');
+                    }}
+                    className="mt-5 p-2 rounded-lg border border-border text-text-tertiary hover:text-accent hover:border-accent/50 transition-colors"
+                    title={t('exchange.swap')}
+                  >
+                    <ArrowLeftRight className="w-4 h-4" />
+                  </button>
+                  <div className="flex-1">
+                    <div className="text-[12px] font-medium text-text-tertiary mb-1.5">
+                      {t('exchange.result')}
+                    </div>
+                    <div className="h-11 flex items-center px-3 rounded-xl bg-bg-secondary text-[14px] font-bold text-text-primary tabular-nums">
+                      {calcResult || '-'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* 투자 비중 / Investment Weight */}
             {portfolio.holdings.length > 0 && (
-              <div className="mb-6 py-4 border-t border-border/60">
+              <div className="mb-6 py-4 border-b border-border/60">
                 <h2 className="text-[14px] font-bold text-text-secondary mb-3">
                   {t('portfolio.investmentWeight')}
                 </h2>

@@ -9,12 +9,14 @@
 
 import { cn, formatCurrency, formatPercent } from '@/lib/format';
 import { useTranslation } from '@/hooks/useTranslation';
+import { Plus } from 'lucide-react';
 
 interface BalanceCardProps {
   totalValue: number;
   totalPnl: number;
   totalPnlPercent: number;
   cashBalance: number;
+  onDeposit?: () => void;
 }
 
 export default function BalanceCard({
@@ -22,6 +24,7 @@ export default function BalanceCard({
   totalPnl,
   totalPnlPercent,
   cashBalance,
+  onDeposit,
 }: BalanceCardProps) {
   const { t } = useTranslation();
   const isPositive = totalPnl >= 0;
@@ -52,11 +55,22 @@ export default function BalanceCard({
         </span>
       </div>
       <div className="mt-6 pt-4 border-t border-border/50 space-y-3">
-        <div className="flex justify-between text-[14px]">
+        <div className="flex justify-between items-center text-[14px]">
           <span className="text-text-tertiary">{t('portfolio.cashBalance')}</span>
-          <span className="text-text-primary font-bold tabular-nums">
-            {formatCurrency(cashBalance)}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-text-primary font-bold tabular-nums">
+              {formatCurrency(cashBalance)}
+            </span>
+            {onDeposit && (
+              <button
+                onClick={onDeposit}
+                className="flex items-center gap-1 px-2.5 py-1 text-[12px] font-semibold text-accent border border-accent/30 rounded-lg hover:bg-accent/10 transition-colors"
+              >
+                <Plus className="w-3 h-3" />
+                {t('portfolio.deposit')}
+              </button>
+            )}
+          </div>
         </div>
         <div className="flex justify-between text-[14px]">
           <span className="text-text-tertiary">{t('portfolio.investedValue')}</span>
