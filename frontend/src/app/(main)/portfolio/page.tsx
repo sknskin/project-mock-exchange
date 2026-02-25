@@ -16,9 +16,10 @@ import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import BottomSheet from '@/components/ui/BottomSheet';
 import Skeleton from '@/components/ui/Skeleton';
-import { usePortfolio, useDeposit } from '@/hooks/usePortfolio';
+import { usePortfolio, useDeposit, useWithdraw } from '@/hooks/usePortfolio';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useTranslation } from '@/hooks/useTranslation';
+import { formatCurrency } from '@/lib/format';
 import { Briefcase, ArrowLeftRight } from 'lucide-react';
 
 export default function PortfolioPage() {
@@ -28,6 +29,9 @@ export default function PortfolioPage() {
   const deposit = useDeposit();
   const [depositOpen, setDepositOpen] = useState(false);
   const [depositAmount, setDepositAmount] = useState('');
+  const withdraw = useWithdraw();
+  const [withdrawOpen, setWithdrawOpen] = useState(false);
+  const [withdrawAmount, setWithdrawAmount] = useState('');
 
   // 환율 계산기 상태 (Exchange calculator state)
   const [calcAmount, setCalcAmount] = useState('');
@@ -59,6 +63,19 @@ export default function PortfolioPage() {
     }
   };
 
+  const handleWithdraw = async () => {
+    const amount = parseFloat(withdrawAmount);
+    if (!amount || amount <= 0) return;
+
+    try {
+      await withdraw.mutateAsync(amount);
+      setWithdrawAmount('');
+      setWithdrawOpen(false);
+    } catch {
+      // Error handled by query client
+    }
+  };
+
   return (
     <AuthGuard>
       <div>
@@ -80,6 +97,7 @@ export default function PortfolioPage() {
               totalPnlPercent={portfolio.totalPnlPercent}
               cashBalance={portfolio.cashBalance}
               onDeposit={() => setDepositOpen(true)}
+              onWithdraw={() => setWithdrawOpen(true)}
             />
 
             {/* 환율 정보 / Exchange Rate */}
@@ -227,6 +245,60 @@ export default function PortfolioPage() {
               }
             >
               {deposit.isPending ? t('portfolio.depositing') : t('portfolio.deposit')}
+            </Button>
+          </div>
+        </BottomSheet>
+
+        <BottomSheet
+          isOpen={withdrawOpen}
+          onClose={() => setWithdrawOpen(false)}
+          title={t('portfolio.withdrawTitle')}
+        >
+          <div className="space-y-5">
+            <div>
+              <Input
+                label={t('portfolio.withdrawAmount')}
+                type="number"
+                value={withdrawAmount}
+                onChange={(e) => setWithdrawAmount(e.target.value)}
+                placeholder={t('portfolio.withdrawPlaceholder')}
+              />
+              {portfolio && (
+                <p className="mt-1.5 text-[12px] text-text-quaternary">
+                  {t('portfolio.availableBalance')}: {formatCurrency(portfolio.cashBalance)}
+                </p>
+              )}
+            </div>
+
+            <div className="flex gap-2">
+              {[10, 25, 50, 100].map((pct) => (
+                <button
+                  key={pct}
+                  onClick={() => {
+                    if (portfolio) {
+                      const amount = Math.floor(portfolio.cashBalance * pct / 100);
+                      setWithdrawAmount(amount.toString());
+                    }
+                  }}
+                  className="flex-1 h-10 text-[13px] font-medium bg-bg-secondary text-text-secondary rounded-lg hover:bg-bg-tertiary transition-colors"
+                >
+                  {pct}%
+                </button>
+              ))}
+            </div>
+
+            <Button
+              size="lg"
+              fullWidth
+              onClick={handleWithdraw}
+              disabled={
+                withdraw.isPending ||
+                !withdrawAmount ||
+                parseFloat(withdrawAmount) <= 0 ||
+                (portfolio ? parseFloat(withdrawAmount) > portfolio.cashBalance : true)
+              }
+            >
+              {withdraw.isPending ? t('portfolio.withdrawing') : t('portfolio.withdraw')}
             </Button>
           </div>
         </BottomSheet>

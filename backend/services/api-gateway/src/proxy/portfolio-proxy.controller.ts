@@ -44,6 +44,21 @@ export class PortfolioProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  @Post('withdraw')
+  @ApiOperation({ summary: '자금 출금', description: '포트폴리오에서 가상 자금을 출금합니다' })
+  @ApiResponse({ status: 201, description: '출금 성공' })
+  @ApiResponse({ status: 400, description: '잔고 부족 또는 유효성 검사 실패' })
+  async withdraw(@Body() body: unknown, @Req() req: Request, @Res() res: Response) {
+    const userId = (req as any).user?.id;
+    const result = await this.proxyService.forward('portfolio', {
+      method: 'POST',
+      url: '/portfolio/withdraw',
+      data: body,
+      headers: { 'x-user-id': userId },
+    });
+    return res.status(result.status).json(result.data);
+  }
+
   @Get('balance')
   @ApiOperation({ summary: '잔고 조회', description: '현재 사용자의 잔고를 반환합니다' })
   @ApiResponse({ status: 200, description: '잔고 정보 반환' })
@@ -109,6 +124,39 @@ export class PortfolioProxyController {
       url: '/portfolio/leaderboard',
       params: { limit },
     });
+
+    // Enrich leaderboard entries with username/name from user-auth
+    const data = result.data as any;
+    if (data?.success && Array.isArray(data?.data)) {
+      const userIds = data.data.map((e: any) => e.userId).filter(Boolean);
+      if (userIds.length > 0) {
+        try {
+          const usersResult = await this.proxyService.forward('user-auth', {
+            method: 'POST',
+            url: '/users/by-ids',
+            data: { ids: userIds },
+          });
+          const usersData = usersResult.data as any;
+          if (usersData?.success && Array.isArray(usersData?.data)) {
+            const userMap = new Map<string, { username: string; name: string }>();
+            for (const u of usersData.data) {
+              userMap.set(u.id, { username: u.username, name: u.name });
+            }
+            data.data = data.data.map((entry: any) => {
+              const userInfo = userMap.get(entry.userId);
+              return {
+                ...entry,
+                username: userInfo?.username || '',
+                name: userInfo?.name || '',
+              };
+            });
+          }
+        } catch {
+          // Fallback: return leaderboard without names
+        }
+      }
+    }
+
     return res.status(result.status).json(result.data);
   }
 

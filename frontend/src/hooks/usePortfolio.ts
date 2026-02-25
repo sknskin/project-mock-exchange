@@ -46,3 +46,17 @@ export function useDeposit() {
     },
   });
 }
+
+export function useWithdraw() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (amount: number) => {
+      const { data } = await api.post('/api/portfolio/withdraw', { amount });
+      return data.data ?? data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['portfolio'] });
+    },
+  });
+}

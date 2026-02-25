@@ -129,6 +129,53 @@ export class BalanceService {
   }
 
   /**
+   * 사용자의 가용 현금 잔고에서 자금을 출금합니다.
+   *
+   * Withdraw funds from the user's available cash balance.
+   */
+  async withdraw(userId: string, amount: number | string): Promise<BalanceInfo> {
+    const withdrawAmount = new Decimal(amount);
+
+    if (withdrawAmount.lte(0)) {
+      throw new BadRequestException('Withdraw amount must be positive');
+    }
+
+    const account = await this.ensureAccount(userId);
+    const available = new Decimal(account.availableCash.toString());
+
+    if (available.lt(withdrawAmount)) {
+      throw new BadRequestException(
+        `Insufficient funds: available ${available.toFixed(2)}, requested ${withdrawAmount.toFixed(2)}`,
+      );
+    }
+
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const updatedAccount = await tx.account.update({
+        where: { userId },
+        data: {
+          availableCash: available.minus(withdrawAmount).toFixed(8),
+        },
+      });
+
+      await tx.transaction.create({
+        data: {
+          userId,
+          type: 'WITHDRAW',
+          cashDelta: withdrawAmount.negated().toFixed(8),
+        },
+      });
+
+      return updatedAccount;
+    });
+
+    this.logger.log(
+      `Withdrew ${withdrawAmount.toFixed(8)} for user ${userId}`,
+    );
+
+    return this.toBalanceInfo(updated);
+  }
+
+  /**
    * 주문을 위해 자금을 예약합니다. 가용 현금에서 예약 현금으로 이동합니다.
    *
    * Reserve funds for an order. Moves cash from available to reserved.
@@ -633,6 +680,7 @@ export class BalanceService {
       userId: string;
       totalCash: string;
       totalPortfolioValue: string;
+      pnlPercent: string;
     }[]
   > {
     const accounts = await this.prisma.account.findMany({
@@ -640,7 +688,7 @@ export class BalanceService {
       take: limit * 2, // fetch more to account for holdings
     });
 
-    const results: { userId: string; totalValue: Decimal }[] = [];
+    const results: { userId: string; totalValue: Decimal; netDeposit: Decimal }[] = [];
 
     for (const account of accounts) {
       const holdings = await this.prisma.holding.findMany({
@@ -661,20 +709,40 @@ export class BalanceService {
         new Decimal(account.reservedCash.toString()),
       );
 
+      // 순 입금액 계산 (총 입금 - 총 출금) / Calculate net deposits
+      const depositAgg = await this.prisma.transaction.aggregate({
+        where: { userId: account.userId, type: 'DEPOSIT' },
+        _sum: { cashDelta: true },
+      });
+      const withdrawAgg = await this.prisma.transaction.aggregate({
+        where: { userId: account.userId, type: 'WITHDRAW' },
+        _sum: { cashDelta: true },
+      });
+      const totalDeposits = new Decimal(depositAgg._sum.cashDelta?.toString() || '0');
+      const totalWithdraws = new Decimal(withdrawAgg._sum.cashDelta?.toString() || '0').abs();
+      const netDeposit = totalDeposits.minus(totalWithdraws);
+
       results.push({
         userId: account.userId,
         totalValue: cashTotal.plus(holdingsValue),
+        netDeposit,
       });
     }
 
     results.sort((a, b) => b.totalValue.minus(a.totalValue).toNumber());
 
-    return results.slice(0, limit).map((r, i) => ({
-      rank: i + 1,
-      userId: r.userId,
-      totalCash: r.totalValue.toFixed(8),
-      totalPortfolioValue: r.totalValue.toFixed(8),
-    }));
+    return results.slice(0, limit).map((r, i) => {
+      const pnlPercent = r.netDeposit.gt(0)
+        ? r.totalValue.minus(r.netDeposit).div(r.netDeposit).mul(100)
+        : new Decimal(0);
+      return {
+        rank: i + 1,
+        userId: r.userId,
+        totalCash: r.totalValue.toFixed(8),
+        totalPortfolioValue: r.totalValue.toFixed(8),
+        pnlPercent: pnlPercent.toFixed(2),
+      };
+    });
   }
 
   private async fetchMarketPrices(

@@ -9,7 +9,7 @@
 
 import { cn, formatCurrency, formatPercent } from '@/lib/format';
 import { useTranslation } from '@/hooks/useTranslation';
-import { Plus } from 'lucide-react';
+import { Plus, Minus } from 'lucide-react';
 
 interface BalanceCardProps {
   totalValue: number;
@@ -17,6 +17,7 @@ interface BalanceCardProps {
   totalPnlPercent: number;
   cashBalance: number;
   onDeposit?: () => void;
+  onWithdraw?: () => void;
 }
 
 export default function BalanceCard({
@@ -25,6 +26,7 @@ export default function BalanceCard({
   totalPnlPercent,
   cashBalance,
   onDeposit,
+  onWithdraw,
 }: BalanceCardProps) {
   const { t } = useTranslation();
   const isPositive = totalPnl >= 0;
@@ -61,15 +63,26 @@ export default function BalanceCard({
             <span className="text-text-primary font-bold tabular-nums">
               {formatCurrency(cashBalance)}
             </span>
-            {onDeposit && (
-              <button
-                onClick={onDeposit}
-                className="flex items-center gap-1 px-2.5 py-1 text-[12px] font-semibold text-accent border border-accent/30 rounded-lg hover:bg-accent/10 transition-colors"
-              >
-                <Plus className="w-3 h-3" />
-                {t('portfolio.deposit')}
-              </button>
-            )}
+            <div className="flex items-center gap-1.5">
+              {onDeposit && (
+                <button
+                  onClick={onDeposit}
+                  className="flex items-center gap-1 px-2.5 py-1 text-[12px] font-semibold text-accent border border-accent/30 rounded-lg hover:bg-accent/10 transition-colors"
+                >
+                  <Plus className="w-3 h-3" />
+                  {t('portfolio.deposit')}
+                </button>
+              )}
+              {onWithdraw && (
+                <button
+                  onClick={onWithdraw}
+                  className="flex items-center gap-1 px-2.5 py-1 text-[12px] font-semibold text-fall border border-fall/30 rounded-lg hover:bg-fall/10 transition-colors"
+                >
+                  <Minus className="w-3 h-3" />
+                  {t('portfolio.withdraw')}
+                </button>
+              )}
+            </div>
           </div>
         </div>
         <div className="flex justify-between text-[14px]">

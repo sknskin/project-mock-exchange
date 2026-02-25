@@ -16,6 +16,7 @@ import {
 } from '@nestjs/common';
 import { BalanceService } from '../../domain/services/balance.service';
 import { DepositDto } from '../dto/deposit.dto';
+import { WithdrawDto } from '../dto/withdraw.dto';
 
 @Controller('portfolio')
 export class PortfolioController {
@@ -34,6 +35,22 @@ export class PortfolioController {
   ) {
     this.validateUserId(userId);
     const balance = await this.balanceService.deposit(userId, dto.amount);
+    return { success: true, data: balance };
+  }
+
+  /**
+   * 사용자 계좌에서 자금을 출금합니다.
+   *
+   * Withdraw funds from the user's account.
+   * POST /portfolio/withdraw
+   */
+  @Post('withdraw')
+  async withdraw(
+    @Headers('x-user-id') userId: string,
+    @Body() dto: WithdrawDto,
+  ) {
+    this.validateUserId(userId);
+    const balance = await this.balanceService.withdraw(userId, dto.amount);
     return { success: true, data: balance };
   }
 
