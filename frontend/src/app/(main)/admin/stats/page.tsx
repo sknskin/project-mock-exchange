@@ -1238,22 +1238,6 @@ export default function AdminStatsPage() {
             </ChartCard>
           </div>
 
-          {/* 활발한 채팅방 TOP 10 (Top Active Rooms) */}
-          <ChartCard title={t('stats.topActiveRooms')}>
-            {chatStats?.topRooms?.length ? (
-              <ResponsiveContainer width="100%" height={280}>
-                <BarChart data={chatStats.topRooms} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                  <XAxis type="number" tick={{ fill: 'var(--text-quaternary)', fontSize: 11 }} />
-                  <YAxis dataKey="name" type="category" tick={{ fill: 'var(--text-quaternary)', fontSize: 11 }} width={100} />
-                  <Tooltip contentStyle={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 12, fontSize: 12 }} />
-                  <Bar dataKey="messageCount" fill={CHART_COLORS.blue} radius={[0, 4, 4, 0]} name={t('stats.messages')} />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <EmptyChart height={280} />
-            )}
-          </ChartCard>
         </div>
       )}
     </div>

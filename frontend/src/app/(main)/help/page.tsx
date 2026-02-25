@@ -879,6 +879,11 @@ function HelpTab({
 }) {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
 
+  // 탭 전환 시 펼쳐진 항목 닫기 (Close expanded item on tab change)
+  useEffect(() => {
+    setExpandedIndex(null);
+  }, [tabKey]);
+
   return (
     <div className="space-y-6">
       <div className="bg-bg-secondary/60 border border-border/60 rounded-2xl p-5 sm:p-6">
