@@ -47,20 +47,21 @@ export default function AnnouncementDetailPage({
   const toggleCommentLike = useToggleCommentLike();
   const incrementViewCount = useIncrementViewCount();
 
-  // View count increment (once per session, 30-min cooldown per announcement)
+  // View count increment (once per session per user, 30-min cooldown per announcement)
   const viewTracked = useRef(false);
   useEffect(() => {
     if (!id || viewTracked.current) return;
     viewTracked.current = true;
     const VIEW_COOLDOWN = 30 * 60 * 1000; // 30 minutes
-    const storageKey = `announce-viewed-${id}`;
+    const uid = user?.id || 'anon';
+    const storageKey = `announce-viewed-${uid}-${id}`;
     try {
       const lastViewed = sessionStorage.getItem(storageKey);
       if (lastViewed && Date.now() - Number(lastViewed) < VIEW_COOLDOWN) return;
       sessionStorage.setItem(storageKey, String(Date.now()));
     } catch { /* sessionStorage unavailable */ }
     incrementViewCount.mutate(id);
-  }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [id, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Delete announcement modal
   const [showDeleteModal, setShowDeleteModal] = useState(false);
