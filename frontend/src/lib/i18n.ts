@@ -111,6 +111,11 @@ const translations = {
     'exchange.showingKRW': '현재: 원화 표시 중',
     'exchange.showingUSD': '현재: 달러 표시 중',
     'exchange.rateNote': 'ECB 기준 평일 1회 갱신 (당일 내 동일 환율)',
+    'exchange.calculator': '환율 계산기',
+    'exchange.fromKRW': '원화 (KRW)',
+    'exchange.fromUSD': '달러 (USD)',
+    'exchange.result': '환산 결과',
+    'exchange.swap': '통화 전환',
 
     // Toast
     'toast.copied': '복사됨!',
@@ -643,6 +648,7 @@ const translations = {
     'chat.rename': '이름 수정',
     'chat.renamePlaceholder': '새 이름 입력',
     'chat.deleteMessage': '삭제',
+    'chat.deleteConfirm': '이 메시지를 삭제하시겠습니까?',
 
     // Common
     'common.confirm': '확인',
@@ -830,6 +836,11 @@ const translations = {
     'exchange.showingKRW': 'Showing: KRW',
     'exchange.showingUSD': 'Showing: USD',
     'exchange.rateNote': 'ECB rate, updated once on business days',
+    'exchange.calculator': 'Exchange Calculator',
+    'exchange.fromKRW': 'KRW',
+    'exchange.fromUSD': 'USD',
+    'exchange.result': 'Result',
+    'exchange.swap': 'Swap',
 
     // Toast
     'toast.copied': 'Copied!',
@@ -1362,6 +1373,7 @@ const translations = {
     'chat.rename': 'Rename',
     'chat.renamePlaceholder': 'Enter new name',
     'chat.deleteMessage': 'Delete',
+    'chat.deleteConfirm': 'Are you sure you want to delete this message?',
 
     // Common
     'common.confirm': 'Confirm',

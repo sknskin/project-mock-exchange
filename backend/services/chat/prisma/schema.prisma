@@ -51,6 +51,7 @@ model Message {
   senderId       String   @map("sender_id") @db.Uuid
   senderUsername String   @map("sender_username") @db.VarChar(50)
   senderName     String   @default("") @map("sender_name") @db.VarChar(50)
+  senderRole     String   @default("USER") @map("sender_role") @db.VarChar(10)
   content        String   @db.VarChar(2000)
   createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz()
 

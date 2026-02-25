@@ -78,10 +78,11 @@ export class ChatController {
     @Headers('x-user-id') userId: string,
     @Headers('x-user-username') username: string,
     @Headers('x-user-name') name: string,
+    @Headers('x-user-role') role: string,
     @Body() dto: SendMessageDto,
   ) {
     const decodedName = name ? decodeURIComponent(name) : '';
-    const message = await this.chatService.sendMessage(roomId, userId, username, dto, decodedName);
+    const message = await this.chatService.sendMessage(roomId, userId, username, dto, decodedName, role);
     return { success: true, data: message };
   }
 
@@ -149,8 +150,7 @@ export class ChatController {
     @Headers('x-user-id') userId: string,
     @Headers('x-user-role') role?: string,
   ) {
-    const isAdmin = role === 'ADMIN' || role === 'SYSTEM';
-    const result = await this.chatService.deleteMessage(roomId, messageId, userId, isAdmin);
+    const result = await this.chatService.deleteMessage(roomId, messageId, userId, role);
     return { success: true, data: result };
   }
 }

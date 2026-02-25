@@ -207,7 +207,7 @@ export class ChatService {
     };
   }
 
-  async sendMessage(roomId: string, userId: string, username: string, dto: SendMessageDto, name?: string) {
+  async sendMessage(roomId: string, userId: string, username: string, dto: SendMessageDto, name?: string, role?: string) {
     await this.verifyParticipant(roomId, userId);
 
     const message = await this.prisma.message.create({
@@ -216,6 +216,7 @@ export class ChatService {
         senderId: userId,
         senderUsername: username,
         senderName: name || '',
+        senderRole: role || 'USER',
         content: dto.content,
       },
       select: {
@@ -224,6 +225,7 @@ export class ChatService {
         senderId: true,
         senderUsername: true,
         senderName: true,
+        senderRole: true,
         content: true,
         createdAt: true,
       },
@@ -367,7 +369,7 @@ export class ChatService {
     return { id: updated.id, name: updated.name };
   }
 
-  async deleteMessage(roomId: string, messageId: string, userId: string, isAdmin: boolean) {
+  async deleteMessage(roomId: string, messageId: string, userId: string, role?: string) {
     const message = await this.prisma.message.findUnique({
       where: { id: messageId },
     });
@@ -375,8 +377,17 @@ export class ChatService {
     if (message.roomId !== roomId) {
       throw new BadRequestException('Message does not belong to this room');
     }
-    if (!isAdmin && message.senderId !== userId) {
+
+    const isSystem = role === 'SYSTEM';
+    const isAdmin = role === 'ADMIN';
+    const isMine = message.senderId === userId;
+
+    if (!isMine && !isSystem && !isAdmin) {
       throw new ForbiddenException('You can only delete your own messages');
+    }
+    // ADMIN은 SYSTEM이 남긴 메시지를 삭제할 수 없음
+    if (isAdmin && message.senderRole === 'SYSTEM') {
+      throw new ForbiddenException('Admins cannot delete SYSTEM messages');
     }
 
     // 연결된 읽음 확인 삭제 후 메시지 삭제 (Delete read receipts then delete message)

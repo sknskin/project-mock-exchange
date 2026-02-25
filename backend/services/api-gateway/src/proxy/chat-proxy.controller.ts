@@ -121,7 +121,7 @@ export class ChatProxyController {
   // 메시지 전송 (Send message)
   @Post('rooms/:id/messages')
   async sendMessage(@Param('id') id: string, @Req() req: Request, @Res() res: Response) {
-    const user = req.user as { id: string; username: string; name?: string };
+    const user = req.user as { id: string; username: string; name?: string; role?: string };
     const result = await this.proxyService.forward('chat', {
       method: 'POST',
       url: `/rooms/${id}/messages`,
@@ -130,6 +130,7 @@ export class ChatProxyController {
         'x-user-id': user.id,
         'x-user-username': user.username,
         'x-user-name': encodeURIComponent(user.name || ''),
+        'x-user-role': user.role || '',
       },
     });
 
