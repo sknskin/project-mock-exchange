@@ -126,6 +126,7 @@ export interface LeaderboardEntry {
   rank: number;
   userId: string;
   username: string;
+  name?: string;
   totalValue: number;
   pnlPercent: number;
 }

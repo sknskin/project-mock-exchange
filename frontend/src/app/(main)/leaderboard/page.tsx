@@ -9,15 +9,28 @@
 
 import { useRef, useEffect, useCallback, useState } from 'react';
 import { useLeaderboard } from '@/hooks/useLeaderboard';
+import { useAuthStore } from '@/stores/auth';
 import { useTranslation } from '@/hooks/useTranslation';
 import Skeleton from '@/components/ui/Skeleton';
 import { cn, formatCurrency, formatPercent } from '@/lib/format';
-import { Trophy, RefreshCw } from 'lucide-react';
+import { Trophy, RefreshCw, Users } from 'lucide-react';
 
 const medalColors: Record<number, string> = {
   1: 'text-yellow-400',
   2: 'text-gray-400',
   3: 'text-amber-600',
+};
+
+const medalEmoji: Record<number, string> = {
+  1: '\uD83E\uDD47',
+  2: '\uD83E\uDD48',
+  3: '\uD83E\uDD49',
+};
+
+const top3Bg: Record<number, string> = {
+  1: 'bg-gradient-to-r from-yellow-400/10 to-transparent',
+  2: 'bg-gradient-to-r from-gray-400/10 to-transparent',
+  3: 'bg-gradient-to-r from-amber-600/10 to-transparent',
 };
 
 const ROW_HEIGHT = 52;
@@ -45,7 +58,9 @@ function formatTimestamp(ts: number, locale: string): string {
 export default function LeaderboardPage() {
   const { t, locale } = useTranslation();
   const { data: leaderboard, isLoading, dataUpdatedAt, refetch } = useLeaderboard();
+  const user = useAuthStore((s) => s.user);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const myEntry = leaderboard?.find((e) => e.userId === user?.id);
   const prevRankMap = useRef<Map<string, number>>(new Map());
   const rowRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
@@ -88,6 +103,22 @@ export default function LeaderboardPage() {
         <h1 className="text-[20px] font-extrabold text-text-primary">{t('leaderboard.title')}</h1>
       </div>
 
+      {/* 참여자 수 + 내 순위 / Participants + My Rank */}
+      {!isLoading && leaderboard && leaderboard.length > 0 && (
+        <div className="flex items-center gap-4 pb-3">
+          <div className="flex items-center gap-1.5 text-[12px] text-text-tertiary">
+            <Users className="w-3.5 h-3.5" />
+            <span>{t('leaderboard.participants')} {leaderboard.length}</span>
+          </div>
+          {myEntry && (
+            <div className="flex items-center gap-1.5 text-[12px] text-accent font-medium">
+              <Trophy className="w-3.5 h-3.5" />
+              <span>{t('leaderboard.myRank')} #{myEntry.rank}</span>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* 기준 시간 + 새로고침 / Timestamp + Refresh */}
       <div className="flex items-center justify-between pb-4">
         <span className="text-[12px] text-text-quaternary">
@@ -126,6 +157,8 @@ export default function LeaderboardPage() {
           {leaderboard?.map((entry) => {
             const isTop3 = entry.rank <= 3;
             const isPositive = entry.pnlPercent >= 0;
+            const isMe = entry.userId === user?.id;
+            const displayName = entry.name || entry.username || '-';
 
             return (
               <div
@@ -135,7 +168,9 @@ export default function LeaderboardPage() {
                 }}
                 className={cn(
                   'flex items-center py-3.5',
-                  isTop3 && 'bg-bg-secondary/20',
+                  isTop3 && (top3Bg[entry.rank] || 'bg-bg-secondary/20'),
+                  isMe && !isTop3 && 'bg-accent/5',
+                  isMe && 'ring-1 ring-accent/30 rounded-lg',
                 )}
               >
                 <div
@@ -144,16 +179,29 @@ export default function LeaderboardPage() {
                     medalColors[entry.rank] ?? 'text-text-quaternary',
                   )}
                 >
-                  {entry.rank}
+                  {medalEmoji[entry.rank] ? (
+                    <span className="text-[16px]">{medalEmoji[entry.rank]}</span>
+                  ) : (
+                    entry.rank
+                  )}
                 </div>
 
                 <div className="flex items-center gap-2.5 sm:gap-3 flex-1 pl-2 min-w-0">
-                  <div className="w-8 h-8 rounded-full bg-bg-tertiary flex items-center justify-center text-[11px] font-bold text-text-secondary shrink-0 ring-1 ring-border">
-                    {(entry.username ?? '?').slice(0, 1).toUpperCase()}
+                  <div className={cn(
+                    'w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 ring-1',
+                    isTop3 ? 'bg-bg-secondary ring-border text-text-primary' : 'bg-bg-tertiary ring-border text-text-secondary',
+                  )}>
+                    {displayName.slice(0, 1).toUpperCase()}
                   </div>
-                  <span className="font-semibold text-text-primary text-[14px] truncate">
-                    {entry.username ?? '-'}
-                  </span>
+                  <div className="min-w-0">
+                    <span className={cn(
+                      'font-semibold text-[14px] truncate block',
+                      isMe ? 'text-accent' : 'text-text-primary',
+                    )}>
+                      {displayName}
+                      {isMe && <span className="text-[11px] text-accent/70 ml-1.5">(me)</span>}
+                    </span>
+                  </div>
                 </div>
 
                 <span className="w-24 sm:w-36 text-right text-[13px] sm:text-[14px] text-text-secondary tabular-nums font-medium shrink-0">
