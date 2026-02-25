@@ -18,7 +18,7 @@ export default function ServiceError({ onRetry }: ServiceErrorProps) {
   const { t } = useTranslation();
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[50vh] px-5 text-center">
+    <div className="flex flex-col items-center justify-center min-h-[60vh] pt-8 px-5 text-center">
       {/* 아이콘 / Icon */}
       <div className="relative mb-8">
         <div className="w-20 h-20 rounded-2xl bg-danger/10 flex items-center justify-center">
