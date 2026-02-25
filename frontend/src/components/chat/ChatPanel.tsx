@@ -10,17 +10,27 @@ import RoomList from './RoomList';
 import MessageArea from './MessageArea';
 import CreateRoomModal from './CreateRoomModal';
 
-const PANEL_W = 380;
-const PANEL_H = 560;
+const MIN_W = 320;
+const MIN_H = 400;
+
+type DragMode = 'move' | 'resize-se' | 'resize-sw' | 'resize-ne' | 'resize-nw' | 'resize-e' | 'resize-w' | 'resize-s' | 'resize-n';
 
 export default function ChatPanel() {
-  const { isOpen, isPinned, view, activeRoomId, position, closeChat, backToList, setPosition } = useChatStore();
+  const { isOpen, isPinned, view, activeRoomId, position, size, closeChat, backToList, setPosition, setSize } = useChatStore();
   const leaveRoom = useLeaveRoom();
   const { joinRoom, leaveRoom: leaveSocketRoom } = useChatSocket();
 
   const panelRef = useRef<HTMLDivElement>(null);
-  const dragRef = useRef<{ startX: number; startY: number; origX: number; origY: number } | null>(null);
-  const [dragging, setDragging] = useState(false);
+  const dragRef = useRef<{
+    mode: DragMode;
+    startX: number;
+    startY: number;
+    origX: number;
+    origY: number;
+    origW: number;
+    origH: number;
+  } | null>(null);
+  const [interacting, setInteracting] = useState(false);
 
   // ESC 키로 닫기 (Close on ESC)
   useEffect(() => {
@@ -32,35 +42,67 @@ export default function ChatPanel() {
     return () => document.removeEventListener('keydown', handler);
   }, [isOpen, isPinned, closeChat]);
 
-  // 드래그 핸들러 (Drag handlers)
-  const onMouseDown = useCallback((e: React.MouseEvent) => {
+  // 드래그/리사이즈 시작 (Start drag/resize)
+  const onPointerDown = useCallback((mode: DragMode, e: React.MouseEvent) => {
     if (isPinned) return;
-    const pos = position || { x: window.innerWidth - PANEL_W - 16, y: 76 };
+    const pos = position || { x: window.innerWidth - size.width - 16, y: 76 };
     dragRef.current = {
+      mode,
       startX: e.clientX,
       startY: e.clientY,
       origX: pos.x,
       origY: pos.y,
+      origW: size.width,
+      origH: size.height,
     };
-    setDragging(true);
+    setInteracting(true);
     e.preventDefault();
-  }, [isPinned, position]);
+  }, [isPinned, position, size]);
 
   useEffect(() => {
-    if (!dragging) return;
+    if (!interacting) return;
 
     const onMouseMove = (e: MouseEvent) => {
-      if (!dragRef.current) return;
-      const dx = e.clientX - dragRef.current.startX;
-      const dy = e.clientY - dragRef.current.startY;
-      const newX = Math.max(0, Math.min(window.innerWidth - PANEL_W, dragRef.current.origX + dx));
-      const newY = Math.max(0, Math.min(window.innerHeight - 100, dragRef.current.origY + dy));
-      setPosition({ x: newX, y: newY });
+      const d = dragRef.current;
+      if (!d) return;
+      const dx = e.clientX - d.startX;
+      const dy = e.clientY - d.startY;
+
+      if (d.mode === 'move') {
+        const newX = Math.max(0, Math.min(window.innerWidth - size.width, d.origX + dx));
+        const newY = Math.max(0, Math.min(window.innerHeight - 100, d.origY + dy));
+        setPosition({ x: newX, y: newY });
+      } else {
+        let newW = d.origW;
+        let newH = d.origH;
+        let newX = d.origX;
+        let newY = d.origY;
+
+        if (d.mode.includes('e')) newW = Math.max(MIN_W, d.origW + dx);
+        if (d.mode.includes('w')) {
+          const dw = Math.min(dx, d.origW - MIN_W);
+          newW = d.origW - dw;
+          newX = d.origX + dw;
+        }
+        if (d.mode.includes('s')) newH = Math.max(MIN_H, d.origH + dy);
+        if (d.mode.includes('n')) {
+          const dh = Math.min(dy, d.origH - MIN_H);
+          newH = d.origH - dh;
+          newY = d.origY + dh;
+        }
+
+        // 뷰포트 클램프 (Viewport clamp)
+        newX = Math.max(0, newX);
+        newY = Math.max(0, newY);
+
+        setSize({ width: newW, height: newH });
+        setPosition({ x: newX, y: newY });
+      }
     };
 
     const onMouseUp = () => {
       dragRef.current = null;
-      setDragging(false);
+      setInteracting(false);
     };
 
     document.addEventListener('mousemove', onMouseMove);
@@ -69,7 +111,7 @@ export default function ChatPanel() {
       document.removeEventListener('mousemove', onMouseMove);
       document.removeEventListener('mouseup', onMouseUp);
     };
-  }, [dragging, setPosition]);
+  }, [interacting, size, setPosition, setSize]);
 
   if (!isOpen) return null;
 
@@ -83,8 +125,8 @@ export default function ChatPanel() {
   if (isPinned) return null;
 
   // 뷰포트 내로 위치 제한 (Clamp position within viewport)
-  const pos = position || { x: window.innerWidth - PANEL_W - 16, y: 76 };
-  const clampedX = Math.max(0, Math.min(pos.x, window.innerWidth - PANEL_W));
+  const pos = position || { x: window.innerWidth - size.width - 16, y: 76 };
+  const clampedX = Math.max(0, Math.min(pos.x, window.innerWidth - size.width));
   const clampedY = Math.max(0, Math.min(pos.y, window.innerHeight - 100));
 
   const content = (
@@ -99,22 +141,22 @@ export default function ChatPanel() {
         style={{
           left: clampedX,
           top: clampedY,
-          width: PANEL_W,
-          height: PANEL_H,
+          width: size.width,
+          height: size.height,
         }}
         className={cn(
           'fixed z-[60] flex flex-col bg-bg-primary border border-border shadow-2xl overflow-hidden rounded-2xl overscroll-contain',
           'max-lg:!inset-0 max-lg:!w-auto max-lg:!h-auto max-lg:rounded-none',
           'animate-chat-panel-in',
-          dragging && 'select-none',
+          interacting && 'select-none',
         )}
       >
         {/* 드래그 핸들 (Drag handle) */}
         <div
-          onMouseDown={onMouseDown}
+          onMouseDown={(e) => onPointerDown('move', e)}
           className={cn(
             'hidden lg:flex items-center justify-center h-3 shrink-0 cursor-grab border-b border-border/50',
-            dragging && 'cursor-grabbing',
+            interacting && dragRef.current?.mode === 'move' && 'cursor-grabbing',
           )}
         >
           <div className="w-8 h-1 rounded-full bg-border" />
@@ -132,6 +174,18 @@ export default function ChatPanel() {
           )}
           {view === 'create-room' && <CreateRoomModal />}
         </div>
+
+        {/* 리사이즈 핸들 — 데스크톱만 (Resize handles — desktop only) */}
+        {/* 모서리 (Corners) */}
+        <div onMouseDown={(e) => onPointerDown('resize-se', e)} className="hidden lg:block absolute bottom-0 right-0 w-3 h-3 cursor-se-resize z-10" />
+        <div onMouseDown={(e) => onPointerDown('resize-sw', e)} className="hidden lg:block absolute bottom-0 left-0 w-3 h-3 cursor-sw-resize z-10" />
+        <div onMouseDown={(e) => onPointerDown('resize-ne', e)} className="hidden lg:block absolute top-0 right-0 w-3 h-3 cursor-ne-resize z-10" />
+        <div onMouseDown={(e) => onPointerDown('resize-nw', e)} className="hidden lg:block absolute top-0 left-0 w-3 h-3 cursor-nw-resize z-10" />
+        {/* 변 (Edges) */}
+        <div onMouseDown={(e) => onPointerDown('resize-e', e)} className="hidden lg:block absolute top-3 bottom-3 right-0 w-1.5 cursor-e-resize z-10" />
+        <div onMouseDown={(e) => onPointerDown('resize-w', e)} className="hidden lg:block absolute top-3 bottom-3 left-0 w-1.5 cursor-w-resize z-10" />
+        <div onMouseDown={(e) => onPointerDown('resize-s', e)} className="hidden lg:block absolute bottom-0 left-3 right-3 h-1.5 cursor-s-resize z-10" />
+        <div onMouseDown={(e) => onPointerDown('resize-n', e)} className="hidden lg:block absolute top-0 left-3 right-3 h-1.5 cursor-n-resize z-10" />
       </div>
     </>
   );
