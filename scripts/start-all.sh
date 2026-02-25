@@ -319,10 +319,13 @@ set +e
 for svc in user-auth market-data order-engine portfolio chat; do
   if [ -f "backend/services/$svc/prisma/schema.prisma" ]; then
     cd "backend/services/$svc"
-    if npx prisma db push --skip-generate --accept-data-loss 2>&1 | tail -1; then
+    push_output=$(npx prisma db push --skip-generate --accept-data-loss 2>&1)
+    push_exit=$?
+    if [ $push_exit -eq 0 ]; then
       echo -e "  ${GREEN}✓${NC} $svc"
     else
-      echo -e "  ${YELLOW}⚠${NC} $svc (이미 최신이거나 경고 / already up-to-date or warning)"
+      echo -e "  ${RED}✗${NC} $svc (마이그레이션 실패 / migration failed)"
+      echo "    $push_output" | tail -3
     fi
     cd "$ROOT_DIR"
   fi
