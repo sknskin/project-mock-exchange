@@ -234,10 +234,10 @@ if [ ! -f .env ]; then
   echo -e "  ${GREEN}✓${NC} .env 생성됨 / .env created (from .env.example)"
 fi
 
-# set -a: 이후 정의되는 변수를 자동으로 export
-# set -a: automatically export all subsequent variable definitions
+# set -a: 이후 정의되는 변수를 자동으로 export (bash는 # 주석을 자체 처리)
+# set -a: automatically export all subsequent variable definitions (bash handles # comments natively)
 set -a
-source <(grep -v '^#' .env | grep -v '^$')
+source "$ROOT_DIR/.env"
 set +a
 echo -e "  ${GREEN}✓${NC} .env 로드 완료 / .env loaded"
 
