@@ -7,7 +7,7 @@
  */
 'use client';
 
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { cn } from '@/lib/format';
 
 interface BottomSheetProps {
@@ -23,6 +23,8 @@ export default function BottomSheet({
   title,
   children,
 }: BottomSheetProps) {
+  const contentRef = useRef<HTMLDivElement>(null);
+
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -34,6 +36,11 @@ export default function BottomSheet({
     if (isOpen) {
       document.addEventListener('keydown', handleKeyDown);
       document.body.style.overflow = 'hidden';
+      // 첫 번째 input에 자동 포커스 (Auto-focus first input)
+      requestAnimationFrame(() => {
+        const input = contentRef.current?.querySelector('input');
+        if (input) input.focus();
+      });
     }
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
@@ -44,19 +51,20 @@ export default function BottomSheet({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50">
+    <div className="fixed inset-0 z-50 sm:flex sm:items-center sm:justify-center">
       <div
         className="absolute inset-0 bg-black/50"
         onClick={onClose}
       />
-      {/* 모달 컨테이너: 화면 중앙에 표시, 모바일에서는 하단 시트 */}
+      {/* 모달: 모바일은 하단, 데스크톱은 flex 중앙 정렬 */}
       <div
+        ref={contentRef}
         className={cn(
-          'absolute w-full sm:max-w-[480px] bg-bg-elevated',
+          'w-full sm:max-w-[480px] bg-bg-elevated',
           'max-h-[85vh] overflow-y-auto',
-          'animate-modal-in',
-          'bottom-0 left-0 right-0 rounded-t-2xl',
-          'sm:bottom-auto sm:left-1/2 sm:right-auto sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl',
+          'animate-bottomsheet-in',
+          'absolute bottom-0 left-0 right-0 rounded-t-2xl',
+          'sm:relative sm:bottom-auto sm:left-auto sm:right-auto sm:rounded-2xl',
         )}
       >
         {/* 모바일 드래그 핸들 (Mobile drag handle) */}
@@ -71,30 +79,21 @@ export default function BottomSheet({
         <div className="px-6 pb-8 pt-2">{children}</div>
       </div>
       <style jsx>{`
-        @keyframes modal-in {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
+        @keyframes bottomsheet-slide-up {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes bottomsheet-scale-in {
+          from { opacity: 0; transform: scale(0.95); }
+          to { opacity: 1; transform: scale(1); }
+        }
+        .animate-bottomsheet-in {
+          animation: bottomsheet-slide-up 0.2s ease-out both;
         }
         @media (min-width: 640px) {
-          @keyframes modal-in {
-            from {
-              opacity: 0;
-              transform: translate(-50%, -50%) scale(0.95);
-            }
-            to {
-              opacity: 1;
-              transform: translate(-50%, -50%) scale(1);
-            }
+          .animate-bottomsheet-in {
+            animation: bottomsheet-scale-in 0.2s ease-out both;
           }
-        }
-        .animate-modal-in {
-          animation: modal-in 0.2s ease-out both;
         }
       `}</style>
     </div>
