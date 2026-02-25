@@ -169,6 +169,7 @@ export class ChatService {
         senderId: true,
         senderUsername: true,
         senderName: true,
+        senderRole: true,
         content: true,
         createdAt: true,
         readReceipts: {
@@ -195,6 +196,7 @@ export class ChatService {
         senderId: msg.senderId,
         senderUsername: msg.senderUsername,
         senderName: msg.senderName,
+        senderRole: msg.senderRole,
         content: msg.content,
         createdAt: msg.createdAt,
         unreadCount,

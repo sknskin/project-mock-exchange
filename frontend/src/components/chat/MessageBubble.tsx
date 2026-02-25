@@ -13,7 +13,7 @@ interface MessageBubbleProps {
   isMine: boolean;
   showSender: boolean;
   locale: string;
-  isAdmin?: boolean;
+  userRole?: string;
 }
 
 function formatTime(dateString: string) {
@@ -21,11 +21,17 @@ function formatTime(dateString: string) {
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-export default function MessageBubble({ message, isMine, showSender, locale, isAdmin }: MessageBubbleProps) {
+export default function MessageBubble({ message, isMine, showSender, locale, userRole }: MessageBubbleProps) {
   const { t } = useTranslation();
   const deleteMessage = useDeleteMessage();
-  const canDelete = isMine || isAdmin;
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  // 삭제 권한: SYSTEM=모두 / ADMIN=SYSTEM 메시지 제외 / USER=본인만
+  const canDelete = (() => {
+    if (userRole === 'SYSTEM') return true;
+    if (userRole === 'ADMIN') return message.senderRole !== 'SYSTEM';
+    return isMine;
+  })();
 
   const handleDelete = async () => {
     await deleteMessage.mutateAsync({ roomId: message.roomId, messageId: message.id });
@@ -41,7 +47,7 @@ export default function MessageBubble({ message, isMine, showSender, locale, isA
               {message.senderName || message.senderUsername}
             </span>
           )}
-          <div className={cn('flex items-end gap-1.5', isMine ? 'flex-row-reverse' : 'flex-row')}>
+          <div className={cn('flex items-end gap-1', isMine ? 'flex-row-reverse' : 'flex-row')}>
             <div className="relative">
               <div
                 className={cn(
@@ -69,13 +75,13 @@ export default function MessageBubble({ message, isMine, showSender, locale, isA
                 </button>
               )}
             </div>
-            <div className="flex flex-col items-center gap-0.5 shrink-0">
+            <div className={cn('flex flex-col shrink-0 mb-0.5', isMine ? 'items-end' : 'items-start')}>
               {message.unreadCount > 0 && (
-                <span className="text-[10px] text-accent font-bold">
+                <span className="text-[10px] leading-none text-accent font-bold">
                   {message.unreadCount}
                 </span>
               )}
-              <span className="text-[10px] text-text-quaternary">
+              <span className="text-[10px] leading-none text-text-quaternary mt-0.5">
                 {formatTime(message.createdAt)}
               </span>
             </div>

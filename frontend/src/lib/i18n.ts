@@ -667,10 +667,9 @@ const translations = {
 
     // Help
     'help.title': '도움말',
-    'help.subtitle': 'VirtuEx 사용 가이드',
     'help.tab.dashboard': '대시보드',
     'help.tab.portfolio': '내 투자',
-    'help.tab.orders': '주문',
+    'help.tab.orders': '주문 내역',
     'help.tab.leaderboard': '리더보드',
     'help.tab.announcements': '공지사항',
     'help.tab.news': '뉴스',
@@ -1392,7 +1391,6 @@ const translations = {
 
     // Help
     'help.title': 'Help',
-    'help.subtitle': 'VirtuEx User Guide',
     'help.tab.dashboard': 'Dashboard',
     'help.tab.portfolio': 'Portfolio',
     'help.tab.orders': 'Orders',

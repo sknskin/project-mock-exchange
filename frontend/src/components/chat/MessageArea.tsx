@@ -261,7 +261,7 @@ export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeave
                 isMine={msg.senderId === user?.id}
                 showSender={showSender}
                 locale={locale}
-                isAdmin={isAdmin}
+                userRole={user?.role}
               />
             );
           })

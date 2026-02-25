@@ -370,6 +370,7 @@ export interface ChatMessage {
   senderId: string;
   senderUsername: string;
   senderName: string;
+  senderRole?: string;
   content: string;
   createdAt: string;
   unreadCount: number;
