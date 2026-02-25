@@ -442,13 +442,13 @@ export class ChatService {
       }).then((r) => r.length),
       this.prisma.$queryRaw<{ label: string; count: bigint }[]>`
         SELECT TO_CHAR("created_at", 'YYYY-MM-DD') AS label, COUNT(*)::bigint AS count
-        FROM "Message"
+        FROM "messages"
         WHERE "created_at" >= ${since}
         GROUP BY label ORDER BY label
       `,
       this.prisma.$queryRaw<{ room_id: string; name: string | null; type: string; count: bigint }[]>`
         SELECT r.id AS room_id, r.name, r.type, COUNT(m.id)::bigint AS count
-        FROM "Room" r JOIN "Message" m ON m."room_id" = r.id
+        FROM "rooms" r JOIN "messages" m ON m."room_id" = r.id
         WHERE m."created_at" >= ${since}
         GROUP BY r.id ORDER BY count DESC LIMIT 10
       `,
