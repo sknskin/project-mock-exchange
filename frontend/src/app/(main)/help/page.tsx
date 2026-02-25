@@ -218,7 +218,6 @@ export default function HelpPage() {
         <HelpCircle className="w-5 h-5 text-accent" />
         <div>
           <h1 className="text-[20px] font-extrabold text-text-primary">{t('help.title')}</h1>
-          <p className="text-[13px] text-text-tertiary">{t('help.subtitle')}</p>
         </div>
       </div>
 
