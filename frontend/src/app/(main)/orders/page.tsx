@@ -22,6 +22,7 @@ const STATUS_OPTIONS: { key: string; labelKey: TranslationKey }[] = [
   { key: 'all', labelKey: 'orders.all' },
   { key: 'PENDING', labelKey: 'orders.pending' },
   { key: 'FILLED', labelKey: 'orders.filled' },
+  { key: 'CANCELLED', labelKey: 'orders.cancelled' },
 ];
 
 function StatusDropdown({
@@ -144,6 +145,22 @@ export default function OrdersPage() {
             t={t}
           />
         </div>
+
+        {/* 주문 요약 통계 / Order Summary Stats */}
+        {!isLoading && orders && orders.length > 0 && (
+          <div className="grid grid-cols-3 gap-3 mb-5">
+            {[
+              { label: t('orders.totalOrders'), value: orders.length, color: 'text-text-primary' },
+              { label: t('orders.filledOrders'), value: orders.filter((o) => o.status === 'FILLED').length, color: 'text-success' },
+              { label: t('orders.pendingOrders'), value: orders.filter((o) => o.status === 'PENDING').length, color: 'text-warning' },
+            ].map((stat) => (
+              <div key={stat.label} className="bg-bg-secondary/60 border border-border/60 rounded-xl px-4 py-3 text-center">
+                <div className={cn('text-[20px] font-extrabold tabular-nums', stat.color)}>{stat.value}</div>
+                <div className="text-[11px] text-text-quaternary font-medium mt-0.5">{stat.label}</div>
+              </div>
+            ))}
+          </div>
+        )}
 
         <div>
           {isLoading ? (

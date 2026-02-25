@@ -60,7 +60,7 @@ export default function TransactionList({ orders }: TransactionListProps) {
                 : order.status === 'PENDING'
                   ? t('orders.pending')
                   : order.status === 'CANCELLED'
-                    ? t('orders.cancel')
+                    ? t('orders.cancelled')
                     : t('orders.filled')}
             </span>
           </div>
@@ -73,6 +73,17 @@ export default function TransactionList({ orders }: TransactionListProps) {
               {formatDate(order.createdAt)}
             </span>
           </div>
+          {/* 체결 정보 / Filled info */}
+          {order.filledPrice != null && order.filledQuantity > 0 && (
+            <div className="flex items-center justify-between mt-1.5 px-0.5">
+              <span className="text-[11px] text-text-tertiary">
+                {t('orders.filledPrice')} {formatPrice(order.filledPrice)} · {t('orders.filledQuantity')} {formatQuantity(order.filledQuantity)}{t('orders.unit')}
+              </span>
+              <span className="text-[11px] font-medium text-text-secondary">
+                {t('orders.totalAmount')} {formatPrice(order.filledPrice * order.filledQuantity)}
+              </span>
+            </div>
+          )}
         </div>
       ))}
     </div>
