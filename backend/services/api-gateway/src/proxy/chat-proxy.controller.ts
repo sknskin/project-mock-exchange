@@ -137,9 +137,6 @@ export class ChatProxyController {
     if (result.status < 400 && result.data) {
       const messageData = (result.data as { data?: unknown }).data;
       this.chatGateway.broadcastMessage(id, messageData);
-
-      // 오프라인 참여자에게 알림 생성 (Create notification for offline participants)
-      this.notifyOfflineParticipants(id, user, req);
     }
 
     return res.status(result.status).json(result.data);
@@ -281,59 +278,5 @@ export class ChatProxyController {
     }
 
     return res.status(result.status).json(result.data);
-  }
-
-  private async notifyOfflineParticipants(
-    roomId: string,
-    sender: { id: string; username: string; name?: string },
-    req: Request,
-  ) {
-    try {
-      // 채팅 서비스에서 방 목록 (참여자 포함) 조회 (Get room list (contains participants) from chat service)
-      const roomResult = await this.proxyService.forward('chat', {
-        method: 'GET',
-        url: '/rooms',
-        headers: {
-          'x-user-id': sender.id,
-          'x-user-username': sender.username,
-        },
-      });
-
-      const rooms = (roomResult.data as { data?: { id: string; name?: string; type: string; participants: { userId: string; username: string }[] }[] }).data || [];
-      const room = rooms.find((r) => r.id === roomId);
-      if (!room) return;
-
-      const senderDisplayName = sender.name || sender.username;
-      const roomLabel = room.type === 'GROUP'
-        ? room.name || room.participants.map((p) => p.username).join(', ')
-        : undefined;
-
-      for (const p of room.participants) {
-        if (p.userId === sender.id) continue;
-        if (this.chatGateway.isUserOnline(p.userId)) continue;
-
-        const title = roomLabel
-          ? `${senderDisplayName} (${roomLabel})`
-          : `${senderDisplayName}`;
-
-        // 오프라인 사용자에게 알림 생성 (Create notification for offline user)
-        await this.proxyService.forward('user-auth', {
-          method: 'POST',
-          url: '/notifications',
-          data: {
-            userId: p.userId,
-            type: 'CHAT_MESSAGE',
-            title,
-            message: req.body.content?.substring(0, 100) || '',
-            link: `chat:${roomId}`,
-          },
-          headers: { Authorization: req.headers.authorization || '' },
-        }).catch(() => {
-          // 알림 생성은 최선의 노력 (Notification creation is best-effort)
-        });
-      }
-    } catch {
-      // 알림은 최선의 노력이므로, 메시지 전송 실패로 이어지지 않도록 함 (Notification is best-effort, don't fail the message send)
-    }
   }
 }
