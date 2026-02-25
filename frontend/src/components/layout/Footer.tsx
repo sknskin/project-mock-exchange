@@ -69,12 +69,12 @@ export default function Footer() {
     }, 1500);
   }, [t]);
 
-  // 홈, 대시보드에서만 푸터 표시 / Show footer only on home and dashboard pages
-  const showFooter = pathname === '/' || pathname === '/dashboard';
-  if (!showFooter) return null;
+  // 모바일: 홈/대시보드만, 데스크톱: 모든 페이지에서 표시
+  // Mobile: home/dashboard only, Desktop: always show
+  const isHomeDashboard = pathname === '/' || pathname === '/dashboard';
 
   return (
-    <footer className={cn('border-t border-border mt-12 md:mt-20 transition-[margin] duration-300 ease-in-out', showPinned && 'lg:mr-[380px]')}>
+    <footer className={cn('border-t border-border mt-12 md:mt-20 transition-[margin] duration-300 ease-in-out', showPinned && 'lg:mr-[380px]', !isHomeDashboard && 'hidden sm:block')}>
       <div className="max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-10 pt-10 md:pt-14">
         {/* 상단: 브랜드 + 설명 + 연락처 / Top: Brand + Description + Contact */}
         <div className="flex flex-col gap-4 mb-8">
