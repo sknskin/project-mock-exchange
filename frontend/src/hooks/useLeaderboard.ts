@@ -16,7 +16,15 @@ export function useLeaderboard() {
     queryKey: ['leaderboard'],
     queryFn: async () => {
       const { data } = await api.get('/api/portfolio/leaderboard');
-      return data.data ?? data;
+      const raw: any[] = data.data ?? data;
+      return raw.map((e: any) => ({
+        rank: e.rank,
+        userId: e.userId,
+        username: e.username || '',
+        name: e.name || '',
+        totalValue: Number(e.totalPortfolioValue || e.totalValue || 0),
+        pnlPercent: Number(e.pnlPercent || 0),
+      }));
     },
     refetchInterval: 30000,
   });
