@@ -126,7 +126,7 @@ export default function AssetDetailPage({
 
   const handleLoginConfirm = () => {
     setLoginModalOpen(false);
-    router.push('/auth/login');
+    router.push('/login');
   };
 
   return (
