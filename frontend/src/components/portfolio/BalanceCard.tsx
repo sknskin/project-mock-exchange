@@ -7,8 +7,10 @@
  */
 'use client';
 
-import { cn, formatCurrency, formatPercent } from '@/lib/format';
+import { cn, formatCurrencyDisplay, formatPercent } from '@/lib/format';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useExchangeRate } from '@/hooks/useExchangeRate';
+import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
 import { Plus, Minus } from 'lucide-react';
 
 interface BalanceCardProps {
@@ -29,13 +31,17 @@ export default function BalanceCard({
   onWithdraw,
 }: BalanceCardProps) {
   const { t } = useTranslation();
+  const { data: rateData } = useExchangeRate();
+  const { display } = useCurrencyDisplay();
+  const rate = rateData?.rate;
+  const fmt = (v: number) => formatCurrencyDisplay(v, display, rate);
   const isPositive = totalPnl >= 0;
 
   return (
     <div className="py-6 sm:py-7">
       <div className="text-[13px] text-text-tertiary font-medium mb-2">{t('portfolio.totalAssets')}</div>
       <div className="text-[28px] sm:text-[32px] font-extrabold text-text-primary tabular-nums leading-tight">
-        {formatCurrency(totalValue)}
+        {fmt(totalValue)}
       </div>
       <div className="flex items-center gap-2.5 mt-2.5">
         <span
@@ -45,7 +51,7 @@ export default function BalanceCard({
           )}
         >
           {isPositive ? '+' : ''}
-          {formatCurrency(totalPnl)}
+          {fmt(totalPnl)}
         </span>
         <span
           className={cn(
@@ -61,7 +67,7 @@ export default function BalanceCard({
           <span className="text-text-tertiary">{t('portfolio.cashBalance')}</span>
           <div className="flex items-center gap-2">
             <span className="text-text-primary font-bold tabular-nums">
-              {formatCurrency(cashBalance)}
+              {fmt(cashBalance)}
             </span>
             <div className="flex items-center gap-1.5">
               {onDeposit && (
@@ -88,7 +94,7 @@ export default function BalanceCard({
         <div className="flex justify-between text-[14px]">
           <span className="text-text-tertiary">{t('portfolio.investedValue')}</span>
           <span className="text-text-primary font-bold tabular-nums">
-            {formatCurrency(totalValue - cashBalance)}
+            {fmt(totalValue - cashBalance)}
           </span>
         </div>
 

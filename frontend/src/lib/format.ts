@@ -70,8 +70,33 @@ export function formatCompactPrice(price: number): string {
 export function formatCurrency(value: number): string {
   if (value == null || isNaN(value)) return '-';
   const locale = getLocale();
-  if (locale === 'en') return '₩' + value.toLocaleString('en-US');
-  return value.toLocaleString('ko-KR') + '원';
+  const rounded = Math.round(value);
+  if (locale === 'en') return '₩' + rounded.toLocaleString('en-US');
+  return rounded.toLocaleString('ko-KR') + '원';
+}
+
+/** USD 포맷 — 항상 소수점 2자리 */
+export function formatDollar(value: number): string {
+  if (value == null || isNaN(value)) return '-';
+  return '$' + value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+/**
+ * 통화 모드에 따라 원화 또는 달러로 표시
+ * @param value 원화 기준 금액
+ * @param mode 'krw' | 'original' (original = USD)
+ * @param exchangeRate USD→KRW 환율
+ */
+export function formatCurrencyDisplay(
+  value: number,
+  mode: 'krw' | 'original',
+  exchangeRate?: number,
+): string {
+  if (value == null || isNaN(value)) return '-';
+  if (mode === 'original' && exchangeRate && exchangeRate > 0) {
+    return formatDollar(value / exchangeRate);
+  }
+  return formatCurrency(value);
 }
 
 export function formatQuantity(quantity: number): string {

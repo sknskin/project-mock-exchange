@@ -7,8 +7,10 @@
  */
 'use client';
 
-import { cn, formatPrice, formatQuantity, formatDate } from '@/lib/format';
+import { cn, formatPrice, formatQuantity, formatDate, formatCurrencyDisplay, formatDollar } from '@/lib/format';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useExchangeRate } from '@/hooks/useExchangeRate';
+import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
 import type { Order } from '@/types';
 
 interface TransactionListProps {
@@ -17,6 +19,11 @@ interface TransactionListProps {
 
 export default function TransactionList({ orders }: TransactionListProps) {
   const { t } = useTranslation();
+  const { data: rateData } = useExchangeRate();
+  const { display: currencyMode } = useCurrencyDisplay();
+  const rate = rateData?.rate;
+  const fmtPrice = (v: number) => currencyMode === 'original' && rate ? formatDollar(v / rate) : formatPrice(v);
+  const fmt = (v: number) => formatCurrencyDisplay(v, currencyMode, rate);
 
   if (orders.length === 0) {
     return (
@@ -67,7 +74,7 @@ export default function TransactionList({ orders }: TransactionListProps) {
           <div className="flex items-center justify-between mt-2">
             <span className="text-[12px] text-text-quaternary">
               {formatQuantity(order.quantity)}{t('orders.unit')} ·{' '}
-              {order.price ? formatPrice(order.price) : t('orders.marketPrice')}
+              {order.price ? fmtPrice(order.price) : t('orders.marketPrice')}
             </span>
             <span className="text-[12px] text-text-quaternary">
               {formatDate(order.createdAt)}
@@ -77,10 +84,10 @@ export default function TransactionList({ orders }: TransactionListProps) {
           {order.filledPrice != null && order.filledQuantity > 0 && (
             <div className="flex items-center justify-between mt-1.5 px-0.5">
               <span className="text-[11px] text-text-tertiary">
-                {t('orders.filledPrice')} {formatPrice(order.filledPrice)} · {t('orders.filledQuantity')} {formatQuantity(order.filledQuantity)}{t('orders.unit')}
+                {t('orders.filledPrice')} {fmtPrice(order.filledPrice)} · {t('orders.filledQuantity')} {formatQuantity(order.filledQuantity)}{t('orders.unit')}
               </span>
               <span className="text-[11px] font-medium text-text-secondary">
-                {t('orders.totalAmount')} {formatPrice(order.filledPrice * order.filledQuantity)}
+                {t('orders.totalAmount')} {fmt(order.filledPrice * order.filledQuantity)}
               </span>
             </div>
           )}

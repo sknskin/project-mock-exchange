@@ -11,11 +11,14 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import AuthGuard from '@/components/layout/AuthGuard';
 import TransactionList from '@/components/portfolio/TransactionList';
+import ExchangeRateBar from '@/components/market/ExchangeRateBar';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import Skeleton from '@/components/ui/Skeleton';
 import { useOrders, useCancelOrder, useModifyOrder, useTradeHistory } from '@/hooks/useOrders';
+import { useExchangeRate } from '@/hooks/useExchangeRate';
+import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
 import { useTranslation } from '@/hooks/useTranslation';
-import { cn, formatPrice, formatQuantity, formatDate, formatCurrency } from '@/lib/format';
+import { cn, formatPrice, formatQuantity, formatDate, formatCurrencyDisplay } from '@/lib/format';
 import { useAuthStore } from '@/stores/auth';
 import { Search, ChevronDown, ClipboardList, Check, BarChart, LayoutDashboard } from 'lucide-react';
 import type { TranslationKey } from '@/lib/i18n';
@@ -95,6 +98,10 @@ function StatusDropdown({
 
 export default function OrdersPage() {
   const { t } = useTranslation();
+  const { data: rateData } = useExchangeRate();
+  const { display: currencyMode } = useCurrencyDisplay();
+  const rate = rateData?.rate;
+  const fmt = (v: number) => formatCurrencyDisplay(v, currencyMode, rate);
   const [tab, setTab] = useState<'orders' | 'trades'>('orders');
   const [statusFilter, setStatusFilter] = useState('all');
   const [searchInput, setSearchInput] = useState('');
@@ -152,6 +159,8 @@ export default function OrdersPage() {
           <ClipboardList className="w-5 h-5 text-accent" />
           <h1 className="text-[20px] font-extrabold text-text-primary">{t('orders.title')}</h1>
         </div>
+
+        <ExchangeRateBar />
 
         <div className="flex gap-1 mb-4">
           <button
@@ -367,10 +376,10 @@ export default function OrdersPage() {
                       </div>
                       <div className="text-right">
                         <div className="text-[13px] font-medium text-text-primary tabular-nums">
-                          {formatCurrency(trade.price)} × {trade.quantity.toLocaleString(undefined, { maximumFractionDigits: 8 })}
+                          {fmt(trade.price)} × {trade.quantity.toLocaleString(undefined, { maximumFractionDigits: 8 })}
                         </div>
                         <div className="text-[12px] text-text-tertiary tabular-nums">
-                          {t('orders.totalAmount')}: {formatCurrency(trade.total)}
+                          {t('orders.totalAmount')}: {fmt(trade.total)}
                         </div>
                       </div>
                     </div>

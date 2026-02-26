@@ -20,14 +20,16 @@ import ConfirmModal from '@/components/ui/ConfirmModal';
 import Skeleton from '@/components/ui/Skeleton';
 import { usePortfolio, useDeposit, useWithdraw } from '@/hooks/usePortfolio';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
+import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
 import { useTranslation } from '@/hooks/useTranslation';
-import { formatCurrency } from '@/lib/format';
+import { formatCurrency, formatCurrencyDisplay } from '@/lib/format';
 import { Briefcase, ArrowLeftRight, ShoppingCart, LayoutDashboard } from 'lucide-react';
 
 export default function PortfolioPage() {
   const { t } = useTranslation();
   const { data: portfolio, isLoading } = usePortfolio();
   const { data: rateData } = useExchangeRate();
+  const { display: currencyMode } = useCurrencyDisplay();
   const deposit = useDeposit();
   const [depositOpen, setDepositOpen] = useState(false);
   const [depositAmount, setDepositAmount] = useState('');
@@ -278,7 +280,7 @@ export default function PortfolioPage() {
               />
               {portfolio && (
                 <p className="mt-1.5 text-[12px] text-text-quaternary">
-                  {t('portfolio.availableBalance')}: {formatCurrency(portfolio.cashBalance)}
+                  {t('portfolio.availableBalance')}: {formatCurrencyDisplay(portfolio.cashBalance, currencyMode, rate)}
                 </p>
               )}
             </div>
@@ -324,7 +326,7 @@ export default function PortfolioPage() {
             handleWithdraw();
           }}
           title={t('portfolio.withdrawConfirmTitle')}
-          message={t('portfolio.withdrawConfirmMessage').replace('${amount}', withdrawAmount ? formatCurrency(parseFloat(withdrawAmount)) : '0')}
+          message={t('portfolio.withdrawConfirmMessage').replace('${amount}', withdrawAmount ? formatCurrencyDisplay(parseFloat(withdrawAmount), currencyMode, rate) : '0')}
           confirmVariant="danger"
           loading={withdraw.isPending}
         />

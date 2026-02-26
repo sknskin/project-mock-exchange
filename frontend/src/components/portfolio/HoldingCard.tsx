@@ -8,8 +8,10 @@
 'use client';
 
 import Link from 'next/link';
-import { cn, formatPrice, formatPercent, formatQuantity, formatCurrency } from '@/lib/format';
+import { cn, formatPrice, formatPercent, formatQuantity, formatCurrencyDisplay, formatDollar } from '@/lib/format';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useExchangeRate } from '@/hooks/useExchangeRate';
+import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
 import type { Holding } from '@/types';
 
 interface HoldingCardProps {
@@ -30,6 +32,10 @@ function getSymbolColor(symbol: string): string {
 
 export default function HoldingCard({ holding }: HoldingCardProps) {
   const { t } = useTranslation();
+  const { data: rateData } = useExchangeRate();
+  const { display } = useCurrencyDisplay();
+  const rate = rateData?.rate;
+  const fmt = (v: number) => formatCurrencyDisplay(v, display, rate);
   const isPositive = holding.pnl >= 0;
 
   return (
@@ -56,7 +62,7 @@ export default function HoldingCard({ holding }: HoldingCardProps) {
       </div>
       <div className="text-right">
         <div className="text-[14px] font-semibold text-text-primary tabular-nums">
-          {formatCurrency(holding.value)}
+          {fmt(holding.value)}
         </div>
         <div
           className={cn(
@@ -64,8 +70,9 @@ export default function HoldingCard({ holding }: HoldingCardProps) {
             isPositive ? 'text-rise' : 'text-fall',
           )}
         >
-          {isPositive ? '+' : ''}
-          {formatPrice(holding.pnl)} ({formatPercent(holding.pnlPercent)})
+          {isPositive ? '+' : ''}{display === 'original' && rate
+            ? formatDollar(holding.pnl / rate)
+            : formatPrice(holding.pnl)} ({formatPercent(holding.pnlPercent)})
         </div>
       </div>
     </Link>

@@ -9,10 +9,13 @@
 
 import { useRef, useEffect, useCallback, useState, useMemo } from 'react';
 import { useLeaderboard } from '@/hooks/useLeaderboard';
+import { useExchangeRate } from '@/hooks/useExchangeRate';
+import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
 import { useAuthStore } from '@/stores/auth';
 import { useTranslation } from '@/hooks/useTranslation';
+import ExchangeRateBar from '@/components/market/ExchangeRateBar';
 import Skeleton from '@/components/ui/Skeleton';
-import { cn, formatCurrency, formatPercent } from '@/lib/format';
+import { cn, formatCurrencyDisplay, formatPercent } from '@/lib/format';
 import { Trophy, RefreshCw, Users } from 'lucide-react';
 
 type SortMode = 'return' | 'assets';
@@ -60,6 +63,10 @@ function formatTimestamp(ts: number, locale: string): string {
 export default function LeaderboardPage() {
   const { t, locale } = useTranslation();
   const { data: leaderboard, isLoading, dataUpdatedAt, refetch } = useLeaderboard();
+  const { data: rateData } = useExchangeRate();
+  const { display: currencyMode } = useCurrencyDisplay();
+  const rate = rateData?.rate;
+  const fmt = (v: number) => formatCurrencyDisplay(v, currencyMode, rate);
   const user = useAuthStore((s) => s.user);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [sortMode, setSortMode] = useState<SortMode>('return');
@@ -117,6 +124,8 @@ export default function LeaderboardPage() {
         <Trophy className="w-5 h-5 text-yellow-400" />
         <h1 className="text-[20px] font-extrabold text-text-primary">{t('leaderboard.title')}</h1>
       </div>
+
+      <ExchangeRateBar />
 
       {/* 참여자 수 + 내 순위 + 정렬 / Participants + My Rank + Sort */}
       {!isLoading && leaderboard && leaderboard.length > 0 && (
@@ -235,7 +244,7 @@ export default function LeaderboardPage() {
                 </div>
 
                 <span className="w-24 sm:w-36 text-right text-[13px] sm:text-[14px] text-text-secondary tabular-nums font-medium shrink-0">
-                  {formatCurrency(entry.totalValue)}
+                  {fmt(entry.totalValue)}
                 </span>
 
                 <span
