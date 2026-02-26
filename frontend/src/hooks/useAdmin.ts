@@ -67,7 +67,7 @@ export function useApproveUser() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin-users'] });
       qc.invalidateQueries({ queryKey: ['admin-user'] });
-      useToastStore.getState().addToast(t('toast.userApproved'));
+      useToastStore.getState().addToast(t('toast.userApproved'), 'success');
     },
   });
 }
@@ -83,7 +83,7 @@ export function useRejectUser() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin-users'] });
       qc.invalidateQueries({ queryKey: ['admin-user'] });
-      useToastStore.getState().addToast(t('toast.userRejected'));
+      useToastStore.getState().addToast(t('toast.userRejected'), 'success');
     },
   });
 }
@@ -99,7 +99,7 @@ export function useDeactivateUser() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin-users'] });
       qc.invalidateQueries({ queryKey: ['admin-user'] });
-      useToastStore.getState().addToast(t('toast.userDeactivated'));
+      useToastStore.getState().addToast(t('toast.userDeactivated'), 'success');
     },
   });
 }
@@ -115,7 +115,7 @@ export function useActivateUser() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin-users'] });
       qc.invalidateQueries({ queryKey: ['admin-user'] });
-      useToastStore.getState().addToast(t('toast.userActivated'));
+      useToastStore.getState().addToast(t('toast.userActivated'), 'success');
     },
   });
 }
@@ -130,7 +130,7 @@ export function useDeleteUser() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin-users'] });
-      useToastStore.getState().addToast(t('toast.userDeleted'));
+      useToastStore.getState().addToast(t('toast.userDeleted'), 'success');
     },
   });
 }
@@ -146,7 +146,7 @@ export function useUpdateRole() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin-users'] });
       qc.invalidateQueries({ queryKey: ['admin-user'] });
-      useToastStore.getState().addToast(t('toast.roleChanged'));
+      useToastStore.getState().addToast(t('toast.roleChanged'), 'success');
     },
   });
 }
@@ -183,7 +183,7 @@ export function useCreateAnnouncement() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['announcements'] });
-      useToastStore.getState().addToast(t('toast.announcementCreated'));
+      useToastStore.getState().addToast(t('toast.announcementCreated'), 'success');
     },
   });
 }
@@ -199,7 +199,7 @@ export function useUpdateAnnouncement() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['announcements'] });
       qc.invalidateQueries({ queryKey: ['announcement'] });
-      useToastStore.getState().addToast(t('toast.announcementUpdated'));
+      useToastStore.getState().addToast(t('toast.announcementUpdated'), 'success');
     },
   });
 }
@@ -259,7 +259,7 @@ export function useDeleteAnnouncement() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['announcements'] });
-      useToastStore.getState().addToast(t('toast.announcementDeleted'));
+      useToastStore.getState().addToast(t('toast.announcementDeleted'), 'success');
     },
   });
 }
@@ -365,7 +365,7 @@ export function useUpdateProfile() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['profile'] });
-      useToastStore.getState().addToast(t('toast.profileUpdated'));
+      useToastStore.getState().addToast(t('toast.profileUpdated'), 'success');
     },
   });
 }
@@ -382,7 +382,7 @@ export function useChangePassword() {
       return data;
     },
     onSuccess: () => {
-      useToastStore.getState().addToast(t('toast.passwordChanged'));
+      useToastStore.getState().addToast(t('toast.passwordChanged'), 'success');
     },
   });
 }

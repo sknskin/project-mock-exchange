@@ -61,7 +61,7 @@ export function useChatSocket() {
 
     socket.on('chat:kicked', () => {
       qc.invalidateQueries({ queryKey: ['chat-rooms'] });
-      useToastStore.getState().addToast('You have been removed from a room');
+      useToastStore.getState().addToast('You have been removed from a room', 'error');
     });
 
     // 거래 체결 알림 (Trade execution notifications)

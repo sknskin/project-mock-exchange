@@ -481,7 +481,15 @@ export class OrderService {
         { amount },
         { headers: { 'x-user-id': userId }, timeout: 5000 },
       );
-    } catch (error: unknown) {
+    } catch (error: any) {
+      // axios 에러의 경우 portfolio 서비스의 실제 에러 메시지를 추출
+      const respMsg = error?.response?.data?.message;
+      if (respMsg) {
+        const msg = typeof respMsg === 'string' ? respMsg : Array.isArray(respMsg) ? respMsg[0] : '';
+        if (msg) {
+          throw new BadRequestException(msg);
+        }
+      }
       const message =
         error instanceof Error ? error.message : 'Unknown error';
       throw new BadRequestException(`Failed to reserve funds: ${message}`);

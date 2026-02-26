@@ -39,6 +39,7 @@ export default function MyPageEditPage() {
   });
   const [error, setError] = useState('');
   const [initialized, setInitialized] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   useEffect(() => {
     if (profile && !initialized) {
@@ -53,7 +54,12 @@ export default function MyPageEditPage() {
     }
   }, [profile, initialized]);
 
-  const handleSave = async () => {
+  const handleSave = () => {
+    setConfirmOpen(true);
+  };
+
+  const handleConfirmSave = async () => {
+    setConfirmOpen(false);
     setError('');
     try {
       await updateProfile.mutateAsync(form);
@@ -163,6 +169,39 @@ export default function MyPageEditPage() {
           </button>
         </div>
       </div>
+
+      {/* 수정 확인 모달 */}
+      {confirmOpen && (
+        <>
+          <div className="fixed inset-0 z-[60] bg-black/60" onClick={() => setConfirmOpen(false)} />
+          <div className="fixed inset-0 z-[61] flex items-center justify-center pointer-events-none px-4">
+            <div className="relative bg-bg-primary border border-border rounded-2xl p-6 w-full max-w-[360px] max-w-[calc(100vw-2rem)] shadow-2xl pointer-events-auto">
+              <h3 className="text-[16px] font-bold text-text-primary mb-2">
+                {t('mypage.confirmEdit')}
+              </h3>
+              <p className="text-[13px] text-text-tertiary mb-6">
+                {t('mypage.confirmEditDesc')}
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={handleConfirmSave}
+                  disabled={updateProfile.isPending}
+                  className="flex-1 h-11 rounded-xl bg-accent hover:bg-accent/90 text-white text-[14px] font-semibold transition-colors disabled:opacity-50"
+                >
+                  {updateProfile.isPending ? '...' : t('mypage.confirm')}
+                </button>
+                <button
+                  onClick={() => setConfirmOpen(false)}
+                  disabled={updateProfile.isPending}
+                  className="flex-1 h-11 rounded-xl border border-border text-[14px] font-semibold text-text-secondary hover:bg-bg-secondary transition-colors disabled:opacity-50"
+                >
+                  {t('mypage.cancel')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

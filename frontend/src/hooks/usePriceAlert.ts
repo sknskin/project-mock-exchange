@@ -37,7 +37,7 @@ export function useCreatePriceAlert() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['price-alerts'] });
-      useToastStore.getState().addToast(t('toast.alertCreated'));
+      useToastStore.getState().addToast(t('toast.alertCreated'), 'success');
     },
   });
 }
@@ -53,7 +53,7 @@ export function useDeletePriceAlert() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['price-alerts'] });
-      useToastStore.getState().addToast(t('toast.alertDeleted'));
+      useToastStore.getState().addToast(t('toast.alertDeleted'), 'success');
     },
   });
 }

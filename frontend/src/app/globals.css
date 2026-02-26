@@ -92,6 +92,16 @@ nextjs-portal,
     cursor: pointer;
   }
 
+  /* 숫자 인풋 스피너(위/아래 화살표) 숨김 / Hide number input spinners */
+  input[type='number']::-webkit-inner-spin-button,
+  input[type='number']::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type='number'] {
+    -moz-appearance: textfield;
+  }
+
   /* 텍스트 선택 색상 / Selection color */
   ::selection {
     background: rgba(49, 130, 246, 0.3);
@@ -298,15 +308,15 @@ nextjs-portal,
   html[data-role="ADMIN"] .admin-show,
   html[data-role="SYSTEM"] .admin-show { display: contents; }
 
-  /* 토스트 페이드 인/아웃 / Toast fade in/out */
+  /* 토스트 페이드 인/아웃 (3초) / Toast fade in/out (3s) */
   @keyframes toast-fade {
-    0% { opacity: 0; transform: translateY(-50%) translateX(4px); }
-    15% { opacity: 1; transform: translateY(-50%) translateX(0); }
-    75% { opacity: 1; }
+    0% { opacity: 0; transform: translateY(8px); }
+    8% { opacity: 1; transform: translateY(0); }
+    80% { opacity: 1; }
     100% { opacity: 0; }
   }
   .animate-toast-fade {
-    animation: toast-fade 1.5s ease-out forwards;
+    animation: toast-fade 3s ease-out forwards;
   }
 
   /* 채팅 패널 열림 애니메이션 / Chat panel open animation */

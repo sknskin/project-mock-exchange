@@ -467,6 +467,11 @@ const translations = {
     'mypage.address': '주소',
     'mypage.role': '역할',
     'mypage.joinDate': '가입일',
+    'mypage.confirmEdit': '수정하시겠습니까?',
+    'mypage.confirmEditDesc': '입력하신 내용으로 정보가 수정됩니다.',
+    'mypage.confirmPasswordChange': '정말로 비밀번호를 변경하시겠습니까?',
+    'mypage.confirmPasswordChangeDesc': '비밀번호 변경 후에는 새 비밀번호로만 로그인할 수 있습니다. 변경 전 새 비밀번호를 반드시 기억해 주세요.',
+    'mypage.confirm': '확인',
 
     // Statistics
     'stats.title': '통계',
@@ -1337,6 +1342,11 @@ const translations = {
     'mypage.address': 'Address',
     'mypage.role': 'Role',
     'mypage.joinDate': 'Joined',
+    'mypage.confirmEdit': 'Save changes?',
+    'mypage.confirmEditDesc': 'Your information will be updated with the entered details.',
+    'mypage.confirmPasswordChange': 'Are you sure you want to change your password?',
+    'mypage.confirmPasswordChangeDesc': 'After changing your password, you can only log in with the new password. Please make sure to remember your new password.',
+    'mypage.confirm': 'Confirm',
 
     // Statistics
     'stats.title': 'Statistics',

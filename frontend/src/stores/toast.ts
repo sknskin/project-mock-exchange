@@ -7,14 +7,17 @@
  */
 import { create } from 'zustand';
 
+export type ToastType = 'default' | 'info' | 'error' | 'success';
+
 interface Toast {
   id: number;
   message: string;
+  type: ToastType;
 }
 
 interface ToastState {
   toasts: Toast[];
-  addToast: (message: string) => void;
+  addToast: (message: string, type?: ToastType) => void;
   removeToast: (id: number) => void;
 }
 
@@ -22,12 +25,12 @@ let nextId = 0;
 
 export const useToastStore = create<ToastState>((set) => ({
   toasts: [],
-  addToast: (message) => {
+  addToast: (message, type = 'default') => {
     const id = ++nextId;
-    set((s) => ({ toasts: [...s.toasts, { id, message }] }));
+    set((s) => ({ toasts: [...s.toasts, { id, message, type }] }));
     setTimeout(() => {
       set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) }));
-    }, 2000);
+    }, 3000);
   },
   removeToast: (id) => {
     set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) }));

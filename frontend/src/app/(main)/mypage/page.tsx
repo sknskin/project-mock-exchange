@@ -69,6 +69,7 @@ export default function MyPage() {
   });
   const [passwordError, setPasswordError] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState('');
+  const [confirmPasswordOpen, setConfirmPasswordOpen] = useState(false);
 
   const handleOpenPasswordModal = () => {
     setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
@@ -83,7 +84,7 @@ export default function MyPage() {
     setPasswordSuccess('');
   };
 
-  const handleChangePassword = async () => {
+  const handleChangePassword = () => {
     setPasswordError('');
     setPasswordSuccess('');
 
@@ -96,6 +97,11 @@ export default function MyPage() {
       return;
     }
 
+    setConfirmPasswordOpen(true);
+  };
+
+  const handleConfirmChangePassword = async () => {
+    setConfirmPasswordOpen(false);
     try {
       await changePassword.mutateAsync(passwordForm);
       setPasswordSuccess(t('mypage.passwordChanged'));
@@ -207,7 +213,7 @@ export default function MyPage() {
             onClick={handleClosePasswordModal}
           />
           <div className="fixed inset-0 z-[61] flex items-center justify-center pointer-events-none px-4">
-            <div className="relative bg-bg-primary border border-border rounded-2xl p-6 w-full max-w-[360px] shadow-2xl pointer-events-auto">
+            <div className="relative bg-bg-primary border border-border rounded-2xl p-6 w-full max-w-[360px] max-w-[calc(100vw-2rem)] shadow-2xl pointer-events-auto">
               <div className="flex items-center justify-between mb-5">
                 <h3 className="text-[16px] font-bold text-text-primary">
                   {t('mypage.changePassword')}
@@ -319,6 +325,44 @@ export default function MyPage() {
                 </button>
                 <button
                   onClick={handleClosePasswordModal}
+                  disabled={changePassword.isPending}
+                  className="flex-1 h-11 rounded-xl border border-border text-[14px] font-semibold text-text-secondary hover:bg-bg-secondary transition-colors disabled:opacity-50"
+                >
+                  {t('mypage.cancel')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* 비밀번호 변경 최종 확인 모달 (강력한 경고) */}
+      {confirmPasswordOpen && (
+        <>
+          <div className="fixed inset-0 z-[70] bg-black/70" onClick={() => setConfirmPasswordOpen(false)} />
+          <div className="fixed inset-0 z-[71] flex items-center justify-center pointer-events-none px-4">
+            <div className="relative bg-bg-primary border border-danger/30 rounded-2xl p-6 w-full max-w-[380px] max-w-[calc(100vw-2rem)] shadow-2xl pointer-events-auto">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-8 h-8 rounded-full bg-danger/15 flex items-center justify-center">
+                  <Lock className="w-4 h-4 text-danger" />
+                </div>
+                <h3 className="text-[16px] font-bold text-text-primary">
+                  {t('mypage.confirmPasswordChange')}
+                </h3>
+              </div>
+              <p className="text-[13px] text-text-tertiary leading-relaxed mb-6">
+                {t('mypage.confirmPasswordChangeDesc')}
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={handleConfirmChangePassword}
+                  disabled={changePassword.isPending}
+                  className="flex-1 h-11 rounded-xl bg-danger hover:bg-danger/90 text-white text-[14px] font-bold transition-colors disabled:opacity-50"
+                >
+                  {changePassword.isPending ? '...' : t('mypage.confirm')}
+                </button>
+                <button
+                  onClick={() => setConfirmPasswordOpen(false)}
                   disabled={changePassword.isPending}
                   className="flex-1 h-11 rounded-xl border border-border text-[14px] font-semibold text-text-secondary hover:bg-bg-secondary transition-colors disabled:opacity-50"
                 >

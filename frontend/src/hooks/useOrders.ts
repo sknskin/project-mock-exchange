@@ -42,7 +42,16 @@ export function usePlaceOrder() {
 
   return useMutation({
     mutationFn: async (order: PlaceOrderRequest) => {
-      const { data } = await api.post('/api/orders', order);
+      // 백엔드 DTO는 quantity/price를 decimal 문자열로, idempotencyKey를 필수로 요구
+      const payload = {
+        symbol: order.symbol,
+        side: order.side,
+        type: order.type,
+        quantity: order.quantity.toString(),
+        ...(order.price != null ? { price: order.price.toString() } : {}),
+        idempotencyKey: crypto.randomUUID(),
+      };
+      const { data } = await api.post('/api/orders', payload);
       return data.data ?? data;
     },
     onSuccess: () => {
@@ -72,7 +81,11 @@ export function useModifyOrder() {
 
   return useMutation({
     mutationFn: async ({ orderId, price, quantity }: { orderId: string; price?: number; quantity?: number }) => {
-      const { data } = await api.patch(`/api/orders/${orderId}`, { price, quantity });
+      // 백엔드 DTO는 price/quantity를 decimal 문자열로 요구
+      const payload: Record<string, string> = {};
+      if (price != null) payload.price = price.toString();
+      if (quantity != null) payload.quantity = quantity.toString();
+      const { data } = await api.patch(`/api/orders/${orderId}`, payload);
       return data.data ?? data;
     },
     onSuccess: () => {

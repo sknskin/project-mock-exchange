@@ -35,7 +35,7 @@ export function useAddWatchlist() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['portfolio', 'watchlist'] });
-      useToastStore.getState().addToast(t('toast.watchlistAdded'));
+      useToastStore.getState().addToast(t('toast.watchlistAdded'), 'success');
     },
   });
 }
@@ -51,7 +51,7 @@ export function useRemoveWatchlist() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['portfolio', 'watchlist'] });
-      useToastStore.getState().addToast(t('toast.watchlistRemoved'));
+      useToastStore.getState().addToast(t('toast.watchlistRemoved'), 'success');
     },
   });
 }

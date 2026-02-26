@@ -186,13 +186,7 @@ export default function LeaderboardPage() {
                   )}
                 </div>
 
-                <div className="flex items-center gap-2.5 sm:gap-3 flex-1 pl-2 min-w-0">
-                  <div className={cn(
-                    'w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 ring-1',
-                    isTop3 ? 'bg-bg-secondary ring-border text-text-primary' : 'bg-bg-tertiary ring-border text-text-secondary',
-                  )}>
-                    {displayName.slice(0, 1).toUpperCase()}
-                  </div>
+                <div className="flex items-center flex-1 pl-2 min-w-0">
                   <div className="min-w-0">
                     <span className={cn(
                       'font-semibold text-[14px] truncate block',
