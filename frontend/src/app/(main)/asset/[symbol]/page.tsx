@@ -22,7 +22,7 @@ import OrderSheet from '@/components/trading/OrderSheet';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import Tabs from '@/components/ui/Tabs';
 import { ChartSkeleton } from '@/components/ui/Skeleton';
-import { cn, formatPriceDisplay, formatAmountDisplay, formatPercent, formatQuantity, formatTime, formatVolumeDisplay } from '@/lib/format';
+import { cn, isKRW, formatPriceDisplay, formatAmountDisplay, formatPercent, formatQuantity, formatTime, formatVolumeDisplay } from '@/lib/format';
 import { ArrowLeft, Star, Bell } from 'lucide-react';
 import { useWatchlist, useAddWatchlist, useRemoveWatchlist } from '@/hooks/useWatchlist';
 import { usePriceAlerts } from '@/hooks/usePriceAlert';
@@ -278,7 +278,16 @@ export default function AssetDetailPage({
             {t('detail.noChart')}
           </div>
         ) : (
-          <CandlestickChart data={candlesticks} chartType={chartType} exchangeRate={currencyMode === 'krw' && rate ? rate : undefined} interval={chartInterval} />
+          <CandlestickChart
+            data={candlesticks}
+            chartType={chartType}
+            exchangeRate={
+              isKRW(symbol)
+                ? currencyMode !== 'krw' && rate ? 1 / rate : undefined
+                : currencyMode === 'krw' && rate ? rate : undefined
+            }
+            interval={chartInterval}
+          />
         )}
       </div>
 

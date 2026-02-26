@@ -49,6 +49,7 @@ const INTERVAL_MS: Record<string, number> = {
   '5m': 300_000,
   '15m': 900_000,
   '1h': 3_600_000,
+  '4h': 14_400_000,
   '1d': 86_400_000,
 };
 
@@ -86,6 +87,7 @@ export function useCandlesticks(
     : interval === '5m' ? limit * 5
     : interval === '15m' ? limit * 15
     : interval === '1h' ? Math.min(limit * 60, 20000)
+    : interval === '4h' ? Math.min(limit * 240, 30000)
     : Math.min(limit * 1440, 50000);
 
   return useQuery<Candlestick[]>({
@@ -119,6 +121,7 @@ export function useCandlesticks(
       return aggregateCandles(candles1m, interval);
     },
     enabled: !!symbol,
+    refetchInterval: 60_000,
   });
 }
 

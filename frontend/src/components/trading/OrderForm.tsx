@@ -12,6 +12,8 @@ import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Tabs from '@/components/ui/Tabs';
 import { usePlaceOrder } from '@/hooks/useOrders';
+import { useExchangeRate } from '@/hooks/useExchangeRate';
+import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatPriceDisplay, isKRW } from '@/lib/format';
 import type { TranslationKey } from '@/lib/i18n';
@@ -35,6 +37,9 @@ export default function OrderForm({
   onSuccess,
 }: OrderFormProps) {
   const { t } = useTranslation();
+  const { data: rateData } = useExchangeRate();
+  const currencyMode = useCurrencyDisplay((s) => s.display);
+  const rate = rateData?.rate;
   const [orderType, setOrderType] = useState<'MARKET' | 'LIMIT'>('MARKET');
   const [quantity, setQuantity] = useState('');
   const [price, setPrice] = useState(currentPrice.toString());
@@ -51,8 +56,7 @@ export default function OrderForm({
       ? parseFloat(quantity || '0') * currentPrice
       : parseFloat(quantity || '0') * parseFloat(price || '0');
 
-  // 종목의 원래 통화로 표시 (Display in asset's native currency)
-  const fp = (p: number) => formatPriceDisplay(p, symbol, 'original');
+  const fp = (p: number) => formatPriceDisplay(p, symbol, currencyMode, rate);
 
   const handleSubmit = async () => {
     if (!quantity || parseFloat(quantity) <= 0) return;
@@ -83,7 +87,7 @@ export default function OrderForm({
 
       {orderType === 'LIMIT' && (
         <Input
-          label={`${t('order.price')} (${isKRW(symbol) ? 'KRW' : 'USD'})`}
+          label={`${t('order.price')} (${currencyMode === 'krw' ? 'KRW' : 'USD'})`}
           type="number"
           value={price}
           onChange={(e) => setPrice(e.target.value)}
