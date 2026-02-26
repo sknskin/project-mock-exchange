@@ -1,12 +1,19 @@
 import { Controller, Get, Post, Req, Res } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { Request, Response } from 'express';
 import { ProxyService } from './proxy.service';
 
+@ApiTags('News')
 @Controller('api/news')
 export class NewsProxyController {
   constructor(private readonly proxyService: ProxyService) {}
 
   @Get()
+  @ApiOperation({ summary: '뉴스 목록 조회', description: '카테고리, 페이지, 개수 기준으로 뉴스 목록을 조회합니다.' })
+  @ApiQuery({ name: 'category', required: false, description: '뉴스 카테고리' })
+  @ApiQuery({ name: 'page', required: false, description: '페이지 번호' })
+  @ApiQuery({ name: 'limit', required: false, description: '페이지당 항목 수' })
+  @ApiResponse({ status: 200, description: '뉴스 목록 조회 성공' })
   async list(@Req() req: Request, @Res() res: Response) {
     const result = await this.proxyService.forward('market-data', {
       method: 'GET',
@@ -17,6 +24,8 @@ export class NewsProxyController {
   }
 
   @Get('scrape-status')
+  @ApiOperation({ summary: '스크래핑 상태 조회', description: '뉴스 스크래핑 작업의 현재 상태를 조회합니다.' })
+  @ApiResponse({ status: 200, description: '스크래핑 상태 조회 성공' })
   async scrapeStatus(@Res() res: Response) {
     const result = await this.proxyService.forward('market-data', {
       method: 'GET',
@@ -26,6 +35,9 @@ export class NewsProxyController {
   }
 
   @Post('scrape')
+  @ApiOperation({ summary: '뉴스 스크래핑 실행', description: '뉴스 스크래핑 작업을 수동으로 트리거합니다.' })
+  @ApiResponse({ status: 200, description: '스크래핑 실행 성공' })
+  @ApiResponse({ status: 500, description: '스크래핑 실행 실패' })
   async triggerScrape(@Req() req: Request, @Res() res: Response) {
     const result = await this.proxyService.forward('market-data', {
       method: 'POST',

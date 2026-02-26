@@ -17,16 +17,28 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { Request, Response } from 'express';
 import { ProxyService } from './proxy.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
+@ApiTags('Admin')
+@ApiBearerAuth()
 @Controller('api/admin')
 @UseGuards(JwtAuthGuard)
 export class AdminProxyController {
   constructor(private readonly proxyService: ProxyService) {}
 
   @Get('users')
+  @ApiOperation({ summary: '사용자 목록 조회', description: '관리자 권한으로 전체 사용자 목록을 페이징, 필터링, 검색 조건과 함께 조회합니다' })
+  @ApiQuery({ name: 'page', required: false, description: '페이지 번호' })
+  @ApiQuery({ name: 'limit', required: false, description: '페이지당 항목 수' })
+  @ApiQuery({ name: 'status', required: false, description: '사용자 상태 필터 (active, inactive, pending 등)' })
+  @ApiQuery({ name: 'role', required: false, description: '사용자 역할 필터' })
+  @ApiQuery({ name: 'search', required: false, description: '검색어 (이름, 이메일 등)' })
+  @ApiResponse({ status: 200, description: '사용자 목록 반환 성공' })
+  @ApiResponse({ status: 401, description: '인증 필요' })
+  @ApiResponse({ status: 403, description: '관리자 권한 필요' })
   async listUsers(@Req() req: Request, @Res() res: Response) {
     const result = await this.proxyService.forward('user-auth', {
       method: 'GET',
@@ -38,6 +50,12 @@ export class AdminProxyController {
   }
 
   @Get('users/:id')
+  @ApiOperation({ summary: '사용자 상세 조회', description: '관리자 권한으로 특정 사용자의 상세 정보를 조회합니다' })
+  @ApiParam({ name: 'id', description: '사용자 ID' })
+  @ApiResponse({ status: 200, description: '사용자 상세 정보 반환 성공' })
+  @ApiResponse({ status: 401, description: '인증 필요' })
+  @ApiResponse({ status: 403, description: '관리자 권한 필요' })
+  @ApiResponse({ status: 404, description: '사용자를 찾을 수 없음' })
   async getUserDetail(
     @Param('id') id: string,
     @Req() req: Request,
@@ -52,6 +70,13 @@ export class AdminProxyController {
   }
 
   @Post('users/:id/approve')
+  @ApiOperation({ summary: '가입 승인', description: '관리자가 대기 중인 사용자의 가입 요청을 승인합니다' })
+  @ApiParam({ name: 'id', description: '사용자 ID' })
+  @ApiResponse({ status: 200, description: '가입 승인 성공' })
+  @ApiResponse({ status: 400, description: '잘못된 요청 (이미 승인된 사용자 등)' })
+  @ApiResponse({ status: 401, description: '인증 필요' })
+  @ApiResponse({ status: 403, description: '관리자 권한 필요' })
+  @ApiResponse({ status: 404, description: '사용자를 찾을 수 없음' })
   async approveUser(
     @Param('id') id: string,
     @Body() body: unknown,
@@ -68,6 +93,13 @@ export class AdminProxyController {
   }
 
   @Post('users/:id/reject')
+  @ApiOperation({ summary: '가입 거절', description: '관리자가 대기 중인 사용자의 가입 요청을 거절합니다' })
+  @ApiParam({ name: 'id', description: '사용자 ID' })
+  @ApiResponse({ status: 200, description: '가입 거절 성공' })
+  @ApiResponse({ status: 400, description: '잘못된 요청 (이미 처리된 사용자 등)' })
+  @ApiResponse({ status: 401, description: '인증 필요' })
+  @ApiResponse({ status: 403, description: '관리자 권한 필요' })
+  @ApiResponse({ status: 404, description: '사용자를 찾을 수 없음' })
   async rejectUser(
     @Param('id') id: string,
     @Body() body: unknown,
@@ -84,6 +116,13 @@ export class AdminProxyController {
   }
 
   @Post('users/:id/deactivate')
+  @ApiOperation({ summary: '사용자 비활성화', description: '관리자가 특정 사용자 계정을 비활성화합니다' })
+  @ApiParam({ name: 'id', description: '사용자 ID' })
+  @ApiResponse({ status: 200, description: '비활성화 성공' })
+  @ApiResponse({ status: 400, description: '잘못된 요청 (이미 비활성 상태 등)' })
+  @ApiResponse({ status: 401, description: '인증 필요' })
+  @ApiResponse({ status: 403, description: '관리자 권한 필요' })
+  @ApiResponse({ status: 404, description: '사용자를 찾을 수 없음' })
   async deactivateUser(
     @Param('id') id: string,
     @Req() req: Request,
@@ -98,6 +137,13 @@ export class AdminProxyController {
   }
 
   @Post('users/:id/activate')
+  @ApiOperation({ summary: '사용자 활성화', description: '관리자가 비활성화된 사용자 계정을 다시 활성화합니다' })
+  @ApiParam({ name: 'id', description: '사용자 ID' })
+  @ApiResponse({ status: 200, description: '활성화 성공' })
+  @ApiResponse({ status: 400, description: '잘못된 요청 (이미 활성 상태 등)' })
+  @ApiResponse({ status: 401, description: '인증 필요' })
+  @ApiResponse({ status: 403, description: '관리자 권한 필요' })
+  @ApiResponse({ status: 404, description: '사용자를 찾을 수 없음' })
   async activateUser(
     @Param('id') id: string,
     @Req() req: Request,
@@ -112,6 +158,12 @@ export class AdminProxyController {
   }
 
   @Delete('users/:id')
+  @ApiOperation({ summary: '사용자 삭제', description: '관리자가 특정 사용자 계정을 영구 삭제합니다' })
+  @ApiParam({ name: 'id', description: '사용자 ID' })
+  @ApiResponse({ status: 200, description: '사용자 삭제 성공' })
+  @ApiResponse({ status: 401, description: '인증 필요' })
+  @ApiResponse({ status: 403, description: '관리자 권한 필요' })
+  @ApiResponse({ status: 404, description: '사용자를 찾을 수 없음' })
   async deleteUser(
     @Param('id') id: string,
     @Req() req: Request,
@@ -126,6 +178,13 @@ export class AdminProxyController {
   }
 
   @Patch('users/:id/role')
+  @ApiOperation({ summary: '사용자 역할 변경', description: '관리자가 특정 사용자의 역할(권한)을 변경합니다' })
+  @ApiParam({ name: 'id', description: '사용자 ID' })
+  @ApiResponse({ status: 200, description: '역할 변경 성공' })
+  @ApiResponse({ status: 400, description: '잘못된 역할 값' })
+  @ApiResponse({ status: 401, description: '인증 필요' })
+  @ApiResponse({ status: 403, description: '관리자 권한 필요' })
+  @ApiResponse({ status: 404, description: '사용자를 찾을 수 없음' })
   async updateRole(
     @Param('id') id: string,
     @Body() body: unknown,

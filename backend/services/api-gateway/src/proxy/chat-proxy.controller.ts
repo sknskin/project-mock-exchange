@@ -8,11 +8,21 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiParam,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { Request, Response } from 'express';
 import { ProxyService } from './proxy.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ChatGateway } from '../gateway/chat.gateway';
 
+@ApiTags('Chat')
+@ApiBearerAuth()
 @Controller('api/chat')
 @UseGuards(JwtAuthGuard)
 export class ChatProxyController {
@@ -23,6 +33,9 @@ export class ChatProxyController {
 
   // 사용자 검색 (user-auth로 프록시) (User search (proxied to user-auth))
   @Get('users/search')
+  @ApiOperation({ summary: '사용자 검색', description: '채팅을 위한 사용자 검색' })
+  @ApiResponse({ status: 200, description: '검색 성공' })
+  @ApiResponse({ status: 401, description: '인증 실패' })
   async searchUsers(@Req() req: Request, @Res() res: Response) {
     const result = await this.proxyService.forward('user-auth', {
       method: 'GET',
@@ -35,6 +48,9 @@ export class ChatProxyController {
 
   // 채팅방 목록 (Room list)
   @Get('rooms')
+  @ApiOperation({ summary: '채팅방 목록 조회', description: '현재 사용자의 채팅방 목록을 조회합니다' })
+  @ApiResponse({ status: 200, description: '조회 성공' })
+  @ApiResponse({ status: 401, description: '인증 실패' })
   async getRooms(@Req() req: Request, @Res() res: Response) {
     const user = req.user as { id: string; username: string; name?: string };
     const result = await this.proxyService.forward('chat', {
@@ -51,6 +67,9 @@ export class ChatProxyController {
 
   // 채팅방 생성 (Create room)
   @Post('rooms')
+  @ApiOperation({ summary: '채팅방 생성', description: '새로운 채팅방을 생성합니다' })
+  @ApiResponse({ status: 201, description: '생성 성공' })
+  @ApiResponse({ status: 401, description: '인증 실패' })
   async createRoom(@Req() req: Request, @Res() res: Response) {
     const user = req.user as { id: string; username: string; name?: string };
     const { participantIds } = req.body;
@@ -104,6 +123,12 @@ export class ChatProxyController {
 
   // 메시지 조회 (Get messages)
   @Get('rooms/:id/messages')
+  @ApiOperation({ summary: '메시지 조회', description: '채팅방의 메시지 목록을 조회합니다' })
+  @ApiParam({ name: 'id', description: '채팅방 ID' })
+  @ApiQuery({ name: 'cursor', required: false, description: '커서 (페이지네이션)' })
+  @ApiQuery({ name: 'limit', required: false, description: '조회 개수 제한' })
+  @ApiResponse({ status: 200, description: '조회 성공' })
+  @ApiResponse({ status: 401, description: '인증 실패' })
   async getMessages(@Param('id') id: string, @Req() req: Request, @Res() res: Response) {
     const user = req.user as { id: string; username: string };
     const result = await this.proxyService.forward('chat', {
@@ -120,6 +145,10 @@ export class ChatProxyController {
 
   // 메시지 전송 (Send message)
   @Post('rooms/:id/messages')
+  @ApiOperation({ summary: '메시지 전송', description: '채팅방에 메시지를 전송합니다' })
+  @ApiParam({ name: 'id', description: '채팅방 ID' })
+  @ApiResponse({ status: 201, description: '전송 성공' })
+  @ApiResponse({ status: 401, description: '인증 실패' })
   async sendMessage(@Param('id') id: string, @Req() req: Request, @Res() res: Response) {
     const user = req.user as { id: string; username: string; name?: string; role?: string };
     const result = await this.proxyService.forward('chat', {
@@ -145,6 +174,10 @@ export class ChatProxyController {
 
   // 사용자 초대 (Invite users)
   @Post('rooms/:id/invite')
+  @ApiOperation({ summary: '사용자 초대', description: '채팅방에 사용자를 초대합니다' })
+  @ApiParam({ name: 'id', description: '채팅방 ID' })
+  @ApiResponse({ status: 200, description: '초대 성공' })
+  @ApiResponse({ status: 401, description: '인증 실패' })
   async inviteUsers(@Param('id') id: string, @Req() req: Request, @Res() res: Response) {
     const user = req.user as { id: string; username: string; name?: string };
 
@@ -179,6 +212,11 @@ export class ChatProxyController {
 
   // 사용자 강퇴 (관리자 전용) (Kick user (admin only))
   @Post('rooms/:id/kick')
+  @ApiOperation({ summary: '사용자 강퇴', description: '채팅방에서 사용자를 강퇴합니다 (관리자 전용)' })
+  @ApiParam({ name: 'id', description: '채팅방 ID' })
+  @ApiResponse({ status: 200, description: '강퇴 성공' })
+  @ApiResponse({ status: 401, description: '인증 실패' })
+  @ApiResponse({ status: 403, description: '권한 없음' })
   async kickUser(@Param('id') id: string, @Req() req: Request, @Res() res: Response) {
     const user = req.user as { id: string; username: string; role?: string };
     const result = await this.proxyService.forward('chat', {
@@ -201,6 +239,10 @@ export class ChatProxyController {
 
   // 채팅방 퇴장 (Leave room)
   @Post('rooms/:id/leave')
+  @ApiOperation({ summary: '채팅방 퇴장', description: '채팅방에서 퇴장합니다' })
+  @ApiParam({ name: 'id', description: '채팅방 ID' })
+  @ApiResponse({ status: 200, description: '퇴장 성공' })
+  @ApiResponse({ status: 401, description: '인증 실패' })
   async leaveRoom(@Param('id') id: string, @Req() req: Request, @Res() res: Response) {
     const user = req.user as { id: string; username: string };
     const result = await this.proxyService.forward('chat', {
@@ -216,6 +258,10 @@ export class ChatProxyController {
 
   // 채팅방 이름 수정 (Rename room)
   @Post('rooms/:id/rename')
+  @ApiOperation({ summary: '채팅방 이름 수정', description: '채팅방의 이름을 변경합니다' })
+  @ApiParam({ name: 'id', description: '채팅방 ID' })
+  @ApiResponse({ status: 200, description: '수정 성공' })
+  @ApiResponse({ status: 401, description: '인증 실패' })
   async renameRoom(@Param('id') id: string, @Req() req: Request, @Res() res: Response) {
     const user = req.user as { id: string; username: string };
     const result = await this.proxyService.forward('chat', {
@@ -232,6 +278,11 @@ export class ChatProxyController {
 
   // 메시지 삭제 (Delete message)
   @Delete('rooms/:roomId/messages/:messageId')
+  @ApiOperation({ summary: '메시지 삭제', description: '채팅 메시지를 삭제합니다' })
+  @ApiParam({ name: 'roomId', description: '채팅방 ID' })
+  @ApiParam({ name: 'messageId', description: '메시지 ID' })
+  @ApiResponse({ status: 200, description: '삭제 성공' })
+  @ApiResponse({ status: 401, description: '인증 실패' })
   async deleteMessage(
     @Param('roomId') roomId: string,
     @Param('messageId') messageId: string,
@@ -263,6 +314,10 @@ export class ChatProxyController {
 
   // 읽음 처리 (Mark as read)
   @Post('rooms/:id/read')
+  @ApiOperation({ summary: '읽음 처리', description: '채팅방의 메시지를 읽음으로 표시합니다' })
+  @ApiParam({ name: 'id', description: '채팅방 ID' })
+  @ApiResponse({ status: 200, description: '읽음 처리 성공' })
+  @ApiResponse({ status: 401, description: '인증 실패' })
   async markAsRead(@Param('id') id: string, @Req() req: Request, @Res() res: Response) {
     const user = req.user as { id: string; username: string };
     const result = await this.proxyService.forward('chat', {
