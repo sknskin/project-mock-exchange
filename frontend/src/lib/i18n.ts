@@ -126,6 +126,7 @@ const translations = {
     'toast.userDeactivated': '회원이 비활성화되었습니다',
     'toast.userActivated': '회원이 활성화되었습니다',
     'toast.userDeleted': '회원이 삭제되었습니다',
+    'toast.roleChanged': '역할이 변경되었습니다',
     'toast.announcementCreated': '공지사항이 등록되었습니다',
     'toast.announcementUpdated': '공지사항이 수정되었습니다',
     'toast.announcementDeleted': '공지사항이 삭제되었습니다',
@@ -320,6 +321,7 @@ const translations = {
     'chart.5m': '5분',
     'chart.15m': '15분',
     'chart.1h': '1시간',
+    'chart.4h': '4시간',
     'chart.1d': '1일',
 
     // SMS Verification
@@ -383,6 +385,8 @@ const translations = {
     'admin.users.deactivateConfirm': '이 회원을 비활성화하시겠습니까?',
     'admin.users.activateConfirm': '이 회원을 활성화하시겠습니까?',
     'admin.users.deleteConfirm': '이 회원을 영구 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.',
+    'admin.changeRole': '역할 변경',
+    'admin.changeRoleConfirm': '의 역할을 다음으로 변경하시겠습니까?',
     'admin.users.noteLabel': '사유 (선택)',
     'admin.users.phone': '전화번호',
     'admin.users.address': '주소',
@@ -566,6 +570,12 @@ const translations = {
     'orders.filledPrice': '체결가',
     'orders.filledQuantity': '체결수량',
     'orders.totalAmount': '총액',
+    'orders.tradeHistory': '체결내역',
+    'orders.noTrades': '체결 내역이 없습니다',
+    'orders.modify': '수정',
+    'orders.confirmModify': '수정 확인',
+    'orders.price': '가격',
+    'orders.quantity': '수량',
 
     // Order Form
     'order.title': '주문',
@@ -986,6 +996,7 @@ const translations = {
     'toast.userDeactivated': 'User deactivated',
     'toast.userActivated': 'User activated',
     'toast.userDeleted': 'User deleted',
+    'toast.roleChanged': 'Role changed',
     'toast.announcementCreated': 'Announcement created',
     'toast.announcementUpdated': 'Announcement updated',
     'toast.announcementDeleted': 'Announcement deleted',
@@ -1180,6 +1191,7 @@ const translations = {
     'chart.5m': '5m',
     'chart.15m': '15m',
     'chart.1h': '1h',
+    'chart.4h': '4H',
     'chart.1d': '1D',
 
     // SMS Verification
@@ -1243,6 +1255,8 @@ const translations = {
     'admin.users.deactivateConfirm': 'Deactivate this user?',
     'admin.users.activateConfirm': 'Activate this user?',
     'admin.users.deleteConfirm': 'Permanently delete this user?\nThis action cannot be undone.',
+    'admin.changeRole': 'Change Role',
+    'admin.changeRoleConfirm': ' role will be changed to:',
     'admin.users.noteLabel': 'Note (optional)',
     'admin.users.phone': 'Phone',
     'admin.users.address': 'Address',
@@ -1426,6 +1440,12 @@ const translations = {
     'orders.filledPrice': 'Filled Price',
     'orders.filledQuantity': 'Filled Qty',
     'orders.totalAmount': 'Total Amount',
+    'orders.tradeHistory': 'Trade History',
+    'orders.noTrades': 'No trade history',
+    'orders.modify': 'Modify',
+    'orders.confirmModify': 'Confirm',
+    'orders.price': 'Price',
+    'orders.quantity': 'Quantity',
 
     // Order Form
     'order.title': 'Order',

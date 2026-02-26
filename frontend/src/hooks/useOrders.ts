@@ -11,6 +11,19 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import type { Order, PlaceOrderRequest } from '@/types';
 
+export interface TradeHistory {
+  tradeId: string;
+  buyOrderId: string;
+  sellOrderId: string;
+  buyerId: string;
+  sellerId: string;
+  symbol: string;
+  price: number;
+  quantity: number;
+  total: number;
+  executedAt: string;
+}
+
 export function useOrders(status?: string) {
   return useQuery<Order[]>({
     queryKey: ['orders', status],
@@ -51,5 +64,42 @@ export function useCancelOrder() {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       queryClient.invalidateQueries({ queryKey: ['portfolio'] });
     },
+  });
+}
+
+export function useModifyOrder() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ orderId, price, quantity }: { orderId: string; price?: number; quantity?: number }) => {
+      const { data } = await api.patch(`/api/orders/${orderId}`, { price, quantity });
+      return data.data ?? data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+    },
+  });
+}
+
+export function useTradeHistory() {
+  return useQuery<TradeHistory[]>({
+    queryKey: ['trades', 'history'],
+    queryFn: async () => {
+      const { data } = await api.get('/api/orders/trades/history');
+      const raw: any[] = data.data ?? data;
+      return raw.map((t: any) => ({
+        tradeId: t.tradeId,
+        buyOrderId: t.buyOrderId,
+        sellOrderId: t.sellOrderId,
+        buyerId: t.buyerId,
+        sellerId: t.sellerId,
+        symbol: t.symbol,
+        price: Number(t.price),
+        quantity: Number(t.quantity),
+        total: Number(t.total),
+        executedAt: t.executedAt,
+      }));
+    },
+    refetchInterval: 10000,
   });
 }
