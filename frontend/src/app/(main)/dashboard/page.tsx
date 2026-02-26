@@ -23,6 +23,7 @@ import ConfirmModal from '@/components/ui/ConfirmModal';
 import { AssetListSkeleton } from '@/components/ui/Skeleton';
 import ServiceError from '@/components/ui/ServiceError';
 import { cn } from '@/lib/format';
+import { Search } from 'lucide-react';
 import type { Asset, AssetInfo, PriceUpdate } from '@/types';
 
 export default function DashboardPage() {
@@ -155,6 +156,17 @@ export default function DashboardPage() {
 
   return (
     <div>
+      {/* Mobile search bar */}
+      <div className="lg:hidden pt-2 pb-1">
+        <button
+          onClick={() => setSpotlightOpen(true)}
+          className="w-full flex items-center gap-2.5 bg-bg-secondary border border-border rounded-xl px-3.5 py-2.5 text-[13px] text-text-quaternary transition-colors hover:border-border/80"
+        >
+          <Search className="w-4 h-4" />
+          <span>{t('nav.searchPlaceholder')}</span>
+        </button>
+      </div>
+
       {!pricesLoading && displayAssets.length > 0 && (
         <>
           <MarketIndexSummary assets={displayAssets} />
