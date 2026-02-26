@@ -67,7 +67,7 @@ export default function BalanceCard({
               {onDeposit && (
                 <button
                   onClick={onDeposit}
-                  className="flex items-center gap-1 px-2.5 py-1 text-[12px] font-semibold text-accent border border-accent/30 rounded-lg hover:bg-accent/10 transition-colors"
+                  className="flex items-center gap-1 px-2.5 py-1.5 text-[12px] font-semibold text-accent border border-accent/30 rounded-lg hover:bg-accent/10 transition-colors"
                 >
                   <Plus className="w-3 h-3" />
                   {t('portfolio.deposit')}
@@ -76,7 +76,7 @@ export default function BalanceCard({
               {onWithdraw && (
                 <button
                   onClick={onWithdraw}
-                  className="flex items-center gap-1 px-2.5 py-1 text-[12px] font-semibold text-fall border border-fall/30 rounded-lg hover:bg-fall/10 transition-colors"
+                  className="flex items-center gap-1 px-2.5 py-1.5 text-[12px] font-semibold text-fall border border-fall/30 rounded-lg hover:bg-fall/10 transition-colors"
                 >
                   <Minus className="w-3 h-3" />
                   {t('portfolio.withdraw')}

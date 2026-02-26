@@ -103,14 +103,14 @@ export default function Pagination({
         <button
           onClick={() => handlePageChange(1)}
           disabled={page === 1}
-          className="hidden sm:block p-2 rounded text-text-quaternary hover:text-text-primary hover:bg-bg-secondary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          className="hidden sm:block p-2.5 rounded text-text-quaternary hover:text-text-primary hover:bg-bg-secondary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
         >
           <ChevronsLeft className="w-4 h-4" />
         </button>
         <button
           onClick={() => handlePageChange(page - 1)}
           disabled={page === 1}
-          className="p-2 rounded text-text-quaternary hover:text-text-primary hover:bg-bg-secondary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          className="p-2.5 rounded text-text-quaternary hover:text-text-primary hover:bg-bg-secondary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
         >
           <ChevronLeft className="w-4 h-4" />
         </button>
@@ -137,14 +137,14 @@ export default function Pagination({
         <button
           onClick={() => handlePageChange(page + 1)}
           disabled={page >= totalPages}
-          className="p-2 rounded text-text-quaternary hover:text-text-primary hover:bg-bg-secondary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          className="p-2.5 rounded text-text-quaternary hover:text-text-primary hover:bg-bg-secondary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
         >
           <ChevronRight className="w-4 h-4" />
         </button>
         <button
           onClick={() => handlePageChange(totalPages)}
           disabled={page >= totalPages}
-          className="hidden sm:block p-2 rounded text-text-quaternary hover:text-text-primary hover:bg-bg-secondary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          className="hidden sm:block p-2.5 rounded text-text-quaternary hover:text-text-primary hover:bg-bg-secondary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
         >
           <ChevronsRight className="w-4 h-4" />
         </button>

@@ -203,7 +203,7 @@ export default function AssetList({ assets, period, onPeriodChange, mainTab = 'r
           ))}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
           {/* 정렬 그룹 / Sort group — 실시간 차트 탭에서만 표시 */}
           {mainTab === 'realtime' && (
             <div className="flex items-center gap-1 bg-bg-secondary/50 rounded-xl px-1.5 py-1.5 overflow-x-auto scrollbar-hide w-fit">

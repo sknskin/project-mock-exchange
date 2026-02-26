@@ -31,7 +31,7 @@ export default function BottomNav() {
           )}
         >
           <LayoutDashboard className="w-[22px] h-[22px]" strokeWidth={pathname.startsWith('/dashboard') ? 2.2 : 1.6} />
-          <span className="text-[10px] font-semibold">{t('nav.dashboard')}</span>
+          <span className="text-[11px] font-semibold">{t('nav.dashboard')}</span>
         </Link>
 
         {/* 인증 시 표시 / Auth-only tabs */}
@@ -44,7 +44,7 @@ export default function BottomNav() {
             )}
           >
             <Briefcase className="w-[22px] h-[22px]" strokeWidth={pathname.startsWith('/portfolio') ? 2.2 : 1.6} />
-            <span className="text-[10px] font-semibold">{t('nav.portfolio')}</span>
+            <span className="text-[11px] font-semibold">{t('nav.portfolio')}</span>
           </Link>
           <Link
             href="/orders"
@@ -54,7 +54,7 @@ export default function BottomNav() {
             )}
           >
             <ClipboardList className="w-[22px] h-[22px]" strokeWidth={pathname.startsWith('/orders') ? 2.2 : 1.6} />
-            <span className="text-[10px] font-semibold">{t('nav.orders')}</span>
+            <span className="text-[11px] font-semibold">{t('nav.orders')}</span>
           </Link>
           <Link
             href="/leaderboard"
@@ -64,7 +64,7 @@ export default function BottomNav() {
             )}
           >
             <Star className="w-[22px] h-[22px]" strokeWidth={pathname.startsWith('/leaderboard') ? 2.2 : 1.6} />
-            <span className="text-[10px] font-semibold">{t('nav.leaderboard')}</span>
+            <span className="text-[11px] font-semibold">{t('nav.leaderboard')}</span>
           </Link>
         </div>
 
@@ -78,7 +78,7 @@ export default function BottomNav() {
             )}
           >
             <Newspaper className="w-[22px] h-[22px]" strokeWidth={pathname.startsWith('/news') ? 2.2 : 1.6} />
-            <span className="text-[10px] font-semibold">{t('nav.news')}</span>
+            <span className="text-[11px] font-semibold">{t('nav.news')}</span>
           </Link>
           <Link
             href="/login"
@@ -88,7 +88,7 @@ export default function BottomNav() {
             )}
           >
             <LogIn className="w-[22px] h-[22px]" strokeWidth={pathname.startsWith('/login') ? 2.2 : 1.6} />
-            <span className="text-[10px] font-semibold">{t('nav.login')}</span>
+            <span className="text-[11px] font-semibold">{t('nav.login')}</span>
           </Link>
         </div>
       </div>

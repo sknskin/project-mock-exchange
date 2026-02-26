@@ -146,7 +146,7 @@ export default function ChatPanel() {
         }}
         className={cn(
           'fixed z-[60] flex flex-col bg-bg-primary border border-border shadow-2xl overflow-hidden rounded-2xl overscroll-contain',
-          'max-lg:!inset-0 max-lg:!w-auto max-lg:!h-auto max-lg:rounded-none',
+          'max-lg:!inset-0 max-lg:!w-auto max-lg:!h-auto max-lg:rounded-none max-lg:!top-[60px] max-lg:!bottom-[52px]',
           'animate-chat-panel-in',
           interacting && 'select-none',
         )}

@@ -227,7 +227,7 @@ export default function PortfolioPage() {
                 <button
                   key={amount}
                   onClick={() => setDepositAmount(amount.toString())}
-                  className="flex-1 h-10 text-[13px] font-medium bg-bg-secondary text-text-secondary rounded-lg hover:bg-bg-tertiary transition-colors"
+                  className="flex-1 h-11 text-[13px] font-medium bg-bg-secondary text-text-secondary rounded-lg hover:bg-bg-tertiary transition-colors"
                 >
                   {(amount / 10000).toFixed(0)}{t('portfolio.tenThousand')}
                 </button>
@@ -280,7 +280,7 @@ export default function PortfolioPage() {
                       setWithdrawAmount(amount.toString());
                     }
                   }}
-                  className="flex-1 h-10 text-[13px] font-medium bg-bg-secondary text-text-secondary rounded-lg hover:bg-bg-tertiary transition-colors"
+                  className="flex-1 h-11 text-[13px] font-medium bg-bg-secondary text-text-secondary rounded-lg hover:bg-bg-tertiary transition-colors"
                 >
                   {pct}%
                 </button>

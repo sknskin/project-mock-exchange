@@ -298,7 +298,7 @@ export default function Header() {
               </Link>
               <Link
                 href="/login"
-                className="lg:hidden text-[13px] font-bold text-accent"
+                className="lg:hidden px-3 py-2 text-[13px] font-bold text-accent"
               >
                 {t('nav.login')}
               </Link>
@@ -306,7 +306,7 @@ export default function Header() {
 
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2.5 text-text-secondary hover:text-text-primary transition-colors"
+              className="lg:hidden p-3 text-text-secondary hover:text-text-primary transition-colors"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
@@ -325,7 +325,7 @@ export default function Header() {
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <nav className="px-4 py-5 space-y-1">
+            <nav className="px-4 py-5 space-y-1 overflow-y-auto">
               {mobileNavItems.map((item) => (
                 <Link
                   key={item.href}
@@ -408,7 +408,7 @@ export default function Header() {
       {logoutModalOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center">
           <div className="absolute inset-0 bg-black/60" onClick={() => setLogoutModalOpen(false)} />
-          <div className="relative bg-bg-primary border border-border rounded-2xl p-6 w-[320px] shadow-2xl">
+          <div className="relative bg-bg-primary border border-border rounded-2xl p-6 w-[320px] max-w-[calc(100vw-2rem)] shadow-2xl">
             <h3 className="text-[16px] font-bold text-text-primary text-center">
               {t('modal.logoutTitle')}
             </h3>

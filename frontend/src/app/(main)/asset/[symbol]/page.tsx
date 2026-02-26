@@ -178,13 +178,13 @@ export default function AssetDetailPage({
         <div className="flex gap-1.5">
           <button
             onClick={() => handleBuySell('BUY')}
-            className="h-10 px-4 text-[13px] font-bold text-rise border border-rise/30 rounded-md hover:bg-rise hover:text-white transition-colors"
+            className="h-11 px-4 text-[13px] font-bold text-rise border border-rise/30 rounded-md hover:bg-rise hover:text-white transition-colors"
           >
             {t('detail.buy')}
           </button>
           <button
             onClick={() => handleBuySell('SELL')}
-            className="h-10 px-4 text-[13px] font-bold text-fall border border-fall/30 rounded-md hover:bg-fall hover:text-white transition-colors"
+            className="h-11 px-4 text-[13px] font-bold text-fall border border-fall/30 rounded-md hover:bg-fall hover:text-white transition-colors"
           >
             {t('detail.sell')}
           </button>

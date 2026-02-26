@@ -240,27 +240,27 @@ export default function OrdersPage() {
                               value={editPrice}
                               onChange={(e) => setEditPrice(e.target.value)}
                               placeholder={t('orders.price')}
-                              className="flex-1 h-9 px-3 text-[13px] bg-bg-secondary border border-border rounded-lg text-text-primary"
+                              className="flex-1 h-11 px-3 text-[13px] bg-bg-secondary border border-border rounded-lg text-text-primary"
                             />
                             <input
                               type="number"
                               value={editQuantity}
                               onChange={(e) => setEditQuantity(e.target.value)}
                               placeholder={t('orders.quantity')}
-                              className="flex-1 h-9 px-3 text-[13px] bg-bg-secondary border border-border rounded-lg text-text-primary"
+                              className="flex-1 h-11 px-3 text-[13px] bg-bg-secondary border border-border rounded-lg text-text-primary"
                             />
                           </div>
                           <div className="flex gap-2">
                             <button
                               onClick={() => handleModify(order.id)}
                               disabled={modifyOrder.isPending}
-                              className="flex-1 h-8 text-[12px] font-semibold text-white bg-accent rounded-lg hover:bg-accent/90 transition-colors disabled:opacity-50"
+                              className="flex-1 h-10 text-[12px] font-semibold text-white bg-accent rounded-lg hover:bg-accent/90 transition-colors disabled:opacity-50"
                             >
                               {t('orders.confirmModify')}
                             </button>
                             <button
                               onClick={() => setEditingOrderId(null)}
-                              className="flex-1 h-8 text-[12px] font-semibold text-text-tertiary bg-bg-secondary rounded-lg hover:bg-bg-tertiary transition-colors"
+                              className="flex-1 h-10 text-[12px] font-semibold text-text-tertiary bg-bg-secondary rounded-lg hover:bg-bg-tertiary transition-colors"
                             >
                               {t('orders.cancel')}
                             </button>

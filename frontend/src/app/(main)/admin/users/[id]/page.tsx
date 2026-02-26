@@ -391,7 +391,7 @@ export default function AdminUserDetailPage({
             onClick={closeModal}
           />
           <div className="fixed inset-0 z-[61] flex items-center justify-center pointer-events-none">
-            <div className="relative bg-bg-primary border border-border rounded-2xl p-6 w-[320px] shadow-2xl pointer-events-auto">
+            <div className="relative bg-bg-primary border border-border rounded-2xl p-6 w-[320px] max-w-[calc(100vw-2rem)] shadow-2xl pointer-events-auto">
               <h3 className="text-[16px] font-bold text-text-primary text-center">
                 {getModalTitle()}
               </h3>
