@@ -10,11 +10,15 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@ne
 import { Request, Response } from 'express';
 import { ProxyService } from './proxy.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { ChatGateway } from '../gateway/chat.gateway';
 
 @ApiTags('Auth')
 @Controller('api/auth')
 export class AuthProxyController {
-  constructor(private readonly proxyService: ProxyService) {}
+  constructor(
+    private readonly proxyService: ProxyService,
+    private readonly chatGateway: ChatGateway,
+  ) {}
 
   @Post('register')
   @ApiOperation({ summary: '회원가입', description: '새 사용자 계정을 생성합니다' })
@@ -27,6 +31,15 @@ export class AuthProxyController {
       url: '/auth/register',
       data: body,
     });
+    if (result.status < 400) {
+      const data = result.data as { username?: string; name?: string };
+      this.chatGateway.server.emit('notification:registration-request', {
+        type: 'registration-request',
+        username: data.username || (body as { username?: string })?.username || '',
+        name: data.name || (body as { name?: string })?.name || '',
+        timestamp: new Date().toISOString(),
+      });
+    }
     return res.status(result.status).json(result.data);
   }
 

@@ -21,13 +21,17 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery }
 import { Request, Response } from 'express';
 import { ProxyService } from './proxy.service';
 import { JwtAuthGuard, Public, OptionalAuth } from '../auth/jwt-auth.guard';
+import { ChatGateway } from '../gateway/chat.gateway';
 
 @ApiTags('Announcements')
 @ApiBearerAuth()
 @Controller('api/announcements')
 @UseGuards(JwtAuthGuard)
 export class AnnouncementProxyController {
-  constructor(private readonly proxyService: ProxyService) {}
+  constructor(
+    private readonly proxyService: ProxyService,
+    private readonly chatGateway: ChatGateway,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: '공지사항 목록 조회', description: '공지사항 목록을 페이징, 검색, 카테고리 필터링 조건과 함께 조회합니다' })
@@ -109,12 +113,23 @@ export class AnnouncementProxyController {
   @ApiResponse({ status: 401, description: '인증 필요' })
   @ApiResponse({ status: 403, description: '권한 부족' })
   async create(@Body() body: unknown, @Req() req: Request, @Res() res: Response) {
+    const user = req.user as { id: string; username?: string } | undefined;
     const result = await this.proxyService.forward('user-auth', {
       method: 'POST',
       url: '/announcements',
       data: body,
       headers: { Authorization: req.headers.authorization || '' },
     });
+    if (result.status < 400 && result.data) {
+      const data = result.data as { id?: string; title?: string };
+      this.chatGateway.server.emit('notification:announcement-new', {
+        type: 'announcement-new',
+        title: (body as { title?: string })?.title || data.title || '',
+        announcementId: data.id,
+        authorId: user?.id,
+        timestamp: new Date().toISOString(),
+      });
+    }
     return res.status(result.status).json(result.data);
   }
 
@@ -132,12 +147,22 @@ export class AnnouncementProxyController {
     @Req() req: Request,
     @Res() res: Response,
   ) {
+    const user = req.user as { id: string; username?: string } | undefined;
     const result = await this.proxyService.forward('user-auth', {
       method: 'PUT',
       url: `/announcements/${id}`,
       data: body,
       headers: { Authorization: req.headers.authorization || '' },
     });
+    if (result.status < 400) {
+      this.chatGateway.server.emit('notification:announcement-updated', {
+        type: 'announcement-updated',
+        title: (body as { title?: string })?.title || '',
+        announcementId: id,
+        authorId: user?.id,
+        timestamp: new Date().toISOString(),
+      });
+    }
     return res.status(result.status).json(result.data);
   }
 

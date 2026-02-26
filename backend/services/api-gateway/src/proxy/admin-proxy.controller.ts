@@ -21,13 +21,17 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery }
 import { Request, Response } from 'express';
 import { ProxyService } from './proxy.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { ChatGateway } from '../gateway/chat.gateway';
 
 @ApiTags('Admin')
 @ApiBearerAuth()
 @Controller('api/admin')
 @UseGuards(JwtAuthGuard)
 export class AdminProxyController {
-  constructor(private readonly proxyService: ProxyService) {}
+  constructor(
+    private readonly proxyService: ProxyService,
+    private readonly chatGateway: ChatGateway,
+  ) {}
 
   @Get('users')
   @ApiOperation({ summary: '사용자 목록 조회', description: '관리자 권한으로 전체 사용자 목록을 페이징, 필터링, 검색 조건과 함께 조회합니다' })
@@ -89,6 +93,12 @@ export class AdminProxyController {
       data: body,
       headers: { Authorization: req.headers.authorization || '' },
     });
+    if (result.status < 400) {
+      this.chatGateway.notifyUser(id, 'notification:registration-approved', {
+        type: 'registration-approved',
+        timestamp: new Date().toISOString(),
+      });
+    }
     return res.status(result.status).json(result.data);
   }
 
@@ -112,6 +122,13 @@ export class AdminProxyController {
       data: body,
       headers: { Authorization: req.headers.authorization || '' },
     });
+    if (result.status < 400) {
+      this.chatGateway.notifyUser(id, 'notification:registration-rejected', {
+        type: 'registration-rejected',
+        reason: (body as { reason?: string })?.reason || '',
+        timestamp: new Date().toISOString(),
+      });
+    }
     return res.status(result.status).json(result.data);
   }
 
