@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { RefreshCw, ExternalLink, Newspaper, Search, Calendar } from 'lucide-react';
 import { useNews, useScrapeStatus, useTriggerScrape } from '@/hooks/useNews';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -10,17 +10,31 @@ import { cn } from '@/lib/format';
 
 type NewsTab = 'CRYPTO' | 'DOMESTIC_STOCK' | 'FOREIGN_STOCK';
 
+const FILTERED_FETCH_LIMIT = 200;
+
 export default function NewsPage() {
   const { t } = useTranslation();
   const locale = useSettingsStore((s) => s.locale);
   const dateLocale = locale === 'ko' ? 'ko-KR' : 'en-US';
   const [activeTab, setActiveTab] = useState<NewsTab>('CRYPTO');
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
+  const [pageSize, setPageSize] = useState(10);
   const [searchQuery, setSearchQuery] = useState('');
-  const [dateFilter, setDateFilter] = useState<'all' | '24h' | '7d' | '30d'>('all');
+  const [dateFilter, setDateFilter] = useState<'all' | '24h' | '7d' | '30d'>('24h');
 
-  const { data, isLoading } = useNews({ category: activeTab, page, limit });
+  const isFiltered = searchQuery.trim() !== '' || dateFilter !== 'all';
+
+  // When filtered, fetch a large batch for client-side pagination; otherwise use server-side pagination
+  const apiPage = isFiltered ? 1 : page;
+  const apiLimit = isFiltered ? FILTERED_FETCH_LIMIT : pageSize;
+
+  const { data, isLoading } = useNews({ category: activeTab, page: apiPage, limit: apiLimit });
+
+  // Reset page to 1 when search query or date filter changes
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery, dateFilter]);
+
   const { data: scrapeStatusList } = useScrapeStatus();
   const triggerScrape = useTriggerScrape();
 
@@ -54,7 +68,7 @@ export default function NewsPage() {
     return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
   };
 
-  const filteredItems = (data?.items ?? []).filter((item) => {
+  const filteredItems = useMemo(() => (data?.items ?? []).filter((item) => {
     const q = searchQuery.toLowerCase().trim();
     if (q && !item.title.toLowerCase().includes(q) && !(item.summary?.toLowerCase().includes(q))) {
       return false;
@@ -65,7 +79,17 @@ export default function NewsPage() {
       if (itemDate < cutoff) return false;
     }
     return true;
-  });
+  }), [data?.items, searchQuery, dateFilter]);
+
+  // Client-side pagination for filtered results
+  const displayItems = isFiltered
+    ? filteredItems.slice((page - 1) * pageSize, page * pageSize)
+    : filteredItems;
+
+  const paginationTotal = isFiltered ? filteredItems.length : (data?.total ?? 0);
+  const paginationTotalPages = isFiltered
+    ? Math.ceil(filteredItems.length / pageSize)
+    : (data?.totalPages ?? 0);
 
   const handleRefresh = () => {
     if (!triggerScrape.isPending) {
@@ -189,7 +213,7 @@ export default function NewsPage() {
             />
           ))}
         </div>
-      ) : !data || filteredItems.length === 0 ? (
+      ) : !data || displayItems.length === 0 ? (
         <div className="py-24 text-center">
           <Newspaper className="w-10 h-10 mx-auto mb-3 text-text-quaternary" />
           <p className="text-text-quaternary text-[14px]">
@@ -198,7 +222,7 @@ export default function NewsPage() {
         </div>
       ) : (
         <div className="space-y-3">
-          {filteredItems.map((item) => (
+          {displayItems.map((item) => (
             <a
               key={item.id}
               href={item.sourceUrl}
@@ -240,14 +264,14 @@ export default function NewsPage() {
       )}
 
       {/* Pagination */}
-      {data && data.totalPages > 0 && (
+      {data && paginationTotalPages > 0 && (
         <Pagination
           page={page}
-          totalPages={data.totalPages}
-          total={data.total}
-          limit={limit}
+          totalPages={paginationTotalPages}
+          total={paginationTotal}
+          limit={pageSize}
           onPageChange={(p) => setPage(p)}
-          onLimitChange={(n) => { setLimit(n); setPage(1); }}
+          onLimitChange={(n) => { setPageSize(n); setPage(1); }}
         />
       )}
     </div>
