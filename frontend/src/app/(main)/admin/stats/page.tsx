@@ -390,7 +390,7 @@ export default function AdminStatsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex flex-wrap gap-1 mb-5 border-b border-border pb-1" ref={tabsRef}>
+      <div className="grid grid-cols-3 sm:flex sm:flex-wrap gap-1 mb-5 border-b border-border pb-1" ref={tabsRef}>
         {STAT_TABS.map((t_) => {
           const Icon = t_.icon;
           const isActive = tab === t_.key;
