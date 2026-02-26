@@ -17,7 +17,7 @@
     "docker:infra": "docker compose up -d postgres redis kafka",
     "docker:all": "docker compose --profile all up -d",
     "docker:down": "docker compose down",
-    "docker:reset": "docker compose down -v",
+    "docker:reset": "echo '⚠️  This will DELETE ALL DATA (volumes). Press Ctrl+C to cancel.' && sleep 3 && docker compose down -v",
     "db:migrate": "turbo run db:migrate",
     "db:seed": "tsx scripts/seed.ts",
     "dev:frontend": "turbo run dev --filter=@virtuex/web",

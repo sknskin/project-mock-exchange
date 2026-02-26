@@ -9,6 +9,7 @@
 
 import { useEffect, useRef, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
+import { useAuthStore } from '@/stores/auth';
 import type { PriceUpdate } from '@/types';
 
 const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:3000';
@@ -20,6 +21,7 @@ export function useWebSocket(
   const socketRef = useRef<Socket | null>(null);
   const callbackRef = useRef(onPriceUpdate);
   callbackRef.current = onPriceUpdate;
+  const accessToken = useAuthStore((s) => s.accessToken);
 
   const connect = useCallback(() => {
     if (socketRef.current?.connected) return;
@@ -29,6 +31,7 @@ export function useWebSocket(
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionAttempts: 10,
+      auth: accessToken ? { token: accessToken } : undefined,
     });
 
     socket.on('connect', () => {

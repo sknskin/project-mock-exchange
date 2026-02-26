@@ -315,17 +315,28 @@ echo -e "${YELLOW}[6/7] DB 마이그레이션... / Running DB migrations...${NC}
 
 # set +e: 개별 마이그레이션 실패가 전체 스크립트를 중단하지 않도록
 # set +e: prevent individual migration failures from stopping the entire script
+#
+# ⚠️ 주의: --accept-data-loss 플래그를 사용하지 않습니다.
+#    스키마 변경이 기존 데이터와 충돌하면 수동 마이그레이션이 필요합니다.
+#    데이터 초기화가 필요한 경우에만 수동으로 --force-reset을 실행하세요.
+# ⚠️ Note: --accept-data-loss is NOT used to prevent accidental data loss.
+#    If schema changes conflict with existing data, manual migration is required.
+#    Only run --force-reset manually when data reset is explicitly intended.
 set +e
 for svc in user-auth market-data order-engine portfolio chat; do
   if [ -f "backend/services/$svc/prisma/schema.prisma" ]; then
     cd "backend/services/$svc"
-    push_output=$(npx prisma db push --skip-generate --accept-data-loss 2>&1)
+    push_output=$(npx prisma db push --skip-generate 2>&1)
     push_exit=$?
     if [ $push_exit -eq 0 ]; then
       echo -e "  ${GREEN}✓${NC} $svc"
     else
-      echo -e "  ${RED}✗${NC} $svc (마이그레이션 실패 / migration failed)"
+      # 데이터 손실이 필요한 변경인 경우 경고만 출력하고 계속 진행
+      # If the change requires data loss, warn and continue (don't auto-reset)
+      echo -e "  ${YELLOW}⚠${NC} $svc (스키마 동기화 실패 — 기존 데이터 보호를 위해 건너뜀)"
+      echo -e "    Schema sync failed — skipped to protect existing data"
       echo "    $push_output" | tail -3
+      echo -e "    ${YELLOW}수동 처리가 필요합니다 / Manual intervention required${NC}"
     fi
     cd "$ROOT_DIR"
   fi

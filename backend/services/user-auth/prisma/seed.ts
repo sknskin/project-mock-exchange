@@ -35,7 +35,10 @@ async function main() {
 
   // 2. 시스템 계정 생성 / Create system account
   const passwordHash = await bcrypt.hash('ehgml5516!', SALT_ROUNDS);
-  const jwtSecret = process.env.JWT_SECRET || 'dev-jwt-secret-change-in-production-must-be-at-least-32-chars-long';
+  const jwtSecret = process.env.JWT_SECRET;
+  if (!jwtSecret) {
+    throw new Error('JWT_SECRET environment variable is required');
+  }
   const encryptedRrn = encryptRrn('9311171052812', jwtSecret);
 
   const systemUser = await prisma.user.create({

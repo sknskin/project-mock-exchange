@@ -31,7 +31,7 @@ import { USER_REPOSITORY } from '../domain/repositories/user.repository.interfac
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
-        secret: config.get<string>('JWT_SECRET', 'dev-jwt-secret'),
+        secret: config.getOrThrow<string>('JWT_SECRET'),
         signOptions: {
           expiresIn: config.get('JWT_ACCESS_EXPIRY', '15m') as `${number}${'s' | 'm' | 'h' | 'd'}`,
         },

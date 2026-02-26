@@ -86,7 +86,7 @@ export class AuthService {
       throw new BadRequestException(`Invalid resident number: ${rrnValidation.message}`);
     }
 
-    const rrnSecret = this.configService.get('JWT_SECRET', 'dev-jwt-secret');
+    const rrnSecret = this.configService.getOrThrow<string>('JWT_SECRET');
     const encryptedRrn = rrn.encrypt(rrnSecret);
 
     const passwordHash = await bcrypt.hash(password, this.SALT_ROUNDS);
