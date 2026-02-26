@@ -11,7 +11,7 @@ interface RssFeedConfig {
 }
 
 const RSS_FEEDS: RssFeedConfig[] = [
-  // 암호화폐
+  // 암호화폐 (Cryptocurrency — dedicated crypto sources, no filtering needed)
   {
     url: 'https://www.coindesk.com/arc/outboundfeeds/rss/',
     source: 'CoinDesk',
@@ -37,14 +37,14 @@ const RSS_FEEDS: RssFeedConfig[] = [
     source: 'The Block',
     category: 'CRYPTO',
   },
-  // 국내주식
+  // 국내주식 (Domestic stock — general finance feeds, keyword filtering applied)
   {
     url: 'https://www.hankyung.com/feed/stock',
     source: '한국경제',
     category: 'DOMESTIC_STOCK',
   },
   {
-    url: 'https://www.mk.co.kr/rss/30000001/',
+    url: 'https://www.mk.co.kr/rss/30100041/',
     source: '매일경제',
     category: 'DOMESTIC_STOCK',
   },
@@ -54,7 +54,7 @@ const RSS_FEEDS: RssFeedConfig[] = [
     category: 'DOMESTIC_STOCK',
   },
   {
-    url: 'https://www.sedaily.com/RSS/Economy',
+    url: 'https://www.sedaily.com/RSS/Stock',
     source: '서울경제',
     category: 'DOMESTIC_STOCK',
   },
@@ -63,7 +63,7 @@ const RSS_FEEDS: RssFeedConfig[] = [
     source: '이데일리',
     category: 'DOMESTIC_STOCK',
   },
-  // 해외주식
+  // 해외주식 (Foreign stock — general finance feeds, keyword filtering applied)
   {
     url: 'https://finance.yahoo.com/news/rssindex',
     source: 'Yahoo Finance',
@@ -75,7 +75,7 @@ const RSS_FEEDS: RssFeedConfig[] = [
     category: 'FOREIGN_STOCK',
   },
   {
-    url: 'https://feeds.marketwatch.com/marketwatch/topstories/',
+    url: 'https://feeds.marketwatch.com/marketwatch/marketpulse/',
     source: 'MarketWatch',
     category: 'FOREIGN_STOCK',
   },
@@ -90,6 +90,28 @@ const RSS_FEEDS: RssFeedConfig[] = [
     category: 'FOREIGN_STOCK',
   },
 ];
+
+/**
+ * 카테고리별 관련성 키워드 (Relevance keywords by category)
+ * 전용 소스(crypto)는 필터링 불필요, 일반 소스에서만 적용
+ */
+const RELEVANCE_KEYWORDS: Record<NewsCategory, RegExp> = {
+  CRYPTO:
+    /bitcoin|btc|ethereum|eth|crypto|blockchain|defi|nft|token|coin|web3|mining|binance|solana|cardano|ripple|xrp|stablecoin|altcoin|wallet|exchange|거래소|비트코인|이더리움|암호화폐|블록체인|코인|토큰|디파이/i,
+  DOMESTIC_STOCK:
+    /주식|코스피|코스닥|증시|주가|시장|투자|펀드|etf|배당|실적|매출|영업이익|순이익|상장|ipo|공모|기업|종목|환율|금리|채권|선물|옵션|파생|수익률|증권|거래|시가총액|외국인|기관|개인|공매도|작전|테마주|우량주|배당주|성장주|가치주|지수|반등|하락|상승|급등|급락|stock|market|kospi|kosdaq/i,
+  FOREIGN_STOCK:
+    /stock|market|share|invest|fund|etf|earn|revenue|profit|dividend|nyse|nasdaq|s&p|dow|trading|bond|treasury|fed|interest rate|wall street|bull|bear|ipo|merger|acquisition|sector|index|portfolio|forex|commodity|oil|gold|equity|rally|crash|surge|plunge|quarter|fiscal|yield|inflation|gdp/i,
+};
+
+/** 전용 금융 소스 — 필터링 생략 (Dedicated finance sources — skip filtering) */
+const SKIP_FILTER_SOURCES = new Set([
+  'CoinDesk',
+  'CoinTelegraph',
+  'Decrypt',
+  'Bitcoin Magazine',
+  'The Block',
+]);
 
 @Injectable()
 export class NewsService implements OnModuleInit {
@@ -136,6 +158,12 @@ export class NewsService implements OnModuleInit {
 
         for (const item of items) {
           if (!item.link || !item.title) continue;
+
+          // 관련성 필터링 (Relevance filtering for non-dedicated sources)
+          if (!SKIP_FILTER_SOURCES.has(feed.source)) {
+            const text = `${item.title} ${item.contentSnippet || ''}`;
+            if (!RELEVANCE_KEYWORDS[category].test(text)) continue;
+          }
 
           try {
             await this.prisma.news.upsert({
