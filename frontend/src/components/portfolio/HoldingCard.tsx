@@ -9,6 +9,7 @@
 
 import Link from 'next/link';
 import { cn, formatPrice, formatPercent, formatQuantity, formatCurrency } from '@/lib/format';
+import { useTranslation } from '@/hooks/useTranslation';
 import type { Holding } from '@/types';
 
 interface HoldingCardProps {
@@ -28,6 +29,7 @@ function getSymbolColor(symbol: string): string {
 }
 
 export default function HoldingCard({ holding }: HoldingCardProps) {
+  const { t } = useTranslation();
   const isPositive = holding.pnl >= 0;
 
   return (
@@ -47,7 +49,7 @@ export default function HoldingCard({ holding }: HoldingCardProps) {
             {holding.name}
           </div>
           <div className="text-[12px] text-text-quaternary mt-0.5">
-            {formatQuantity(holding.quantity)}주 · 평균{' '}
+            {formatQuantity(holding.quantity)}{t('portfolio.holdingUnit')} · {t('portfolio.avgPrice')}{' '}
             {formatPrice(holding.averagePrice)}
           </div>
         </div>

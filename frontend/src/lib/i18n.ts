@@ -17,6 +17,7 @@ const translations = {
     'nav.leaderboard': '리더보드',
     'nav.more': '더보기',
     'nav.search': '를 눌러 검색하세요',
+    'nav.searchPlaceholder': '종목 검색',
     'nav.login': '로그인',
     'nav.logout': '로그아웃',
     'nav.menu': '메뉴',
@@ -165,6 +166,8 @@ const translations = {
     'leaderboard.empty': '리더보드 데이터가 없습니다',
     'leaderboard.myRank': '내 순위',
     'leaderboard.participants': '참여자',
+    'leaderboard.sortByReturn': '수익률순',
+    'leaderboard.sortByAssets': '총자산순',
 
     // Portfolio (additional)
     'portfolio.totalAssets': '총 자산',
@@ -581,6 +584,11 @@ const translations = {
     'orders.confirmModify': '수정 확인',
     'orders.price': '가격',
     'orders.quantity': '수량',
+    'orders.cancelConfirmTitle': '주문 취소',
+    'orders.cancelConfirmMessage': '이 주문을 취소하시겠습니까?',
+    'orders.emptyPending': '대기중인 주문이 없습니다.\n대시보드에서 첫 주문을 시작해 보세요.',
+    'orders.emptyTrades': '아직 체결된 주문이 없습니다.',
+    'orders.goToDashboard': '대시보드로 이동',
 
     // Order Form
     'order.title': '주문',
@@ -613,6 +621,35 @@ const translations = {
     'portfolio.cashRatio': '현금 비중',
     'portfolio.investedRatio': '투자 비중',
     'portfolio.investmentWeight': '투자 비중',
+    'portfolio.holdingUnit': '주',
+    'portfolio.avgPrice': '평균',
+    'portfolio.emptyHoldings': '종목을 매수하면 여기에 표시됩니다.\n대시보드에서 매수를 시작해 보세요.',
+    'portfolio.withdrawConfirmTitle': '출금 확인',
+    'portfolio.withdrawConfirmMessage': '${amount}을 출금하시겠습니까?',
+
+    // News
+    'news.search': '키워드 검색',
+    'news.dateFilter.all': '전체 기간',
+    'news.dateFilter.24h': '최근 24시간',
+    'news.dateFilter.7d': '최근 7일',
+    'news.dateFilter.30d': '최근 30일',
+
+    // Stats
+    'stats.popularAssetsDonut': '거래량 비중',
+    'stats.topRooms': '인기 채팅방',
+    'stats.roomName': '채팅방',
+    'stats.memberCount': '멤버',
+    'stats.messageCount': '메시지',
+    'stats.comparePrevPeriod': '이전 기간 비교',
+
+    // Help FAQ
+    'help.faq.title': '자주 묻는 질문',
+    'help.faq.q1': '매수가 안 돼요',
+    'help.faq.a1': '예수금(현금 잔액)이 부족하면 매수할 수 없습니다. 내 투자 페이지에서 입금 후 다시 시도해 주세요.',
+    'help.faq.q2': '리더보드 순위가 안 바뀌어요',
+    'help.faq.a2': '리더보드 순위는 시세 반영 주기에 따라 업데이트됩니다. 잠시 후 새로고침 해주세요.',
+    'help.faq.q3': '주문을 취소하고 싶어요',
+    'help.faq.a3': '주문내역 페이지에서 대기중(Pending) 상태의 주문만 취소할 수 있습니다. 이미 체결된 주문은 취소할 수 없습니다.',
 
     // Notifications
     'notification.title': '알림',
@@ -892,6 +929,7 @@ const translations = {
     'nav.leaderboard': 'Leaderboard',
     'nav.more': 'More',
     'nav.search': ' to search',
+    'nav.searchPlaceholder': 'Search assets',
     'nav.login': 'Login',
     'nav.logout': 'Logout',
     'nav.menu': 'Menu',
@@ -1040,6 +1078,8 @@ const translations = {
     'leaderboard.empty': 'No leaderboard data',
     'leaderboard.myRank': 'My Rank',
     'leaderboard.participants': 'Participants',
+    'leaderboard.sortByReturn': 'By Return',
+    'leaderboard.sortByAssets': 'By Assets',
 
     // Portfolio (additional)
     'portfolio.totalAssets': 'Total Assets',
@@ -1456,6 +1496,11 @@ const translations = {
     'orders.confirmModify': 'Confirm',
     'orders.price': 'Price',
     'orders.quantity': 'Quantity',
+    'orders.cancelConfirmTitle': 'Cancel Order',
+    'orders.cancelConfirmMessage': 'Cancel this order?',
+    'orders.emptyPending': 'No pending orders.\nStart your first order from the dashboard.',
+    'orders.emptyTrades': 'No trade history yet.',
+    'orders.goToDashboard': 'Go to Dashboard',
 
     // Order Form
     'order.title': 'Order',
@@ -1488,6 +1533,35 @@ const translations = {
     'portfolio.cashRatio': 'Cash Ratio',
     'portfolio.investedRatio': 'Invested Ratio',
     'portfolio.investmentWeight': 'Investment Weight',
+    'portfolio.holdingUnit': 'shares',
+    'portfolio.avgPrice': 'Avg',
+    'portfolio.emptyHoldings': 'Your holdings will appear here.\nStart buying from the dashboard.',
+    'portfolio.withdrawConfirmTitle': 'Confirm Withdrawal',
+    'portfolio.withdrawConfirmMessage': 'Withdraw ${amount}?',
+
+    // News
+    'news.search': 'Search keywords',
+    'news.dateFilter.all': 'All time',
+    'news.dateFilter.24h': 'Last 24h',
+    'news.dateFilter.7d': 'Last 7 days',
+    'news.dateFilter.30d': 'Last 30 days',
+
+    // Stats
+    'stats.popularAssetsDonut': 'Volume Distribution',
+    'stats.topRooms': 'Top Chat Rooms',
+    'stats.roomName': 'Room',
+    'stats.memberCount': 'Members',
+    'stats.messageCount': 'Messages',
+    'stats.comparePrevPeriod': 'Compare Previous Period',
+
+    // Help FAQ
+    'help.faq.title': 'FAQ',
+    'help.faq.q1': "I can't buy",
+    'help.faq.a1': 'You need sufficient cash balance to buy. Please deposit funds from the Portfolio page and try again.',
+    'help.faq.q2': 'Leaderboard rank not updating',
+    'help.faq.a2': 'Leaderboard rankings update based on market price refresh cycles. Please wait and refresh.',
+    'help.faq.q3': 'I want to cancel an order',
+    'help.faq.a3': 'Only pending orders can be cancelled from the Orders page. Already filled orders cannot be cancelled.',
 
     // Notifications
     'notification.title': 'Notifications',
