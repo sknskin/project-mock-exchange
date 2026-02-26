@@ -1701,6 +1701,7 @@ function FeatureItem({
 }) {
   const contentRef = useRef<HTMLDivElement>(null);
   const [height, setHeight] = useState(0);
+  const [zoomOpen, setZoomOpen] = useState(false);
 
   useEffect(() => {
     if (expanded && contentRef.current) {
@@ -1709,6 +1710,14 @@ function FeatureItem({
       setHeight(0);
     }
   }, [expanded]);
+
+  useEffect(() => {
+    if (!zoomOpen) return;
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') setZoomOpen(false); };
+    document.addEventListener('keydown', handler);
+    document.body.style.overflow = 'hidden';
+    return () => { document.removeEventListener('keydown', handler); document.body.style.overflow = ''; };
+  }, [zoomOpen]);
 
   const hasIllust = !!illustrationMap[tabKey]?.[index];
   const tips = tipMap[tabKey]?.[index];
@@ -1738,7 +1747,10 @@ function FeatureItem({
         <div ref={contentRef} className="px-4 pb-4 pt-1">
           <div className={cn('flex flex-col gap-4', tips?.length ? 'lg:flex-row' : '')}>
             <div className={cn('min-w-0', tips?.length ? 'lg:flex-[3]' : 'w-full')}>
-              <div className="bg-bg-secondary/30 border border-border/30 rounded-xl p-3 sm:p-4">
+              <div
+                className="bg-bg-secondary/30 border border-border/30 rounded-xl p-3 sm:p-4 cursor-zoom-in hover:border-accent/30 transition-colors"
+                onClick={() => setZoomOpen(true)}
+              >
                 {illustrationMap[tabKey]?.[index]?.()}
               </div>
             </div>
@@ -1762,6 +1774,29 @@ function FeatureItem({
           </div>
         </div>
       </div>
+
+      {/* Zoom Modal */}
+      {zoomOpen && hasIllust && (
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4"
+          onClick={() => setZoomOpen(false)}
+        >
+          <div
+            className="relative bg-bg-primary border border-border rounded-2xl p-6 sm:p-8 max-w-[90vw] max-h-[90vh] overflow-auto shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setZoomOpen(false)}
+              className="absolute top-3 right-3 p-1.5 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-secondary transition-colors"
+            >
+              <span className="text-[18px]">&times;</span>
+            </button>
+            <div className="transform scale-125 sm:scale-150 origin-top-left w-[calc(100%/1.25)] sm:w-[calc(100%/1.5)]">
+              {illustrationMap[tabKey]?.[index]?.()}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1822,6 +1857,27 @@ function HelpTab({
   );
 }
 
+/* ─── FAQ Item ─── */
+function FaqItem({ question, answer }: { question: string; answer: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="border border-border/60 rounded-xl overflow-hidden">
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex items-center justify-between w-full px-4 py-3.5 text-left hover:bg-bg-secondary/50 transition-colors"
+      >
+        <span className="text-[14px] font-semibold text-text-primary">{question}</span>
+        <ChevronDown className={cn('w-4 h-4 text-text-quaternary transition-transform shrink-0 ml-2', open && 'rotate-180')} />
+      </button>
+      {open && (
+        <div className="px-4 pb-4 text-[13px] text-text-secondary leading-relaxed">
+          {answer}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ─── Main page ─── */
 export default function HelpPage() {
   const { t } = useTranslation();
@@ -1841,6 +1897,8 @@ export default function HelpPage() {
     { key: 'adminUsers', label: 'help.tab.adminUsers', icon: <Users className="w-4 h-4" />, adminOnly: true },
   ];
 
+  const normalTabs = tabs.filter((tab) => !tab.adminOnly);
+  const adminTabs = tabs.filter((tab) => tab.adminOnly && isAdmin);
   const visibleTabs = tabs.filter((tab) => !tab.adminOnly || isAdmin);
 
   const sections: Record<string, HelpSection> = {
@@ -1967,30 +2025,63 @@ export default function HelpPage() {
         <h1 className="text-[20px] font-extrabold text-text-primary">{t('help.title')}</h1>
       </div>
 
-      <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide pb-4 -mx-1 px-1">
-        {visibleTabs.map((tab) => (
+      <div className="flex flex-wrap items-center gap-1 pb-4">
+        {normalTabs.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
             className={cn(
-              'flex items-center gap-1.5 px-3 py-2 rounded-xl text-[13px] font-medium transition-colors whitespace-nowrap shrink-0',
+              'flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[12px] sm:text-[13px] font-medium transition-colors',
               activeTab === tab.key
                 ? 'bg-accent/15 text-accent font-bold'
                 : 'text-text-quaternary hover:text-text-tertiary hover:bg-bg-secondary/50',
-              tab.adminOnly && 'border border-accent/20',
             )}
           >
             {tab.icon}
             {t(tab.label)}
-            {tab.adminOnly && (
-              <span className="text-[9px] font-bold text-accent/70 ml-0.5">{t('help.adminOnly')}</span>
-            )}
           </button>
         ))}
+        {adminTabs.length > 0 && (
+          <>
+            <div className="w-px h-5 bg-border/60 mx-1" />
+            {adminTabs.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={cn(
+                  'flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[12px] sm:text-[13px] font-medium transition-colors border border-accent/20',
+                  activeTab === tab.key
+                    ? 'bg-accent/15 text-accent font-bold'
+                    : 'text-text-quaternary hover:text-text-tertiary hover:bg-bg-secondary/50',
+                )}
+              >
+                {tab.icon}
+                {t(tab.label)}
+              </button>
+            ))}
+          </>
+        )}
       </div>
 
       <div className="pb-10">
         {sections[activeTab] && <HelpTab section={sections[activeTab]} tabKey={activeTab} t={t} />}
+      </div>
+
+      {/* FAQ Section */}
+      <div className="border-t border-border/60 pt-8 pb-10">
+        <h2 className="text-[16px] font-bold text-text-primary mb-4 flex items-center gap-2">
+          <HelpCircle className="w-5 h-5 text-accent" />
+          {t('help.faq.title')}
+        </h2>
+        <div className="space-y-2">
+          {(['q1', 'q2', 'q3'] as const).map((qKey) => (
+            <FaqItem
+              key={qKey}
+              question={t(`help.faq.${qKey}` as TranslationKey)}
+              answer={t(`help.faq.a${qKey.slice(1)}` as TranslationKey)}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );
