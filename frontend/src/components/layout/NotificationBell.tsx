@@ -10,12 +10,13 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
-import { Bell } from 'lucide-react';
+import { Bell, X } from 'lucide-react';
 import {
   useNotifications,
   useUnreadCount,
   useMarkAsRead,
   useMarkAllAsRead,
+  useDeleteNotification,
 } from '@/hooks/useAdmin';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/format';
@@ -60,6 +61,7 @@ export default function NotificationBell() {
   const { data: notificationsData, refetch } = useNotifications({ page: 1, limit: DROPDOWN_LIMIT });
   const markAsRead = useMarkAsRead();
   const markAllAsRead = useMarkAllAsRead();
+  const deleteNotification = useDeleteNotification();
 
   const notifications: NotificationItem[] = notificationsData?.items ?? [];
 
@@ -181,7 +183,7 @@ export default function NotificationBell() {
             ) : (
               <ul>
                 {notifications.map((notification) => (
-                  <li key={notification.id}>
+                  <li key={notification.id} className="relative group">
                     <button
                       onClick={() => handleNotificationClick(notification)}
                       className={cn(
@@ -218,6 +220,16 @@ export default function NotificationBell() {
                           {getRelativeTime(notification.createdAt, locale)}
                         </p>
                       </div>
+                    </button>
+                    {/* 삭제 버튼 (Delete button) */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteNotification.mutate(notification.id);
+                      }}
+                      className="absolute top-2 right-2 p-0.5 text-text-quaternary hover:text-fall transition-colors opacity-0 group-hover:opacity-100"
+                    >
+                      <X className="w-3.5 h-3.5" />
                     </button>
                   </li>
                 ))}

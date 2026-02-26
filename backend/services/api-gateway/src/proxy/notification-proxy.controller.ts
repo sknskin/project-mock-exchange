@@ -9,6 +9,7 @@ import {
   Controller,
   Get,
   Post,
+  Delete,
   Param,
   Req,
   Res,
@@ -59,6 +60,20 @@ export class NotificationProxyController {
     const result = await this.proxyService.forward('user-auth', {
       method: 'POST',
       url: '/notifications/read-all',
+      headers: { Authorization: req.headers.authorization || '' },
+    });
+    return res.status(result.status).json(result.data);
+  }
+
+  @Delete(':id')
+  async deleteNotification(
+    @Param('id') id: string,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    const result = await this.proxyService.forward('user-auth', {
+      method: 'DELETE',
+      url: `/notifications/${id}`,
       headers: { Authorization: req.headers.authorization || '' },
     });
     return res.status(result.status).json(result.data);

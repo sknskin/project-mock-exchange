@@ -9,6 +9,7 @@ import {
   Controller,
   Get,
   Post,
+  Delete,
   Body,
   Param,
   Query,
@@ -102,6 +103,18 @@ export class NotificationController {
     await this.prisma.notification.updateMany({
       where: { userId: user.id, isRead: false },
       data: { isRead: true },
+    });
+    return { success: true };
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard)
+  async deleteNotification(
+    @Param('id') id: string,
+    @CurrentUser() user: any,
+  ) {
+    await this.prisma.notification.deleteMany({
+      where: { id, userId: user.id },
     });
     return { success: true };
   }
