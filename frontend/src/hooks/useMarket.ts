@@ -121,7 +121,7 @@ export function useCandlesticks(
       return aggregateCandles(candles1m, interval);
     },
     enabled: !!symbol,
-    refetchInterval: 60_000,
+    refetchInterval: 5_000,
   });
 }
 

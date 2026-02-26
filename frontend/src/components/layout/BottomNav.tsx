@@ -13,7 +13,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/format';
-import { LayoutDashboard, Briefcase, Star, Newspaper, LogIn, ClipboardList } from 'lucide-react';
+import { LayoutDashboard, Briefcase, Star, Newspaper, LogIn, ClipboardList, HelpCircle } from 'lucide-react';
 
 export default function BottomNav() {
   const pathname = usePathname();
@@ -79,6 +79,16 @@ export default function BottomNav() {
           >
             <Newspaper className="w-[22px] h-[22px]" strokeWidth={pathname.startsWith('/news') ? 2.2 : 1.6} />
             <span className="text-[11px] font-semibold">{t('nav.news')}</span>
+          </Link>
+          <Link
+            href="/help"
+            className={cn(
+              'flex flex-col items-center gap-0.5 py-1 px-4 transition-colors active:scale-95',
+              pathname.startsWith('/help') ? 'text-text-primary' : 'text-text-quaternary',
+            )}
+          >
+            <HelpCircle className="w-[22px] h-[22px]" strokeWidth={pathname.startsWith('/help') ? 2.2 : 1.6} />
+            <span className="text-[11px] font-semibold">{t('help.title')}</span>
           </Link>
           <Link
             href="/login"

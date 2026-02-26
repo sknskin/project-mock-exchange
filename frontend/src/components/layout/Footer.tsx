@@ -9,9 +9,11 @@
 
 import { useCallback, useState } from 'react';
 import { usePathname } from 'next/navigation';
+import NextLink from 'next/link';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useChatStore } from '@/stores/chat';
 import { techItems } from '@/lib/constants';
+import { HelpCircle } from 'lucide-react';
 import VirtuExLogo from '@/components/ui/VirtuExLogo';
 import { cn } from '@/lib/format';
 
@@ -132,9 +134,14 @@ export default function Footer() {
                 <span className="hidden sm:inline">010-7455-4829</span>
               </button>
             </div>
-            <p className="text-[11px] text-text-quaternary">
-              {t('footer.rights')}
-            </p>
+            <div className="flex items-center gap-2 text-[11px] text-text-quaternary">
+              <span>{t('footer.rights')}</span>
+              <span className="text-border">|</span>
+              <NextLink href="/help" className="flex items-center gap-1 hover:text-text-secondary transition-colors">
+                <HelpCircle className="w-3 h-3" />
+                {t('help.title')}
+              </NextLink>
+            </div>
           </div>
         </div>
 

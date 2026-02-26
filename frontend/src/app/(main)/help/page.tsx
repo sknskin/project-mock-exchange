@@ -76,8 +76,10 @@ function RoughRect({ x, y, w, h, fill = 'none', stroke = '#555', sw = 1.5 }: { x
   return <path d={d} fill={fill} stroke={stroke} strokeWidth={sw} strokeLinejoin="round" />;
 }
 function RoughLine({ x1, y1, x2, y2, stroke = '#555', sw = 1.5 }: { x1: number; y1: number; x2: number; y2: number; stroke?: string; sw?: number }) {
-  const mx = (x1 + x2) / 2 + (Math.random() - 0.5) * 2;
-  const my = (y1 + y2) / 2 + (Math.random() - 0.5) * 2;
+  // Deterministic offset based on coordinates to avoid SSR hydration mismatch
+  const seed = ((x1 * 7 + y1 * 13 + x2 * 17 + y2 * 23) % 100) / 100;
+  const mx = (x1 + x2) / 2 + (seed - 0.5) * 2;
+  const my = (y1 + y2) / 2 + ((1 - seed) - 0.5) * 2;
   return <path d={`M${x1},${y1} Q${mx},${my} ${x2},${y2}`} fill="none" stroke={stroke} strokeWidth={sw} strokeLinecap="round" />;
 }
 function RoughCircle({ cx, cy, r, stroke = '#ef4444', sw = 2.5, fill = 'none' }: { cx: number; cy: number; r: number; stroke?: string; sw?: number; fill?: string }) {
@@ -1532,6 +1534,148 @@ function AdminUsersStatusFilterIllust() {
   );
 }
 
+/* ─── Notifications illustrations ─── */
+function NotificationsBellIllust() {
+  return (
+    <ScreenFrame>
+      {/* Bell icon area */}
+      <SketchText x={560} y={30} size={16}>🔔</SketchText>
+      <RoughCircle cx={578} cy={17} r={7} stroke="#ef4444" sw={1.5} fill="#ef4444" />
+      <SketchText x={574} y={21} size={7} fill="#fff">3</SketchText>
+      {/* Dropdown panel */}
+      <RoughRect x={390} y={48} w={260} h={300} fill="#222228" stroke="#555" sw={1.5} />
+      {/* Header */}
+      <SketchText x={405} y={68} size={11} fill="#ccc">알림</SketchText>
+      <SketchText x={570} y={68} size={8} fill="#7c7cff">모두 읽음</SketchText>
+      <RoughLine x1={390} y1={75} x2={650} y2={75} stroke="#444" sw={1} />
+      {/* Notification 1 - unread */}
+      <RoughCircle cx={405} cy={95} r={3} stroke="#3b82f6" sw={1} fill="#3b82f6" />
+      <SketchText x={415} y={91} size={9} fill="#fff">주문 체결 완료</SketchText>
+      <SketchText x={415} y={104} size={7} fill="#888">BTC 0.5주 매수 체결되었습니다</SketchText>
+      <SketchText x={415} y={116} size={6} fill="#666">방금 전</SketchText>
+      <RoughLine x1={395} y1={125} x2={645} y2={125} stroke="#333" sw={0.5} />
+      {/* Notification 2 - unread */}
+      <RoughCircle cx={405} cy={142} r={3} stroke="#3b82f6" sw={1} fill="#3b82f6" />
+      <SketchText x={415} y={138} size={9} fill="#fff">새 채팅 메시지</SketchText>
+      <SketchText x={415} y={151} size={7} fill="#888">user123: 안녕하세요!</SketchText>
+      <SketchText x={415} y={163} size={6} fill="#666">5분 전</SketchText>
+      <RoughLine x1={395} y1={172} x2={645} y2={172} stroke="#333" sw={0.5} />
+      {/* Notification 3 - read */}
+      <RoughCircle cx={405} cy={189} r={3} stroke="transparent" sw={1} fill="transparent" />
+      <SketchText x={415} y={185} size={9} fill="#aaa">가격 알림</SketchText>
+      <SketchText x={415} y={198} size={7} fill="#666">ETH가 목표 가격에 도달했습니다</SketchText>
+      <SketchText x={415} y={210} size={6} fill="#555">2시간 전</SketchText>
+      {/* Highlight bell */}
+      <RoughCircle cx={570} cy={25} r={25} />
+      <RoughArrow x1={545} y1={38} x2={480} y2={48} />
+      <RedLabel x={200} y={340}>벨 아이콘 클릭 시 최근 알림 확인</RedLabel>
+    </ScreenFrame>
+  );
+}
+
+function NotificationsUnreadIllust() {
+  return (
+    <ScreenFrame>
+      {/* Dropdown panel */}
+      <RoughRect x={200} y={55} w={400} h={280} fill="#222228" stroke="#555" sw={1.5} />
+      <SketchText x={220} y={78} size={12} fill="#ccc">알림</SketchText>
+      <RoughLine x1={200} y1={85} x2={600} y2={85} stroke="#444" sw={1} />
+      {/* Unread notification */}
+      <RoughRect x={200} y={86} w={400} h={55} fill="#2a2a3e" stroke="none" />
+      <RoughCircle cx={220} cy={110} r={4} stroke="#3b82f6" sw={1.5} fill="#3b82f6" />
+      <SketchText x={232} y={104} size={10} fill="#fff">주문 체결 완료</SketchText>
+      <SketchText x={232} y={118} size={8} fill="#888">BTC 0.5주 매수 체결</SketchText>
+      <SketchText x={232} y={130} size={7} fill="#666">방금 전</SketchText>
+      <RoughLine x1={210} y1={141} x2={590} y2={141} stroke="#333" sw={0.5} />
+      {/* Read notification */}
+      <RoughRect x={200} y={142} w={400} h={55} fill="transparent" stroke="none" />
+      <RoughCircle cx={220} cy={166} r={4} stroke="transparent" sw={1} fill="transparent" />
+      <SketchText x={232} y={160} size={10} fill="#aaa">이전 알림</SketchText>
+      <SketchText x={232} y={174} size={8} fill="#666">읽음 처리된 알림</SketchText>
+      <SketchText x={232} y={186} size={7} fill="#555">1일 전</SketchText>
+      {/* Highlight unread dot */}
+      <RoughCircle cx={220} cy={110} r={18} />
+      <RoughArrow x1={200} y1={110} x2={120} y2={110} />
+      <RedLabel x={20} y={105}>파란 점 = 읽지 않음</RedLabel>
+      <RedLabel x={20} y={123}>클릭 시 자동 읽음 처리</RedLabel>
+    </ScreenFrame>
+  );
+}
+
+function NotificationsMarkAllIllust() {
+  return (
+    <ScreenFrame>
+      {/* Dropdown header */}
+      <RoughRect x={200} y={55} w={400} h={40} fill="#222228" stroke="#555" sw={1.5} />
+      <SketchText x={220} y={80} size={12} fill="#ccc">알림</SketchText>
+      <RoughRect x={480} y={65} w={100} h={22} fill="#7c7cff20" stroke="#7c7cff" sw={1} />
+      <SketchText x={495} y={80} size={9} fill="#7c7cff">모두 읽음</SketchText>
+      {/* Body */}
+      <RoughRect x={200} y={95} w={400} h={200} fill="#222228" stroke="#555" sw={1.5} />
+      <SketchText x={350} y={195} size={10} fill="#666" anchor="middle">모든 알림이 읽음 처리됩니다</SketchText>
+      {/* Highlight */}
+      <RoughCircle cx={530} cy={76} r={40} />
+      <RoughArrow x1={530} y1={110} x2={530} y2={320} />
+      <RedLabel x={380} y={340}>한 번에 모든 알림 읽음 처리</RedLabel>
+    </ScreenFrame>
+  );
+}
+
+function NotificationsDeleteIllust() {
+  return (
+    <ScreenFrame>
+      {/* Dropdown */}
+      <RoughRect x={200} y={55} w={400} h={250} fill="#222228" stroke="#555" sw={1.5} />
+      <SketchText x={220} y={78} size={12} fill="#ccc">알림</SketchText>
+      <RoughLine x1={200} y1={85} x2={600} y2={85} stroke="#444" sw={1} />
+      {/* Notification with hover - showing delete button */}
+      <RoughRect x={200} y={86} w={400} h={55} fill="#2a2a2e" stroke="none" />
+      <SketchText x={220} y={104} size={10} fill="#ccc">주문 체결 완료</SketchText>
+      <SketchText x={220} y={118} size={8} fill="#888">BTC 0.5주 매수 체결</SketchText>
+      {/* Delete button */}
+      <RoughRect x={570} y={92} w={20} h={20} fill="#ef444420" stroke="#ef4444" sw={1} />
+      <SketchText x={575} y={107} size={12} fill="#ef4444">×</SketchText>
+      {/* Highlight delete button */}
+      <RoughCircle cx={580} cy={102} r={18} />
+      <RoughArrow x1={560} y1={102} x2={480} y2={102} />
+      <RedLabel x={300} y={97}>호버 시 삭제 버튼 표시</RedLabel>
+      <RedLabel x={300} y={115}>개별 알림 삭제 가능</RedLabel>
+    </ScreenFrame>
+  );
+}
+
+function NotificationsRealtimeIllust() {
+  return (
+    <ScreenFrame>
+      {/* Main content */}
+      <SketchText x={25} y={70} size={11} fill="#ccc">실시간 알림</SketchText>
+      {/* WebSocket connection visualization */}
+      <RoughRect x={20} y={85} w={180} h={60} fill="#222228" stroke="#444" sw={1.5} />
+      <SketchText x={60} y={110} size={9} fill="#888" anchor="middle">서버</SketchText>
+      <SketchText x={60} y={125} size={8} fill="#7c7cff" anchor="middle">WebSocket</SketchText>
+      <RoughArrow x1={200} y1={115} x2={280} y2={115} stroke="#7c7cff" />
+      <RoughRect x={280} y={85} w={180} h={60} fill="#222228" stroke="#444" sw={1.5} />
+      <SketchText x={370} y={110} size={9} fill="#888" anchor="middle">브라우저</SketchText>
+      <SketchText x={370} y={125} size={8} fill="#22c55e" anchor="middle">실시간 수신</SketchText>
+      {/* Notification types */}
+      <RoughRect x={20} y={170} w={290} h={40} fill="#22c55e15" stroke="#22c55e" sw={1} />
+      <SketchText x={35} y={195} size={9} fill="#22c55e">📈 주문 체결: BTC 0.5주 매수 완료</SketchText>
+      <RoughRect x={20} y={220} w={290} h={40} fill="#f59e0b15" stroke="#f59e0b" sw={1} />
+      <SketchText x={35} y={245} size={9} fill="#f59e0b">🔔 가격 알림: ETH 목표 가격 도달</SketchText>
+      <RoughRect x={20} y={270} w={290} h={40} fill="#3b82f615" stroke="#3b82f6" sw={1} />
+      <SketchText x={35} y={295} size={9} fill="#3b82f6">💬 채팅: user123님의 새 메시지</SketchText>
+      {/* Toast notification */}
+      <RoughRect x={380} y={170} w={250} h={50} fill="#222228" stroke="#22c55e" sw={1.5} />
+      <SketchText x={395} y={192} size={9} fill="#22c55e">✓ 주문 체결 완료</SketchText>
+      <SketchText x={395} y={206} size={7} fill="#888">BTC 0.5주 매수</SketchText>
+      <SketchText x={440} y={240} size={8} fill="#666">↑ 토스트 알림</SketchText>
+      {/* Highlight */}
+      <RoughCircle cx={330} cy={115} r={100} />
+      <RedLabel x={400} y={340}>WebSocket으로 체결/가격/채팅 알림 실시간 수신</RedLabel>
+    </ScreenFrame>
+  );
+}
+
 /* ─── Illustration mapping ─── */
 const illustrationMap: Record<string, Record<number, () => React.ReactNode>> = {
   dashboard: {
@@ -1602,6 +1746,13 @@ const illustrationMap: Record<string, Record<number, () => React.ReactNode>> = {
     2: () => <AdminUsersDetailIllust />,
     3: () => <AdminUsersRoleIllust />,
     4: () => <AdminUsersStatusFilterIllust />,
+  },
+  notifications: {
+    0: () => <NotificationsBellIllust />,
+    1: () => <NotificationsUnreadIllust />,
+    2: () => <NotificationsMarkAllIllust />,
+    3: () => <NotificationsDeleteIllust />,
+    4: () => <NotificationsRealtimeIllust />,
   },
 };
 
@@ -1675,6 +1826,148 @@ const tipMap: Record<string, Record<number, TranslationKey[]>> = {
     2: ['help.adminUsers.detail.tip1', 'help.adminUsers.detail.tip2'],
     3: ['help.adminUsers.role.tip1', 'help.adminUsers.role.tip2'],
     4: ['help.adminUsers.statusFilter.tip1', 'help.adminUsers.statusFilter.tip2'],
+  },
+  notifications: {
+    0: ['help.notifications.bell.tip1', 'help.notifications.bell.tip2'],
+    1: ['help.notifications.unread.tip1', 'help.notifications.unread.tip2'],
+    2: ['help.notifications.markAll.tip1', 'help.notifications.markAll.tip2'],
+    3: ['help.notifications.delete.tip1', 'help.notifications.delete.tip2'],
+    4: ['help.notifications.realtime.tip1', 'help.notifications.realtime.tip2'],
+  },
+};
+
+/* ─── FAQ Illustration map (reuses existing feature illustrations) ─── */
+const faqIllustrationMap: Record<string, Record<string, () => React.ReactNode>> = {
+  dashboard: {
+    d1: () => <DashboardChartIllust />,
+    d2: () => <DashboardWatchlistIllust />,
+    d3: () => <DashboardSearchIllust />,
+    d4: () => <DashboardMarketInfoIllust />,
+    d5: () => <DashboardPeriodIllust />,
+    d6: () => <DashboardDetailIllust />,
+  },
+  portfolio: {
+    p1: () => <PortfolioBalanceIllust />,
+    p2: () => <PortfolioPnlIllust />,
+    p3: () => <PortfolioDepositIllust />,
+    p4: () => <PortfolioHoldingsIllust />,
+    p5: () => <PortfolioRatioIllust />,
+    p6: () => <PortfolioHistoryIllust />,
+  },
+  orders: {
+    o1: () => <OrdersCancelIllust />,
+    o2: () => <OrdersStepIllust step={4} />,
+    o3: () => <OrdersMarketVsLimitIllust />,
+    o4: () => <OrdersFilterIllust />,
+    o5: () => <OrdersStepIllust step={3} />,
+    o6: () => <OrdersCalcIllust />,
+  },
+  leaderboard: {
+    l1: () => <LeaderboardRefreshIllust />,
+    l2: () => <LeaderboardScoringIllust />,
+    l3: () => <LeaderboardRankIllust />,
+    l4: () => <LeaderboardMyRankIllust />,
+  },
+  announcements: {
+    n1: () => <AnnouncementsViewIllust />,
+    n2: () => <AnnouncementsCommentIllust />,
+    n3: () => <AnnouncementsLikeIllust />,
+  },
+  news: {
+    w1: () => <NewsCategoryIllust />,
+    w2: () => <NewsCategoryIllust />,
+    w3: () => <NewsRefreshIllust />,
+  },
+  chat: {
+    c1: () => <ChatGroupIllust />,
+    c2: () => <ChatDeleteIllust />,
+    c3: () => <ChatUnreadIllust />,
+    c4: () => <ChatResizeIllust />,
+    c5: () => <ChatInviteIllust />,
+  },
+  adminStats: {
+    a1: () => <AdminStatsOverviewIllust />,
+    a2: () => <AdminStatsPeriodIllust />,
+  },
+  adminUsers: {
+    u1: () => <AdminUsersApproveIllust />,
+    u2: () => <AdminUsersRoleIllust />,
+  },
+  notifications: {
+    noti1: () => <NotificationsBellIllust />,
+    noti2: () => <NotificationsDeleteIllust />,
+    noti3: () => <NotificationsRealtimeIllust />,
+  },
+};
+
+/* ─── FAQ Tip descriptions ─── */
+const faqTipMap: Record<string, Record<string, string[]>> = {
+  dashboard: {
+    d1: ['help.faq.d1.t1', 'help.faq.d1.t2', 'help.faq.d1.t3'],
+    d2: ['help.faq.d2.t1', 'help.faq.d2.t2', 'help.faq.d2.t3'],
+    d3: ['help.faq.d3.t1', 'help.faq.d3.t2', 'help.faq.d3.t3'],
+    d4: ['help.faq.d4.t1', 'help.faq.d4.t2', 'help.faq.d4.t3'],
+    d5: ['help.faq.d5.t1', 'help.faq.d5.t2', 'help.faq.d5.t3'],
+    d6: ['help.faq.d6.t1', 'help.faq.d6.t2', 'help.faq.d6.t3'],
+  },
+  portfolio: {
+    p1: ['help.faq.p1.t1', 'help.faq.p1.t2', 'help.faq.p1.t3'],
+    p2: ['help.faq.p2.t1', 'help.faq.p2.t2', 'help.faq.p2.t3'],
+    p3: ['help.faq.p3.t1', 'help.faq.p3.t2', 'help.faq.p3.t3'],
+    p4: ['help.faq.p4.t1', 'help.faq.p4.t2', 'help.faq.p4.t3'],
+    p5: ['help.faq.p5.t1', 'help.faq.p5.t2'],
+    p6: ['help.faq.p6.t1', 'help.faq.p6.t2'],
+  },
+  orders: {
+    o1: ['help.faq.o1.t1', 'help.faq.o1.t2', 'help.faq.o1.t3'],
+    o2: ['help.faq.o2.t1', 'help.faq.o2.t2', 'help.faq.o2.t3'],
+    o3: ['help.faq.o3.t1', 'help.faq.o3.t2', 'help.faq.o3.t3'],
+    o4: ['help.faq.o4.t1', 'help.faq.o4.t2', 'help.faq.o4.t3', 'help.faq.o4.t4'],
+    o5: ['help.faq.o5.t1', 'help.faq.o5.t2'],
+    o6: ['help.faq.o6.t1', 'help.faq.o6.t2'],
+  },
+  leaderboard: {
+    l1: ['help.faq.l1.t1', 'help.faq.l1.t2', 'help.faq.l1.t3'],
+    l2: ['help.faq.l2.t1', 'help.faq.l2.t2', 'help.faq.l2.t3'],
+    l3: ['help.faq.l3.t1', 'help.faq.l3.t2'],
+    l4: ['help.faq.l4.t1', 'help.faq.l4.t2'],
+  },
+  announcements: {
+    n1: ['help.faq.n1.t1', 'help.faq.n1.t2', 'help.faq.n1.t3'],
+    n2: ['help.faq.n2.t1', 'help.faq.n2.t2'],
+    n3: ['help.faq.n3.t1', 'help.faq.n3.t2'],
+  },
+  news: {
+    w1: ['help.faq.w1.t1', 'help.faq.w1.t2', 'help.faq.w1.t3'],
+    w2: ['help.faq.w2.t1', 'help.faq.w2.t2', 'help.faq.w2.t3'],
+    w3: ['help.faq.w3.t1', 'help.faq.w3.t2'],
+  },
+  chat: {
+    c1: ['help.faq.c1.t1', 'help.faq.c1.t2', 'help.faq.c1.t3'],
+    c2: ['help.faq.c2.t1', 'help.faq.c2.t2'],
+    c3: ['help.faq.c3.t1', 'help.faq.c3.t2'],
+    c4: ['help.faq.c4.t1', 'help.faq.c4.t2'],
+    c5: ['help.faq.c5.t1', 'help.faq.c5.t2', 'help.faq.c5.t3'],
+  },
+  adminStats: {
+    a1: ['help.faq.a1.t1', 'help.faq.a1.t2', 'help.faq.a1.t3'],
+    a2: ['help.faq.a2.t1', 'help.faq.a2.t2'],
+  },
+  adminUsers: {
+    u1: ['help.faq.u1.t1', 'help.faq.u1.t2'],
+    u2: ['help.faq.u2.t1', 'help.faq.u2.t2'],
+  },
+  notifications: {
+    noti1: ['help.faq.noti1.t1', 'help.faq.noti1.t2', 'help.faq.noti1.t3'],
+    noti2: ['help.faq.noti2.t1', 'help.faq.noti2.t2'],
+    noti3: ['help.faq.noti3.t1', 'help.faq.noti3.t2', 'help.faq.noti3.t3', 'help.faq.noti3.t4'],
+  },
+  common: {
+    g1: ['help.faq.g1.t1', 'help.faq.g1.t2', 'help.faq.g1.t3'],
+    g2: ['help.faq.g2.t1', 'help.faq.g2.t2', 'help.faq.g2.t3'],
+    g3: ['help.faq.g3.t1', 'help.faq.g3.t2', 'help.faq.g3.t3'],
+    g4: ['help.faq.g4.t1', 'help.faq.g4.t2', 'help.faq.g4.t3'],
+    g5: ['help.faq.g5.t1', 'help.faq.g5.t2'],
   },
 };
 
@@ -1807,6 +2100,8 @@ interface HelpSection {
   title: TranslationKey;
   description: TranslationKey;
   items: FeatureItemData[];
+  loginRequired?: boolean;
+  adminOnly?: boolean;
 }
 
 function HelpTab({
@@ -1832,8 +2127,20 @@ function HelpTab({
           <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center text-accent shrink-0">
             {section.icon}
           </div>
-          <div>
-            <h2 className="text-[16px] font-bold text-text-primary">{t(section.title)}</h2>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-[16px] font-bold text-text-primary">{t(section.title)}</h2>
+              {section.adminOnly && (
+                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-accent/10 text-accent border border-accent/20">
+                  {t('help.badge.adminOnly' as TranslationKey)}
+                </span>
+              )}
+              {section.loginRequired && !section.adminOnly && (
+                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-warning/10 text-warning border border-warning/20">
+                  {t('help.badge.loginRequired' as TranslationKey)}
+                </span>
+              )}
+            </div>
             <p className="text-[13px] text-text-tertiary mt-0.5">{t(section.description)}</p>
           </div>
         </div>
@@ -1857,21 +2164,172 @@ function HelpTab({
   );
 }
 
-/* ─── FAQ Item ─── */
-function FaqItem({ question, answer }: { question: string; answer: string }) {
-  const [open, setOpen] = useState(false);
+/* ─── FAQ Feature Item (illustration + tips, like FeatureItem) ─── */
+function FaqFeatureItem({
+  id,
+  tabKey,
+  expanded,
+  onToggle,
+  t,
+}: {
+  id: string;
+  tabKey: string;
+  expanded: boolean;
+  onToggle: () => void;
+  t: (key: TranslationKey) => string;
+}) {
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [height, setHeight] = useState(0);
+  const [zoomOpen, setZoomOpen] = useState(false);
+
+  useEffect(() => {
+    if (expanded && contentRef.current) {
+      setHeight(contentRef.current.scrollHeight);
+    } else {
+      setHeight(0);
+    }
+  }, [expanded]);
+
+  useEffect(() => {
+    if (!zoomOpen) return;
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') setZoomOpen(false); };
+    document.addEventListener('keydown', handler);
+    document.body.style.overflow = 'hidden';
+    return () => { document.removeEventListener('keydown', handler); document.body.style.overflow = ''; };
+  }, [zoomOpen]);
+
+  const illustRenderer = faqIllustrationMap[tabKey]?.[id];
+  const hasIllust = !!illustRenderer;
+  const tips = faqTipMap[tabKey]?.[id] ?? faqTipMap.common?.[id];
+
   return (
-    <div className="border border-border/60 rounded-xl overflow-hidden">
+    <div className="rounded-xl border border-border/40 overflow-hidden transition-colors hover:border-border/80">
       <button
-        onClick={() => setOpen(!open)}
-        className="flex items-center justify-between w-full px-4 py-3.5 text-left hover:bg-bg-secondary/50 transition-colors"
+        onClick={onToggle}
+        className={cn(
+          'w-full flex items-start gap-3 px-4 py-3 text-left transition-colors cursor-pointer hover:bg-bg-secondary/60',
+          expanded && 'bg-bg-secondary/40',
+        )}
       >
-        <span className="text-[14px] font-semibold text-text-primary">{question}</span>
-        <ChevronDown className={cn('w-4 h-4 text-text-quaternary transition-transform shrink-0 ml-2', open && 'rotate-180')} />
+        <div className="w-7 h-7 rounded-lg bg-warning/8 flex items-center justify-center text-warning shrink-0 mt-0.5">
+          <HelpCircle className="w-4 h-4" />
+        </div>
+        <p className="flex-1 text-[14px] font-semibold text-text-primary leading-relaxed">
+          {t(`help.faq.${id}.q` as TranslationKey)}
+        </p>
+        <ChevronDown className={cn('w-4 h-4 text-text-quaternary shrink-0 mt-1 transition-transform duration-300', expanded && 'rotate-180')} />
       </button>
-      {open && (
-        <div className="px-4 pb-4 text-[13px] text-text-secondary leading-relaxed">
-          {answer}
+      <div
+        style={{ maxHeight: height }}
+        className="overflow-hidden transition-[max-height] duration-400 ease-in-out"
+      >
+        <div ref={contentRef} className="px-4 pb-4 pt-1">
+          <div className={cn('flex flex-col gap-4', hasIllust && tips?.length ? 'lg:flex-row' : '')}>
+            {hasIllust && (
+              <div className={cn('min-w-0', tips?.length ? 'lg:flex-[3]' : 'w-full')}>
+                <div
+                  className="bg-bg-secondary/30 border border-border/30 rounded-xl p-3 sm:p-4 cursor-zoom-in hover:border-accent/30 transition-colors"
+                  onClick={() => setZoomOpen(true)}
+                >
+                  {illustRenderer()}
+                </div>
+              </div>
+            )}
+            {tips && tips.length > 0 && (
+              <div className={hasIllust ? 'lg:flex-[2] shrink-0' : 'w-full'}>
+                <div className="bg-bg-secondary/20 border border-border/20 rounded-xl p-4 h-full">
+                  <p className="text-[12px] font-bold text-accent mb-3 flex items-center gap-1.5">
+                    💡 {t('help.tips')}
+                  </p>
+                  <div className="space-y-2.5">
+                    {tips.map((tip, i) => (
+                      <p key={i} className="text-[12px] text-text-tertiary leading-relaxed flex gap-2">
+                        <span className="text-accent/70 shrink-0 font-bold">•</span>
+                        <span>{t(tip as TranslationKey)}</span>
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Zoom Modal */}
+      {zoomOpen && hasIllust && (
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4"
+          onClick={() => setZoomOpen(false)}
+        >
+          <div
+            className="relative bg-bg-primary border border-border rounded-2xl p-6 sm:p-8 max-w-[90vw] max-h-[90vh] overflow-auto shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setZoomOpen(false)}
+              className="absolute top-3 right-3 p-1.5 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-secondary transition-colors"
+            >
+              <span className="text-[18px]">&times;</span>
+            </button>
+            <div className="transform scale-125 sm:scale-150 origin-top-left w-[calc(100%/1.25)] sm:w-[calc(100%/1.5)]">
+              {illustRenderer()}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── FAQ Section with expandable items ─── */
+function FaqSection({ tabFaqs, commonFaqs, activeTab, t }: {
+  tabFaqs: string[];
+  commonFaqs: string[];
+  activeTab: string;
+  t: (key: TranslationKey) => string;
+}) {
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setExpandedId(null);
+  }, [activeTab]);
+
+  return (
+    <div className="border-t border-border/60 pt-8 pb-10">
+      <h2 className="text-[16px] font-bold text-text-primary mb-4 flex items-center gap-2">
+        <HelpCircle className="w-5 h-5 text-accent" />
+        {t('help.faq.title')}
+      </h2>
+      {tabFaqs.length > 0 && (
+        <div className="space-y-2 mb-6">
+          {tabFaqs.map((id) => (
+            <FaqFeatureItem
+              key={id}
+              id={id}
+              tabKey={activeTab}
+              expanded={expandedId === id}
+              onToggle={() => setExpandedId(expandedId === id ? null : id)}
+              t={t}
+            />
+          ))}
+        </div>
+      )}
+      {commonFaqs.length > 0 && (
+        <div className="space-y-2">
+          {tabFaqs.length > 0 && (
+            <p className="text-[12px] text-text-quaternary font-medium uppercase mt-4 mb-2">{t('help.faq.commonTitle' as TranslationKey)}</p>
+          )}
+          {commonFaqs.map((id) => (
+            <FaqFeatureItem
+              key={id}
+              id={id}
+              tabKey="common"
+              expanded={expandedId === `common-${id}`}
+              onToggle={() => setExpandedId(expandedId === `common-${id}` ? null : `common-${id}`)}
+              t={t}
+            />
+          ))}
         </div>
       )}
     </div>
@@ -1893,6 +2351,7 @@ export default function HelpPage() {
     { key: 'announcements', label: 'help.tab.announcements', icon: <Megaphone className="w-4 h-4" /> },
     { key: 'news', label: 'help.tab.news', icon: <Newspaper className="w-4 h-4" /> },
     { key: 'chat', label: 'help.tab.chat', icon: <MessageCircle className="w-4 h-4" /> },
+    { key: 'notifications', label: 'help.tab.notifications' as TranslationKey, icon: <Bell className="w-4 h-4" /> },
     { key: 'adminStats', label: 'help.tab.adminStats', icon: <BarChart3 className="w-4 h-4" />, adminOnly: true },
     { key: 'adminUsers', label: 'help.tab.adminUsers', icon: <Users className="w-4 h-4" />, adminOnly: true },
   ];
@@ -1921,6 +2380,7 @@ export default function HelpPage() {
       icon: <Briefcase className="w-5 h-5" />,
       title: 'help.portfolio.title',
       description: 'help.portfolio.desc',
+      loginRequired: true,
       items: [
         { icon: <DollarSign className="w-4 h-4" />, text: 'help.portfolio.balance' },
         { icon: <DollarSign className="w-4 h-4" />, text: 'help.portfolio.deposit' },
@@ -1934,6 +2394,7 @@ export default function HelpPage() {
       icon: <ClipboardList className="w-5 h-5" />,
       title: 'help.orders.title',
       description: 'help.orders.desc',
+      loginRequired: true,
       items: [
         { icon: <ShoppingCart className="w-4 h-4" />, text: 'help.orders.step1' },
         { icon: <ShoppingCart className="w-4 h-4" />, text: 'help.orders.step2' },
@@ -1949,6 +2410,7 @@ export default function HelpPage() {
       icon: <Trophy className="w-5 h-5" />,
       title: 'help.leaderboard.title',
       description: 'help.leaderboard.desc',
+      loginRequired: true,
       items: [
         { icon: <TrendingUp className="w-4 h-4" />, text: 'help.leaderboard.ranking' },
         { icon: <RefreshCw className="w-4 h-4" />, text: 'help.leaderboard.refresh' },
@@ -1960,6 +2422,7 @@ export default function HelpPage() {
       icon: <Megaphone className="w-5 h-5" />,
       title: 'help.announcements.title',
       description: 'help.announcements.desc',
+      loginRequired: true,
       items: [
         { icon: <Eye className="w-4 h-4" />, text: 'help.announcements.view' },
         { icon: <MessageCircle className="w-4 h-4" />, text: 'help.announcements.comment' },
@@ -1982,6 +2445,7 @@ export default function HelpPage() {
       icon: <MessageCircle className="w-5 h-5" />,
       title: 'help.chat.title',
       description: 'help.chat.desc',
+      loginRequired: true,
       items: [
         { icon: <MessageCircle className="w-4 h-4" />, text: 'help.chat.dm' },
         { icon: <Users className="w-4 h-4" />, text: 'help.chat.group' },
@@ -1993,10 +2457,25 @@ export default function HelpPage() {
         { icon: <Maximize2 className="w-4 h-4" />, text: 'help.chat.resize' },
       ],
     },
+    notifications: {
+      icon: <Bell className="w-5 h-5" />,
+      title: 'help.notifications.title' as TranslationKey,
+      description: 'help.notifications.desc' as TranslationKey,
+      loginRequired: true,
+      items: [
+        { icon: <Bell className="w-4 h-4" />, text: 'help.notifications.bell' as TranslationKey },
+        { icon: <Eye className="w-4 h-4" />, text: 'help.notifications.unread' as TranslationKey },
+        { icon: <CheckCircle className="w-4 h-4" />, text: 'help.notifications.markAll' as TranslationKey },
+        { icon: <Trash2 className="w-4 h-4" />, text: 'help.notifications.delete' as TranslationKey },
+        { icon: <RefreshCw className="w-4 h-4" />, text: 'help.notifications.realtime' as TranslationKey },
+      ],
+    },
     adminStats: {
       icon: <BarChart3 className="w-5 h-5" />,
       title: 'help.adminStats.title',
       description: 'help.adminStats.desc',
+      loginRequired: true,
+      adminOnly: true,
       items: [
         { icon: <FileText className="w-4 h-4" />, text: 'help.adminStats.overview' },
         { icon: <TrendingUp className="w-4 h-4" />, text: 'help.adminStats.chart' },
@@ -2008,6 +2487,8 @@ export default function HelpPage() {
       icon: <Users className="w-5 h-5" />,
       title: 'help.adminUsers.title',
       description: 'help.adminUsers.desc',
+      loginRequired: true,
+      adminOnly: true,
       items: [
         { icon: <Search className="w-4 h-4" />, text: 'help.adminUsers.search' },
         { icon: <CheckCircle className="w-4 h-4" />, text: 'help.adminUsers.approve' },
@@ -2070,51 +2551,20 @@ export default function HelpPage() {
       {/* FAQ Section — grouped by active tab */}
       {(() => {
         const faqByTab: Record<string, string[]> = {
-          dashboard: ['d1', 'd2', 'd3'],
-          portfolio: ['p1', 'p2', 'p3'],
-          orders: ['o1', 'o2', 'o3'],
-          leaderboard: ['l1', 'l2'],
-          announcements: ['n1'],
-          news: ['w1'],
-          chat: ['c1', 'c2'],
-          adminStats: [],
-          adminUsers: [],
+          dashboard: ['d1', 'd2', 'd3', 'd4', 'd5', 'd6'],
+          portfolio: ['p1', 'p2', 'p3', 'p4', 'p5', 'p6'],
+          orders: ['o1', 'o2', 'o3', 'o4', 'o5', 'o6'],
+          leaderboard: ['l1', 'l2', 'l3', 'l4'],
+          announcements: ['n1', 'n2', 'n3'],
+          news: ['w1', 'w2', 'w3'],
+          chat: ['c1', 'c2', 'c3', 'c4', 'c5'],
+          notifications: ['noti1', 'noti2', 'noti3'],
+          adminStats: ['a1', 'a2'],
+          adminUsers: ['u1', 'u2'],
         };
         const tabFaqs = faqByTab[activeTab] ?? [];
-        const commonFaqs = ['g1', 'g2', 'g3'];
-        return (
-          <div className="border-t border-border/60 pt-8 pb-10">
-            <h2 className="text-[16px] font-bold text-text-primary mb-4 flex items-center gap-2">
-              <HelpCircle className="w-5 h-5 text-accent" />
-              {t('help.faq.title')}
-            </h2>
-            {tabFaqs.length > 0 && (
-              <div className="space-y-2 mb-6">
-                {tabFaqs.map((key) => (
-                  <FaqItem
-                    key={key}
-                    question={t(`help.faq.${key}.q` as TranslationKey)}
-                    answer={t(`help.faq.${key}.a` as TranslationKey)}
-                  />
-                ))}
-              </div>
-            )}
-            {commonFaqs.length > 0 && (
-              <div className="space-y-2">
-                {tabFaqs.length > 0 && (
-                  <p className="text-[12px] text-text-quaternary font-medium uppercase mt-4 mb-2">{t('filter.all')}</p>
-                )}
-                {commonFaqs.map((key) => (
-                  <FaqItem
-                    key={key}
-                    question={t(`help.faq.${key}.q` as TranslationKey)}
-                    answer={t(`help.faq.${key}.a` as TranslationKey)}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        );
+        const commonFaqs = ['g1', 'g2', 'g3', 'g4', 'g5'];
+        return <FaqSection tabFaqs={tabFaqs} commonFaqs={commonFaqs} activeTab={activeTab} t={t} />;
       })()}
     </div>
   );

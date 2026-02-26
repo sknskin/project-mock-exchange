@@ -135,6 +135,20 @@ export default function Header() {
                 {t('nav.news')}
               </Link>
 
+              {/* 비인증 시 도움말 표시 / Help link visible pre-login */}
+              <div className="contents auth-hide">
+                <Link
+                  href="/help"
+                  className={cn(
+                    'text-[14px] font-medium transition-colors py-1',
+                    pathname === '/help' || pathname.startsWith('/help/')
+                      ? 'text-text-primary' : 'text-text-tertiary hover:text-text-primary',
+                  )}
+                >
+                  {t('help.title')}
+                </Link>
+              </div>
+
               {/* 인증 필요 메뉴 / Auth-only nav items */}
               <div className="contents auth-show">
                 <Link

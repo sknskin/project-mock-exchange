@@ -114,7 +114,10 @@ export default function SpotlightSearch({ isOpen, onClose, assets, onLoginRequir
             onChange={(e) => { setQuery(e.target.value); setSelectedIndex(0); }}
             className="flex-1 bg-transparent text-[16px] text-text-primary placeholder-text-quaternary focus:outline-none font-medium"
           />
-          <kbd className="px-2 py-0.5 text-[11px] border border-border rounded text-text-tertiary font-mono shrink-0">
+          <kbd
+            className="px-2 py-0.5 text-[11px] border border-border rounded text-text-tertiary font-mono shrink-0 cursor-pointer hover:bg-bg-secondary hover:text-text-primary transition-colors"
+            onClick={onClose}
+          >
             ESC
           </kbd>
         </div>
@@ -194,7 +197,7 @@ export default function SpotlightSearch({ isOpen, onClose, assets, onLoginRequir
             <kbd className="px-1 py-0.5 border border-border rounded font-mono text-[10px]">Enter</kbd>
             {t('spotlight.select')}
           </span>
-          <span className="flex items-center gap-1">
+          <span className="flex items-center gap-1 cursor-pointer hover:text-text-tertiary transition-colors" onClick={onClose}>
             <kbd className="px-1 py-0.5 border border-border rounded font-mono text-[10px]">ESC</kbd>
             {t('spotlight.close')}
           </span>
