@@ -7,13 +7,15 @@
  */
 'use client';
 
-import { useRef, useEffect, useCallback, useState } from 'react';
+import { useRef, useEffect, useCallback, useState, useMemo } from 'react';
 import { useLeaderboard } from '@/hooks/useLeaderboard';
 import { useAuthStore } from '@/stores/auth';
 import { useTranslation } from '@/hooks/useTranslation';
 import Skeleton from '@/components/ui/Skeleton';
 import { cn, formatCurrency, formatPercent } from '@/lib/format';
 import { Trophy, RefreshCw, Users } from 'lucide-react';
+
+type SortMode = 'return' | 'assets';
 
 const medalColors: Record<number, string> = {
   1: 'text-yellow-400',
@@ -60,7 +62,20 @@ export default function LeaderboardPage() {
   const { data: leaderboard, isLoading, dataUpdatedAt, refetch } = useLeaderboard();
   const user = useAuthStore((s) => s.user);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const myEntry = leaderboard?.find((e) => e.userId === user?.id);
+  const [sortMode, setSortMode] = useState<SortMode>('return');
+
+  // Sort and re-rank entries client-side (filter out users with no deposits)
+  const sortedLeaderboard = useMemo(() => {
+    if (!leaderboard) return [];
+    const active = leaderboard.filter((e) => e.totalValue > 0);
+    const sorted = active.sort((a, b) => {
+      if (sortMode === 'return') return b.pnlPercent - a.pnlPercent;
+      return b.totalValue - a.totalValue;
+    });
+    return sorted.map((entry, i) => ({ ...entry, rank: i + 1 }));
+  }, [leaderboard, sortMode]);
+
+  const myEntry = sortedLeaderboard.find((e) => e.userId === user?.id);
   const prevRankMap = useRef<Map<string, number>>(new Map());
   const rowRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
@@ -71,11 +86,11 @@ export default function LeaderboardPage() {
   }, [refetch]);
 
   useEffect(() => {
-    if (!leaderboard) return;
+    if (!sortedLeaderboard.length) return;
 
     const prev = prevRankMap.current;
 
-    leaderboard.forEach((entry) => {
+    sortedLeaderboard.forEach((entry) => {
       const el = rowRefs.current.get(entry.userId);
       if (!el) return;
 
@@ -92,9 +107,9 @@ export default function LeaderboardPage() {
     });
 
     const next = new Map<string, number>();
-    leaderboard.forEach((entry) => next.set(entry.userId, entry.rank));
+    sortedLeaderboard.forEach((entry) => next.set(entry.userId, entry.rank));
     prevRankMap.current = next;
-  }, [leaderboard]);
+  }, [sortedLeaderboard]);
 
   return (
     <div>
@@ -103,19 +118,40 @@ export default function LeaderboardPage() {
         <h1 className="text-[20px] font-extrabold text-text-primary">{t('leaderboard.title')}</h1>
       </div>
 
-      {/* 참여자 수 + 내 순위 / Participants + My Rank */}
+      {/* 참여자 수 + 내 순위 + 정렬 / Participants + My Rank + Sort */}
       {!isLoading && leaderboard && leaderboard.length > 0 && (
-        <div className="flex items-center gap-4 pb-3">
-          <div className="flex items-center gap-1.5 text-[12px] text-text-tertiary">
-            <Users className="w-3.5 h-3.5" />
-            <span>{t('leaderboard.participants')} {leaderboard.length}</span>
-          </div>
-          {myEntry && (
-            <div className="flex items-center gap-1.5 text-[12px] text-accent font-medium">
-              <Trophy className="w-3.5 h-3.5" />
-              <span>{t('leaderboard.myRank')} #{myEntry.rank}</span>
+        <div className="flex items-center justify-between gap-4 pb-3 flex-wrap">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1.5 text-[12px] text-text-tertiary">
+              <Users className="w-3.5 h-3.5" />
+              <span>{t('leaderboard.participants')} {sortedLeaderboard.length}</span>
             </div>
-          )}
+            {myEntry && (
+              <div className="flex items-center gap-1.5 text-[12px] text-accent font-medium">
+                <Trophy className="w-3.5 h-3.5" />
+                <span>{t('leaderboard.myRank')} #{myEntry.rank}</span>
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-1 bg-bg-secondary border border-border rounded-xl p-1">
+            {([
+              { key: 'return' as SortMode, label: t('leaderboard.sortByReturn') },
+              { key: 'assets' as SortMode, label: t('leaderboard.sortByAssets') },
+            ]).map((opt) => (
+              <button
+                key={opt.key}
+                onClick={() => setSortMode(opt.key)}
+                className={cn(
+                  'px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-colors',
+                  sortMode === opt.key
+                    ? 'bg-accent text-white'
+                    : 'text-text-quaternary hover:text-text-secondary',
+                )}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
@@ -154,7 +190,7 @@ export default function LeaderboardPage() {
         </div>
       ) : (
         <div className="divide-y divide-border/40">
-          {leaderboard?.map((entry) => {
+          {sortedLeaderboard.map((entry) => {
             const isTop3 = entry.rank <= 3;
             const isPositive = entry.pnlPercent >= 0;
             const isMe = entry.userId === user?.id;
@@ -214,7 +250,7 @@ export default function LeaderboardPage() {
             );
           })}
 
-          {(!leaderboard || leaderboard.length === 0) && (
+          {sortedLeaderboard.length === 0 && (
             <div className="py-24 text-center text-text-quaternary text-[14px]">
               {t('leaderboard.empty')}
             </div>
