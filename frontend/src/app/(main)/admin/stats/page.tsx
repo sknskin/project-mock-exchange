@@ -26,7 +26,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts';
-import { Users, LogIn, Eye, FileText, TrendingUp, Activity, ShoppingCart, ArrowUpRight, ArrowDownRight, Minus, BarChart2, BarChart3, Heart, MessageSquare } from 'lucide-react';
+import { Users, LogIn, Eye, FileText, TrendingUp, Activity, ShoppingCart, ArrowUpRight, ArrowDownRight, Minus, BarChart2, BarChart3, Heart, MessageSquare, MessagesSquare, CalendarCheck } from 'lucide-react';
 import {
   useStatOverview,
   useStatOverviewTrend,
@@ -155,7 +155,7 @@ function CustomTooltip({
 function TrendBadge({ changePercent }: { changePercent: number }) {
   if (changePercent > 0) {
     return (
-      <span className="inline-flex items-center gap-0.5 text-[11px] font-semibold text-emerald-400">
+      <span className="inline-flex items-center gap-0.5 text-[11px] font-bold text-emerald-400 bg-emerald-400/10 px-1.5 py-0.5 rounded-md">
         <ArrowUpRight className="w-3 h-3" />
         +{changePercent}%
       </span>
@@ -163,7 +163,7 @@ function TrendBadge({ changePercent }: { changePercent: number }) {
   }
   if (changePercent < 0) {
     return (
-      <span className="inline-flex items-center gap-0.5 text-[11px] font-semibold text-red-400">
+      <span className="inline-flex items-center gap-0.5 text-[11px] font-bold text-red-400 bg-red-400/10 px-1.5 py-0.5 rounded-md">
         <ArrowDownRight className="w-3 h-3" />
         {changePercent}%
       </span>
@@ -177,6 +177,28 @@ function TrendBadge({ changePercent }: { changePercent: number }) {
   );
 }
 
+// ===== Mini sparkline for KPI cards =====
+function MiniSparkline({ data, color }: { data: number[]; color: string }) {
+  if (!data || data.length < 2) return null;
+  const max = Math.max(...data);
+  const min = Math.min(...data);
+  const range = max - min || 1;
+  const h = 32;
+  const w = 80;
+  const points = data.map((v, i) => {
+    const x = (i / (data.length - 1)) * w;
+    const y = h - ((v - min) / range) * (h - 4) - 2;
+    return `${x},${y}`;
+  }).join(' ');
+  const areaPoints = `0,${h} ${points} ${w},${h}`;
+  return (
+    <svg width={w} height={h} className="shrink-0 opacity-60">
+      <polyline fill="none" stroke={color} strokeWidth="1.5" points={points} />
+      <polygon fill={color} fillOpacity="0.1" points={areaPoints} />
+    </svg>
+  );
+}
+
 // ===== Overview card with optional trend =====
 function OverviewCard({
   icon: Icon,
@@ -184,30 +206,37 @@ function OverviewCard({
   label,
   iconColor,
   changePercent,
+  sparklineData,
 }: {
   icon: React.ElementType;
   value: number | undefined;
   label: string;
   iconColor: string;
   changePercent?: number;
+  sparklineData?: number[];
 }) {
   return (
-    <div className="bg-bg-secondary rounded-2xl p-5 border border-border flex items-center gap-4">
+    <div className="bg-bg-secondary rounded-2xl p-3 sm:p-5 border border-border flex items-center gap-3 sm:gap-4 min-w-0">
       <div
-        className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+        className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center shrink-0"
         style={{ backgroundColor: `${iconColor}18` }}
       >
-        <Icon className="w-5 h-5" style={{ color: iconColor }} />
+        <Icon className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: iconColor }} />
       </div>
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <p className="text-[20px] font-extrabold text-text-primary tabular-nums leading-tight">
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+          <p className="text-[16px] sm:text-[20px] font-extrabold text-text-primary tabular-nums leading-tight">
             {value !== undefined ? value.toLocaleString() : '\u2014'}
           </p>
           {changePercent !== undefined && <TrendBadge changePercent={changePercent} />}
         </div>
-        <p className="text-[12px] text-text-quaternary mt-0.5 truncate">{label}</p>
+        <p className="text-[11px] sm:text-[12px] text-text-quaternary mt-0.5 truncate">{label}</p>
       </div>
+      {sparklineData && sparklineData.length >= 2 && (
+        <div className="hidden sm:block">
+          <MiniSparkline data={sparklineData} color={iconColor} />
+        </div>
+      )}
     </div>
   );
 }
@@ -361,7 +390,7 @@ export default function AdminStatsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-5 border-b border-border overflow-x-auto overflow-y-hidden overscroll-x-contain scrollbar-hide" ref={tabsRef}>
+      <div className="flex flex-wrap gap-1 mb-5 border-b border-border pb-1" ref={tabsRef}>
         {STAT_TABS.map((t_) => {
           const Icon = t_.icon;
           const isActive = tab === t_.key;
@@ -370,10 +399,10 @@ export default function AdminStatsPage() {
               key={t_.key}
               onClick={() => setTab(t_.key)}
               className={cn(
-                'flex items-center gap-1.5 px-2.5 sm:px-4 py-2.5 text-[12px] sm:text-[13px] font-semibold transition-colors whitespace-nowrap border-b-2 -mb-px',
+                'flex items-center gap-1.5 px-2.5 sm:px-4 py-2 text-[12px] sm:text-[13px] font-semibold transition-colors rounded-lg',
                 isActive
-                  ? 'border-accent text-accent'
-                  : 'border-transparent text-text-quaternary hover:text-text-secondary',
+                  ? 'bg-accent/15 text-accent'
+                  : 'text-text-quaternary hover:text-text-secondary hover:bg-bg-secondary/50',
               )}
             >
               <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
@@ -382,17 +411,13 @@ export default function AdminStatsPage() {
           );
         })}
       </div>
-      <style jsx>{`
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
-        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-      `}</style>
 
       {/* Period / Days selectors - show only for non-overview tabs */}
       {tab !== 'overview' && (
         <div className="flex flex-wrap gap-2 mb-6">
           {/* Period - hide for trading tab */}
           {tab !== 'trading' && (
-            <div className="flex gap-1 bg-bg-secondary border border-border rounded-xl p-1">
+            <div className="flex flex-wrap gap-1 bg-bg-secondary border border-border rounded-xl p-1">
               {PERIOD_OPTIONS.map((opt) => (
                 <button
                   key={opt.value}
@@ -438,13 +463,14 @@ export default function AdminStatsPage() {
             <h2 className="text-[12px] font-semibold text-text-quaternary uppercase tracking-wider mb-3">
               {t('stats.overview')}
             </h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <OverviewCard
                 icon={Users}
                 value={overview?.totalUsers}
                 label={t('stats.totalUsers')}
                 iconColor={CHART_COLORS.blue}
                 changePercent={trend?.newUsers.changePercent}
+                sparklineData={registrations?.map((r) => r.count)}
               />
               <OverviewCard
                 icon={Activity}
@@ -471,6 +497,7 @@ export default function AdminStatsPage() {
                 label={t('stats.totalPageViews')}
                 iconColor={CHART_COLORS.gray}
                 changePercent={trend?.pageViews.changePercent}
+                sparklineData={pageViews?.timeline?.map((p) => p.count)}
               />
               <OverviewCard
                 icon={LogIn}
@@ -478,6 +505,7 @@ export default function AdminStatsPage() {
                 label={t('stats.todayLogins')}
                 iconColor={CHART_COLORS.green}
                 changePercent={trend?.logins.changePercent}
+                sparklineData={logins?.map((l) => l.count)}
               />
             </div>
           </div>
@@ -496,7 +524,7 @@ export default function AdminStatsPage() {
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
-                    <XAxis dataKey="label" tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} />
+                    <XAxis dataKey="label" tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} interval="preserveStartEnd" tickFormatter={(v: string) => v.length > 8 ? v.slice(5) : v} />
                     <YAxis tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} />
                     <Tooltip content={<CustomTooltip />} />
                     <Area type="monotone" dataKey="count" name={t('stats.registrations')} stroke={CHART_COLORS.blue} strokeWidth={2} fill="url(#overviewRegGrad)" dot={false} activeDot={{ r: 4, fill: CHART_COLORS.blue }} />
@@ -513,7 +541,7 @@ export default function AdminStatsPage() {
                 <ResponsiveContainer width="100%" height={240}>
                   <LineChart data={logins ?? []} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
-                    <XAxis dataKey="label" tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} />
+                    <XAxis dataKey="label" tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} interval="preserveStartEnd" tickFormatter={(v: string) => v.length > 8 ? v.slice(5) : v} />
                     <YAxis tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} />
                     <Tooltip content={<CustomTooltip />} />
                     <Line type="monotone" dataKey="count" name={t('stats.logins')} stroke={CHART_COLORS.red} strokeWidth={2} dot={false} activeDot={{ r: 4, fill: CHART_COLORS.red }} />
@@ -530,7 +558,7 @@ export default function AdminStatsPage() {
                 <ResponsiveContainer width="100%" height={240}>
                   <BarChart data={pageViews?.timeline ?? []} margin={{ top: 4, right: 4, left: -20, bottom: 0 }} barSize={6}>
                     <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
-                    <XAxis dataKey="label" tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} />
+                    <XAxis dataKey="label" tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} interval="preserveStartEnd" tickFormatter={(v: string) => v.length > 8 ? v.slice(5) : v} />
                     <YAxis tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} />
                     <Tooltip content={<CustomTooltip />} />
                     <Bar dataKey="count" name={t('stats.pageViews')} fill={CHART_COLORS.green} radius={[3, 3, 0, 0]} />
@@ -547,7 +575,7 @@ export default function AdminStatsPage() {
                 <ResponsiveContainer width="100%" height={240}>
                   <BarChart data={trading?.dailyVolume ?? []} margin={{ top: 4, right: 4, left: -20, bottom: 0 }} barSize={8}>
                     <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
-                    <XAxis dataKey="date" tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} />
+                    <XAxis dataKey="date" tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} interval="preserveStartEnd" tickFormatter={(v: string) => v.length > 8 ? v.slice(5) : v} />
                     <YAxis tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} />
                     <Tooltip content={<CustomTooltip />} />
                     <Legend wrapperStyle={{ fontSize: 11, color: AXIS_TICK_FILL, paddingTop: 8 }} />
@@ -566,7 +594,7 @@ export default function AdminStatsPage() {
                 <ResponsiveContainer width="100%" height={240}>
                   <BarChart data={announcementChartData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }} barSize={6}>
                     <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
-                    <XAxis dataKey="date" tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} />
+                    <XAxis dataKey="date" tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} interval="preserveStartEnd" tickFormatter={(v: string) => v.length > 8 ? v.slice(5) : v} />
                     <YAxis tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} />
                     <Tooltip content={<CustomTooltip />} />
                     <Legend wrapperStyle={{ fontSize: 11, color: AXIS_TICK_FILL, paddingTop: 8 }} />
@@ -605,7 +633,7 @@ export default function AdminStatsPage() {
       {tab === 'users' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* 사용자 요약 카드 */}
-          <div className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-3">
             <OverviewCard icon={Users} value={overview?.totalUsers} label={t('stats.totalUsers')} iconColor={CHART_COLORS.blue} changePercent={trend?.newUsers.changePercent} />
             <OverviewCard icon={Activity} value={overview?.activeUsers} label={t('stats.activeUsers')} iconColor={CHART_COLORS.green} />
             <OverviewCard icon={Users} value={overview?.pendingUsers} label={t('stats.pendingUsers')} iconColor={CHART_COLORS.red} />
@@ -625,9 +653,11 @@ export default function AdminStatsPage() {
                   <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
                   <XAxis
                     dataKey="label"
-                    tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }}
+                    tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }}
                     axisLine={{ stroke: AXIS_LINE_STROKE }}
                     tickLine={false}
+                    interval="preserveStartEnd"
+                    tickFormatter={(v: string) => v.length > 8 ? v.slice(5) : v}
                   />
                   <YAxis
                     tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }}
@@ -724,7 +754,7 @@ export default function AdminStatsPage() {
       {tab === 'activity' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* 활동 요약 카드 */}
-          <div className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-3">
             <OverviewCard icon={LogIn} value={overview?.todayLogins} label={t('stats.todayLogins')} iconColor={CHART_COLORS.red} changePercent={trend?.logins.changePercent} />
             <OverviewCard icon={Eye} value={overview?.totalPageViews} label={t('stats.totalPageViews')} iconColor={CHART_COLORS.green} changePercent={trend?.pageViews.changePercent} />
             <OverviewCard icon={Activity} value={topPagesData.length} label={t('stats.topPages')} iconColor={CHART_COLORS.blue} />
@@ -738,9 +768,11 @@ export default function AdminStatsPage() {
                   <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
                   <XAxis
                     dataKey="label"
-                    tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }}
+                    tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }}
                     axisLine={{ stroke: AXIS_LINE_STROKE }}
                     tickLine={false}
+                    interval="preserveStartEnd"
+                    tickFormatter={(v: string) => v.length > 8 ? v.slice(5) : v}
                   />
                   <YAxis
                     tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }}
@@ -776,9 +808,11 @@ export default function AdminStatsPage() {
                   <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
                   <XAxis
                     dataKey="label"
-                    tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }}
+                    tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }}
                     axisLine={{ stroke: AXIS_LINE_STROKE }}
                     tickLine={false}
+                    interval="preserveStartEnd"
+                    tickFormatter={(v: string) => v.length > 8 ? v.slice(5) : v}
                   />
                   <YAxis
                     tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }}
@@ -850,9 +884,11 @@ export default function AdminStatsPage() {
                   <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
                   <XAxis
                     dataKey="label"
-                    tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }}
+                    tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }}
                     axisLine={{ stroke: AXIS_LINE_STROKE }}
                     tickLine={false}
+                    interval="preserveStartEnd"
+                    tickFormatter={(v: string) => v.length > 8 ? v.slice(5) : v}
                   />
                   <YAxis
                     tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }}
@@ -879,7 +915,7 @@ export default function AdminStatsPage() {
       {tab === 'trading' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Summary cards */}
-          <div className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <OverviewCard
               icon={ShoppingCart}
               value={trading?.totalOrders}
@@ -918,9 +954,11 @@ export default function AdminStatsPage() {
                   <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
                   <XAxis
                     dataKey="date"
-                    tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }}
+                    tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }}
                     axisLine={{ stroke: AXIS_LINE_STROKE }}
                     tickLine={false}
+                    interval="preserveStartEnd"
+                    tickFormatter={(v: string) => v.length > 8 ? v.slice(5) : v}
                   />
                   <YAxis
                     tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }}
@@ -1021,6 +1059,38 @@ export default function AdminStatsPage() {
               <EmptyChart />
             )}
           </ChartCard>
+
+          {/* Popular Assets Volume Distribution - Donut Chart */}
+          <ChartCard title={t('stats.popularAssetsDonut')} description={t('stats.desc.popularAssets')}>
+            {trading?.popularAssets && trading.popularAssets.length > 0 ? (
+              <ResponsiveContainer width="100%" height={280}>
+                <PieChart>
+                  <Pie
+                    data={trading.popularAssets.slice(0, 8).map((a, i) => ({
+                      name: a.symbol,
+                      value: a.volume,
+                      color: Object.values(CHART_COLORS)[i % Object.values(CHART_COLORS).length],
+                    }))}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={110}
+                    paddingAngle={2}
+                    dataKey="value"
+                    nameKey="name"
+                    label={({ name, percent }: { name?: string; percent?: number }) => `${name ?? ''} ${((percent ?? 0) * 100).toFixed(0)}%`}
+                  >
+                    {trading.popularAssets.slice(0, 8).map((_, i) => (
+                      <Cell key={`pa-${i}`} fill={Object.values(CHART_COLORS)[i % Object.values(CHART_COLORS).length]} strokeWidth={0} />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<CustomTooltip />} />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <EmptyChart />
+            )}
+          </ChartCard>
         </div>
       )}
 
@@ -1028,7 +1098,7 @@ export default function AdminStatsPage() {
       {tab === 'content' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* 요약 카드 */}
-          <div className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <OverviewCard
               icon={FileText}
               value={announcements?.totalAnnouncements}
@@ -1061,7 +1131,7 @@ export default function AdminStatsPage() {
               <ResponsiveContainer width="100%" height={280}>
                 <BarChart data={announcementChartData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }} barSize={6}>
                   <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
-                  <XAxis dataKey="date" tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} />
+                  <XAxis dataKey="date" tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} interval="preserveStartEnd" tickFormatter={(v: string) => v.length > 8 ? v.slice(5) : v} />
                   <YAxis tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} />
                   <Tooltip content={<CustomTooltip />} />
                   <Legend wrapperStyle={{ fontSize: 11, color: AXIS_TICK_FILL, paddingTop: 8 }} />
@@ -1080,7 +1150,7 @@ export default function AdminStatsPage() {
               <ResponsiveContainer width="100%" height={280}>
                 <BarChart data={likeChartData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }} barSize={6}>
                   <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
-                  <XAxis dataKey="date" tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} />
+                  <XAxis dataKey="date" tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} interval="preserveStartEnd" tickFormatter={(v: string) => v.length > 8 ? v.slice(5) : v} />
                   <YAxis tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} />
                   <Tooltip content={<CustomTooltip />} />
                   <Legend wrapperStyle={{ fontSize: 11, color: AXIS_TICK_FILL, paddingTop: 8 }} />
@@ -1158,21 +1228,30 @@ export default function AdminStatsPage() {
       {tab === 'chat' && (
         <div className="space-y-6">
           {/* 요약 카드 (Summary Cards) */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-bg-secondary rounded-2xl p-4 border border-border">
-              <p className="text-[11px] font-bold text-text-quaternary uppercase">{t('stats.chatRooms')}</p>
-              <p className="text-[22px] font-extrabold text-text-primary mt-1">{chatStats?.totalRooms ?? '-'}</p>
-              <p className="text-[11px] text-text-quaternary mt-0.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="bg-bg-secondary rounded-2xl p-3 sm:p-4 border border-border">
+              <div className="flex items-center gap-1.5">
+                <MessageSquare className="w-3.5 h-3.5 text-text-quaternary shrink-0" />
+                <p className="text-[10px] sm:text-[11px] font-bold text-text-quaternary uppercase">{t('stats.chatRooms')}</p>
+              </div>
+              <p className="text-[18px] sm:text-[22px] font-extrabold text-text-primary mt-1">{chatStats?.totalRooms ?? '-'}</p>
+              <p className="text-[10px] sm:text-[11px] text-text-quaternary mt-0.5">
                 {t('stats.dm')} {chatStats?.dmCount ?? 0} · {t('stats.group')} {chatStats?.groupCount ?? 0}
               </p>
             </div>
-            <div className="bg-bg-secondary rounded-2xl p-4 border border-border">
-              <p className="text-[11px] font-bold text-text-quaternary uppercase">{t('stats.messages')}</p>
-              <p className="text-[22px] font-extrabold text-text-primary mt-1">{chatStats?.totalMessages?.toLocaleString() ?? '-'}</p>
+            <div className="bg-bg-secondary rounded-2xl p-3 sm:p-4 border border-border">
+              <div className="flex items-center gap-1.5">
+                <MessagesSquare className="w-3.5 h-3.5 text-text-quaternary shrink-0" />
+                <p className="text-[10px] sm:text-[11px] font-bold text-text-quaternary uppercase">{t('stats.messages')}</p>
+              </div>
+              <p className="text-[18px] sm:text-[22px] font-extrabold text-text-primary mt-1">{chatStats?.totalMessages?.toLocaleString() ?? '-'}</p>
             </div>
-            <div className="bg-bg-secondary rounded-2xl p-4 border border-border">
-              <p className="text-[11px] font-bold text-text-quaternary uppercase">{t('stats.todayMessages')}</p>
-              <p className="text-[22px] font-extrabold text-text-primary mt-1">{chatStats?.todayMessages ?? '-'}</p>
+            <div className="bg-bg-secondary rounded-2xl p-3 sm:p-4 border border-border">
+              <div className="flex items-center gap-1.5">
+                <CalendarCheck className="w-3.5 h-3.5 text-text-quaternary shrink-0" />
+                <p className="text-[10px] sm:text-[11px] font-bold text-text-quaternary uppercase">{t('stats.todayMessages')}</p>
+              </div>
+              <p className="text-[18px] sm:text-[22px] font-extrabold text-text-primary mt-1">{chatStats?.todayMessages ?? '-'}</p>
               {chatStats && chatStats.yesterdayMessages > 0 && (
                 <p className={cn('text-[11px] mt-0.5 flex items-center gap-0.5',
                   chatStats.todayMessages >= chatStats.yesterdayMessages ? 'text-success' : 'text-danger')}>
@@ -1183,9 +1262,12 @@ export default function AdminStatsPage() {
                 </p>
               )}
             </div>
-            <div className="bg-bg-secondary rounded-2xl p-4 border border-border">
-              <p className="text-[11px] font-bold text-text-quaternary uppercase">{t('stats.activeParticipants')}</p>
-              <p className="text-[22px] font-extrabold text-text-primary mt-1">{chatStats?.activeParticipants ?? '-'}</p>
+            <div className="bg-bg-secondary rounded-2xl p-3 sm:p-4 border border-border">
+              <div className="flex items-center gap-1.5">
+                <Users className="w-3.5 h-3.5 text-text-quaternary shrink-0" />
+                <p className="text-[10px] sm:text-[11px] font-bold text-text-quaternary uppercase">{t('stats.activeParticipants')}</p>
+              </div>
+              <p className="text-[18px] sm:text-[22px] font-extrabold text-text-primary mt-1">{chatStats?.activeParticipants ?? '-'}</p>
             </div>
           </div>
 
@@ -1197,7 +1279,7 @@ export default function AdminStatsPage() {
                 <ResponsiveContainer width="100%" height={240}>
                   <AreaChart data={chatStats.dailyMessages}>
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                    <XAxis dataKey="label" tick={{ fill: 'var(--text-quaternary)', fontSize: 11 }} tickFormatter={(v) => v.slice(5)} />
+                    <XAxis dataKey="label" tick={{ fill: 'var(--text-quaternary)', fontSize: 10 }} tickFormatter={(v: string) => v.slice(5)} interval="preserveStartEnd" />
                     <YAxis tick={{ fill: 'var(--text-quaternary)', fontSize: 11 }} />
                     <Tooltip contentStyle={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 12, fontSize: 12 }} />
                     <Area type="monotone" dataKey="count" stroke={CHART_COLORS.blue} fill={CHART_COLORS.blue} fillOpacity={0.15} name={t('stats.messages')} />
@@ -1237,6 +1319,35 @@ export default function AdminStatsPage() {
               )}
             </ChartCard>
           </div>
+
+          {/* Top Rooms */}
+          {chatStats?.topRooms && chatStats.topRooms.length > 0 && (
+            <ChartCard title={t('stats.topRooms')}>
+              <div className="space-y-2">
+                {chatStats.topRooms.map((room: { roomId: string; name: string; type: string; messageCount: number }, i: number) => (
+                  <div
+                    key={room.roomId}
+                    className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-bg-tertiary transition-colors"
+                  >
+                    <span className="text-[13px] font-bold text-text-quaternary w-5 shrink-0 text-center">
+                      {i + 1}
+                    </span>
+                    <span className="text-[13px] text-text-primary truncate flex-1">
+                      {room.name}
+                    </span>
+                    <span className="text-[12px] text-text-quaternary shrink-0 flex items-center gap-3">
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-bg-tertiary">
+                        {room.type === 'DM' ? t('stats.dm') : t('stats.group')}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <MessageSquare className="w-3 h-3" /> {room.messageCount}
+                      </span>
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </ChartCard>
+          )}
 
         </div>
       )}
