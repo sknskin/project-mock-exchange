@@ -9,6 +9,7 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Delete,
   Param,
   Body,
@@ -119,6 +120,22 @@ export class AdminProxyController {
     const result = await this.proxyService.forward('user-auth', {
       method: 'DELETE',
       url: `/admin/users/${id}`,
+      headers: { Authorization: req.headers.authorization || '' },
+    });
+    return res.status(result.status).json(result.data);
+  }
+
+  @Patch('users/:id/role')
+  async updateRole(
+    @Param('id') id: string,
+    @Body() body: unknown,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    const result = await this.proxyService.forward('user-auth', {
+      method: 'PATCH',
+      url: `/admin/users/${id}/role`,
+      data: body,
       headers: { Authorization: req.headers.authorization || '' },
     });
     return res.status(result.status).json(result.data);

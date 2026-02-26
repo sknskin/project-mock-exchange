@@ -9,6 +9,7 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Delete,
   Param,
   Query,
@@ -114,5 +115,16 @@ export class AdminController {
     this.assertAdmin(user);
     await this.adminService.deleteUser(id, user.role);
     return { success: true, message: 'User deleted' };
+  }
+
+  @Patch('users/:id/role')
+  async updateRole(
+    @CurrentUser() user: UserDto,
+    @Param('id') id: string,
+    @Body() body: { role: string },
+  ) {
+    this.assertAdmin(user);
+    const result = await this.adminService.updateRole(id, body.role, user.role);
+    return { success: true, data: result };
   }
 }

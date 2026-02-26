@@ -18,13 +18,14 @@ import {
   useDeactivateUser,
   useActivateUser,
   useDeleteUser,
+  useUpdateRole,
 } from '@/hooks/useAdmin';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuthStore } from '@/stores/auth';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import { cn } from '@/lib/format';
 
-type ModalType = 'approve' | 'reject' | 'deactivate' | 'activate' | 'delete' | null;
+type ModalType = 'approve' | 'reject' | 'deactivate' | 'activate' | 'delete' | 'changeRole' | null;
 
 function InfoRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -52,9 +53,11 @@ export default function AdminUserDetailPage({
   const deactivateUser = useDeactivateUser();
   const activateUser = useActivateUser();
   const deleteUser = useDeleteUser();
+  const updateRole = useUpdateRole();
 
   const [activeModal, setActiveModal] = useState<ModalType>(null);
   const [note, setNote] = useState('');
+  const [selectedRole, setSelectedRole] = useState('');
 
   // Redirect non-admin users
   if (currentUser && currentUser.role !== 'ADMIN' && currentUser.role !== 'SYSTEM') {
@@ -72,8 +75,8 @@ export default function AdminUserDetailPage({
   // Modals with a note textarea: approve, reject
   const hasNoteField = activeModal === 'approve' || activeModal === 'reject';
 
-  // Simple modals (no note): deactivate, activate, delete
-  const isSimpleModal = activeModal === 'deactivate' || activeModal === 'activate' || activeModal === 'delete';
+  // Simple modals (no note): deactivate, activate, delete, changeRole
+  const isSimpleModal = activeModal === 'deactivate' || activeModal === 'activate' || activeModal === 'delete' || activeModal === 'changeRole';
 
   const openModal = (type: ModalType) => {
     setNote('');
@@ -83,6 +86,7 @@ export default function AdminUserDetailPage({
   const closeModal = () => {
     setActiveModal(null);
     setNote('');
+    setSelectedRole('');
   };
 
   const handleConfirm = async () => {
@@ -98,9 +102,12 @@ export default function AdminUserDetailPage({
         await activateUser.mutateAsync(user.id);
       } else if (activeModal === 'delete') {
         await deleteUser.mutateAsync(user.id);
+      } else if (activeModal === 'changeRole' && selectedRole) {
+        await updateRole.mutateAsync({ id: user.id, role: selectedRole });
       }
+      const wasChangeRole = activeModal === 'changeRole';
       closeModal();
-      router.push('/admin/users');
+      if (!wasChangeRole) router.push('/admin/users');
     } catch {
       // errors are handled by mutation state
     }
@@ -111,7 +118,8 @@ export default function AdminUserDetailPage({
     rejectUser.isPending ||
     deactivateUser.isPending ||
     activateUser.isPending ||
-    deleteUser.isPending;
+    deleteUser.isPending ||
+    updateRole.isPending;
 
   const formatDateValue = (value: string | null | undefined): string => {
     if (!value) return '-';
@@ -130,6 +138,7 @@ export default function AdminUserDetailPage({
     if (activeModal === 'deactivate') return t('admin.users.deactivate');
     if (activeModal === 'activate') return t('admin.users.activate');
     if (activeModal === 'delete') return t('admin.users.delete');
+    if (activeModal === 'changeRole') return t('admin.changeRole');
     return '';
   };
 
@@ -139,6 +148,7 @@ export default function AdminUserDetailPage({
     if (activeModal === 'deactivate') return t('admin.users.deactivateConfirm');
     if (activeModal === 'activate') return t('admin.users.activateConfirm');
     if (activeModal === 'delete') return t('admin.users.deleteConfirm');
+    if (activeModal === 'changeRole') return `${user?.name || user?.username}${t('admin.changeRoleConfirm')} ${selectedRole}`;
     return '';
   };
 
@@ -148,6 +158,7 @@ export default function AdminUserDetailPage({
     if (activeModal === 'deactivate') return t('admin.users.deactivate');
     if (activeModal === 'activate') return t('admin.users.activate');
     if (activeModal === 'delete') return t('admin.users.delete');
+    if (activeModal === 'changeRole') return t('admin.changeRole');
     return t('common.confirm');
   };
 
@@ -340,6 +351,17 @@ export default function AdminUserDetailPage({
                     className="px-5 py-2.5 rounded-xl text-[14px] font-semibold text-danger border border-danger/30 hover:bg-danger/10 transition-colors"
                   >
                     {t('admin.users.delete')}
+                  </button>
+                )}
+                {currentUser?.role === 'SYSTEM' && user.role !== 'SYSTEM' && (
+                  <button
+                    onClick={() => {
+                      setSelectedRole(user.role === 'ADMIN' ? 'USER' : 'ADMIN');
+                      setActiveModal('changeRole');
+                    }}
+                    className="px-5 py-2.5 rounded-xl text-[14px] font-semibold text-purple-500 border border-purple-500/30 hover:bg-purple-500/10 transition-colors"
+                  >
+                    {t('admin.changeRole')}
                   </button>
                 )}
               </div>

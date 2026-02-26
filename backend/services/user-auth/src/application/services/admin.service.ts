@@ -9,6 +9,7 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  BadRequestException,
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../infrastructure/persistence/prisma/prisma.service';
@@ -243,6 +244,37 @@ export class AdminService {
 
     await this.prisma.user.delete({ where: { id } });
     this.logger.log(`User ${target.username} deleted`);
+  }
+
+  async updateRole(id: string, newRole: string, currentUserRole: string) {
+    this.checkPermission(currentUserRole, 'ADMIN');
+
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    if (!user) throw new NotFoundException('User not found');
+
+    // Cannot change role of SYSTEM users
+    if (user.role === 'SYSTEM') {
+      throw new ForbiddenException('Cannot change role of SYSTEM users');
+    }
+
+    // New role must be valid
+    if (!['ADMIN', 'USER'].includes(newRole)) {
+      throw new BadRequestException('Invalid role. Must be ADMIN or USER');
+    }
+
+    // Only SYSTEM can promote to ADMIN
+    if (newRole === 'ADMIN' && currentUserRole !== 'SYSTEM') {
+      throw new ForbiddenException('Only SYSTEM users can promote to ADMIN');
+    }
+
+    const updated = await this.prisma.user.update({
+      where: { id },
+      data: { role: newRole as any },
+      select: { id: true, username: true, name: true, role: true },
+    });
+
+    this.logger.log(`User ${user.username} role changed from ${user.role} to ${newRole}`);
+    return updated;
   }
 
   private checkPermission(currentRole: string, targetRole: string) {

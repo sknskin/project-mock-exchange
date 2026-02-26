@@ -135,6 +135,22 @@ export function useDeleteUser() {
   });
 }
 
+export function useUpdateRole() {
+  const qc = useQueryClient();
+  const { t } = useTranslation();
+  return useMutation({
+    mutationFn: async ({ id, role }: { id: string; role: string }) => {
+      const { data } = await api.patch(`/api/admin/users/${id}/role`, { role });
+      return data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-users'] });
+      qc.invalidateQueries({ queryKey: ['admin-user'] });
+      useToastStore.getState().addToast(t('toast.roleChanged'));
+    },
+  });
+}
+
 // ===== 공지사항 (Announcements) =====
 export function useAnnouncements(params: { page: number; limit: number; search?: string }) {
   return useQuery({
@@ -426,6 +442,21 @@ export function useMarkAllAsRead() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['notifications'] });
       qc.invalidateQueries({ queryKey: ['unread-count'] });
+    },
+  });
+}
+
+export function useDeleteNotification() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await api.delete(`/api/notifications/${id}`);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['unread-count'] });
     },
   });
 }
