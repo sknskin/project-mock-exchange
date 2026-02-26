@@ -644,12 +644,50 @@ const translations = {
 
     // Help FAQ
     'help.faq.title': '자주 묻는 질문',
-    'help.faq.q1': '매수가 안 돼요',
-    'help.faq.a1': '예수금(현금 잔액)이 부족하면 매수할 수 없습니다. 내 투자 페이지에서 입금 후 다시 시도해 주세요.',
-    'help.faq.q2': '리더보드 순위가 안 바뀌어요',
-    'help.faq.a2': '리더보드 순위는 시세 반영 주기에 따라 업데이트됩니다. 잠시 후 새로고침 해주세요.',
-    'help.faq.q3': '주문을 취소하고 싶어요',
-    'help.faq.a3': '주문내역 페이지에서 대기중(Pending) 상태의 주문만 취소할 수 있습니다. 이미 체결된 주문은 취소할 수 없습니다.',
+    // 대시보드
+    'help.faq.d1.q': '실시간 시세는 어떻게 제공되나요?',
+    'help.faq.d1.a': 'VirtuEx의 암호화폐 시세는 Binance 거래소의 실시간 WebSocket 데이터를 기반으로 제공됩니다. 가격, 거래량, 변동률이 실시간으로 업데이트되며, 차트와 호가창에 즉시 반영됩니다. 주식 시세는 시뮬레이션 데이터로, 실제 시장과는 무관합니다. 데이터 소스는 각 종목 옆의 배지(Binance/시뮬레이션)로 확인할 수 있습니다.',
+    'help.faq.d2.q': '관심종목은 어떻게 추가하나요?',
+    'help.faq.d2.a': '대시보드 종목 목록에서 각 종목 오른쪽의 별(☆) 아이콘을 클릭하면 관심종목에 추가됩니다. 추가된 관심종목은 대시보드 상단의 "관심종목" 탭에서 모아볼 수 있습니다. 관심종목을 해제하려면 같은 별 아이콘을 다시 클릭하세요. 관심종목 기능은 로그인 후 사용할 수 있습니다.',
+    'help.faq.d3.q': '종목 검색은 어떻게 하나요?',
+    'help.faq.d3.a': '데스크톱에서는 키보드의 "/" 키를 누르면 스포트라이트 검색창이 열립니다. 모바일에서는 헤더 아래의 검색 바를 탭하세요. 종목명이나 심볼(예: BTC, 삼성전자)을 입력하면 실시간으로 검색 결과가 표시됩니다. 검색 결과에서 종목을 클릭하면 상세 페이지로 이동합니다.',
+    // 포트폴리오
+    'help.faq.p1.q': '매수가 안 돼요',
+    'help.faq.p1.a': '매수 주문을 넣으려면 충분한 예수금(현금 잔액)이 필요합니다. "내 투자" 페이지에서 현재 잔고를 확인하고, 부족하다면 입금 버튼을 눌러 가상 자금을 충전하세요. 입금 후 대시보드의 종목 상세 페이지에서 매수 주문을 다시 시도해 주세요.\n\n입금 순서: 내 투자 → 잔고 카드의 "+" 버튼 → 금액 입력 → 입금',
+    'help.faq.p2.q': '수익률은 어떻게 계산되나요?',
+    'help.faq.p2.a': '포트폴리오 수익률은 다음 공식으로 계산됩니다:\n\n수익률(%) = ((현재 총 자산가치 - 초기 투자금) / 초기 투자금) × 100\n\n• 현재 총 자산가치 = 보유 종목의 시가 평가액 합계 + 현금 잔액\n• 초기 투자금 = 총 입금액 - 총 출금액\n\n개별 종목의 수익률은 현재가와 평균 매입가의 차이로 계산됩니다. 수익률은 시세 변동에 따라 실시간으로 업데이트됩니다.',
+    'help.faq.p3.q': '입금과 출금은 어떻게 하나요?',
+    'help.faq.p3.a': 'VirtuEx는 가상 모의투자 플랫폼이므로 실제 화폐가 사용되지 않습니다.\n\n• 입금: "내 투자" 페이지에서 잔고 옆 "+" 버튼 클릭 → 원하는 금액 입력 또는 빠른 금액(10만/50만/100만/500만) 선택 → 입금 버튼 클릭\n• 출금: 잔고 옆 "-" 버튼 클릭 → 금액 입력 또는 비율(10%/25%/50%/100%) 선택 → 확인 모달에서 승인\n\n출금은 현금 잔액 범위 내에서만 가능하며, 보유 종목에 투자된 금액은 매도 후 출금할 수 있습니다.',
+    // 주문
+    'help.faq.o1.q': '주문을 취소하고 싶어요',
+    'help.faq.o1.a': '"주문내역" 페이지에서 대기중(Pending) 상태의 주문만 취소할 수 있습니다. 해당 주문의 "취소" 버튼을 클릭하면 확인 모달이 표시되고, 확인을 누르면 주문이 취소됩니다.\n\n이미 체결(Filled)된 주문은 취소할 수 없습니다. 체결된 주문은 반대 매매(매수한 종목을 매도하거나 그 반대)를 통해 포지션을 청산할 수 있습니다.',
+    'help.faq.o2.q': '주문이 체결되지 않아요',
+    'help.faq.o2.a': '지정가 주문의 경우 시장 가격이 지정한 가격에 도달해야 체결됩니다.\n\n• 매수 지정가: 시장가가 지정가 이하로 내려와야 체결\n• 매도 지정가: 시장가가 지정가 이상으로 올라가야 체결\n\n현재 시장가와 주문 가격의 차이가 크면 체결까지 오래 걸릴 수 있습니다. 즉시 체결을 원하시면 시장가 주문을 이용하세요. 주문 페이지에서 가격 수정도 가능합니다.',
+    'help.faq.o3.q': '시장가 주문과 지정가 주문의 차이는?',
+    'help.faq.o3.a': '• 시장가 주문: 현재 시장 가격으로 즉시 체결됩니다. 빠른 거래가 필요할 때 적합하지만, 변동이 큰 종목에서는 예상과 다른 가격에 체결될 수 있습니다.\n\n• 지정가 주문: 원하는 가격을 직접 설정합니다. 시장가가 지정가에 도달하면 체결되며, 원하는 가격에 거래할 수 있지만 체결까지 시간이 걸릴 수 있습니다.\n\n종목 상세 페이지의 주문 패널에서 두 가지 주문 유형을 선택할 수 있습니다.',
+    // 리더보드
+    'help.faq.l1.q': '리더보드 순위가 안 바뀌어요',
+    'help.faq.l1.a': '리더보드 순위는 보유 자산의 시가 평가가 반영된 후 업데이트됩니다. 시세 데이터가 갱신되는 주기에 따라 약간의 지연이 있을 수 있습니다.\n\n순위 갱신이 안 된다면:\n1. 리더보드 페이지의 새로고침 버튼을 클릭해 보세요\n2. 자산을 입금하지 않은 사용자는 순위에 표시되지 않습니다\n3. 수익률/총자산 정렬 기준을 변경해 확인해 보세요',
+    'help.faq.l2.q': '리더보드 순위 기준은 무엇인가요?',
+    'help.faq.l2.a': '기본적으로 수익률(%) 기준 내림차순으로 정렬됩니다. 페이지 상단의 정렬 토글을 이용해 총자산 기준으로도 전환할 수 있습니다.\n\n• 수익률 기준: 투자 대비 수익이 높은 사용자가 상위에 표시됩니다\n• 총자산 기준: 보유 자산 총 가치가 큰 사용자가 상위에 표시됩니다\n\n자산을 입금한 사용자만 리더보드에 표시되며, 상위 3명에게는 금·은·동 메달이 부여됩니다.',
+    // 공지사항
+    'help.faq.n1.q': '공지사항은 어디서 확인하나요?',
+    'help.faq.n1.a': '사이드바 메뉴의 "공지사항"을 클릭하면 공지사항 목록 페이지로 이동합니다. 각 공지사항을 클릭하면 상세 내용을 확인할 수 있으며, 최신 공지가 상단에 표시됩니다.\n\n공지사항 상단에 고정된 글은 중요 공지이니 반드시 확인해 주세요. 관리자는 공지사항을 작성, 수정, 삭제할 수 있습니다.',
+    // 뉴스
+    'help.faq.w1.q': '뉴스는 어디서 수집되나요?',
+    'help.faq.w1.a': 'VirtuEx의 뉴스는 신뢰할 수 있는 금융 전문 매체의 RSS 피드를 통해 자동 수집됩니다.\n\n• 암호화폐: CoinDesk, CoinTelegraph, Decrypt, Bitcoin Magazine, The Block\n• 국내주식: 한국경제, 매일경제, 조선비즈, 서울경제, 이데일리\n• 해외주식: Yahoo Finance, CNBC, MarketWatch, Investing.com, Seeking Alpha\n\n뉴스는 30분마다 자동 갱신되며, 수동 새로고침도 가능합니다. 키워드 검색과 날짜 필터로 원하는 뉴스를 찾을 수 있습니다.',
+    // 채팅
+    'help.faq.c1.q': '채팅방은 어떻게 만드나요?',
+    'help.faq.c1.a': '채팅 페이지에서 "새 채팅방 만들기" 버튼을 클릭하면 채팅방을 생성할 수 있습니다. 채팅방 이름을 입력하고 생성하면 다른 사용자들이 참여할 수 있습니다.\n\n채팅방 유형:\n• 그룹 채팅: 여러 사용자가 참여하는 공개 채팅방\n• DM(다이렉트 메시지): 1:1 개인 대화\n\n채팅방에서는 실시간으로 메시지를 주고받을 수 있으며, 자신이 보낸 메시지는 삭제할 수 있습니다. 관리자는 다른 사용자의 메시지도 삭제할 수 있습니다.',
+    'help.faq.c2.q': '메시지를 삭제하거나 수정할 수 있나요?',
+    'help.faq.c2.a': '자신이 보낸 메시지는 삭제할 수 있습니다. 메시지 위에 마우스를 올리면(모바일에서는 길게 누르면) 삭제 버튼이 나타납니다. 관리자(Admin)는 다른 사용자의 메시지도 삭제할 수 있습니다.\n\n현재 메시지 수정 기능은 제공되지 않으므로, 잘못 보낸 메시지는 삭제 후 다시 작성해 주세요. 채팅방 나가기를 하면 해당 채팅방의 메시지를 더 이상 볼 수 없게 됩니다.',
+    // 공통
+    'help.faq.g1.q': '비밀번호를 변경하고 싶어요',
+    'help.faq.g1.a': '마이페이지 > 프로필 수정 페이지에서 비밀번호를 변경할 수 있습니다.\n\n변경 순서:\n1. 우측 상단 프로필 아이콘 또는 사이드바에서 "마이페이지" 클릭\n2. "프로필 수정" 버튼 클릭\n3. 현재 비밀번호 입력\n4. 새 비밀번호 입력 및 확인\n\n비밀번호 요구사항: 최소 8자 이상, 영문 대·소문자, 숫자, 특수문자를 조합하는 것을 권장합니다.',
+    'help.faq.g2.q': '계정을 삭제하고 싶어요',
+    'help.faq.g2.a': '계정 삭제는 마이페이지 > 프로필 수정 페이지 하단의 "계정 삭제" 버튼을 통해 진행할 수 있습니다.\n\n주의사항:\n• 계정 삭제 시 모든 거래 내역, 포트폴리오, 채팅 기록이 영구적으로 삭제됩니다\n• 삭제된 계정은 복구할 수 없습니다\n• 리더보드에서도 제거됩니다\n\n계정 삭제 전에 필요한 데이터가 있다면 미리 기록해 두시길 권장합니다.',
+    'help.faq.g3.q': '한국어/영어 전환은 어떻게 하나요?',
+    'help.faq.g3.a': '헤더 우측 상단의 언어 아이콘(🌐)을 클릭하면 한국어와 영어 사이를 전환할 수 있습니다. 설정은 즉시 적용되며, 브라우저를 닫아도 선택한 언어가 유지됩니다.\n\n다크 모드/라이트 모드도 헤더의 테마 아이콘을 클릭하여 전환할 수 있습니다.',
 
     // Notifications
     'notification.title': '알림',
@@ -1556,12 +1594,50 @@ const translations = {
 
     // Help FAQ
     'help.faq.title': 'FAQ',
-    'help.faq.q1': "I can't buy",
-    'help.faq.a1': 'You need sufficient cash balance to buy. Please deposit funds from the Portfolio page and try again.',
-    'help.faq.q2': 'Leaderboard rank not updating',
-    'help.faq.a2': 'Leaderboard rankings update based on market price refresh cycles. Please wait and refresh.',
-    'help.faq.q3': 'I want to cancel an order',
-    'help.faq.a3': 'Only pending orders can be cancelled from the Orders page. Already filled orders cannot be cancelled.',
+    // Dashboard
+    'help.faq.d1.q': 'How is real-time market data provided?',
+    'help.faq.d1.a': 'VirtuEx cryptocurrency prices are powered by Binance exchange real-time WebSocket data. Price, volume, and change rates are updated in real-time and immediately reflected on charts and order books. Stock prices are simulated data, unrelated to actual markets. You can identify the data source via the badge (Binance/Simulated) next to each asset.',
+    'help.faq.d2.q': 'How do I add to my watchlist?',
+    'help.faq.d2.a': 'Click the star icon (☆) on the right side of each asset in the dashboard list to add it to your watchlist. Added watchlist items can be viewed in the "Watchlist" tab at the top of the dashboard. To remove an item, click the star icon again. The watchlist feature requires login.',
+    'help.faq.d3.q': 'How do I search for assets?',
+    'help.faq.d3.a': 'On desktop, press the "/" key to open the spotlight search. On mobile, tap the search bar below the header. Type an asset name or symbol (e.g., BTC, AAPL) and results will appear in real-time. Click a result to navigate to its detail page.',
+    // Portfolio
+    'help.faq.p1.q': "I can't buy",
+    'help.faq.p1.a': 'To place a buy order, you need sufficient cash balance. Check your current balance on the "Portfolio" page, and if insufficient, click the deposit button to add virtual funds. After depositing, try placing a buy order again from the asset detail page on the dashboard.\n\nDeposit steps: Portfolio → "+" button on balance card → Enter amount → Deposit',
+    'help.faq.p2.q': 'How is the return rate calculated?',
+    'help.faq.p2.a': 'Portfolio return is calculated using:\n\nReturn(%) = ((Current Total Asset Value - Initial Investment) / Initial Investment) × 100\n\n• Current Total Asset Value = Sum of holdings at market price + Cash balance\n• Initial Investment = Total deposits - Total withdrawals\n\nIndividual asset returns are calculated from the difference between current price and average purchase price. Returns update in real-time as prices change.',
+    'help.faq.p3.q': 'How do deposits and withdrawals work?',
+    'help.faq.p3.a': 'VirtuEx is a virtual mock trading platform, so no real money is used.\n\n• Deposit: On the Portfolio page, click the "+" button next to balance → Enter amount or select quick amounts (100K/500K/1M/5M) → Click Deposit\n• Withdraw: Click the "-" button → Enter amount or select percentage (10%/25%/50%/100%) → Confirm in the confirmation modal\n\nWithdrawals are limited to your cash balance. To withdraw invested funds, sell your holdings first.',
+    // Orders
+    'help.faq.o1.q': 'I want to cancel an order',
+    'help.faq.o1.a': 'Only Pending orders can be cancelled from the "Orders" page. Click the "Cancel" button on the order, confirm in the modal, and the order will be cancelled.\n\nAlready filled orders cannot be cancelled. To close a filled position, place an opposite trade (sell what you bought, or vice versa).',
+    'help.faq.o2.q': "My order hasn't been filled",
+    'help.faq.o2.a': 'For limit orders, the market price must reach your specified price to fill.\n\n• Buy limit: Market price must fall to or below your limit price\n• Sell limit: Market price must rise to or above your limit price\n\nIf there is a large gap between market price and your order price, it may take time. For immediate execution, use a market order. You can also modify the price on the Orders page.',
+    'help.faq.o3.q': 'What is the difference between market and limit orders?',
+    'help.faq.o3.a': '• Market order: Executes immediately at the current market price. Best for quick trades, but volatile assets may fill at a different price than expected.\n\n• Limit order: You set the exact price. The order fills when the market reaches your price. You get your desired price, but it may take time to fill.\n\nYou can choose between both order types in the order panel on the asset detail page.',
+    // Leaderboard
+    'help.faq.l1.q': 'Leaderboard rank not updating',
+    'help.faq.l1.a': 'Leaderboard rankings update after holdings are revalued at current market prices. There may be a slight delay depending on the price refresh cycle.\n\nIf rankings seem stuck:\n1. Click the refresh button on the leaderboard page\n2. Users who haven\'t deposited funds are not shown in rankings\n3. Try switching between return rate and total assets sorting',
+    'help.faq.l2.q': 'What determines leaderboard rankings?',
+    'help.faq.l2.a': 'By default, rankings are sorted by return rate (%) in descending order. Use the sort toggle at the top to switch to total assets ranking.\n\n• Return rate: Users with higher investment returns rank higher\n• Total assets: Users with larger total portfolio value rank higher\n\nOnly users who have deposited funds appear on the leaderboard. Top 3 users receive gold, silver, and bronze medals.',
+    // Announcements
+    'help.faq.n1.q': 'Where can I check announcements?',
+    'help.faq.n1.a': 'Click "Announcements" in the sidebar menu to view the announcements list. Click any announcement to see its full details, with the latest posts shown at the top.\n\nPinned posts at the top are important announcements — please make sure to read them. Administrators can create, edit, and delete announcements.',
+    // News
+    'help.faq.w1.q': 'Where is the news sourced from?',
+    'help.faq.w1.a': 'VirtuEx news is automatically collected from trusted financial media RSS feeds.\n\n• Crypto: CoinDesk, CoinTelegraph, Decrypt, Bitcoin Magazine, The Block\n• Domestic stocks: 한국경제, 매일경제, 조선비즈, 서울경제, 이데일리\n• Foreign stocks: Yahoo Finance, CNBC, MarketWatch, Investing.com, Seeking Alpha\n\nNews is auto-refreshed every 30 minutes, with manual refresh available. Use keyword search and date filters to find specific articles.',
+    // Chat
+    'help.faq.c1.q': 'How do I create a chat room?',
+    'help.faq.c1.a': 'Click the "Create New Chat Room" button on the Chat page to create a room. Enter a name and create it — other users can then join.\n\nChat room types:\n• Group chat: Public rooms where multiple users can participate\n• DM (Direct Message): Private 1-on-1 conversations\n\nYou can send and receive messages in real-time. You can delete your own messages, and administrators can delete any user\'s messages.',
+    'help.faq.c2.q': 'Can I delete or edit messages?',
+    'help.faq.c2.a': 'You can delete messages you sent. Hover over the message (or long-press on mobile) to see the delete button. Administrators can delete any user\'s messages.\n\nMessage editing is not currently available, so please delete and resend if needed. Leaving a chat room means you will no longer be able to see its messages.',
+    // General
+    'help.faq.g1.q': 'I want to change my password',
+    'help.faq.g1.a': 'You can change your password from My Page > Edit Profile.\n\nSteps:\n1. Click the profile icon or "My Page" in the sidebar\n2. Click "Edit Profile"\n3. Enter your current password\n4. Enter and confirm your new password\n\nPassword requirements: Minimum 8 characters. We recommend using a mix of uppercase, lowercase, numbers, and special characters.',
+    'help.faq.g2.q': 'I want to delete my account',
+    'help.faq.g2.a': 'Account deletion is available via the "Delete Account" button at the bottom of My Page > Edit Profile.\n\nPlease note:\n• All trade history, portfolio data, and chat records will be permanently deleted\n• Deleted accounts cannot be recovered\n• You will be removed from the leaderboard\n\nWe recommend saving any needed data before deleting your account.',
+    'help.faq.g3.q': 'How do I switch between Korean and English?',
+    'help.faq.g3.a': 'Click the language icon (🌐) in the top-right header to toggle between Korean and English. The change applies immediately and persists across browser sessions.\n\nYou can also toggle dark/light mode by clicking the theme icon in the header.',
 
     // Notifications
     'notification.title': 'Notifications',

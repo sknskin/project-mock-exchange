@@ -2067,22 +2067,55 @@ export default function HelpPage() {
         {sections[activeTab] && <HelpTab section={sections[activeTab]} tabKey={activeTab} t={t} />}
       </div>
 
-      {/* FAQ Section */}
-      <div className="border-t border-border/60 pt-8 pb-10">
-        <h2 className="text-[16px] font-bold text-text-primary mb-4 flex items-center gap-2">
-          <HelpCircle className="w-5 h-5 text-accent" />
-          {t('help.faq.title')}
-        </h2>
-        <div className="space-y-2">
-          {(['q1', 'q2', 'q3'] as const).map((qKey) => (
-            <FaqItem
-              key={qKey}
-              question={t(`help.faq.${qKey}` as TranslationKey)}
-              answer={t(`help.faq.a${qKey.slice(1)}` as TranslationKey)}
-            />
-          ))}
-        </div>
-      </div>
+      {/* FAQ Section — grouped by active tab */}
+      {(() => {
+        const faqByTab: Record<string, string[]> = {
+          dashboard: ['d1', 'd2', 'd3'],
+          portfolio: ['p1', 'p2', 'p3'],
+          orders: ['o1', 'o2', 'o3'],
+          leaderboard: ['l1', 'l2'],
+          announcements: ['n1'],
+          news: ['w1'],
+          chat: ['c1', 'c2'],
+          adminStats: [],
+          adminUsers: [],
+        };
+        const tabFaqs = faqByTab[activeTab] ?? [];
+        const commonFaqs = ['g1', 'g2', 'g3'];
+        return (
+          <div className="border-t border-border/60 pt-8 pb-10">
+            <h2 className="text-[16px] font-bold text-text-primary mb-4 flex items-center gap-2">
+              <HelpCircle className="w-5 h-5 text-accent" />
+              {t('help.faq.title')}
+            </h2>
+            {tabFaqs.length > 0 && (
+              <div className="space-y-2 mb-6">
+                {tabFaqs.map((key) => (
+                  <FaqItem
+                    key={key}
+                    question={t(`help.faq.${key}.q` as TranslationKey)}
+                    answer={t(`help.faq.${key}.a` as TranslationKey)}
+                  />
+                ))}
+              </div>
+            )}
+            {commonFaqs.length > 0 && (
+              <div className="space-y-2">
+                {tabFaqs.length > 0 && (
+                  <p className="text-[12px] text-text-quaternary font-medium uppercase mt-4 mb-2">{t('filter.all')}</p>
+                )}
+                {commonFaqs.map((key) => (
+                  <FaqItem
+                    key={key}
+                    question={t(`help.faq.${key}.q` as TranslationKey)}
+                    answer={t(`help.faq.${key}.a` as TranslationKey)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })()}
     </div>
   );
 }
