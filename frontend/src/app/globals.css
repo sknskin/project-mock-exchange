@@ -129,6 +129,19 @@ nextjs-portal,
   }
 
   /* 마크다운 콘텐츠 스타일링 / Markdown content styling */
+  .markdown-content {
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    max-width: 100%;
+  }
+  @media (max-width: 767px) {
+    .markdown-content h1 { font-size: 1.25rem; }
+    .markdown-content h2 { font-size: 1.1rem; }
+    .markdown-content h3 { font-size: 1rem; }
+    .markdown-content p,
+    .markdown-content li { font-size: 0.9rem; }
+    .markdown-content blockquote { padding-left: 0.75rem; font-size: 0.85rem; }
+  }
   .markdown-content h1 {
     font-size: 1.5rem;
     font-weight: 800;
@@ -167,6 +180,7 @@ nextjs-portal,
     border-radius: 4px;
     font-size: 0.875em;
     font-family: 'SF Mono', 'Fira Code', monospace;
+    word-break: break-all;
   }
   .markdown-content pre {
     background: var(--color-bg-secondary);
@@ -174,19 +188,34 @@ nextjs-portal,
     border-radius: 8px;
     padding: 1rem;
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
     margin: 1rem 0;
+    max-width: 100%;
   }
   .markdown-content pre code {
     background: transparent;
     padding: 0;
     font-size: 0.85em;
     line-height: 1.6;
+    word-break: normal;
+  }
+  /* 테이블 감싸기: 모바일에서 가로 스크롤 (Table wrapper for mobile horizontal scroll) */
+  .markdown-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 1rem 0;
+    max-width: 100%;
   }
   .markdown-content table {
     width: 100%;
     border-collapse: collapse;
-    margin: 1rem 0;
     font-size: 0.9em;
+  }
+  @media (max-width: 767px) {
+    .markdown-content table {
+      font-size: 0.78em;
+      min-width: 480px;
+    }
   }
   .markdown-content th {
     background: var(--color-bg-secondary);
@@ -195,11 +224,13 @@ nextjs-portal,
     text-align: left;
     padding: 0.6rem 0.75rem;
     border: 1px solid var(--color-border);
+    white-space: nowrap;
   }
   .markdown-content td {
     color: var(--color-text-secondary);
     padding: 0.5rem 0.75rem;
     border: 1px solid var(--color-border);
+    word-break: break-word;
   }
   .markdown-content blockquote {
     border-left: 3px solid var(--color-accent);
