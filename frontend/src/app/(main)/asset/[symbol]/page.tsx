@@ -36,6 +36,7 @@ const chartIntervalKeys: { key: string; i18nKey: TranslationKey }[] = [
   { key: '5m', i18nKey: 'chart.5m' },
   { key: '15m', i18nKey: 'chart.15m' },
   { key: '1h', i18nKey: 'chart.1h' },
+  { key: '4h', i18nKey: 'chart.4h' },
   { key: '1d', i18nKey: 'chart.1d' },
 ];
 
