@@ -97,12 +97,16 @@ export class OrderController {
     @Headers('x-user-id') userId: string,
     @Query('limit') limit?: string,
     @Query('offset') offset?: string,
+    @Query('status') status?: string,
   ) {
     this.validateUserId(userId);
+    const parsedLimit = limit ? parseInt(limit, 10) : 50;
+    const parsedOffset = offset ? parseInt(offset, 10) : 0;
     const orders = await this.orderService.getUserOrders(
       userId,
-      limit ? parseInt(limit, 10) : 50,
-      offset ? parseInt(offset, 10) : 0,
+      parsedLimit,
+      parsedOffset,
+      status,
     );
     return { success: true, data: orders };
   }

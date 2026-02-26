@@ -162,10 +162,12 @@ export class OrderProxyController {
   @ApiOperation({ summary: '내 주문 목록 조회', description: '현재 사용자의 주문 목록을 반환합니다' })
   @ApiQuery({ name: 'limit', required: false, description: '조회 개수' })
   @ApiQuery({ name: 'offset', required: false, description: '오프셋' })
+  @ApiQuery({ name: 'status', required: false, description: '주문 상태 필터 (예: PENDING, FILLED, CANCELLED)' })
   @ApiResponse({ status: 200, description: '주문 목록 반환' })
   async getUserOrders(
     @Query('limit') limit: string,
     @Query('offset') offset: string,
+    @Query('status') status: string,
     @Req() req: Request,
     @Res() res: Response,
   ) {
@@ -173,7 +175,7 @@ export class OrderProxyController {
     const result = await this.proxyService.forward('order-engine', {
       method: 'GET',
       url: '/orders',
-      params: { limit, offset },
+      params: { limit, offset, status },
       headers: { 'x-user-id': userId },
     });
     return res.status(result.status).json(result.data);

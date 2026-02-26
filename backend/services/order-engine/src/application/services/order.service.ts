@@ -234,9 +234,13 @@ export class OrderService {
     return this.prisma.orderRead.findUnique({ where: { orderId } });
   }
 
-  async getUserOrders(userId: string, limit = 50, offset = 0): Promise<unknown[]> {
+  async getUserOrders(userId: string, limit = 50, offset = 0, status?: string): Promise<unknown[]> {
+    const where: any = { userId };
+    if (status) {
+      where.status = status;
+    }
     return this.prisma.orderRead.findMany({
-      where: { userId },
+      where,
       orderBy: { createdAt: 'desc' },
       take: limit,
       skip: offset,
