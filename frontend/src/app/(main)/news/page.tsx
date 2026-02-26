@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { RefreshCw, ExternalLink, Newspaper } from 'lucide-react';
+import { RefreshCw, ExternalLink, Newspaper, Search, Calendar } from 'lucide-react';
 import { useNews, useScrapeStatus, useTriggerScrape } from '@/hooks/useNews';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useSettingsStore } from '@/stores/settings';
 import Pagination from '@/components/ui/Pagination';
 import { cn } from '@/lib/format';
 
@@ -11,9 +12,13 @@ type NewsTab = 'CRYPTO' | 'DOMESTIC_STOCK' | 'FOREIGN_STOCK';
 
 export default function NewsPage() {
   const { t } = useTranslation();
+  const locale = useSettingsStore((s) => s.locale);
+  const dateLocale = locale === 'ko' ? 'ko-KR' : 'en-US';
   const [activeTab, setActiveTab] = useState<NewsTab>('CRYPTO');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [dateFilter, setDateFilter] = useState<'all' | '24h' | '7d' | '30d'>('all');
 
   const { data, isLoading } = useNews({ category: activeTab, page, limit });
   const { data: scrapeStatusList } = useScrapeStatus();
@@ -34,6 +39,34 @@ export default function NewsPage() {
     setPage(1);
   };
 
+  const dateFilterOptions: { key: typeof dateFilter; label: string }[] = [
+    { key: 'all', label: t('news.dateFilter.all') },
+    { key: '24h', label: t('news.dateFilter.24h') },
+    { key: '7d', label: t('news.dateFilter.7d') },
+    { key: '30d', label: t('news.dateFilter.30d') },
+  ];
+
+  const getDateCutoff = () => {
+    if (dateFilter === 'all') return null;
+    const now = new Date();
+    if (dateFilter === '24h') return new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    if (dateFilter === '7d') return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  };
+
+  const filteredItems = (data?.items ?? []).filter((item) => {
+    const q = searchQuery.toLowerCase().trim();
+    if (q && !item.title.toLowerCase().includes(q) && !(item.summary?.toLowerCase().includes(q))) {
+      return false;
+    }
+    const cutoff = getDateCutoff();
+    if (cutoff) {
+      const itemDate = new Date(item.publishedAt || item.scrapedAt);
+      if (itemDate < cutoff) return false;
+    }
+    return true;
+  });
+
   const handleRefresh = () => {
     if (!triggerScrape.isPending) {
       triggerScrape.mutate(activeTab);
@@ -42,7 +75,7 @@ export default function NewsPage() {
 
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr);
-    return d.toLocaleDateString('ko-KR', {
+    return d.toLocaleDateString(dateLocale, {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
@@ -55,7 +88,7 @@ export default function NewsPage() {
   const formatTimeAgo = (dateStr: string | null | undefined) => {
     if (!dateStr) return '';
     const d = new Date(dateStr);
-    return d.toLocaleString('ko-KR', {
+    return d.toLocaleString(dateLocale, {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
@@ -76,7 +109,7 @@ export default function NewsPage() {
       </div>
 
       {/* Tab bar + scrape status */}
-      <div className="flex items-center justify-between gap-4 mb-5 flex-wrap">
+      <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
         <div className="flex items-center gap-1">
           {tabs.map((tab) => (
             <button
@@ -116,6 +149,36 @@ export default function NewsPage() {
         </div>
       </div>
 
+      {/* Search + Date filter */}
+      <div className="flex flex-col sm:flex-row gap-2 mb-5">
+        <div className="relative flex-1 min-w-0">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-quaternary pointer-events-none" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder={t('news.search')}
+            className="w-full bg-bg-secondary border border-border rounded-xl pl-9 pr-4 py-2.5 text-[14px] text-text-primary placeholder:text-text-quaternary focus:outline-none focus:border-accent/60 transition-colors"
+          />
+        </div>
+        <div className="flex items-center gap-1">
+          {dateFilterOptions.map((opt) => (
+            <button
+              key={opt.key}
+              onClick={() => { setDateFilter(opt.key); setPage(1); }}
+              className={cn(
+                'px-3 py-2 rounded-lg text-[12px] font-semibold transition-colors whitespace-nowrap',
+                dateFilter === opt.key
+                  ? 'bg-accent/15 text-accent'
+                  : 'text-text-quaternary hover:text-text-tertiary',
+              )}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* News list */}
       {isLoading ? (
         <div className="space-y-3">
@@ -126,7 +189,7 @@ export default function NewsPage() {
             />
           ))}
         </div>
-      ) : !data || data.items.length === 0 ? (
+      ) : !data || filteredItems.length === 0 ? (
         <div className="py-24 text-center">
           <Newspaper className="w-10 h-10 mx-auto mb-3 text-text-quaternary" />
           <p className="text-text-quaternary text-[14px]">
@@ -135,7 +198,7 @@ export default function NewsPage() {
         </div>
       ) : (
         <div className="space-y-3">
-          {data.items.map((item) => (
+          {filteredItems.map((item) => (
             <a
               key={item.id}
               href={item.sourceUrl}
