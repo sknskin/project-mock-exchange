@@ -90,6 +90,14 @@ export default function Header() {
     return () => window.removeEventListener('open-mobile-menu', handler);
   }, []);
 
+  // ESC 키로 로그아웃 모달 닫기 (Close logout modal on ESC)
+  useEffect(() => {
+    if (!logoutModalOpen) return;
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') setLogoutModalOpen(false); };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [logoutModalOpen]);
+
   return (
     <>
       <header className="fixed top-0 left-0 right-0 z-40 bg-bg-primary/95 backdrop-blur-md border-b border-border">
@@ -307,6 +315,7 @@ export default function Header() {
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="lg:hidden p-3 text-text-secondary hover:text-text-primary transition-colors"
+              aria-label={t('nav.menu')}
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>

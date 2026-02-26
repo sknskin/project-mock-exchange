@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation';
 import { cn, formatPriceDisplay, formatPercent, formatAmountDisplay, formatVolumeDisplay } from '@/lib/format';
 import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
+import { useTranslation } from '@/hooks/useTranslation';
 import { Star } from 'lucide-react';
 import type { Asset } from '@/types';
 
@@ -37,6 +38,7 @@ function getSymbolColor(symbol: string): string {
 
 export default function AssetListItem({ asset, rank, isWatchlisted, onToggleWatchlist }: AssetListItemProps) {
   const router = useRouter();
+  const { t } = useTranslation();
   const isRise = asset.changePercent > 0;
   const isFall = asset.changePercent < 0;
   const isExtreme = Math.abs(asset.changePercent) >= 5;
@@ -80,7 +82,8 @@ export default function AssetListItem({ asset, rank, isWatchlisted, onToggleWatc
             e.stopPropagation();
             onToggleWatchlist(asset.symbol);
           }}
-          className="shrink-0 mr-2 sm:mr-2.5 p-0.5 rounded transition-colors hover:bg-bg-secondary/80"
+          className="shrink-0 mr-1 sm:mr-2 p-2 -m-1.5 rounded transition-colors hover:bg-bg-secondary/80"
+          aria-label={isWatchlisted ? t('market.watchlist') : t('market.watchlist')}
         >
           <Star
             className={cn(
