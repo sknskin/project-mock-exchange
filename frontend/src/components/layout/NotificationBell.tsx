@@ -150,9 +150,9 @@ export default function NotificationBell() {
       {open && (
         <div
           className={cn(
-            'absolute right-0 top-full mt-2 w-[360px] max-h-[480px]',
+            'fixed sm:absolute right-2 sm:right-0 left-2 sm:left-auto top-14 sm:top-full sm:mt-2 sm:w-[360px] max-h-[480px]',
             'bg-bg-primary border border-border rounded-xl shadow-2xl',
-            'flex flex-col z-50 overflow-hidden animate-dropdown-in origin-top-right',
+            'flex flex-col z-50 overflow-hidden animate-dropdown-in sm:origin-top-right',
           )}
         >
           {/* 헤더 행 (Header row) */}
@@ -242,7 +242,7 @@ export default function NotificationBell() {
       {modalNotification && createPortal(
         <div className="fixed inset-0 z-[60] flex items-center justify-center">
           <div className="absolute inset-0 bg-black/60" onClick={() => setModalNotification(null)} />
-          <div className="relative bg-bg-primary border border-border rounded-2xl p-6 w-[340px] shadow-2xl">
+          <div className="relative bg-bg-primary border border-border rounded-2xl p-6 w-[340px] max-w-[calc(100vw-2rem)] shadow-2xl">
             <h3 className={cn(
               'text-[16px] font-bold text-center',
               modalNotification.type === 'REGISTRATION_APPROVED' ? 'text-accent' : 'text-danger',
