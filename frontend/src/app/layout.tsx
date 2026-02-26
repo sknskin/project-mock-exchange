@@ -14,6 +14,7 @@ import Footer from '@/components/layout/Footer';
 import ThemeProvider from '@/components/layout/ThemeProvider';
 import PageViewTracker from '@/components/layout/PageViewTracker';
 import ToastContainer from '@/components/ui/ToastContainer';
+import LiveToastContainer from '@/components/ui/LiveToastContainer';
 import ConnectionGuard from '@/components/layout/ConnectionGuard';
 import ChatPanel from '@/components/chat/ChatPanel';
 import MainContent from '@/components/layout/MainContent';
@@ -51,6 +52,7 @@ export default function RootLayout({
             <Footer />
             <BottomNav />
             <ToastContainer />
+            <LiveToastContainer />
             <ChatPanel />
           </ConnectionGuard>
         </QueryProvider>

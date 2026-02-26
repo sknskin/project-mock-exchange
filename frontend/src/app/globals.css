@@ -359,6 +359,17 @@ nextjs-portal,
     animation: chat-panel-in 0.2s ease-out;
   }
 
+  /* 라이브 토스트 슬라이드 인 + 페이드 아웃 (4초) / Live toast slide-in + fade-out (4s) */
+  @keyframes live-toast-in {
+    0% { opacity: 0; transform: translateX(100%); }
+    8% { opacity: 1; transform: translateX(0); }
+    80% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+  .animate-live-toast-in {
+    animation: live-toast-in 4s ease-out forwards;
+  }
+
   /* 드롭다운 열림 애니메이션 / Dropdown open animation */
   @keyframes dropdown-in {
     0% { opacity: 0; transform: scale(0.92); }

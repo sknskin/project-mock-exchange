@@ -136,6 +136,23 @@ const translations = {
     'toast.alertCreated': '가격 알림이 설정되었습니다',
     'toast.alertDeleted': '가격 알림이 삭제되었습니다',
 
+    // Live Toast
+    'liveToast.close': '닫기',
+    'liveToast.chatMessage': '새 메시지',
+    'liveToast.chatInvited': '채팅방 초대',
+    'liveToast.chatKicked': '채팅방 퇴장',
+    'liveToast.trade': '체결 알림',
+    'liveToast.priceAlert': '가격 알림',
+    'liveToast.announcementNew': '새 공지사항',
+    'liveToast.announcementUpdated': '공지사항 수정',
+    'liveToast.registrationApproved': '가입 승인',
+    'liveToast.registrationRejected': '가입 반려',
+    'liveToast.registrationRequest': '새 회원가입 요청',
+    'liveToast.chatInvitedMsg': '채팅방에 초대되었습니다',
+    'liveToast.chatKickedMsg': '채팅방에서 퇴장되었습니다',
+    'liveToast.registrationApprovedMsg': '가입이 승인되었습니다. 이제 모든 기능을 이용할 수 있습니다',
+    'liveToast.registrationRejectedMsg': '가입 요청이 반려되었습니다',
+
     // Price Alert
     'alert.title': '가격 알림',
     'alert.setAlert': '알림 설정',
@@ -1267,6 +1284,23 @@ const translations = {
     'toast.passwordChanged': 'Password changed',
     'toast.alertCreated': 'Price alert set',
     'toast.alertDeleted': 'Price alert removed',
+
+    // Live Toast
+    'liveToast.close': 'Close',
+    'liveToast.chatMessage': 'New message',
+    'liveToast.chatInvited': 'Chat invitation',
+    'liveToast.chatKicked': 'Removed from chat',
+    'liveToast.trade': 'Trade executed',
+    'liveToast.priceAlert': 'Price alert',
+    'liveToast.announcementNew': 'New announcement',
+    'liveToast.announcementUpdated': 'Announcement updated',
+    'liveToast.registrationApproved': 'Registration approved',
+    'liveToast.registrationRejected': 'Registration rejected',
+    'liveToast.registrationRequest': 'New registration request',
+    'liveToast.chatInvitedMsg': 'You have been invited to a chat room',
+    'liveToast.chatKickedMsg': 'You have been removed from a chat room',
+    'liveToast.registrationApprovedMsg': 'Your registration has been approved. You can now access all features',
+    'liveToast.registrationRejectedMsg': 'Your registration request has been rejected',
 
     // Price Alert
     'alert.title': 'Price Alert',
