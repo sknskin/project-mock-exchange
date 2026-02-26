@@ -8,6 +8,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import AuthGuard from '@/components/layout/AuthGuard';
 import BalanceCard from '@/components/portfolio/BalanceCard';
 import HoldingCard from '@/components/portfolio/HoldingCard';
@@ -15,12 +16,13 @@ import ExchangeRateBar from '@/components/market/ExchangeRateBar';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import BottomSheet from '@/components/ui/BottomSheet';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 import Skeleton from '@/components/ui/Skeleton';
 import { usePortfolio, useDeposit, useWithdraw } from '@/hooks/usePortfolio';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatCurrency } from '@/lib/format';
-import { Briefcase, ArrowLeftRight } from 'lucide-react';
+import { Briefcase, ArrowLeftRight, ShoppingCart, LayoutDashboard } from 'lucide-react';
 
 export default function PortfolioPage() {
   const { t } = useTranslation();
@@ -32,6 +34,7 @@ export default function PortfolioPage() {
   const withdraw = useWithdraw();
   const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState('');
+  const [withdrawConfirmOpen, setWithdrawConfirmOpen] = useState(false);
 
   // 환율 계산기 상태 (Exchange calculator state)
   const [calcAmount, setCalcAmount] = useState('');
@@ -200,8 +203,18 @@ export default function PortfolioPage() {
                   ))}
                 </div>
               ) : (
-                <div className="py-24 text-center text-text-quaternary text-[14px]">
-                  {t('portfolio.noHoldings')}
+                <div className="py-24 flex flex-col items-center text-center">
+                  <ShoppingCart className="w-10 h-10 text-text-quaternary/40 mb-3" />
+                  <p className="text-text-quaternary text-[14px] whitespace-pre-line">
+                    {t('portfolio.emptyHoldings')}
+                  </p>
+                  <Link
+                    href="/dashboard"
+                    className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 text-[13px] font-semibold text-accent bg-accent/10 rounded-lg hover:bg-accent/20 transition-colors"
+                  >
+                    <LayoutDashboard className="w-3.5 h-3.5" />
+                    {t('orders.goToDashboard')}
+                  </Link>
                 </div>
               )}
             </div>
@@ -222,12 +235,12 @@ export default function PortfolioPage() {
               placeholder={t('portfolio.depositPlaceholder')}
             />
 
-            <div className="flex gap-2">
+            <div className="grid grid-cols-2 gap-2">
               {[100000, 500000, 1000000, 5000000].map((amount) => (
                 <button
                   key={amount}
                   onClick={() => setDepositAmount(amount.toString())}
-                  className="flex-1 h-11 text-[13px] font-medium bg-bg-secondary text-text-secondary rounded-lg hover:bg-bg-tertiary transition-colors"
+                  className="h-11 text-[13px] font-medium bg-bg-secondary text-text-secondary rounded-lg hover:bg-bg-tertiary transition-colors"
                 >
                   {(amount / 10000).toFixed(0)}{t('portfolio.tenThousand')}
                 </button>
@@ -290,7 +303,7 @@ export default function PortfolioPage() {
             <Button
               size="lg"
               fullWidth
-              onClick={handleWithdraw}
+              onClick={() => setWithdrawConfirmOpen(true)}
               disabled={
                 withdraw.isPending ||
                 !withdrawAmount ||
@@ -302,6 +315,19 @@ export default function PortfolioPage() {
             </Button>
           </div>
         </BottomSheet>
+
+        <ConfirmModal
+          isOpen={withdrawConfirmOpen}
+          onClose={() => setWithdrawConfirmOpen(false)}
+          onConfirm={() => {
+            setWithdrawConfirmOpen(false);
+            handleWithdraw();
+          }}
+          title={t('portfolio.withdrawConfirmTitle')}
+          message={t('portfolio.withdrawConfirmMessage').replace('${amount}', withdrawAmount ? formatCurrency(parseFloat(withdrawAmount)) : '0')}
+          confirmVariant="danger"
+          loading={withdraw.isPending}
+        />
       </div>
     </AuthGuard>
   );

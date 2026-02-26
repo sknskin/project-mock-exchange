@@ -61,7 +61,7 @@ export default function ConfirmModal({
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
 
       {/* 모달 본체 / Modal body */}
-      <div className="relative bg-bg-primary border border-border rounded-2xl p-6 w-[320px] shadow-2xl">
+      <div className="relative bg-bg-primary border border-border rounded-2xl p-6 w-[min(320px,calc(100vw-2rem))] shadow-2xl">
         <h3 className="text-[16px] font-bold text-text-primary text-center">
           {title}
         </h3>

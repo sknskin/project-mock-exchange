@@ -8,14 +8,16 @@
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
+import Link from 'next/link';
 import AuthGuard from '@/components/layout/AuthGuard';
 import TransactionList from '@/components/portfolio/TransactionList';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 import Skeleton from '@/components/ui/Skeleton';
 import { useOrders, useCancelOrder, useModifyOrder, useTradeHistory } from '@/hooks/useOrders';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn, formatPrice, formatQuantity, formatDate, formatCurrency } from '@/lib/format';
 import { useAuthStore } from '@/stores/auth';
-import { Search, ChevronDown, ClipboardList, Check } from 'lucide-react';
+import { Search, ChevronDown, ClipboardList, Check, BarChart, LayoutDashboard } from 'lucide-react';
 import type { TranslationKey } from '@/lib/i18n';
 import type { Order } from '@/types';
 
@@ -107,6 +109,7 @@ export default function OrdersPage() {
   const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
   const [editPrice, setEditPrice] = useState('');
   const [editQuantity, setEditQuantity] = useState('');
+  const [cancelTargetId, setCancelTargetId] = useState<string | null>(null);
 
   const startEditing = (order: Order) => {
     setEditingOrderId(order.id);
@@ -201,7 +204,7 @@ export default function OrdersPage() {
 
             {/* 주문 요약 통계 / Order Summary Stats */}
             {!isLoading && orders && orders.length > 0 && (
-              <div className="grid grid-cols-3 gap-3 mb-5">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
                 {[
                   { label: t('orders.totalOrders'), value: orders.length, color: 'text-text-primary' },
                   { label: t('orders.filledOrders'), value: orders.filter((o) => o.status === 'FILLED').length, color: 'text-success' },
@@ -234,7 +237,7 @@ export default function OrdersPage() {
                             </span>
                             <span className="font-semibold text-text-primary">{order.symbol}</span>
                           </div>
-                          <div className="flex gap-2">
+                          <div className="flex flex-col sm:flex-row gap-2">
                             <input
                               type="number"
                               value={editPrice}
@@ -292,7 +295,7 @@ export default function OrdersPage() {
                                 {t('orders.modify')}
                               </button>
                               <button
-                                onClick={() => cancelOrder.mutate(order.id)}
+                                onClick={() => setCancelTargetId(order.id)}
                                 disabled={cancelOrder.isPending}
                                 className="px-2 py-1 text-[11px] font-medium text-fall border border-fall/30 rounded-md hover:bg-fall/10 transition-colors"
                               >
@@ -314,8 +317,18 @@ export default function OrdersPage() {
                     </div>
                   ))}
                   {(!filteredOrders || filteredOrders.length === 0) && (
-                    <div className="py-24 text-center text-text-quaternary text-[14px]">
-                      {t('orders.noPending')}
+                    <div className="py-24 flex flex-col items-center text-center">
+                      <ClipboardList className="w-10 h-10 text-text-quaternary/40 mb-3" />
+                      <p className="text-text-quaternary text-[14px] whitespace-pre-line">
+                        {t('orders.emptyPending')}
+                      </p>
+                      <Link
+                        href="/dashboard"
+                        className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 text-[13px] font-semibold text-accent bg-accent/10 rounded-lg hover:bg-accent/20 transition-colors"
+                      >
+                        <LayoutDashboard className="w-3.5 h-3.5" />
+                        {t('orders.goToDashboard')}
+                      </Link>
                     </div>
                   )}
                 </div>
@@ -365,13 +378,31 @@ export default function OrdersPage() {
                 })}
               </div>
             ) : (
-              <div className="py-24 text-center text-text-quaternary text-[14px]">
-                {t('orders.noTrades')}
+              <div className="py-24 flex flex-col items-center text-center">
+                <BarChart className="w-10 h-10 text-text-quaternary/40 mb-3" />
+                <p className="text-text-quaternary text-[14px]">
+                  {t('orders.emptyTrades')}
+                </p>
               </div>
             )}
           </div>
         )}
       </div>
+
+      <ConfirmModal
+        isOpen={cancelTargetId !== null}
+        onClose={() => setCancelTargetId(null)}
+        onConfirm={() => {
+          if (cancelTargetId) {
+            cancelOrder.mutate(cancelTargetId);
+            setCancelTargetId(null);
+          }
+        }}
+        title={t('orders.cancelConfirmTitle')}
+        message={t('orders.cancelConfirmMessage')}
+        confirmLabel={t('orders.cancel')}
+        confirmVariant="danger"
+      />
     </AuthGuard>
   );
 }
