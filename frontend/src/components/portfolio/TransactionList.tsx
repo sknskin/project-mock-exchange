@@ -37,11 +37,11 @@ export default function TransactionList({ orders }: TransactionListProps) {
     <div className="divide-y divide-border/40">
       {orders.map((order) => (
         <div key={order.id} className="py-3.5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 md:gap-2.5 min-w-0">
               <span
                 className={cn(
-                  'text-[12px] font-bold px-2 py-1 rounded-lg',
+                  'text-[11px] md:text-[12px] font-bold px-2 py-1 rounded-lg shrink-0',
                   order.side === 'BUY'
                     ? 'bg-rise/12 text-rise'
                     : 'bg-fall/12 text-fall',
@@ -49,13 +49,19 @@ export default function TransactionList({ orders }: TransactionListProps) {
               >
                 {order.side === 'BUY' ? t('orders.buy') : t('orders.sell')}
               </span>
-              <span className="text-[14px] font-semibold text-text-primary">
+              {order.triggerType && (
+                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-warning/12 text-warning shrink-0">
+                  {order.triggerType === 'STOP_LOSS' ? t('order.stopLoss') : t('order.takeProfit')}
+                  {' '}@ {formatPrice(order.triggerPrice!)}
+                </span>
+              )}
+              <span className="text-[13px] md:text-[14px] font-semibold text-text-primary truncate">
                 {order.symbol}
               </span>
             </div>
             <span
               className={cn(
-                'text-[12px] font-semibold px-2.5 py-1 rounded-full',
+                'text-[11px] md:text-[12px] font-semibold px-2 md:px-2.5 py-1 rounded-full shrink-0 whitespace-nowrap',
                 order.status === 'FILLED' && 'bg-success/10 text-success',
                 order.status === 'PENDING' && 'bg-warning/10 text-warning',
                 order.status === 'CANCELLED' && 'bg-bg-tertiary text-text-quaternary',
@@ -71,22 +77,22 @@ export default function TransactionList({ orders }: TransactionListProps) {
                     : t('orders.filled')}
             </span>
           </div>
-          <div className="flex items-center justify-between mt-2">
-            <span className="text-[12px] text-text-quaternary">
+          <div className="flex items-center justify-between mt-2 gap-2">
+            <span className="text-[11px] md:text-[12px] text-text-quaternary truncate">
               {formatQuantity(order.quantity)}{t('orders.unit')} ·{' '}
               {order.price ? fmtPrice(order.price) : t('orders.marketPrice')}
             </span>
-            <span className="text-[12px] text-text-quaternary">
+            <span className="text-[11px] md:text-[12px] text-text-quaternary shrink-0">
               {formatDate(order.createdAt)}
             </span>
           </div>
           {/* 체결 정보 / Filled info */}
           {order.filledPrice != null && order.filledQuantity > 0 && (
-            <div className="flex items-center justify-between mt-1.5 px-0.5">
-              <span className="text-[11px] text-text-tertiary">
+            <div className="flex items-center justify-between mt-1.5 px-0.5 gap-2 flex-wrap md:flex-nowrap">
+              <span className="text-[10px] md:text-[11px] text-text-tertiary truncate">
                 {t('orders.filledPrice')} {fmtPrice(order.filledPrice)} · {t('orders.filledQuantity')} {formatQuantity(order.filledQuantity)}{t('orders.unit')}
               </span>
-              <span className="text-[11px] font-medium text-text-secondary">
+              <span className="text-[10px] md:text-[11px] font-medium text-text-secondary shrink-0">
                 {t('orders.totalAmount')} {fmt(order.filledPrice * order.filledQuantity)}
               </span>
             </div>

@@ -95,7 +95,7 @@ export default function AssetListItem({ asset, rank, isWatchlisted, onToggleWatc
       )}
 
       {/* 아이콘 + 이름 + 심볼 / Icon + Name + Symbol */}
-      <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 w-[120px] sm:w-[180px] lg:w-[200px] shrink-0">
+      <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 w-[120px] sm:w-[160px] md:w-[180px] lg:w-[200px] shrink-0">
         <div className={cn(
           'w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0',
           getSymbolColor(asset.symbol),
@@ -116,14 +116,14 @@ export default function AssetListItem({ asset, rank, isWatchlisted, onToggleWatc
       <div className="flex-1 min-w-2" />
 
       {/* 현재가 / Price */}
-      <span className={cn('w-[88px] sm:w-[100px] lg:w-[120px] text-right text-[14px] font-semibold text-text-primary tabular-nums shrink-0', flashClass)}>
+      <span className={cn('w-[80px] sm:w-[100px] lg:w-[120px] text-right text-[13px] md:text-[14px] font-semibold text-text-primary tabular-nums shrink-0 truncate', flashClass)}>
         {formatPriceDisplay(asset.currentPrice, asset.symbol, display, rate)}
       </span>
 
       {/* 변동 금액 / Change amount */}
       <span
         className={cn(
-          'w-[90px] lg:w-[100px] text-right text-[13px] font-medium tabular-nums hidden sm:block shrink-0',
+          'w-[80px] md:w-[90px] lg:w-[100px] text-right text-[12px] md:text-[13px] font-medium tabular-nums hidden sm:block shrink-0 truncate',
           isRise && 'text-rise',
           isFall && 'text-fall',
           !isRise && !isFall && 'text-text-quaternary',
@@ -133,7 +133,7 @@ export default function AssetListItem({ asset, rank, isWatchlisted, onToggleWatc
       </span>
 
       {/* 변동률 / Change percent */}
-      <div className="w-[62px] sm:w-[72px] lg:w-[84px] flex justify-end shrink-0">
+      <div className="w-[60px] sm:w-[72px] lg:w-[84px] flex justify-end shrink-0">
         {isExtreme ? (
           <span
             className={cn(

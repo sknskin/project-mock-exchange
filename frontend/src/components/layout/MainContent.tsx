@@ -10,10 +10,10 @@ export default function MainContent({ children }: { children: React.ReactNode })
   const showPinned = isPinned && isOpen;
 
   return (
-    <div className="pt-[60px] min-h-screen">
+    <div className="pt-[60px] min-h-[100dvh]">
       {/* 메인 콘텐츠 영역: 사이드바 고정 시 오른쪽 여백으로 겹침 방지 */}
-      <div className={cn('transition-[margin] duration-300 ease-in-out', showPinned ? 'lg:mr-[380px] overflow-x-hidden' : '')}>
-        <main className="pb-20 md:pb-0 max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
+      <div className={cn('transition-[margin] duration-300 ease-in-out', showPinned ? 'lg:mr-[320px] xl:mr-[380px] overflow-x-hidden' : '')}>
+        <main id="main-content" className="pb-20 md:pb-0 max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
           {children}
         </main>
       </div>

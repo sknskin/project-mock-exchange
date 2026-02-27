@@ -131,7 +131,7 @@ export default function AssetDetailPage({
   };
 
   return (
-    <div className="pb-32">
+    <div className="pb-32 max-h-[100dvh] overflow-y-auto md:max-h-none md:overflow-y-visible">
       {/* 헤더 / Header */}
       <div className="flex items-center gap-3 py-4">
         <Link href="/dashboard" className="p-1.5 -ml-1.5 text-text-tertiary hover:text-text-primary transition-colors rounded-lg hover:bg-bg-secondary/60">
@@ -139,7 +139,7 @@ export default function AssetDetailPage({
         </Link>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
-            <h1 className="text-[16px] sm:text-[17px] font-bold text-text-primary leading-tight truncate">
+            <h1 className="text-[16px] sm:text-[17px] md:text-[18px] font-bold text-text-primary leading-tight truncate">
               {asset?.name ?? symbol}
             </h1>
             <button
@@ -196,7 +196,7 @@ export default function AssetDetailPage({
 
       {/* 현재가 / Price */}
       <div className="pb-5 mt-3">
-        <div className="text-[28px] sm:text-[32px] font-extrabold tabular-nums text-text-primary leading-tight">
+        <div className="text-[28px] sm:text-[32px] md:text-[34px] font-extrabold tabular-nums text-text-primary leading-tight break-all">
           {fp(currentPrice)}
         </div>
         <div className="flex items-center gap-2 mt-1.5">
@@ -227,14 +227,14 @@ export default function AssetDetailPage({
 
       {/* 차트 컨트롤 (항상 표시) / Chart controls (always visible) */}
       <div className="px-1">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex gap-1">
+        <div className="flex items-center justify-between mb-3 gap-2 overflow-x-auto scrollbar-hide">
+          <div className="flex gap-1 shrink-0">
             {chartIntervals.map((i) => (
               <button
                 key={i.key}
                 onClick={() => setChartInterval(i.key)}
                 className={cn(
-                  'px-2.5 py-1 text-[12px] rounded-md transition-colors',
+                  'px-2 md:px-2.5 py-1 text-[11px] md:text-[12px] rounded-md transition-colors whitespace-nowrap',
                   chartInterval === i.key
                     ? 'bg-bg-tertiary text-text-primary font-semibold'
                     : 'text-text-quaternary hover:text-text-tertiary',
@@ -244,11 +244,11 @@ export default function AssetDetailPage({
               </button>
             ))}
           </div>
-          <div className="flex gap-1">
+          <div className="flex gap-1 shrink-0">
             <button
               onClick={() => setChartType('line')}
               className={cn(
-                'px-2.5 py-1 text-[12px] rounded-md transition-colors',
+                'px-2 md:px-2.5 py-1 text-[11px] md:text-[12px] rounded-md transition-colors whitespace-nowrap',
                 chartType === 'line'
                   ? 'bg-bg-tertiary text-text-primary font-semibold'
                   : 'text-text-quaternary hover:text-text-tertiary',
@@ -259,7 +259,7 @@ export default function AssetDetailPage({
             <button
               onClick={() => setChartType('candle')}
               className={cn(
-                'px-2.5 py-1 text-[12px] rounded-md transition-colors',
+                'px-2 md:px-2.5 py-1 text-[11px] md:text-[12px] rounded-md transition-colors whitespace-nowrap',
                 chartType === 'candle'
                   ? 'bg-bg-tertiary text-text-primary font-semibold'
                   : 'text-text-quaternary hover:text-text-tertiary',
@@ -274,7 +274,7 @@ export default function AssetDetailPage({
         {chartLoading || !candlesticks ? (
           <ChartSkeleton />
         ) : candlesticks.length === 0 ? (
-          <div className="h-[380px] flex items-center justify-center text-text-quaternary text-[14px]">
+          <div className="h-[300px] sm:h-[340px] md:h-[380px] flex items-center justify-center text-text-quaternary text-[14px]">
             {t('detail.noChart')}
           </div>
         ) : (
@@ -293,7 +293,7 @@ export default function AssetDetailPage({
 
       {/* 주요 지표 그리드 / Key Metrics Grid */}
       {asset && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-3 mt-5 mb-5 px-1">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-x-4 md:gap-x-6 gap-y-3 mt-5 mb-5 px-1">
           <div className="flex flex-col gap-0.5">
             <span className="text-[11px] text-text-quaternary">{t('detail.open')}</span>
             <span className="text-[13px] font-semibold tabular-nums text-text-primary">
@@ -357,12 +357,12 @@ export default function AssetDetailPage({
             ].map((item) => (
               <div
                 key={item.label}
-                className="flex justify-between py-3.5 border-b border-border/50"
+                className="flex justify-between py-3.5 border-b border-border/50 gap-3"
               >
-                <span className="text-[14px] text-text-tertiary">
+                <span className="text-[13px] md:text-[14px] text-text-tertiary shrink-0">
                   {item.label}
                 </span>
-                <span className="text-[14px] text-text-primary font-semibold tabular-nums">
+                <span className="text-[13px] md:text-[14px] text-text-primary font-semibold tabular-nums text-right truncate">
                   {item.value}
                 </span>
               </div>
@@ -396,28 +396,28 @@ export default function AssetDetailPage({
           )}
           {activeTab === 'trades' && !tradesLoading && (
             <div>
-              <div className="flex text-[12px] text-text-quaternary py-2.5 font-medium">
-                <span className="flex-1">{t('detail.tradePrice')}</span>
-                <span className="flex-1 text-center">{t('detail.tradeQuantity')}</span>
-                <span className="flex-1 text-right">{t('detail.tradeTime')}</span>
+              <div className="flex text-[11px] md:text-[12px] text-text-quaternary py-2.5 font-medium">
+                <span className="flex-1 min-w-0">{t('detail.tradePrice')}</span>
+                <span className="flex-1 text-center min-w-0">{t('detail.tradeQuantity')}</span>
+                <span className="flex-1 text-right min-w-0">{t('detail.tradeTime')}</span>
               </div>
               {trades?.map((trade) => (
                 <div
                   key={trade.id}
-                  className="flex items-center py-2 text-[14px]"
+                  className="flex items-center py-2 text-[13px] md:text-[14px]"
                 >
                   <span
                     className={cn(
-                      'flex-1 tabular-nums font-medium',
+                      'flex-1 tabular-nums font-medium min-w-0 truncate',
                       trade.side === 'BUY' ? 'text-rise' : 'text-fall',
                     )}
                   >
                     {fp(trade.price)}
                   </span>
-                  <span className="flex-1 text-center tabular-nums text-text-secondary">
+                  <span className="flex-1 text-center tabular-nums text-text-secondary min-w-0 truncate">
                     {formatQuantity(trade.quantity)}
                   </span>
-                  <span className="flex-1 text-right text-[12px] text-text-quaternary">
+                  <span className="flex-1 text-right text-[11px] md:text-[12px] text-text-quaternary min-w-0">
                     {formatTime(trade.timestamp)}
                   </span>
                 </div>

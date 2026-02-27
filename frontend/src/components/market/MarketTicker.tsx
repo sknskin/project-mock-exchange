@@ -34,8 +34,8 @@ export default function MarketTicker({ assets }: MarketTickerProps) {
 
   return (
     <div className="py-4 border-b border-border">
-      <div className="flex items-center gap-2.5 lg:gap-3 overflow-x-auto scrollbar-hide -mx-1 px-1">
-        <span className="text-[12px] text-text-quaternary font-medium shrink-0 self-center leading-tight text-center min-w-[44px] whitespace-pre-line">
+      <div className="flex items-center gap-2 md:gap-2.5 lg:gap-3 overflow-x-auto scrollbar-hide -mx-1 px-1">
+        <span className="text-[11px] md:text-[12px] text-text-quaternary font-medium shrink-0 self-center leading-tight text-center min-w-[40px] md:min-w-[44px] whitespace-pre-line">
           {t('market.top5Turnover')}
         </span>
         {topAssets.map((asset) => {
@@ -45,19 +45,19 @@ export default function MarketTicker({ assets }: MarketTickerProps) {
           return (
             <div
               key={asset.symbol}
-              className="flex items-center shrink-0 lg:shrink lg:flex-1 pl-3 pr-2.5 py-2.5 rounded-xl bg-bg-secondary/40 min-w-0"
+              className="flex items-center shrink-0 md:shrink md:flex-1 lg:shrink lg:flex-1 pl-2.5 md:pl-3 pr-2 md:pr-2.5 py-2 md:py-2.5 rounded-xl bg-bg-secondary/40 min-w-0"
             >
               <div className="flex-1 min-w-0">
-                <div className="text-[11px] text-text-quaternary font-medium mb-0.5">
+                <div className="text-[10px] md:text-[11px] text-text-quaternary font-medium mb-0.5 truncate">
                   {asset.name ?? asset.symbol}
                 </div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-[14px] font-bold text-text-primary tabular-nums">
+                <div className="flex items-baseline gap-1.5 md:gap-2">
+                  <span className="text-[13px] md:text-[14px] font-bold text-text-primary tabular-nums truncate">
                     {formatPriceDisplay(asset.currentPrice, asset.symbol, display, rate)}
                   </span>
                   <span
                     className={cn(
-                      'text-[11px] font-semibold tabular-nums',
+                      'text-[10px] md:text-[11px] font-semibold tabular-nums shrink-0',
                       isRise && 'text-rise',
                       isFall && 'text-fall',
                       !isRise && !isFall && 'text-text-quaternary',

@@ -131,7 +131,7 @@ export default function ChatPanel() {
 
   const content = (
     <>
-      {/* 모바일에서만 배경 오버레이 (Backdrop on mobile only) */}
+      {/* 모바일/태블릿에서 배경 오버레이 (Backdrop on mobile/tablet) */}
       <div
         className="fixed inset-0 z-[59] bg-black/40 lg:hidden"
         onClick={closeChat}
@@ -146,7 +146,9 @@ export default function ChatPanel() {
         }}
         className={cn(
           'fixed z-[60] flex flex-col bg-bg-primary border border-border shadow-2xl overflow-hidden rounded-2xl overscroll-contain',
-          'max-lg:!inset-0 max-lg:!w-auto max-lg:!h-auto max-lg:rounded-none max-lg:!top-[60px] max-lg:!bottom-[52px]',
+          'max-lg:!w-auto max-lg:!h-auto max-lg:rounded-none',
+          'max-md:!inset-0 max-md:!top-[60px] max-md:!bottom-[52px]',
+          'md:max-lg:!top-[60px] md:max-lg:!bottom-0 md:max-lg:!right-0 md:max-lg:!left-auto md:max-lg:!w-[380px] md:max-lg:rounded-none',
           'animate-chat-panel-in',
           interacting && 'select-none',
         )}

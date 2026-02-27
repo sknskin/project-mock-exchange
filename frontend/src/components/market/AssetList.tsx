@@ -243,17 +243,17 @@ export default function AssetList({ assets, period, onPeriodChange, mainTab = 'r
       </div>
 
       {/* 테이블 헤더 (기간에 따라 라벨 변경) / Table header (labels change by period) */}
-      <div className="flex items-center pt-3 pb-2.5 text-[12px] text-text-quaternary font-medium -mx-3 px-3">
+      <div className="flex items-center pt-3 pb-2.5 text-[11px] md:text-[12px] text-text-quaternary font-medium -mx-3 px-3">
         <span className="w-6 sm:w-8 text-center shrink-0 mr-2 sm:mr-3">{t('table.rank')}</span>
-        <span className="w-[120px] sm:w-[180px] lg:w-[200px] shrink-0">
+        <span className="w-[120px] sm:w-[160px] md:w-[180px] lg:w-[200px] shrink-0 truncate">
           {t('table.name')} · <span className="text-text-quaternary/70">{timeStr}</span>
         </span>
         <div className="flex-1 min-w-2" />
-        <span className="w-[88px] sm:w-[100px] lg:w-[120px] text-right shrink-0">{t('table.price')}</span>
-        <span className="w-[90px] lg:w-[100px] text-right shrink-0 hidden sm:block">
+        <span className="w-[80px] sm:w-[100px] lg:w-[120px] text-right shrink-0">{t('table.price')}</span>
+        <span className="w-[80px] md:w-[90px] lg:w-[100px] text-right shrink-0 hidden sm:block truncate">
           {changeLabel}
         </span>
-        <span className="w-[62px] sm:w-[72px] lg:w-[84px] text-right shrink-0">{t('table.changeRate')}</span>
+        <span className="w-[60px] sm:w-[72px] lg:w-[84px] text-right shrink-0">{t('table.changeRate')}</span>
         <span className="w-[90px] text-right hidden xl:block shrink-0">
           {period === 'realtime' ? t('table.highRealtime') : t('table.highPeriod')}
         </span>

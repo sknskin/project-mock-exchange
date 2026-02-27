@@ -156,6 +156,14 @@ nextjs-portal,
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
+  /* 모바일 가로모드에서 하단 네비 숨김 (태블릿 이상에서는 유지) */
+  /* Hide bottom nav in mobile landscape, keep on tablet+ landscape */
+  @media (orientation: landscape) and (max-height: 500px) {
+    .landscape-hide-sm {
+      display: none !important;
+    }
+  }
+
   /* 마크다운 콘텐츠 스타일링 / Markdown content styling */
   .markdown-content {
     overflow-wrap: break-word;
