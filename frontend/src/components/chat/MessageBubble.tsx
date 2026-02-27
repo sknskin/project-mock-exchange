@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Shield } from 'lucide-react';
 import { cn } from '@/lib/format';
 import { useDeleteMessage } from '@/hooks/useChat';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -33,6 +33,8 @@ export default function MessageBubble({ message, isMine, showSender, locale, use
     return isMine;
   })();
 
+  const isSystemUser = message.senderRole === 'SYSTEM';
+
   const handleDelete = async () => {
     await deleteMessage.mutateAsync({ roomId: message.roomId, messageId: message.id });
     setShowDeleteConfirm(false);
@@ -43,8 +45,16 @@ export default function MessageBubble({ message, isMine, showSender, locale, use
       <div className={cn('group flex mb-1.5', isMine ? 'justify-end' : 'justify-start')}>
         <div className={cn('max-w-[75%] flex flex-col', isMine ? 'items-end' : 'items-start')}>
           {showSender && !isMine && (
-            <span className="text-[11px] text-text-tertiary mb-0.5 px-1">
-              {message.senderName || message.senderUsername}
+            <span className="text-[11px] text-text-tertiary mb-0.5 px-1 flex items-center gap-1">
+              {isSystemUser && <Shield className="w-3 h-3 text-accent" />}
+              <span className={isSystemUser ? 'font-semibold text-accent' : ''}>
+                {message.senderName || message.senderUsername}
+              </span>
+              {isSystemUser && (
+                <span className="text-[9px] px-1 py-px rounded bg-accent/15 text-accent font-bold uppercase">
+                  system
+                </span>
+              )}
             </span>
           )}
           <div className={cn('flex items-end gap-1', isMine ? 'flex-row-reverse' : 'flex-row')}>
@@ -54,7 +64,9 @@ export default function MessageBubble({ message, isMine, showSender, locale, use
                   'px-3 py-2 rounded-2xl text-[13px] leading-relaxed break-words whitespace-pre-wrap',
                   isMine
                     ? 'bg-accent text-white rounded-br-md'
-                    : 'bg-bg-secondary text-text-primary rounded-bl-md',
+                    : isSystemUser
+                      ? 'bg-accent/10 text-text-primary border border-accent/20 rounded-bl-md'
+                      : 'bg-bg-secondary text-text-primary rounded-bl-md',
                 )}
               >
                 {message.content}

@@ -277,11 +277,13 @@ export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeave
           </div>
         ) : (
           messages.map((msg, i) => {
-            if (msg.senderRole === 'SYSTEM') {
+            // 자동 생성 시스템 메시지 (초대/퇴장/강퇴) - senderId가 nil UUID
+            const isAutoSystem = msg.senderRole === 'SYSTEM' && msg.senderId === '00000000-0000-0000-0000-000000000000';
+            if (isAutoSystem) {
               return <SystemMessageRow key={msg.id} message={msg} t={t} />;
             }
             const prevMsg = i > 0 ? messages[i - 1] : null;
-            const showSender = !prevMsg || prevMsg.senderId !== msg.senderId || prevMsg.senderRole === 'SYSTEM';
+            const showSender = !prevMsg || prevMsg.senderId !== msg.senderId || (prevMsg.senderRole === 'SYSTEM' && prevMsg.senderId === '00000000-0000-0000-0000-000000000000');
             return (
               <MessageBubble
                 key={msg.id}
