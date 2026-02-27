@@ -7,11 +7,12 @@
  */
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Lock, Edit2, User, Bell } from 'lucide-react';
+import { Lock, Edit2, User, Bell, BarChart3, Activity } from 'lucide-react';
 import { useProfile, useChangePassword } from '@/hooks/useAdmin';
+import { useTradeHistory } from '@/hooks/useOrders';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuthStore } from '@/stores/auth';
 import { useSettingsStore, type NotificationPrefs } from '@/stores/settings';
@@ -83,6 +84,36 @@ export default function MyPage() {
 
   const { data: profile, isLoading } = useProfile();
   const changePassword = useChangePassword();
+  const { data: trades } = useTradeHistory();
+  const user = useAuthStore((s) => s.user);
+
+  const tradingStats = useMemo(() => {
+    if (!trades || trades.length === 0) return null;
+    const userId = user?.id;
+    const totalTrades = trades.length;
+    const totalVolume = trades.reduce((sum, t) => sum + t.total, 0);
+
+    // Calculate best trade PnL% (simplified: compare each trade price to average price for that symbol)
+    let bestPnl = 0;
+    const symbolTrades: Record<string, number[]> = {};
+    for (const trade of trades) {
+      if (!symbolTrades[trade.symbol]) symbolTrades[trade.symbol] = [];
+      symbolTrades[trade.symbol].push(trade.price);
+    }
+    for (const trade of trades) {
+      const prices = symbolTrades[trade.symbol];
+      if (prices.length < 2) continue;
+      const avgPrice = prices.reduce((a, b) => a + b, 0) / prices.length;
+      const isBuy = trade.buyerId === userId;
+      // For buy trades: profit if price < avg (bought low); for sell: profit if price > avg (sold high)
+      const pnlPct = isBuy
+        ? ((avgPrice - trade.price) / trade.price) * 100
+        : ((trade.price - avgPrice) / avgPrice) * 100;
+      if (pnlPct > bestPnl) bestPnl = pnlPct;
+    }
+
+    return { totalTrades, totalVolume, bestPnl };
+  }, [trades, user?.id]);
 
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [passwordForm, setPasswordForm] = useState({
@@ -241,6 +272,101 @@ export default function MyPage() {
               <Lock className="w-4 h-4" />
               {t('mypage.changePassword')}
             </button>
+          </div>
+
+          {/* Trading Statistics */}
+          <div className="bg-bg-secondary rounded-2xl px-5 py-4">
+            <div className="flex items-center gap-2 mb-3">
+              <BarChart3 className="w-3.5 h-3.5 text-text-tertiary" />
+              <h2 className="text-[13px] font-bold text-text-tertiary uppercase tracking-wide">
+                {t('mypage.tradingStats')}
+              </h2>
+            </div>
+            {tradingStats ? (
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-bg-tertiary/50 rounded-xl px-4 py-3">
+                  <p className="text-[11px] text-text-quaternary mb-1">{t('mypage.totalTrades')}</p>
+                  <p className="text-[18px] font-bold text-text-primary">
+                    {tradingStats.totalTrades.toLocaleString()}
+                    <span className="text-[12px] font-normal text-text-tertiary ml-1">{t('mypage.trades')}</span>
+                  </p>
+                </div>
+                <div className="bg-bg-tertiary/50 rounded-xl px-4 py-3">
+                  <p className="text-[11px] text-text-quaternary mb-1">{t('mypage.totalVolume')}</p>
+                  <p className="text-[18px] font-bold text-text-primary">
+                    ${tradingStats.totalVolume.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                  </p>
+                </div>
+                <div className="bg-bg-tertiary/50 rounded-xl px-4 py-3">
+                  <p className="text-[11px] text-text-quaternary mb-1">{t('mypage.accountAge')}</p>
+                  <p className="text-[18px] font-bold text-text-primary">
+                    {profile.createdAt
+                      ? t('mypage.accountAgeDays').replace(
+                          '{days}',
+                          String(Math.floor((Date.now() - new Date(profile.createdAt).getTime()) / 86400000)),
+                        )
+                      : '-'}
+                  </p>
+                </div>
+                <div className="bg-bg-tertiary/50 rounded-xl px-4 py-3">
+                  <p className="text-[11px] text-text-quaternary mb-1">{t('mypage.bestTradePnl')}</p>
+                  <p className={cn(
+                    'text-[18px] font-bold',
+                    tradingStats.bestPnl > 0 ? 'text-green-400' : 'text-text-primary',
+                  )}>
+                    {tradingStats.bestPnl > 0 ? '+' : ''}{tradingStats.bestPnl.toFixed(2)}%
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="py-6 text-center text-text-quaternary text-[13px]">
+                {t('mypage.noTrades')}
+              </div>
+            )}
+          </div>
+
+          {/* Account Activity */}
+          <div className="bg-bg-secondary rounded-2xl px-5 py-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Activity className="w-3.5 h-3.5 text-text-tertiary" />
+              <h2 className="text-[13px] font-bold text-text-tertiary uppercase tracking-wide">
+                {t('mypage.accountActivity')}
+              </h2>
+            </div>
+            <div className="flex flex-col divide-y divide-border/40">
+              <InfoRow label={t('mypage.accountCreated')}>
+                {formatJoinDate(profile.createdAt)}
+              </InfoRow>
+              <InfoRow label={t('mypage.lastUpdated')}>
+                {formatJoinDate(profile.updatedAt)}
+              </InfoRow>
+              <InfoRow label={t('mypage.approvalStatus')}>
+                <span className={cn(
+                  'text-[13px] font-semibold px-2.5 py-0.5 rounded-full',
+                  profile.approvalStatus === 'APPROVED'
+                    ? 'bg-green-500/15 text-green-400'
+                    : profile.approvalStatus === 'PENDING'
+                      ? 'bg-yellow-500/15 text-yellow-400'
+                      : 'bg-danger/15 text-danger',
+                )}>
+                  {profile.approvalStatus === 'APPROVED'
+                    ? t('mypage.approvalStatus.APPROVED')
+                    : profile.approvalStatus === 'PENDING'
+                      ? t('mypage.approvalStatus.PENDING')
+                      : t('mypage.approvalStatus.REJECTED')}
+                </span>
+              </InfoRow>
+              <InfoRow label={t('mypage.accountStatus')}>
+                <span className={cn(
+                  'text-[13px] font-semibold px-2.5 py-0.5 rounded-full',
+                  profile.isActive
+                    ? 'bg-green-500/15 text-green-400'
+                    : 'bg-danger/15 text-danger',
+                )}>
+                  {profile.isActive ? t('mypage.accountActive') : t('mypage.accountInactive')}
+                </span>
+              </InfoRow>
+            </div>
           </div>
         </div>
       )}

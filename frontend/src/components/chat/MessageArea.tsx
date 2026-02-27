@@ -1,7 +1,7 @@
 'use client';
 
-import { Fragment, useEffect, useRef, useState, useCallback } from 'react';
-import { ArrowLeft, UserPlus, LogOut, Users, PanelRightOpen, X, Ban, Trash2 } from 'lucide-react';
+import { Fragment, useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { ArrowLeft, UserPlus, LogOut, Users, PanelRightOpen, X, Ban, Trash2, Search } from 'lucide-react';
 import { useChatStore } from '@/stores/chat';
 import { useChatMessages, useSendMessage, useMarkRoomRead, useChatRooms, useKickFromRoom, useDeleteRoom } from '@/hooks/useChat';
 import { useAuthStore } from '@/stores/auth';
@@ -9,6 +9,7 @@ import { usePresenceStore } from '@/stores/presence';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/format';
 import Tooltip from '@/components/ui/Tooltip';
+import Skeleton from '@/components/ui/Skeleton';
 import MessageBubble from './MessageBubble';
 import MessageInput from './MessageInput';
 import InviteModal from './InviteModal';
@@ -54,7 +55,7 @@ export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeave
   const closeChat = useChatStore((s) => s.closeChat);
   const user = useAuthStore((s) => s.user);
   const { data: rooms } = useChatRooms();
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = useChatMessages(roomId);
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading: messagesLoading } = useChatMessages(roomId);
   const sendMessage = useSendMessage();
   const markRead = useMarkRoomRead();
   const kickFromRoom = useKickFromRoom();
@@ -68,6 +69,8 @@ export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeave
   const [leaveConfirm, setLeaveConfirm] = useState(false);
   const [kickTarget, setKickTarget] = useState<{ userId: string; username: string } | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const prevMessageCountRef = useRef(0);
   const lastMarkedLengthRef = useRef(0);
 
@@ -77,6 +80,12 @@ export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeave
 
   const room: ChatRoom | undefined = rooms?.find((r) => r.id === roomId);
   const messages = data?.pages.flatMap((p) => p.items) ?? [];
+
+  const filteredMessages = useMemo(() => {
+    if (!searchQuery.trim()) return messages;
+    const q = searchQuery.toLowerCase();
+    return messages.filter((m) => m.content.toLowerCase().includes(q));
+  }, [messages, searchQuery]);
 
   // 메뉴 외부 클릭 시 닫기 (Close menu on outside click)
   useEffect(() => {
@@ -252,6 +261,19 @@ export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeave
             </div>
           )}
         </div>
+        <Tooltip label={t('chat.search')}>
+          <button
+            onClick={() => { setSearchOpen(!searchOpen); setSearchQuery(''); }}
+            className={cn(
+              'p-1.5 rounded-lg transition-colors',
+              searchOpen
+                ? 'text-accent bg-accent/10 hover:bg-accent/20'
+                : 'text-text-tertiary hover:text-text-primary hover:bg-bg-secondary',
+            )}
+          >
+            <Search className="w-4 h-4" />
+          </button>
+        </Tooltip>
         <Tooltip label={isPinned ? t('chat.tooltip.unpin') : t('chat.tooltip.pin')}>
           <button
             onClick={togglePin}
@@ -275,6 +297,25 @@ export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeave
         </Tooltip>
       </div>
 
+      {searchOpen && (
+        <div className="flex items-center gap-2 px-3 py-2 border-b border-border bg-bg-secondary/50 shrink-0">
+          <Search className="w-3.5 h-3.5 text-text-quaternary shrink-0" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder={t('chat.searchPlaceholder')}
+            className="flex-1 bg-transparent text-[13px] text-text-primary placeholder:text-text-quaternary outline-none"
+            autoFocus
+          />
+          {searchQuery && (
+            <span className="text-[11px] text-text-quaternary whitespace-nowrap">
+              {t('chat.searchResultCount').replace('{{count}}', String(messages.filter((m) => m.content.toLowerCase().includes(searchQuery.toLowerCase())).length))}
+            </span>
+          )}
+        </div>
+      )}
+
       {/* 메시지 영역 (Messages) */}
       <div
         ref={scrollContainerRef}
@@ -286,13 +327,32 @@ export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeave
             <span className="text-[11px] text-text-quaternary">{t('common.loading')}</span>
           </div>
         )}
-        {messages.length === 0 ? (
+        {messagesLoading ? (
+          <div className="flex flex-col gap-3 py-2">
+            {Array.from({ length: 6 }).map((_, i) => {
+              const isRight = i % 3 === 0;
+              return (
+                <div key={i} className={cn('flex gap-2', isRight ? 'justify-end' : 'justify-start')}>
+                  {!isRight && <Skeleton className="w-7 h-7 rounded-full shrink-0" />}
+                  <div className={cn('space-y-1.5', isRight ? 'items-end' : 'items-start')}>
+                    {!isRight && <Skeleton className="w-16 h-2.5" />}
+                    <Skeleton className={cn('h-8 rounded-xl', i % 2 === 0 ? 'w-44' : 'w-32')} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : searchQuery && filteredMessages.length === 0 ? (
+          <div className="flex items-center justify-center h-full">
+            <p className="text-[13px] text-text-tertiary">{t('chat.searchNoResults')}</p>
+          </div>
+        ) : messages.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <p className="text-[13px] text-text-tertiary">{t('chat.noMessages')}</p>
           </div>
         ) : (
-          messages.map((msg, i) => {
-            const prevMsg = i > 0 ? messages[i - 1] : null;
+          filteredMessages.map((msg, i) => {
+            const prevMsg = i > 0 ? filteredMessages[i - 1] : null;
             // 날짜 구분선 (Date separator)
             const msgDate = new Date(msg.createdAt).toLocaleDateString(locale, { year: 'numeric', month: 'long', day: 'numeric' });
             const prevDate = prevMsg ? new Date(prevMsg.createdAt).toLocaleDateString(locale, { year: 'numeric', month: 'long', day: 'numeric' }) : null;
