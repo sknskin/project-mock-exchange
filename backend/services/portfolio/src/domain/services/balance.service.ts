@@ -688,15 +688,46 @@ export class BalanceService {
       take: limit * 2, // fetch more to account for holdings
     });
 
+    const userIds = accounts.map((a) => a.userId);
+
+    // 배치 조회: 모든 보유 자산, 입출금 집계를 한 번에 처리 (N+1 → 4 쿼리)
+    // Batch queries: fetch all holdings and deposit/withdraw aggregates at once
+    const [allHoldings, depositAggs, withdrawAggs] = await Promise.all([
+      this.prisma.holding.findMany({
+        where: { userId: { in: userIds } },
+      }),
+      this.prisma.transaction.groupBy({
+        by: ['userId'],
+        where: { userId: { in: userIds }, type: 'DEPOSIT' },
+        _sum: { cashDelta: true },
+      }),
+      this.prisma.transaction.groupBy({
+        by: ['userId'],
+        where: { userId: { in: userIds }, type: 'WITHDRAW' },
+        _sum: { cashDelta: true },
+      }),
+    ]);
+
+    // 시장 가격 한 번에 조회 / Fetch all market prices in a single call
+    const allSymbols = [...new Set(allHoldings.map((h) => h.symbol))];
+    const priceMap = await this.fetchMarketPrices(allSymbols);
+
+    // 유저별 보유 자산 맵 구성 / Build holdings map per user
+    const holdingsByUser = new Map<string, typeof allHoldings>();
+    for (const h of allHoldings) {
+      const list = holdingsByUser.get(h.userId) || [];
+      list.push(h);
+      holdingsByUser.set(h.userId, list);
+    }
+
+    // 유저별 입출금 맵 구성 / Build deposit/withdraw maps per user
+    const depositMap = new Map(depositAggs.map((d) => [d.userId, d._sum.cashDelta]));
+    const withdrawMap = new Map(withdrawAggs.map((w) => [w.userId, w._sum.cashDelta]));
+
     const results: { userId: string; totalValue: Decimal; netDeposit: Decimal }[] = [];
 
     for (const account of accounts) {
-      const holdings = await this.prisma.holding.findMany({
-        where: { userId: account.userId },
-      });
-
-      const holdingSymbols = holdings.map((h) => h.symbol);
-      const priceMap = await this.fetchMarketPrices(holdingSymbols);
+      const holdings = holdingsByUser.get(account.userId) || [];
 
       let holdingsValue = new Decimal(0);
       for (const h of holdings) {
@@ -709,17 +740,8 @@ export class BalanceService {
         new Decimal(account.reservedCash.toString()),
       );
 
-      // 순 입금액 계산 (총 입금 - 총 출금) / Calculate net deposits
-      const depositAgg = await this.prisma.transaction.aggregate({
-        where: { userId: account.userId, type: 'DEPOSIT' },
-        _sum: { cashDelta: true },
-      });
-      const withdrawAgg = await this.prisma.transaction.aggregate({
-        where: { userId: account.userId, type: 'WITHDRAW' },
-        _sum: { cashDelta: true },
-      });
-      const totalDeposits = new Decimal(depositAgg._sum.cashDelta?.toString() || '0');
-      const totalWithdraws = new Decimal(withdrawAgg._sum.cashDelta?.toString() || '0').abs();
+      const totalDeposits = new Decimal(depositMap.get(account.userId)?.toString() || '0');
+      const totalWithdraws = new Decimal(withdrawMap.get(account.userId)?.toString() || '0').abs();
       const netDeposit = totalDeposits.minus(totalWithdraws);
 
       results.push({
