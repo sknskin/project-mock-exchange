@@ -2279,7 +2279,6 @@ function FeatureItem({
 }) {
   const contentRef = useRef<HTMLDivElement>(null);
   const [height, setHeight] = useState(0);
-  const [zoomOpen, setZoomOpen] = useState(false);
 
   useEffect(() => {
     if (expanded && contentRef.current) {
@@ -2288,14 +2287,6 @@ function FeatureItem({
       setHeight(0);
     }
   }, [expanded]);
-
-  useEffect(() => {
-    if (!zoomOpen) return;
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') setZoomOpen(false); };
-    document.addEventListener('keydown', handler);
-    document.body.style.overflow = 'hidden';
-    return () => { document.removeEventListener('keydown', handler); document.body.style.overflow = ''; };
-  }, [zoomOpen]);
 
   const hasIllust = !!illustrationMap[tabKey]?.[index];
   const tips = tipMap[tabKey]?.[index];
@@ -2325,10 +2316,7 @@ function FeatureItem({
         <div ref={contentRef} className="px-4 pb-4 pt-1">
           <div className={cn('flex flex-col gap-4', tips?.length ? 'lg:flex-row' : '')}>
             <div className={cn('min-w-0', tips?.length ? 'lg:flex-[3]' : 'w-full')}>
-              <div
-                className="bg-bg-secondary/30 border border-border/30 rounded-xl p-3 sm:p-4 cursor-zoom-in hover:border-accent/30 transition-colors"
-                onClick={() => setZoomOpen(true)}
-              >
+              <div className="bg-bg-secondary/30 border border-border/30 rounded-xl p-3 sm:p-4">
                 {illustrationMap[tabKey]?.[index]?.()}
               </div>
             </div>
@@ -2352,29 +2340,6 @@ function FeatureItem({
           </div>
         </div>
       </div>
-
-      {/* Zoom Modal */}
-      {zoomOpen && hasIllust && (
-        <div
-          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4"
-          onClick={() => setZoomOpen(false)}
-        >
-          <div
-            className="relative bg-bg-primary border border-border rounded-2xl p-6 sm:p-8 max-w-[90vw] max-h-[90vh] overflow-auto shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              onClick={() => setZoomOpen(false)}
-              className="absolute top-3 right-3 p-1.5 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-secondary transition-colors"
-            >
-              <span className="text-[18px]">&times;</span>
-            </button>
-            <div className="transform scale-125 sm:scale-150 origin-top-left w-[calc(100%/1.25)] sm:w-[calc(100%/1.5)]">
-              {illustrationMap[tabKey]?.[index]?.()}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -2465,7 +2430,6 @@ function FaqFeatureItem({
 }) {
   const contentRef = useRef<HTMLDivElement>(null);
   const [height, setHeight] = useState(0);
-  const [zoomOpen, setZoomOpen] = useState(false);
 
   useEffect(() => {
     if (expanded && contentRef.current) {
@@ -2474,14 +2438,6 @@ function FaqFeatureItem({
       setHeight(0);
     }
   }, [expanded]);
-
-  useEffect(() => {
-    if (!zoomOpen) return;
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') setZoomOpen(false); };
-    document.addEventListener('keydown', handler);
-    document.body.style.overflow = 'hidden';
-    return () => { document.removeEventListener('keydown', handler); document.body.style.overflow = ''; };
-  }, [zoomOpen]);
 
   const illustRenderer = faqIllustrationMap[tabKey]?.[id];
   const hasIllust = !!illustRenderer;
@@ -2512,10 +2468,7 @@ function FaqFeatureItem({
           <div className={cn('flex flex-col gap-4', hasIllust && tips?.length ? 'lg:flex-row' : '')}>
             {hasIllust && (
               <div className={cn('min-w-0', tips?.length ? 'lg:flex-[3]' : 'w-full')}>
-                <div
-                  className="bg-bg-secondary/30 border border-border/30 rounded-xl p-3 sm:p-4 cursor-zoom-in hover:border-accent/30 transition-colors"
-                  onClick={() => setZoomOpen(true)}
-                >
+                <div className="bg-bg-secondary/30 border border-border/30 rounded-xl p-3 sm:p-4">
                   {illustRenderer()}
                 </div>
               </div>
@@ -2540,29 +2493,6 @@ function FaqFeatureItem({
           </div>
         </div>
       </div>
-
-      {/* Zoom Modal */}
-      {zoomOpen && hasIllust && (
-        <div
-          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4"
-          onClick={() => setZoomOpen(false)}
-        >
-          <div
-            className="relative bg-bg-primary border border-border rounded-2xl p-6 sm:p-8 max-w-[90vw] max-h-[90vh] overflow-auto shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              onClick={() => setZoomOpen(false)}
-              className="absolute top-3 right-3 p-1.5 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-secondary transition-colors"
-            >
-              <span className="text-[18px]">&times;</span>
-            </button>
-            <div className="transform scale-125 sm:scale-150 origin-top-left w-[calc(100%/1.25)] sm:w-[calc(100%/1.5)]">
-              {illustRenderer()}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
