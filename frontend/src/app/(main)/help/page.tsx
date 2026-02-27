@@ -57,6 +57,10 @@ import {
   Layers,
   Shield,
   ListFilter,
+  CandlestickChart,
+  LineChart,
+  BookOpen,
+  ArrowLeftRight,
 } from 'lucide-react';
 import type { TranslationKey } from '@/lib/i18n';
 
@@ -410,6 +414,257 @@ function DashboardMarketInfoIllust() {
       <RoughRect x={15} y={75} w={630} h={80} fill="none" stroke="#ef4444" sw={2.5} />
       <RoughArrow x1={330} y1={160} x2={330} y2={270} />
       <RedLabel x={200} y={290}>환율, 지수, 거래대금 Top 5 한눈에 확인</RedLabel>
+    </ScreenFrame>
+  );
+}
+
+/* ─── Asset Detail illustrations ─── */
+function AssetDetailBuySellIllust() {
+  return (
+    <ScreenFrame>
+      <SketchText x={25} y={70} size={11} fill="#888">← BTC-USD</SketchText>
+      <SketchText x={25} y={92} size={16} fill="#fff">$66,050.65</SketchText>
+      <SketchText x={200} y={92} size={11} fill="#22c55e">+1.8%</SketchText>
+      {/* Chart area */}
+      <RoughRect x={20} y={105} w={380} h={180} fill="#1a1a1e" stroke="#444" sw={1.5} />
+      <path d="M35,250 L80,230 L130,240 L180,200 L230,210 L280,170 L330,180 L370,150" fill="none" stroke="#22c55e" strokeWidth={2} strokeLinecap="round" />
+      {/* Order panel */}
+      <RoughRect x={420} y={55} w={220} h={310} fill="#222228" stroke="#444" sw={1.5} />
+      <SketchText x={490} y={78} size={11} fill="#ccc" anchor="middle">주문</SketchText>
+      {/* Buy/Sell tabs */}
+      <RoughRect x={430} y={88} w={100} h={24} fill="#22c55e20" stroke="#22c55e" sw={1.5} />
+      <RoughRect x={530} y={88} w={100} h={24} fill="#ef444420" stroke="#ef4444" sw={1} />
+      <SketchText x={462} y={105} size={10} fill="#22c55e">매수</SketchText>
+      <SketchText x={562} y={105} size={10} fill="#ef4444">매도</SketchText>
+      {/* Order type */}
+      <RoughRect x={430} y={125} w={95} h={22} fill="#3b3bff20" stroke="#7c7cff" sw={1} />
+      <RoughRect x={530} y={125} w={95} h={22} fill="#2a2a2e" stroke="#555" sw={1} />
+      <SketchText x={455} y={140} size={8} fill="#7c7cff">시장가</SketchText>
+      <SketchText x={555} y={140} size={8}>지정가</SketchText>
+      {/* Quantity */}
+      <SketchText x={435} y={170} size={8} fill="#888">수량</SketchText>
+      <RoughRect x={430} y={175} w={200} h={28} fill="#1a1a1e" stroke="#555" sw={1} />
+      <SketchText x={445} y={194} size={9} fill="#666">0.00</SketchText>
+      {/* Buy button */}
+      <RoughRect x={430} y={220} w={200} h={36} fill="#22c55e30" stroke="#22c55e" sw={2} />
+      <SketchText x={500} y={243} size={12} fill="#22c55e" anchor="middle">매수하기</SketchText>
+      {/* Highlight buy/sell tabs */}
+      <RoughCircle cx={530} cy={100} r={60} />
+      <RoughArrow x1={530} y1={140} x2={530} y2={210} />
+      <RedLabel x={430} y={275}>매수/매도 탭으로 전환</RedLabel>
+    </ScreenFrame>
+  );
+}
+
+function AssetDetailChartIntervalIllust() {
+  return (
+    <ScreenFrame>
+      <SketchText x={25} y={70} size={11} fill="#888">← BTC-USD</SketchText>
+      <SketchText x={25} y={92} size={16} fill="#fff">$66,050.65</SketchText>
+      {/* Interval buttons */}
+      <RoughRect x={20} y={105} w={50} h={22} fill="#2a2a2e" stroke="#555" sw={1} />
+      <SketchText x={32} y={120} size={8}>1m</SketchText>
+      <RoughRect x={75} y={105} w={50} h={22} fill="#2a2a2e" stroke="#555" sw={1} />
+      <SketchText x={87} y={120} size={8}>5m</SketchText>
+      <RoughRect x={130} y={105} w={50} h={22} fill="#3b3bff20" stroke="#7c7cff" sw={1.5} />
+      <SketchText x={139} y={120} size={8} fill="#7c7cff">15m</SketchText>
+      <RoughRect x={185} y={105} w={50} h={22} fill="#2a2a2e" stroke="#555" sw={1} />
+      <SketchText x={197} y={120} size={8}>1h</SketchText>
+      <RoughRect x={240} y={105} w={50} h={22} fill="#2a2a2e" stroke="#555" sw={1} />
+      <SketchText x={252} y={120} size={8}>4h</SketchText>
+      <RoughRect x={295} y={105} w={50} h={22} fill="#2a2a2e" stroke="#555" sw={1} />
+      <SketchText x={307} y={120} size={8}>1d</SketchText>
+      {/* Chart */}
+      <RoughRect x={20} y={135} w={380} h={200} fill="#1a1a1e" stroke="#444" sw={1.5} />
+      <path d="M35,300 L60,280 L90,290 L120,250 L150,260 L180,220 L210,240 L240,200 L270,210 L300,180 L330,190 L360,170" fill="none" stroke="#22c55e" strokeWidth={2} strokeLinecap="round" />
+      {/* Highlight interval bar */}
+      <RoughRect x={15} y={100} w={340} h={32} fill="none" stroke="#ef4444" sw={2.5} />
+      <RoughArrow x1={185} y1={100} x2={185} y2={70} />
+      <RedLabel x={100} y={65}>시간 간격을 클릭하여 변경</RedLabel>
+    </ScreenFrame>
+  );
+}
+
+function AssetDetailChartTypeIllust() {
+  return (
+    <ScreenFrame>
+      <SketchText x={25} y={70} size={11} fill="#888">← BTC-USD</SketchText>
+      <SketchText x={25} y={92} size={16} fill="#fff">$66,050.65</SketchText>
+      {/* Chart type toggle */}
+      <RoughRect x={350} y={105} w={50} h={22} fill="#3b3bff20" stroke="#7c7cff" sw={1.5} />
+      <SketchText x={358} y={120} size={8} fill="#7c7cff">캔들</SketchText>
+      <RoughRect x={400} y={105} w={50} h={22} fill="#2a2a2e" stroke="#555" sw={1} />
+      <SketchText x={410} y={120} size={8}>라인</SketchText>
+      {/* Candlestick chart */}
+      <RoughRect x={20} y={135} w={220} h={200} fill="#1a1a1e" stroke="#444" sw={1.5} />
+      <SketchText x={90} y={155} size={9} fill="#666" anchor="middle">캔들 차트</SketchText>
+      {/* Candle sticks */}
+      <RoughLine x1={50} y1={200} x2={50} y2={280} stroke="#22c55e" sw={1} />
+      <RoughRect x={44} y={220} w={12} h={40} fill="#22c55e" stroke="#22c55e" sw={1} />
+      <RoughLine x1={90} y1={190} x2={90} y2={300} stroke="#ef4444" sw={1} />
+      <RoughRect x={84} y={210} w={12} h={60} fill="#ef4444" stroke="#ef4444" sw={1} />
+      <RoughLine x1={130} y1={180} x2={130} y2={270} stroke="#22c55e" sw={1} />
+      <RoughRect x={124} y={200} w={12} h={40} fill="#22c55e" stroke="#22c55e" sw={1} />
+      <RoughLine x1={170} y1={195} x2={170} y2={290} stroke="#ef4444" sw={1} />
+      <RoughRect x={164} y={215} w={12} h={50} fill="#ef4444" stroke="#ef4444" sw={1} />
+      {/* Line chart */}
+      <RoughRect x={260} y={135} w={220} h={200} fill="#1a1a1e" stroke="#444" sw={1.5} />
+      <SketchText x={340} y={155} size={9} fill="#666" anchor="middle">라인 차트</SketchText>
+      <path d="M275,290 L310,260 L340,270 L370,230 L400,240 L430,200 L460,210" fill="none" stroke="#7c7cff" strokeWidth={2} strokeLinecap="round" />
+      {/* Highlight toggle */}
+      <RoughCircle cx={400} cy={116} r={35} />
+      <RoughArrow x1={440} y1={116} x2={500} y2={116} />
+      <RedLabel x={505} y={112}>차트 유형 전환</RedLabel>
+    </ScreenFrame>
+  );
+}
+
+function AssetDetailWatchlistIllust() {
+  return (
+    <ScreenFrame>
+      {/* Header with star */}
+      <SketchText x={25} y={70} size={11} fill="#888">← BTC-USD</SketchText>
+      <SketchText x={25} y={92} size={16} fill="#fff">$66,050.65</SketchText>
+      <SketchText x={200} y={92} size={11} fill="#22c55e">+1.8%</SketchText>
+      {/* Star icon */}
+      <SketchText x={580} y={75} size={20}>⭐</SketchText>
+      {/* Chart */}
+      <RoughRect x={20} y={105} w={620} h={200} fill="#1a1a1e" stroke="#444" sw={1.5} />
+      <path d="M35,270 L100,250 L170,260 L240,220 L310,230 L380,190 L450,200 L520,170 L590,160" fill="none" stroke="#22c55e" strokeWidth={2} strokeLinecap="round" />
+      {/* Highlight star */}
+      <RoughCircle cx={590} cy={70} r={22} />
+      <RoughArrow x1={590} y1={95} x2={590} y2={140} />
+      <RedLabel x={470} y={155}>별표 클릭으로 관심종목 등록</RedLabel>
+    </ScreenFrame>
+  );
+}
+
+function AssetDetailPriceAlertIllust() {
+  return (
+    <ScreenFrame>
+      <SketchText x={25} y={70} size={11} fill="#888">← BTC-USD</SketchText>
+      <SketchText x={25} y={92} size={16} fill="#fff">$66,050.65</SketchText>
+      {/* Bell icon */}
+      <SketchText x={550} y={75} size={18}>🔔</SketchText>
+      {/* Alert modal */}
+      <RoughRect x={200} y={110} w={260} h={250} fill="#222228" stroke="#7c7cff" sw={2} />
+      <SketchText x={270} y={135} size={11} fill="#ccc">가격 알림 설정</SketchText>
+      {/* Above/Below buttons */}
+      <RoughRect x={215} y={150} w={110} h={28} fill="#22c55e20" stroke="#22c55e" sw={1} />
+      <SketchText x={245} y={169} size={9} fill="#22c55e">↑ 이상</SketchText>
+      <RoughRect x={335} y={150} w={110} h={28} fill="#2a2a2e" stroke="#555" sw={1} />
+      <SketchText x={365} y={169} size={9}>↓ 이하</SketchText>
+      {/* Target price */}
+      <SketchText x={220} y={200} size={8} fill="#888">목표가</SketchText>
+      <RoughRect x={215} y={205} w={230} h={28} fill="#1a1a1e" stroke="#555" sw={1} />
+      <SketchText x={230} y={224} size={10} fill="#fff">$ 70,000.00</SketchText>
+      {/* Create button */}
+      <RoughRect x={215} y={248} w={230} h={32} fill="#7c7cff30" stroke="#7c7cff" sw={1.5} />
+      <SketchText x={295} y={269} size={10} fill="#7c7cff" anchor="middle">알림 생성</SketchText>
+      {/* Active alert */}
+      <RoughRect x={215} y={295} w={230} h={28} fill="#1a1a1e" stroke="#444" sw={1} />
+      <SketchText x={225} y={313} size={8} fill="#22c55e">↑</SketchText>
+      <SketchText x={240} y={313} size={8} fill="#fff">$70,000  활성</SketchText>
+      {/* Highlight bell */}
+      <RoughCircle cx={560} cy={70} r={20} />
+      <RoughArrow x1={540} y1={80} x2={465} y2={130} />
+      <RedLabel x={470} y={95}>벨 아이콘으로 알림 설정</RedLabel>
+    </ScreenFrame>
+  );
+}
+
+function AssetDetailMetricsIllust() {
+  return (
+    <ScreenFrame>
+      <SketchText x={25} y={70} size={11} fill="#888">← BTC-USD</SketchText>
+      <SketchText x={25} y={92} size={16} fill="#fff">$66,050.65</SketchText>
+      {/* Metrics grid */}
+      <SketchText x={25} y={120} size={10} fill="#888">주요 지표</SketchText>
+      <RoughRect x={20} y={130} w={200} h={60} fill="#222228" stroke="#444" sw={1} />
+      <SketchText x={30} y={150} size={8} fill="#888">24h 고가</SketchText>
+      <SketchText x={30} y={170} size={12} fill="#22c55e">$67,200.00</SketchText>
+      <RoughRect x={230} y={130} w={200} h={60} fill="#222228" stroke="#444" sw={1} />
+      <SketchText x={240} y={150} size={8} fill="#888">24h 저가</SketchText>
+      <SketchText x={240} y={170} size={12} fill="#ef4444">$64,800.00</SketchText>
+      <RoughRect x={440} y={130} w={200} h={60} fill="#222228" stroke="#444" sw={1} />
+      <SketchText x={450} y={150} size={8} fill="#888">24h 거래량</SketchText>
+      <SketchText x={450} y={170} size={12} fill="#fff">12,345 BTC</SketchText>
+      <RoughRect x={20} y={200} w={200} h={60} fill="#222228" stroke="#444" sw={1} />
+      <SketchText x={30} y={220} size={8} fill="#888">시가총액</SketchText>
+      <SketchText x={30} y={240} size={12} fill="#fff">$1.29T</SketchText>
+      <RoughRect x={230} y={200} w={200} h={60} fill="#222228" stroke="#444" sw={1} />
+      <SketchText x={240} y={220} size={8} fill="#888">변동률</SketchText>
+      <SketchText x={240} y={240} size={12} fill="#22c55e">+1.8%</SketchText>
+      {/* Highlight */}
+      <RoughRect x={15} y={125} w={630} h={145} fill="none" stroke="#ef4444" sw={2.5} />
+      <RoughArrow x1={330} y1={275} x2={330} y2={330} />
+      <RedLabel x={210} y={350}>주요 지표를 한눈에 확인</RedLabel>
+    </ScreenFrame>
+  );
+}
+
+function AssetDetailOrderbookIllust() {
+  return (
+    <ScreenFrame>
+      <SketchText x={25} y={70} size={11} fill="#888">← BTC-USD</SketchText>
+      {/* Tab buttons */}
+      <RoughRect x={20} y={85} w={100} h={26} fill="#3b3bff20" stroke="#7c7cff" sw={1.5} />
+      <SketchText x={45} y={103} size={9} fill="#7c7cff">호가</SketchText>
+      <RoughRect x={120} y={85} w={100} h={26} fill="#2a2a2e" stroke="#555" sw={1} />
+      <SketchText x={145} y={103} size={9}>체결</SketchText>
+      {/* Orderbook */}
+      <RoughRect x={20} y={120} w={300} h={260} fill="#1a1a1e" stroke="#444" sw={1.5} />
+      <SketchText x={30} y={140} size={8} fill="#888">가격</SketchText>
+      <SketchText x={160} y={140} size={8} fill="#888">수량</SketchText>
+      <SketchText x={250} y={140} size={8} fill="#888">누적</SketchText>
+      {/* Sell orders (red) */}
+      <RoughRect x={25} y={148} w={290} h={20} fill="#ef444410" stroke="none" />
+      <SketchText x={30} y={163} size={8} fill="#ef4444">66,200</SketchText>
+      <SketchText x={160} y={163} size={8}>0.50</SketchText>
+      <RoughRect x={240} y={150} w={60} h={16} fill="#ef444420" stroke="none" />
+      <RoughRect x={25} y={168} w={290} h={20} fill="#ef444410" stroke="none" />
+      <SketchText x={30} y={183} size={8} fill="#ef4444">66,150</SketchText>
+      <SketchText x={160} y={183} size={8}>1.20</SketchText>
+      <RoughRect x={210} y={170} w={90} h={16} fill="#ef444420" stroke="none" />
+      <RoughRect x={25} y={188} w={290} h={20} fill="#ef444410" stroke="none" />
+      <SketchText x={30} y={203} size={8} fill="#ef4444">66,100</SketchText>
+      <SketchText x={160} y={203} size={8}>2.30</SketchText>
+      <RoughRect x={180} y={190} w={120} h={16} fill="#ef444420" stroke="none" />
+      {/* Spread */}
+      <RoughLine x1={25} y1={215} x2={315} y2={215} stroke="#555" sw={0.5} />
+      <SketchText x={130} y={228} size={9} fill="#fff" anchor="middle">$66,050.65</SketchText>
+      <RoughLine x1={25} y1={235} x2={315} y2={235} stroke="#555" sw={0.5} />
+      {/* Buy orders (green) */}
+      <RoughRect x={25} y={240} w={290} h={20} fill="#22c55e10" stroke="none" />
+      <SketchText x={30} y={255} size={8} fill="#22c55e">66,000</SketchText>
+      <SketchText x={160} y={255} size={8}>1.80</SketchText>
+      <RoughRect x={220} y={242} w={80} h={16} fill="#22c55e20" stroke="none" />
+      <RoughRect x={25} y={260} w={290} h={20} fill="#22c55e10" stroke="none" />
+      <SketchText x={30} y={275} size={8} fill="#22c55e">65,950</SketchText>
+      <SketchText x={160} y={275} size={8}>3.50</SketchText>
+      <RoughRect x={190} y={262} w={110} h={16} fill="#22c55e20" stroke="none" />
+      <RoughRect x={25} y={280} w={290} h={20} fill="#22c55e10" stroke="none" />
+      <SketchText x={30} y={295} size={8} fill="#22c55e">65,900</SketchText>
+      <SketchText x={160} y={295} size={8}>5.00</SketchText>
+      <RoughRect x={160} y={282} w={140} h={16} fill="#22c55e20" stroke="none" />
+      {/* Recent trades panel */}
+      <RoughRect x={340} y={120} w={300} h={260} fill="#1a1a1e" stroke="#444" sw={1.5} />
+      <SketchText x={350} y={140} size={8} fill="#888">시간</SketchText>
+      <SketchText x={440} y={140} size={8} fill="#888">가격</SketchText>
+      <SketchText x={560} y={140} size={8} fill="#888">수량</SketchText>
+      <SketchText x={350} y={163} size={8}>14:32:01</SketchText>
+      <SketchText x={440} y={163} size={8} fill="#22c55e">66,055</SketchText>
+      <SketchText x={560} y={163} size={8}>0.12</SketchText>
+      <SketchText x={350} y={183} size={8}>14:31:58</SketchText>
+      <SketchText x={440} y={183} size={8} fill="#ef4444">66,048</SketchText>
+      <SketchText x={560} y={183} size={8}>0.85</SketchText>
+      <SketchText x={350} y={203} size={8}>14:31:55</SketchText>
+      <SketchText x={440} y={203} size={8} fill="#22c55e">66,052</SketchText>
+      <SketchText x={560} y={203} size={8}>0.33</SketchText>
+      {/* Highlight tabs */}
+      <RoughRect x={15} y={80} w={215} h={36} fill="none" stroke="#ef4444" sw={2.5} />
+      <RoughArrow x1={120} y1={80} x2={120} y2={65} />
+      <RedLabel x={140} y={62}>호가/체결 탭으로 전환</RedLabel>
     </ScreenFrame>
   );
 }
@@ -1688,6 +1943,15 @@ const illustrationMap: Record<string, Record<number, () => React.ReactNode>> = {
     6: () => <DashboardDetailIllust />,
     7: () => <DashboardMarketInfoIllust />,
   },
+  assetDetail: {
+    0: () => <AssetDetailBuySellIllust />,
+    1: () => <AssetDetailChartIntervalIllust />,
+    2: () => <AssetDetailChartTypeIllust />,
+    3: () => <AssetDetailWatchlistIllust />,
+    4: () => <AssetDetailPriceAlertIllust />,
+    5: () => <AssetDetailMetricsIllust />,
+    6: () => <AssetDetailOrderbookIllust />,
+  },
   portfolio: {
     0: () => <PortfolioBalanceIllust />,
     1: () => <PortfolioDepositIllust />,
@@ -1768,6 +2032,15 @@ const tipMap: Record<string, Record<number, TranslationKey[]>> = {
     6: ['help.dashboard.detail.tip1', 'help.dashboard.detail.tip2'],
     7: ['help.dashboard.marketInfo.tip1', 'help.dashboard.marketInfo.tip2'],
   },
+  assetDetail: {
+    0: ['help.assetDetail.buySell.tip1', 'help.assetDetail.buySell.tip2'],
+    1: ['help.assetDetail.chartInterval.tip1', 'help.assetDetail.chartInterval.tip2'],
+    2: ['help.assetDetail.chartType.tip1', 'help.assetDetail.chartType.tip2'],
+    3: ['help.assetDetail.watchlist.tip1', 'help.assetDetail.watchlist.tip2'],
+    4: ['help.assetDetail.priceAlert.tip1', 'help.assetDetail.priceAlert.tip2'],
+    5: ['help.assetDetail.metrics.tip1', 'help.assetDetail.metrics.tip2'],
+    6: ['help.assetDetail.orderbook.tip1', 'help.assetDetail.orderbook.tip2'],
+  },
   portfolio: {
     0: ['help.portfolio.balance.tip1', 'help.portfolio.balance.tip2'],
     1: ['help.portfolio.deposit.tip1', 'help.portfolio.deposit.tip2'],
@@ -1846,6 +2119,12 @@ const faqIllustrationMap: Record<string, Record<string, () => React.ReactNode>> 
     d5: () => <DashboardPeriodIllust />,
     d6: () => <DashboardDetailIllust />,
   },
+  assetDetail: {
+    ad1: () => <AssetDetailBuySellIllust />,
+    ad2: () => <AssetDetailChartIntervalIllust />,
+    ad3: () => <AssetDetailPriceAlertIllust />,
+    ad4: () => <AssetDetailOrderbookIllust />,
+  },
   portfolio: {
     p1: () => <PortfolioBalanceIllust />,
     p2: () => <PortfolioPnlIllust />,
@@ -1909,6 +2188,12 @@ const faqTipMap: Record<string, Record<string, string[]>> = {
     d4: ['help.faq.d4.t1', 'help.faq.d4.t2', 'help.faq.d4.t3'],
     d5: ['help.faq.d5.t1', 'help.faq.d5.t2', 'help.faq.d5.t3'],
     d6: ['help.faq.d6.t1', 'help.faq.d6.t2', 'help.faq.d6.t3'],
+  },
+  assetDetail: {
+    ad1: ['help.faq.ad1.t1', 'help.faq.ad1.t2', 'help.faq.ad1.t3'],
+    ad2: ['help.faq.ad2.t1', 'help.faq.ad2.t2', 'help.faq.ad2.t3'],
+    ad3: ['help.faq.ad3.t1', 'help.faq.ad3.t2', 'help.faq.ad3.t3'],
+    ad4: ['help.faq.ad4.t1', 'help.faq.ad4.t2', 'help.faq.ad4.t3'],
   },
   portfolio: {
     p1: ['help.faq.p1.t1', 'help.faq.p1.t2', 'help.faq.p1.t3'],
@@ -2345,6 +2630,7 @@ export default function HelpPage() {
 
   const tabs: { key: string; label: TranslationKey; icon: React.ReactNode; adminOnly?: boolean }[] = [
     { key: 'dashboard', label: 'help.tab.dashboard', icon: <LayoutDashboard className="w-4 h-4" /> },
+    { key: 'assetDetail', label: 'help.tab.assetDetail', icon: <BarChart className="w-4 h-4" /> },
     { key: 'portfolio', label: 'help.tab.portfolio', icon: <Briefcase className="w-4 h-4" /> },
     { key: 'orders', label: 'help.tab.orders', icon: <ClipboardList className="w-4 h-4" /> },
     { key: 'leaderboard', label: 'help.tab.leaderboard', icon: <Trophy className="w-4 h-4" /> },
@@ -2374,6 +2660,20 @@ export default function HelpPage() {
         { icon: <Search className="w-4 h-4" />, text: 'help.dashboard.search' },
         { icon: <MousePointerClick className="w-4 h-4" />, text: 'help.dashboard.detail' },
         { icon: <BarChart className="w-4 h-4" />, text: 'help.dashboard.marketInfo' },
+      ],
+    },
+    assetDetail: {
+      icon: <BarChart className="w-5 h-5" />,
+      title: 'help.assetDetail.title',
+      description: 'help.assetDetail.desc',
+      items: [
+        { icon: <ShoppingCart className="w-4 h-4" />, text: 'help.assetDetail.buySell' },
+        { icon: <Clock className="w-4 h-4" />, text: 'help.assetDetail.chartInterval' },
+        { icon: <CandlestickChart className="w-4 h-4" />, text: 'help.assetDetail.chartType' },
+        { icon: <Star className="w-4 h-4" />, text: 'help.assetDetail.watchlist' },
+        { icon: <Bell className="w-4 h-4" />, text: 'help.assetDetail.priceAlert' },
+        { icon: <BarChart3 className="w-4 h-4" />, text: 'help.assetDetail.metrics' },
+        { icon: <BookOpen className="w-4 h-4" />, text: 'help.assetDetail.orderbook' },
       ],
     },
     portfolio: {
@@ -2552,6 +2852,7 @@ export default function HelpPage() {
       {(() => {
         const faqByTab: Record<string, string[]> = {
           dashboard: ['d1', 'd2', 'd3', 'd4', 'd5', 'd6'],
+          assetDetail: ['ad1', 'ad2', 'ad3', 'ad4'],
           portfolio: ['p1', 'p2', 'p3', 'p4', 'p5', 'p6'],
           orders: ['o1', 'o2', 'o3', 'o4', 'o5', 'o6'],
           leaderboard: ['l1', 'l2', 'l3', 'l4'],
