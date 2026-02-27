@@ -11,10 +11,23 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import type { LeaderboardEntry } from '@/types';
 
-export function useLeaderboard() {
+export type LeaderboardPeriod = 'all' | 'daily' | 'weekly' | 'monthly';
+export type LeaderboardSortBy = 'return' | 'absolute' | 'assets';
+
+interface UseLeaderboardOptions {
+  period?: LeaderboardPeriod;
+  sortBy?: LeaderboardSortBy;
+}
+
+export function useLeaderboard(options?: UseLeaderboardOptions) {
+  const period = options?.period ?? 'all';
+  const sortBy = options?.sortBy ?? 'return';
+
   return useQuery<LeaderboardEntry[]>({
-    queryKey: ['leaderboard'],
+    queryKey: ['leaderboard', period, sortBy],
     queryFn: async () => {
+      // period와 sortBy는 향후 백엔드 지원 시 쿼리 파라미터로 전달 예정
+      // period and sortBy will be passed as query params when backend supports them
       const { data } = await api.get('/api/portfolio/leaderboard');
       const raw: any[] = data.data ?? data;
       return raw.map((e: any) => ({
