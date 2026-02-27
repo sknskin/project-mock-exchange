@@ -11,6 +11,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Trash2, Bell, ArrowUp, ArrowDown } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { usePriceAlerts, useCreatePriceAlert, useDeletePriceAlert } from '@/hooks/usePriceAlert';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
@@ -26,6 +27,8 @@ interface PriceAlertModalProps {
 
 export default function PriceAlertModal({ isOpen, onClose, symbol, currentPrice }: PriceAlertModalProps) {
   const { t } = useTranslation();
+  const modalRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(modalRef, isOpen);
   const { data: alerts } = usePriceAlerts(symbol);
   const createAlert = useCreatePriceAlert();
   const deleteAlert = useDeletePriceAlert();
@@ -61,6 +64,16 @@ export default function PriceAlertModal({ isOpen, onClose, symbol, currentPrice 
     if (isKRW(symbol)) return wantKRW ? '₩' : '$';
     return wantKRW ? '₩' : '$';
   })();
+
+  // ESC 키로 닫기 / Close on Escape key
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   // 모달이 열릴 때 입력 상태 초기화 (Reset touch state when modal opens)
   useEffect(() => {
@@ -112,17 +125,17 @@ export default function PriceAlertModal({ isOpen, onClose, symbol, currentPrice 
   const triggeredAlerts = alerts?.filter((a) => !a.isActive) ?? [];
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="price-alert-modal-title" ref={modalRef}>
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
       <div className="relative w-full max-w-sm bg-bg-primary border border-border rounded-xl shadow-xl">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border">
           <div className="flex items-center gap-2">
             <Bell className="w-4 h-4 text-accent" />
-            <h2 className="text-[15px] font-bold text-text-primary">{t('alert.title')}</h2>
+            <h2 id="price-alert-modal-title" className="text-[15px] font-bold text-text-primary">{t('alert.title')}</h2>
             <span className="text-[12px] text-text-tertiary">{symbol}</span>
           </div>
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-bg-secondary transition-colors">
+          <button onClick={onClose} aria-label="Close" className="p-1 rounded-lg hover:bg-bg-secondary transition-colors">
             <X className="w-4 h-4 text-text-tertiary" />
           </button>
         </div>

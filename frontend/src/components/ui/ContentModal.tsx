@@ -7,11 +7,12 @@
  */
 'use client';
 
-import { useEffect, useCallback, type ComponentPropsWithoutRef } from 'react';
+import { useEffect, useCallback, useRef, type ComponentPropsWithoutRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { X } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 
 /* 테이블을 스크롤 가능한 래퍼로 감싸기 (Wrap table in scrollable wrapper for mobile) */
 function TableWrapper(props: ComponentPropsWithoutRef<'table'>) {
@@ -32,6 +33,8 @@ interface ContentModalProps {
 
 export default function ContentModal({ isOpen, onClose, title, content, type }: ContentModalProps) {
   const { t } = useTranslation();
+  const modalRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(modalRef, isOpen);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -62,15 +65,16 @@ export default function ContentModal({ isOpen, onClose, title, content, type }: 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center" role="dialog" aria-modal="true" aria-labelledby="content-modal-title" ref={modalRef}>
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm cursor-pointer" onClick={onClose} />
 
       <div className="relative w-full h-full md:h-auto md:max-w-[960px] md:max-h-[85vh] bg-bg-primary md:rounded-2xl border border-border flex flex-col overflow-hidden shadow-2xl max-w-[100vw]">
         {/* 헤더 / Header */}
         <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-border shrink-0">
-          <h2 className="text-[15px] sm:text-[17px] font-bold text-text-primary truncate mr-2">{title}</h2>
+          <h2 id="content-modal-title" className="text-[15px] sm:text-[17px] font-bold text-text-primary truncate mr-2">{title}</h2>
           <button
             onClick={onClose}
+            aria-label="Close"
             className="p-2 text-text-tertiary hover:text-text-primary transition-colors rounded-lg hover:bg-bg-secondary cursor-pointer"
           >
             <X className="w-5 h-5" />

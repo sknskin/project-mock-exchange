@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Search, X, Check, CheckCheck } from 'lucide-react';
 import { useInviteToRoom, useSearchUsers } from '@/hooks/useChat';
 import { useAuthStore } from '@/stores/auth';
 import { usePresenceStore } from '@/stores/presence';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/format';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 import type { ChatUserSearchResult } from '@/types';
 
 interface InviteModalProps {
@@ -19,6 +20,8 @@ export default function InviteModal({ roomId, existingParticipantIds, onClose }:
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const invite = useInviteToRoom();
+  const modalRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(modalRef, true);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
@@ -26,6 +29,15 @@ export default function InviteModal({ roomId, existingParticipantIds, onClose }:
 
   const { data: searchResults, isLoading: searching } = useSearchUsers(debouncedQuery, existingParticipantIds);
   const onlineUserIds = usePresenceStore((s) => s.onlineUserIds);
+
+  // ESC 키로 닫기 / Close on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(searchQuery), 300);
@@ -81,12 +93,13 @@ export default function InviteModal({ roomId, existingParticipantIds, onClose }:
   };
 
   return (
-    <div className="absolute inset-0 z-20 flex flex-col bg-bg-primary rounded-2xl">
+    <div className="absolute inset-0 z-20 flex flex-col bg-bg-primary rounded-2xl" role="dialog" aria-modal="true" aria-labelledby="invite-modal-title" ref={modalRef}>
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2.5 border-b border-border shrink-0">
-        <h3 className="text-[14px] font-bold text-text-primary">{t('chat.inviteToRoom')}</h3>
+        <h3 id="invite-modal-title" className="text-[14px] font-bold text-text-primary">{t('chat.inviteToRoom')}</h3>
         <button
           onClick={onClose}
+          aria-label="Close"
           className="p-1.5 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-secondary transition-colors"
         >
           <X className="w-4 h-4" />

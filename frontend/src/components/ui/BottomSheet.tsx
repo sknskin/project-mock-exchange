@@ -9,6 +9,7 @@
 
 import { useEffect, useCallback, useRef } from 'react';
 import { cn } from '@/lib/format';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 
 interface BottomSheetProps {
   isOpen: boolean;
@@ -24,6 +25,7 @@ export default function BottomSheet({
   children,
 }: BottomSheetProps) {
   const contentRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(contentRef, isOpen);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -51,7 +53,7 @@ export default function BottomSheet({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 sm:flex sm:items-center sm:justify-center">
+    <div className="fixed inset-0 z-50 sm:flex sm:items-center sm:justify-center" role="dialog" aria-modal="true" aria-labelledby={title ? 'bottomsheet-title' : undefined}>
       <div
         className="absolute inset-0 bg-black/50"
         onClick={onClose}
@@ -73,7 +75,7 @@ export default function BottomSheet({
         </div>
         {title && (
           <div className="px-6 py-3 sm:pt-5">
-            <h3 className="text-[18px] font-bold text-text-primary">{title}</h3>
+            <h3 id="bottomsheet-title" className="text-[18px] font-bold text-text-primary">{title}</h3>
           </div>
         )}
         <div className="px-6 pb-8 pt-2">{children}</div>

@@ -41,6 +41,13 @@ export default function RootLayout({
         />
       </head>
       <body className="bg-bg-primary text-text-primary min-h-screen">
+        {/* Skip to content link for keyboard/screen reader users */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:bg-accent focus:text-white focus:rounded-lg focus:text-sm focus:font-semibold"
+        >
+          Skip to content
+        </a>
         <QueryProvider>
           <ConnectionGuard>
             <ThemeProvider />

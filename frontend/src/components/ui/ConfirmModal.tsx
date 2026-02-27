@@ -7,8 +7,9 @@
  */
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 
 interface ConfirmModalProps {
   isOpen: boolean;
@@ -34,6 +35,8 @@ export default function ConfirmModal({
   loading = false,
 }: ConfirmModalProps) {
   const { t } = useTranslation();
+  const modalRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(modalRef, isOpen);
 
   // ESC 키로 닫기 + 배경 스크롤 방지 / Close on Escape key + lock body scroll
   useEffect(() => {
@@ -56,13 +59,13 @@ export default function ConfirmModal({
     : 'bg-accent hover:bg-accent/90';
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center" role="dialog" aria-modal="true" aria-labelledby="confirm-modal-title" ref={modalRef}>
       {/* 오버레이 / Overlay */}
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
 
       {/* 모달 본체 / Modal body */}
       <div className="relative bg-bg-primary border border-border rounded-2xl p-6 w-[min(320px,calc(100vw-2rem))] shadow-2xl">
-        <h3 className="text-[16px] font-bold text-text-primary text-center">
+        <h3 id="confirm-modal-title" className="text-[16px] font-bold text-text-primary text-center">
           {title}
         </h3>
         <p className="text-[14px] text-text-secondary text-center mt-3 whitespace-pre-line">

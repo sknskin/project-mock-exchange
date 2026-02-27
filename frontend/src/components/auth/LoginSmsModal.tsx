@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import api from '@/lib/api';
@@ -29,6 +30,8 @@ export default function LoginSmsModal({
   const [timeLeft, setTimeLeft] = useState(180);
   const [locked, setLocked] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(modalRef, isOpen);
 
   // 상태 초기화 / Reset state
   useEffect(() => {
@@ -60,6 +63,16 @@ export default function LoginSmsModal({
       setTimeout(() => inputRef.current?.focus(), 100);
     }
   }, [isOpen]);
+
+  // ESC 키로 닫기 / Close on Escape key
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   // 배경 스크롤 완전 방지 (모바일 포함) / Full scroll lock including mobile
   useEffect(() => {
@@ -131,7 +144,7 @@ export default function LoginSmsModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center px-4 overscroll-none">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center px-4 overscroll-none" role="dialog" aria-modal="true" aria-labelledby="login-sms-modal-title" ref={modalRef}>
       {/* 오버레이 — 클릭/터치해도 닫히지 않음 / Overlay — click/touch does NOT close */}
       <div className="absolute inset-0 bg-black/60" onTouchMove={(e) => e.preventDefault()} />
 
@@ -150,7 +163,7 @@ export default function LoginSmsModal({
         </button>
 
         <div className="p-8 pt-7">
-          <h3 className="text-[16px] font-bold text-text-primary text-center">
+          <h3 id="login-sms-modal-title" className="text-[16px] font-bold text-text-primary text-center">
             {t('auth.loginSms.title')}
           </h3>
 
