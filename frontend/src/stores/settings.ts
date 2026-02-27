@@ -11,13 +11,31 @@ import type { Locale } from '@/lib/i18n';
 
 export type Theme = 'dark' | 'light';
 
+export interface NotificationPrefs {
+  trade: boolean;
+  priceAlert: boolean;
+  chat: boolean;
+  announcement: boolean;
+  registration: boolean;
+}
+
+const defaultNotificationPrefs: NotificationPrefs = {
+  trade: true,
+  priceAlert: true,
+  chat: true,
+  announcement: true,
+  registration: true,
+};
+
 interface SettingsState {
   theme: Theme;
   locale: Locale;
+  notificationPrefs: NotificationPrefs;
   setTheme: (theme: Theme) => void;
   toggleTheme: () => void;
   setLocale: (locale: Locale) => void;
   toggleLocale: () => void;
+  setNotificationPref: (key: keyof NotificationPrefs, value: boolean) => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -25,16 +43,20 @@ export const useSettingsStore = create<SettingsState>()(
     (set, get) => ({
       theme: 'dark',
       locale: 'ko',
+      notificationPrefs: defaultNotificationPrefs,
       setTheme: (theme) => set({ theme }),
       toggleTheme: () => set({ theme: get().theme === 'dark' ? 'light' : 'dark' }),
       setLocale: (locale) => set({ locale }),
       toggleLocale: () => set({ locale: get().locale === 'ko' ? 'en' : 'ko' }),
+      setNotificationPref: (key, value) =>
+        set({ notificationPrefs: { ...get().notificationPrefs, [key]: value } }),
     }),
     {
       name: 'virtuex-settings',
       partialize: (state) => ({
         theme: state.theme,
         locale: state.locale,
+        notificationPrefs: state.notificationPrefs,
       }),
     },
   ),

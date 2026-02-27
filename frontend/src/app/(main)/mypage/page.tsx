@@ -10,10 +10,11 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Lock, Edit2, User } from 'lucide-react';
+import { Lock, Edit2, User, Bell } from 'lucide-react';
 import { useProfile, useChangePassword } from '@/hooks/useAdmin';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuthStore } from '@/stores/auth';
+import { useSettingsStore, type NotificationPrefs } from '@/stores/settings';
 import { cn } from '@/lib/format';
 
 function InfoRow({ label, children }: { label: string; children: React.ReactNode }) {
@@ -44,6 +45,28 @@ function RoleBadge({ role, t }: { role: string; t: (key: Parameters<ReturnType<t
     <span className="text-[13px] font-semibold px-2.5 py-0.5 rounded-full bg-bg-tertiary text-text-secondary">
       {t('common.user')}
     </span>
+  );
+}
+
+function NotifToggle({ label, prefKey }: { label: string; prefKey: keyof NotificationPrefs }) {
+  const value = useSettingsStore((s) => s.notificationPrefs[prefKey]);
+  const setPref = useSettingsStore((s) => s.setNotificationPref);
+  return (
+    <div className="flex items-center justify-between py-2.5">
+      <span className="text-[14px] text-text-primary">{label}</span>
+      <button
+        onClick={() => setPref(prefKey, !value)}
+        className={cn(
+          'relative w-10 h-[22px] rounded-full transition-colors',
+          value ? 'bg-accent' : 'bg-bg-tertiary',
+        )}
+      >
+        <span className={cn(
+          'absolute top-[3px] w-4 h-4 rounded-full bg-white shadow transition-transform',
+          value ? 'left-[22px]' : 'left-[3px]',
+        )} />
+      </button>
+    </div>
   );
 }
 
@@ -189,8 +212,25 @@ export default function MyPage() {
             </div>
           </div>
 
+          {/* Notification Preferences */}
+          <div className="bg-bg-secondary rounded-2xl px-5 py-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Bell className="w-3.5 h-3.5 text-text-tertiary" />
+              <h2 className="text-[13px] font-bold text-text-tertiary uppercase tracking-wide">
+                {t('mypage.notificationPrefs')}
+              </h2>
+            </div>
+            <div className="flex flex-col divide-y divide-border/40">
+              <NotifToggle label={t('mypage.notif.trade')} prefKey="trade" />
+              <NotifToggle label={t('mypage.notif.priceAlert')} prefKey="priceAlert" />
+              <NotifToggle label={t('mypage.notif.chat')} prefKey="chat" />
+              <NotifToggle label={t('mypage.notif.announcement')} prefKey="announcement" />
+              <NotifToggle label={t('mypage.notif.registration')} prefKey="registration" />
+            </div>
+          </div>
+
           {/* Password change */}
-          <div className="bg-bg-secondary rounded-2xl px-5 py-4 lg:col-span-2">
+          <div className="bg-bg-secondary rounded-2xl px-5 py-4">
             <h2 className="text-[13px] font-bold text-text-tertiary uppercase tracking-wide mb-3">
               {t('mypage.changePassword')}
             </h2>
