@@ -7,6 +7,7 @@
  */
 import { Controller, Post, Get, Body, Req, Res, Query, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { Request, Response } from 'express';
 import { ProxyService } from './proxy.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -21,6 +22,7 @@ export class AuthProxyController {
   ) {}
 
   @Post('register')
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
   @ApiOperation({ summary: '회원가입', description: '새 사용자 계정을 생성합니다' })
   @ApiResponse({ status: 201, description: '회원가입 성공' })
   @ApiResponse({ status: 400, description: '유효성 검사 실패' })
@@ -44,6 +46,7 @@ export class AuthProxyController {
   }
 
   @Post('login')
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '로그인', description: '이메일/아이디와 비밀번호로 로그인합니다 (SMS 인증 필요)' })
   @ApiResponse({ status: 200, description: 'SMS 인증 요청 (sessionId + maskedPhone)' })
@@ -59,6 +62,7 @@ export class AuthProxyController {
   }
 
   @Post('login/verify-sms')
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '로그인 SMS 인증', description: '로그인 2단계 SMS 인증번호를 검증합니다' })
   @ApiResponse({ status: 200, description: '인증 성공 (access token + refresh cookie)' })
@@ -117,7 +121,7 @@ export class AuthProxyController {
         Cookie: req.headers.cookie || '',
       },
     });
-    res.clearCookie('refresh_token', { path: '/auth' });
+    res.clearCookie('refresh_token', { path: '/api/auth' });
     return res.status(result.status).json(result.data);
   }
 
@@ -139,6 +143,7 @@ export class AuthProxyController {
   }
 
   @Post('sms/send')
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'SMS 인증번호 발송', description: '입력한 전화번호로 인증번호를 발송합니다' })
   @ApiResponse({ status: 200, description: '인증번호 발송 성공' })
