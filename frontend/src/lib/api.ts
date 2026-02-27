@@ -13,6 +13,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true,
 });
 
 api.interceptors.request.use((config) => {
@@ -45,8 +46,8 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    const hasToken = !!useAuthStore.getState().accessToken;
-    if (error.response?.status === 401 && !originalRequest._retry && hasToken) {
+    const isAuthenticated = useAuthStore.getState().isAuthenticated;
+    if (error.response?.status === 401 && !originalRequest._retry && isAuthenticated) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
@@ -66,7 +67,7 @@ api.interceptors.response.use(
           { withCredentials: true },
         );
 
-        const { accessToken } = data;
+        const accessToken = data.data?.accessToken ?? data.accessToken;
         useAuthStore.getState().setToken(accessToken);
         processQueue(null, accessToken);
 
