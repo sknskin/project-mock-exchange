@@ -13,5 +13,6 @@ export class LoginRequestDto {
   identifier: string;
 
   @IsString()
+  @IsNotEmpty()
   password: string;
 }
