@@ -61,12 +61,22 @@ export default function LoginSmsModal({
     }
   }, [isOpen]);
 
-  // 배경 스크롤 방지 (ESC로 닫기 없음 — 보안 모달) / Lock body scroll (no ESC close — security modal)
+  // 배경 스크롤 완전 방지 (모바일 포함) / Full scroll lock including mobile
   useEffect(() => {
     if (!isOpen) return;
+    const scrollY = window.scrollY;
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.left = '0';
+    document.body.style.right = '0';
     document.body.style.overflow = 'hidden';
     return () => {
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.left = '';
+      document.body.style.right = '';
       document.body.style.overflow = '';
+      window.scrollTo(0, scrollY);
     };
   }, [isOpen]);
 
@@ -121,9 +131,9 @@ export default function LoginSmsModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center px-4">
-      {/* 오버레이 — 클릭해도 닫히지 않음 / Overlay — click does NOT close */}
-      <div className="absolute inset-0 bg-black/60" />
+    <div className="fixed inset-0 z-[60] flex items-center justify-center px-4 overscroll-none">
+      {/* 오버레이 — 클릭/터치해도 닫히지 않음 / Overlay — click/touch does NOT close */}
+      <div className="absolute inset-0 bg-black/60" onTouchMove={(e) => e.preventDefault()} />
 
       {/* 모달 본체 / Modal body */}
       <div className="relative bg-bg-primary border border-border rounded-2xl w-full max-w-[360px] shadow-2xl">
@@ -131,7 +141,7 @@ export default function LoginSmsModal({
         <button
           onClick={onClose}
           disabled={loading}
-          className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-secondary transition-colors disabled:opacity-40"
+          className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-secondary transition-colors disabled:opacity-40"
           aria-label="Close"
         >
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -139,7 +149,7 @@ export default function LoginSmsModal({
           </svg>
         </button>
 
-        <div className="p-6 pt-5">
+        <div className="p-8 pt-7">
           <h3 className="text-[16px] font-bold text-text-primary text-center">
             {t('auth.loginSms.title')}
           </h3>
@@ -151,7 +161,7 @@ export default function LoginSmsModal({
             {maskedPhone}
           </p>
 
-          <div className="mt-5 space-y-3">
+          <div className="mt-6 space-y-4">
             <div className="relative">
               <Input
                 ref={inputRef}
@@ -181,14 +191,26 @@ export default function LoginSmsModal({
             </div>
 
             {expired && !locked && (
-              <p className="text-[13px] text-danger text-center">{t('auth.loginSms.expired')}</p>
+              <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-danger/10 border border-danger/20">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="shrink-0 text-danger">
+                  <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5" />
+                  <path d="M8 4.5v4M8 10.5v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
+                <p className="text-[13px] text-danger leading-snug">{t('auth.loginSms.expired')}</p>
+              </div>
             )}
 
             {error && (
-              <p className="text-[13px] text-danger text-center leading-relaxed">{error}</p>
+              <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-danger/10 border border-danger/20 animate-shake">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="shrink-0 text-danger">
+                  <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5" />
+                  <path d="M8 4.5v4M8 10.5v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
+                <p className="text-[13px] text-danger leading-snug">{error}</p>
+              </div>
             )}
 
-            <div className="pt-1">
+            <div className="pt-2">
               <Button
                 type="button"
                 size="lg"
