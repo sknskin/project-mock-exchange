@@ -125,9 +125,10 @@ export default function AnnouncementsPage() {
               key={item.id}
               href={`/announcements/${item.id}`}
               className={cn(
-                'block p-4 rounded-xl border border-border',
-                'bg-bg-secondary hover:bg-bg-tertiary hover:border-accent/40',
-                'transition-colors cursor-pointer',
+                'block p-4 rounded-xl border transition-colors cursor-pointer',
+                item.isPinned
+                  ? 'bg-accent/[0.04] border-accent/25 hover:bg-accent/[0.08] border-l-[3px] border-l-accent'
+                  : 'bg-bg-secondary border-border hover:bg-bg-tertiary hover:border-accent/40',
               )}
             >
               {/* Title row */}
@@ -136,7 +137,10 @@ export default function AnnouncementsPage() {
                   {item.isPinned && (
                     <Pin className="w-3.5 h-3.5 text-accent shrink-0 rotate-45" />
                   )}
-                  <h2 className="text-[15px] font-semibold text-text-primary leading-snug line-clamp-1">
+                  <h2 className={cn(
+                    'text-[15px] font-semibold leading-snug line-clamp-1',
+                    item.isPinned ? 'text-accent' : 'text-text-primary',
+                  )}>
                     {item.title}
                   </h2>
                 </div>

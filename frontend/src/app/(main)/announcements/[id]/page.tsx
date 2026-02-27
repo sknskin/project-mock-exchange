@@ -20,6 +20,7 @@ import {
   useToggleCommentLike,
   useIncrementViewCount,
   useAdjacentAnnouncements,
+  useTogglePin,
 } from '@/hooks/useAdmin';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuthStore } from '@/stores/auth';
@@ -41,6 +42,7 @@ export default function AnnouncementDetailPage({
   const { data: adjacent } = useAdjacentAnnouncements(id);
 
   const deleteAnnouncement = useDeleteAnnouncement();
+  const togglePin = useTogglePin();
   const addComment = useAddComment();
   const deleteComment = useDeleteComment();
   const toggleAnnouncementLike = useToggleAnnouncementLike();
@@ -226,9 +228,22 @@ export default function AnnouncementDetailPage({
                     {data.title}
                   </h2>
 
-                  {/* Edit / Delete buttons */}
+                  {/* Edit / Pin / Delete buttons */}
                   {canEditAnnouncement && (
                     <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        onClick={() => togglePin.mutate(id)}
+                        disabled={togglePin.isPending}
+                        className={cn(
+                          'flex items-center gap-1 px-3 py-1.5 rounded-lg text-[12px] font-semibold border transition-colors',
+                          data.isPinned
+                            ? 'text-accent border-accent/30 bg-accent/10 hover:bg-accent/20'
+                            : 'text-text-secondary border-border hover:bg-bg-tertiary hover:text-text-primary',
+                        )}
+                      >
+                        <Pin className="w-3 h-3 rotate-45" />
+                        {data.isPinned ? t('announce.unpin') : t('announce.pin')}
+                      </button>
                       <Link
                         href={`/announcements/${id}/edit`}
                         className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[12px] font-semibold text-text-secondary border border-border hover:bg-bg-tertiary hover:text-text-primary transition-colors"
