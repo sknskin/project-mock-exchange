@@ -12,6 +12,7 @@ import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Tabs from '@/components/ui/Tabs';
 import { usePlaceOrder } from '@/hooks/useOrders';
+import { usePortfolio } from '@/hooks/usePortfolio';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -44,6 +45,7 @@ export default function OrderForm({
   const [quantity, setQuantity] = useState('');
   const [price, setPrice] = useState(currentPrice.toString());
   const placeOrder = usePlaceOrder();
+  const { data: portfolio } = usePortfolio();
 
   const typeTabs = useMemo(
     () => typeTabKeys.map((i) => ({ key: i.key, label: t(i.i18nKey) })),
@@ -103,11 +105,24 @@ export default function OrderForm({
         placeholder={t('order.quantityPlaceholder')}
       />
 
-      <div className="flex justify-between py-3 text-[14px]">
-        <span className="text-text-tertiary">{t('order.estimatedTotal')}</span>
-        <span className="text-text-primary font-bold tabular-nums">
-          {fp(estimatedTotal)}
-        </span>
+      <div className="space-y-1.5 py-3">
+        <div className="flex justify-between text-[14px]">
+          <span className="text-text-tertiary">{t('order.estimatedTotal')}</span>
+          <span className="text-text-primary font-bold tabular-nums">
+            {fp(estimatedTotal)}
+          </span>
+        </div>
+        {portfolio && (
+          <div className="flex justify-between text-[13px]">
+            <span className="text-text-quaternary">{t('order.available')}</span>
+            <span className="text-text-tertiary tabular-nums">
+              {isBuy
+                ? fp(portfolio.cashBalance)
+                : `${(portfolio.holdings.find((h) => h.symbol === symbol)?.quantity ?? 0).toLocaleString(undefined, { maximumFractionDigits: 8 })} ${symbol.replace('USDT', '')}`
+              }
+            </span>
+          </div>
+        )}
       </div>
 
       <Button
