@@ -17,6 +17,7 @@ import { REDIS_CLIENT } from '../redis/redis.module';
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   private readonly userAuthUrl: string;
+  private readonly internalToken: string;
 
   constructor(
     configService: ConfigService,
@@ -28,6 +29,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       secretOrKey: configService.getOrThrow<string>('JWT_SECRET'),
     });
     this.userAuthUrl = `http://localhost:${configService.get('USER_AUTH_PORT', 3007)}`;
+    this.internalToken = configService.get<string>('INTERNAL_SERVICE_SECRET', '');
   }
 
   async validate(payload: JwtPayload): Promise<UserDto> {
@@ -43,7 +45,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       try {
         const res = await axios.get(
           `${this.userAuthUrl}/users/${payload.sub}/status`,
-          { timeout: 5000 },
+          {
+            timeout: 5000,
+            headers: { 'x-internal-token': this.internalToken },
+          },
         );
         statusStr = JSON.stringify(res.data);
         await this.redis.set(cacheKey, statusStr, 'EX', 60);
