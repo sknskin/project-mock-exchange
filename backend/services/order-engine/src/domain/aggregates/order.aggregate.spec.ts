@@ -223,6 +223,107 @@ describe('OrderAggregate', () => {
     });
   });
 
+  describe('trigger orders (STOP_LOSS / TAKE_PROFIT)', () => {
+    it('should create STOP_LOSS order with triggerPrice and triggerType', () => {
+      const order = placeOrder({
+        triggerPrice: '45000',
+        triggerType: 'STOP_LOSS',
+      });
+
+      expect(order.triggerPrice?.toString()).toBe('45000');
+      expect(order.triggerType).toBe('STOP_LOSS');
+      expect(order.triggered).toBe(false);
+    });
+
+    it('should create TAKE_PROFIT order with triggerPrice and triggerType', () => {
+      const order = placeOrder({
+        triggerPrice: '60000',
+        triggerType: 'TAKE_PROFIT',
+      });
+
+      expect(order.triggerPrice?.toString()).toBe('60000');
+      expect(order.triggerType).toBe('TAKE_PROFIT');
+      expect(order.triggered).toBe(false);
+    });
+
+    it('should return correct values from triggerPrice and triggerType getters', () => {
+      const stopLoss = placeOrder({
+        triggerPrice: '42000',
+        triggerType: 'STOP_LOSS',
+      });
+
+      expect(stopLoss.triggerPrice).not.toBeNull();
+      expect(stopLoss.triggerPrice?.toString()).toBe('42000');
+      expect(stopLoss.triggerType).toBe('STOP_LOSS');
+
+      const takeProfit = placeOrder({
+        orderId: 'order-2',
+        triggerPrice: '70000',
+        triggerType: 'TAKE_PROFIT',
+      });
+
+      expect(takeProfit.triggerPrice).not.toBeNull();
+      expect(takeProfit.triggerPrice?.toString()).toBe('70000');
+      expect(takeProfit.triggerType).toBe('TAKE_PROFIT');
+    });
+
+    it('should have null trigger fields for a normal order', () => {
+      const order = placeOrder();
+
+      expect(order.triggerPrice).toBeNull();
+      expect(order.triggerType).toBeNull();
+      expect(order.triggered).toBe(false);
+    });
+
+    it('should include triggerPrice and triggerType in ORDER_PLACED event data', () => {
+      const order = placeOrder({
+        triggerPrice: '45000',
+        triggerType: 'STOP_LOSS',
+      });
+
+      const events = order.uncommittedEvents;
+      expect(events).toHaveLength(1);
+      expect(events[0].eventType).toBe(ORDER_EVENT_TYPES.ORDER_PLACED);
+      expect(events[0].eventData).toMatchObject({
+        triggerPrice: '45000',
+        triggerType: 'STOP_LOSS',
+      });
+    });
+
+    it('should include null trigger fields in ORDER_PLACED event for normal orders', () => {
+      const order = placeOrder();
+
+      const events = order.uncommittedEvents;
+      expect(events[0].eventData.triggerPrice).toBeNull();
+      expect(events[0].eventData.triggerType).toBeNull();
+    });
+
+    it('should rebuild trigger fields from event history', () => {
+      const original = placeOrder({
+        triggerPrice: '45000',
+        triggerType: 'STOP_LOSS',
+      });
+
+      const events = original.uncommittedEvents.map((e, i) => ({
+        id: `${i}`,
+        streamId: 'order-order-1',
+        streamPosition: i,
+        globalPosition: BigInt(i),
+        eventType: e.eventType,
+        eventData: e.eventData,
+        metadata: {},
+        createdAt: new Date(),
+      }));
+
+      const rebuilt = new (OrderAggregate as any)();
+      rebuilt.loadFromHistory(events);
+
+      expect(rebuilt.triggerPrice?.toString()).toBe('45000');
+      expect(rebuilt.triggerType).toBe('STOP_LOSS');
+      expect(rebuilt.triggered).toBe(false);
+    });
+  });
+
   describe('event sourcing', () => {
     it('should rebuild state from event history', () => {
       const original = placeOrder();
