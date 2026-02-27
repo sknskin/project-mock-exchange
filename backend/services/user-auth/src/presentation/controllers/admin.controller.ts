@@ -23,9 +23,10 @@ import { JwtAuthGuard } from '../../infrastructure/config/jwt-auth.guard';
 import { CurrentUser } from '../../infrastructure/config/current-user.decorator';
 import { AdminService } from '../../application/services/admin.service';
 import { UserDto, USER_ROLE } from '@virtuex/common';
+import { InternalAuthGuard } from '../../common/guards/internal-auth.guard';
 
 @Controller('admin')
-@UseGuards(JwtAuthGuard)
+@UseGuards(InternalAuthGuard, JwtAuthGuard)
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
@@ -115,6 +116,16 @@ export class AdminController {
     this.assertAdmin(user);
     await this.adminService.deleteUser(id, user.role);
     return { success: true, message: 'User deleted' };
+  }
+
+  @Post('users/:id/unlock')
+  async unlockUser(
+    @CurrentUser() user: UserDto,
+    @Param('id') id: string,
+  ) {
+    this.assertAdmin(user);
+    const result = await this.adminService.unlockUser(id, user.role);
+    return { success: true, data: result };
   }
 
   @Patch('users/:id/role')

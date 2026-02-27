@@ -1,9 +1,9 @@
 /**
  * @file 로그인 페이지
- * @description 이메일/아이디와 비밀번호로 로그인하는 페이지
+ * @description 이메일/아이디와 비밀번호로 로그인 + SMS 2단계 인증
  *
  * @file Login Page
- * @description Login page with email/username and password authentication
+ * @description Login page with email/username, password, and SMS 2FA verification
  */
 'use client';
 
@@ -12,12 +12,12 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
+import LoginSmsModal from '@/components/auth/LoginSmsModal';
 import { useAuthStore } from '@/stores/auth';
 import { useTranslation } from '@/hooks/useTranslation';
 import VirtuExLogo from '@/components/ui/VirtuExLogo';
 import api from '@/lib/api';
 import type { AxiosError } from 'axios';
-import type { AuthResponse } from '@/types';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -28,6 +28,11 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const firstInputRef = useRef<HTMLInputElement>(null);
+
+  // SMS 인증 모달 상태 / SMS verification modal state
+  const [smsModalOpen, setSmsModalOpen] = useState(false);
+  const [sessionId, setSessionId] = useState('');
+  const [maskedPhone, setMaskedPhone] = useState('');
 
   // 첫번째 입력 필드 자동 포커스 / Auto-focus first input field
   useEffect(() => {
@@ -40,13 +45,18 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const { data: resp } = await api.post<AuthResponse>('/api/auth/login', {
+      const { data: resp } = await api.post('/api/auth/login', {
         identifier,
         password,
       });
+
       const payload = resp.data ?? resp;
-      login(payload.user, payload.accessToken);
-      router.push('/dashboard');
+
+      if (payload.requireSmsVerification) {
+        setSessionId(payload.sessionId);
+        setMaskedPhone(payload.maskedPhone);
+        setSmsModalOpen(true);
+      }
     } catch (err) {
       const axiosErr = err as AxiosError<{ message?: string }>;
       const msg = axiosErr.response?.data?.message;
@@ -56,12 +66,26 @@ export default function LoginPage() {
         setError(t('auth.login.rejected'));
       } else if (msg === 'Account is deactivated') {
         setError(t('auth.login.deactivated'));
+      } else if (msg === 'Account is locked') {
+        setError(t('auth.login.locked'));
       } else {
         setError(t('auth.login.error'));
       }
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSmsSuccess = (data: { user: any; accessToken: string }) => {
+    setSmsModalOpen(false);
+    login(data.user, data.accessToken);
+    router.push('/dashboard');
+  };
+
+  const handleSmsClose = () => {
+    setSmsModalOpen(false);
+    setSessionId('');
+    setMaskedPhone('');
   };
 
   return (
@@ -122,6 +146,14 @@ export default function LoginPage() {
           </Link>
         </p>
       </div>
+
+      <LoginSmsModal
+        isOpen={smsModalOpen}
+        sessionId={sessionId}
+        maskedPhone={maskedPhone}
+        onSuccess={handleSmsSuccess}
+        onClose={handleSmsClose}
+      />
     </div>
   );
 }

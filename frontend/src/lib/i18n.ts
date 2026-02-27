@@ -257,8 +257,22 @@ const translations = {
     'auth.login.pendingApproval': '승인 대기 중인 계정입니다. 관리자 승인 후 로그인할 수 있습니다.',
     'auth.login.rejected': '가입이 반려된 계정입니다. 관리자에게 문의하세요.',
     'auth.login.deactivated': '비활성화된 계정입니다. 관리자에게 문의하세요.',
+    'auth.login.locked': '계정이 잠겼습니다. 관리자에게 문의하세요.',
     'auth.login.noAccount': '계정이 없으신가요?',
     'auth.login.register': '회원가입',
+
+    // Auth - Login SMS Verification
+    'auth.loginSms.title': 'SMS 인증',
+    'auth.loginSms.description': '등록된 전화번호로 인증번호가 발송되었습니다.',
+    'auth.loginSms.codePlaceholder': '인증번호 6자리',
+    'auth.loginSms.verify': '인증하기',
+    'auth.loginSms.verifying': '인증 중...',
+    'auth.loginSms.cancel': '취소',
+    'auth.loginSms.expired': '인증 시간이 만료되었습니다.',
+    'auth.loginSms.invalidCode': '인증번호가 일치하지 않습니다.',
+    'auth.loginSms.attemptsLeft': '회 남음',
+    'auth.loginSms.accountLocked': '인증 실패 횟수 초과로 계정이 잠겼습니다. 관리자에게 문의하세요.',
+    'auth.loginSms.sessionExpired': '인증 세션이 만료되었습니다. 다시 로그인해주세요.',
 
     // Auth - Register
     'auth.register.title': '회원가입',
@@ -1412,8 +1426,22 @@ const translations = {
     'auth.login.pendingApproval': 'Your account is pending approval. You can log in after admin approval.',
     'auth.login.rejected': 'Your registration has been rejected. Please contact the administrator.',
     'auth.login.deactivated': 'Your account has been deactivated. Please contact the administrator.',
+    'auth.login.locked': 'Your account is locked. Please contact the administrator.',
     'auth.login.noAccount': "Don't have an account?",
     'auth.login.register': 'Sign Up',
+
+    // Auth - Login SMS Verification
+    'auth.loginSms.title': 'SMS Verification',
+    'auth.loginSms.description': 'A verification code has been sent to your registered phone number.',
+    'auth.loginSms.codePlaceholder': '6-digit code',
+    'auth.loginSms.verify': 'Verify',
+    'auth.loginSms.verifying': 'Verifying...',
+    'auth.loginSms.cancel': 'Cancel',
+    'auth.loginSms.expired': 'Verification time has expired.',
+    'auth.loginSms.invalidCode': 'Invalid verification code.',
+    'auth.loginSms.attemptsLeft': 'attempts left',
+    'auth.loginSms.accountLocked': 'Too many failed attempts. Your account has been locked. Please contact the administrator.',
+    'auth.loginSms.sessionExpired': 'Session expired. Please log in again.',
 
     // Auth - Register
     'auth.register.title': 'Sign Up',

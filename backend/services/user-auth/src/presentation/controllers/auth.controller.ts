@@ -22,10 +22,12 @@ import { AuthService } from '../../application/services/auth.service';
 import { SmsVerificationService } from '../../application/services/sms-verification.service';
 import { RegisterRequestDto } from '../dto/register.dto';
 import { LoginRequestDto } from '../dto/login.dto';
+import { VerifyLoginSmsDto } from '../dto/verify-login-sms.dto';
 import { SendCodeRequestDto, VerifyCodeRequestDto } from '../dto/sms-verification.dto';
 import { JwtAuthGuard } from '../../infrastructure/config/jwt-auth.guard';
 import { CurrentUser } from '../../infrastructure/config/current-user.decorator';
 import { UserDto } from '@virtuex/common';
+import { InternalAuthGuard } from '../../common/guards/internal-auth.guard';
 
 const REFRESH_TOKEN_COOKIE = 'refresh_token';
 const COOKIE_OPTIONS = {
@@ -36,6 +38,7 @@ const COOKIE_OPTIONS = {
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
 };
 
+@UseGuards(InternalAuthGuard)
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -62,23 +65,43 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  async login(
-    @Body() dto: LoginRequestDto,
-    @Res({ passthrough: true }) res: Response,
-  ) {
-    const { user, tokens, refreshToken } = await this.authService.login(
-      dto.identifier,
-      dto.password,
-    );
-
-    res.cookie(REFRESH_TOKEN_COOKIE, refreshToken, COOKIE_OPTIONS);
+  async login(@Body() dto: LoginRequestDto) {
+    const result = await this.authService.login(dto.identifier, dto.password);
 
     return {
       success: true,
       data: {
-        user,
-        accessToken: tokens.accessToken,
-        expiresIn: tokens.expiresIn,
+        requireSmsVerification: result.requireSmsVerification,
+        sessionId: result.sessionId,
+        maskedPhone: result.maskedPhone,
+      },
+    };
+  }
+
+  @Post('login/verify-sms')
+  @HttpCode(HttpStatus.OK)
+  async verifyLoginSms(
+    @Body() dto: VerifyLoginSmsDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.authService.verifyLoginSms(dto.sessionId, dto.code);
+
+    if (!result.success) {
+      return {
+        success: false,
+        attemptsLeft: result.attemptsLeft,
+        message: result.message,
+      };
+    }
+
+    res.cookie(REFRESH_TOKEN_COOKIE, result.refreshToken, COOKIE_OPTIONS);
+
+    return {
+      success: true,
+      data: {
+        user: result.user,
+        accessToken: result.tokens.accessToken,
+        expiresIn: result.tokens.expiresIn,
       },
     };
   }

@@ -174,6 +174,26 @@ export class AdminProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  @Post('users/:id/unlock')
+  @ApiOperation({ summary: '계정 잠금 해제', description: '관리자가 잠긴 사용자 계정의 잠금을 해제합니다' })
+  @ApiParam({ name: 'id', description: '사용자 ID' })
+  @ApiResponse({ status: 200, description: '잠금 해제 성공' })
+  @ApiResponse({ status: 401, description: '인증 필요' })
+  @ApiResponse({ status: 403, description: '관리자 권한 필요' })
+  @ApiResponse({ status: 404, description: '사용자를 찾을 수 없음' })
+  async unlockUser(
+    @Param('id') id: string,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    const result = await this.proxyService.forward('user-auth', {
+      method: 'POST',
+      url: `/admin/users/${id}/unlock`,
+      headers: { Authorization: req.headers.authorization || '' },
+    });
+    return res.status(result.status).json(result.data);
+  }
+
   @Delete('users/:id')
   @ApiOperation({ summary: '사용자 삭제', description: '관리자가 특정 사용자 계정을 영구 삭제합니다' })
   @ApiParam({ name: 'id', description: '사용자 ID' })

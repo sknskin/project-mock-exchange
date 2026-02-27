@@ -18,6 +18,7 @@ import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { randomBytes, createHash } from 'crypto';
 import { JwtPayload, AuthTokensDto, UserDto, USER_ROLE } from '@virtuex/common';
+import Redis from 'ioredis';
 import {
   USER_REPOSITORY,
   IUserRepository,
@@ -26,11 +27,15 @@ import { UserEntity } from '../../domain/entities/user.entity';
 import { ResidentNumber } from '../../domain/value-objects/resident-number.vo';
 import { SmsVerificationService } from './sms-verification.service';
 import { PrismaService } from '../../infrastructure/persistence/prisma/prisma.service';
+import { REDIS_CLIENT } from '../../infrastructure/redis/redis.module';
 
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
   private readonly SALT_ROUNDS = 12;
+
+  private readonly LOGIN_SESSION_TTL = 180; // 3분 / 3 minutes
+  private readonly LOGIN_MAX_ATTEMPTS = 5;
 
   constructor(
     @Inject(USER_REPOSITORY)
@@ -39,6 +44,7 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly prisma: PrismaService,
     private readonly smsVerificationService: SmsVerificationService,
+    @Inject(REDIS_CLIENT) private readonly redis: Redis,
   ) {}
 
   async register(params: {
@@ -87,7 +93,8 @@ export class AuthService {
     }
 
     const rrnSecret = this.configService.getOrThrow<string>('JWT_SECRET');
-    const encryptedRrn = rrn.encrypt(rrnSecret);
+    const encryptionSalt = this.configService.get<string>('ENCRYPTION_SALT', 'virtuex-salt');
+    const encryptedRrn = rrn.encrypt(rrnSecret, encryptionSalt);
 
     const passwordHash = await bcrypt.hash(password, this.SALT_ROUNDS);
     const user = UserEntity.create({
@@ -129,13 +136,22 @@ export class AuthService {
   async login(
     identifier: string,
     password: string,
-  ): Promise<{ user: UserDto; tokens: AuthTokensDto; refreshToken: string }> {
+  ): Promise<{ requireSmsVerification: true; sessionId: string; maskedPhone: string }> {
     let user = await this.userRepository.findByEmail(identifier);
     if (!user) {
       user = await this.userRepository.findByUsername(identifier);
     }
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
+    }
+
+    // 계정 잠금 확인 / Check account lock
+    const dbUser = await this.prisma.user.findUnique({
+      where: { id: user.id },
+      select: { lockedAt: true },
+    });
+    if (dbUser?.lockedAt) {
+      throw new UnauthorizedException('Account is locked');
     }
 
     // 미승인/반려 회원 로그인 거부 (SYSTEM 계정 예외) / Deny unapproved/rejected users (except SYSTEM)
@@ -155,19 +171,100 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    // 로그인 세션 생성 + SMS 인증 발송 / Create login session + send SMS verification
+    const sessionId = randomBytes(20).toString('hex');
+    const sessionKey = `login:session:${sessionId}`;
+    await this.redis.set(
+      sessionKey,
+      JSON.stringify({ userId: user.id, phone: user.phone, attemptsLeft: this.LOGIN_MAX_ATTEMPTS }),
+      'EX',
+      this.LOGIN_SESSION_TTL,
+    );
+
+    await this.smsVerificationService.sendVerificationCode(user.phone);
+
+    const maskedPhone = this.maskPhone(user.phone);
+    this.logger.log(`Login SMS verification requested for: ${user.email}`);
+
+    return { requireSmsVerification: true, sessionId, maskedPhone };
+  }
+
+  async verifyLoginSms(
+    sessionId: string,
+    code: string,
+  ): Promise<
+    | { success: true; user: UserDto; tokens: AuthTokensDto; refreshToken: string }
+    | { success: false; attemptsLeft: number; message: string }
+  > {
+    const sessionKey = `login:session:${sessionId}`;
+    const raw = await this.redis.get(sessionKey);
+    if (!raw) {
+      throw new UnauthorizedException('Session expired');
+    }
+
+    const session = JSON.parse(raw) as { userId: string; phone: string; attemptsLeft: number };
+
+    if (session.attemptsLeft <= 0) {
+      await this.lockUser(session.userId, 'SMS verification attempts exceeded');
+      await this.redis.del(sessionKey);
+      throw new UnauthorizedException('Account is locked');
+    }
+
+    // SMS 코드 검증 / Verify SMS code
+    const smsKey = `sms:verify:${session.phone}`;
+    const storedCode = await this.redis.get(smsKey);
+
+    if (!storedCode || storedCode !== code) {
+      const newAttemptsLeft = session.attemptsLeft - 1;
+
+      if (newAttemptsLeft <= 0) {
+        await this.lockUser(session.userId, 'SMS verification attempts exceeded');
+        await this.redis.del(sessionKey);
+        await this.redis.del(smsKey);
+        return { success: false, attemptsLeft: 0, message: '인증 실패 횟수 초과로 계정이 잠겼습니다.' };
+      }
+
+      await this.redis.set(
+        sessionKey,
+        JSON.stringify({ ...session, attemptsLeft: newAttemptsLeft }),
+        'EX',
+        await this.redis.ttl(sessionKey),
+      );
+
+      return { success: false, attemptsLeft: newAttemptsLeft, message: '인증번호가 일치하지 않습니다.' };
+    }
+
+    // 인증 성공: 세션 및 SMS 키 삭제, 토큰 발급 / Verification success: clean up, issue tokens
+    await this.redis.del(sessionKey);
+    await this.redis.del(smsKey);
+
+    const user = await this.userRepository.findById(session.userId);
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
     const tokens = await this.generateTokens(user);
     const refreshToken = await this.createRefreshToken(user.id);
 
     // 통계를 위한 로그인 기록 (Log login for statistics)
     await this.prisma.loginLog.create({ data: { userId: user.id } }).catch(() => {});
 
-    this.logger.log(`User logged in: ${user.email}`);
+    this.logger.log(`User logged in (2FA verified): ${user.email}`);
 
-    return {
-      user: this.toUserDto(user),
-      tokens,
-      refreshToken,
-    };
+    return { success: true, user: this.toUserDto(user), tokens, refreshToken };
+  }
+
+  private async lockUser(userId: string, reason: string): Promise<void> {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { lockedAt: new Date(), lockedReason: reason },
+    });
+    this.logger.warn(`Account locked: ${userId} - ${reason}`);
+  }
+
+  private maskPhone(phone: string): string {
+    if (phone.length < 8) return phone;
+    return phone.slice(0, 3) + '****' + phone.slice(-4);
   }
 
   async refreshTokens(

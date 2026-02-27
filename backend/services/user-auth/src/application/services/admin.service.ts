@@ -11,14 +11,20 @@ import {
   ForbiddenException,
   BadRequestException,
   Logger,
+  Inject,
 } from '@nestjs/common';
+import Redis from 'ioredis';
 import { PrismaService } from '../../infrastructure/persistence/prisma/prisma.service';
+import { REDIS_CLIENT } from '../../infrastructure/redis/redis.module';
 
 @Injectable()
 export class AdminService {
   private readonly logger = new Logger(AdminService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(REDIS_CLIENT) private readonly redis: Redis,
+  ) {}
 
   private readonly ROLE_ORDER: Record<string, number> = { SYSTEM: 0, ADMIN: 1, USER: 2 };
 
@@ -70,6 +76,7 @@ export class AdminService {
           isActive: true,
           approvalStatus: true,
           phone: true,
+          lockedAt: true,
           createdAt: true,
         },
       }),
@@ -111,6 +118,8 @@ export class AdminService {
         rejectedBy: true,
         rejectionNote: true,
         phone: true,
+        lockedAt: true,
+        lockedReason: true,
         address: true,
         addressDetail: true,
         zipCode: true,
@@ -209,6 +218,7 @@ export class AdminService {
       },
     });
 
+    await this.redis.del(`user:status:${id}`);
     this.logger.log(`User ${target.username} rejected by ${rejectedById}`);
     return updated;
   }
@@ -218,11 +228,13 @@ export class AdminService {
     if (!target) throw new NotFoundException('User not found');
     this.checkPermission(currentRole, target.role);
 
-    return this.prisma.user.update({
+    const result = await this.prisma.user.update({
       where: { id },
       data: { isActive: false },
       select: { id: true, username: true, isActive: true },
     });
+    await this.redis.del(`user:status:${id}`);
+    return result;
   }
 
   async activateUser(id: string, currentRole: string) {
@@ -230,11 +242,13 @@ export class AdminService {
     if (!target) throw new NotFoundException('User not found');
     this.checkPermission(currentRole, target.role);
 
-    return this.prisma.user.update({
+    const result = await this.prisma.user.update({
       where: { id },
       data: { isActive: true },
       select: { id: true, username: true, isActive: true },
     });
+    await this.redis.del(`user:status:${id}`);
+    return result;
   }
 
   async deleteUser(id: string, currentRole: string) {
@@ -275,6 +289,20 @@ export class AdminService {
 
     this.logger.log(`User ${user.username} role changed from ${user.role} to ${newRole}`);
     return updated;
+  }
+
+  async unlockUser(id: string, currentRole: string) {
+    const target = await this.prisma.user.findUnique({ where: { id } });
+    if (!target) throw new NotFoundException('User not found');
+    this.checkPermission(currentRole, target.role);
+
+    const result = await this.prisma.user.update({
+      where: { id },
+      data: { lockedAt: null, lockedReason: null },
+      select: { id: true, username: true, lockedAt: true },
+    });
+    this.logger.log(`User ${target.username} unlocked`);
+    return result;
   }
 
   private checkPermission(currentRole: string, targetRole: string) {

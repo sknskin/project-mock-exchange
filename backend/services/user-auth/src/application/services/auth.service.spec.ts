@@ -7,6 +7,7 @@ import { USER_REPOSITORY } from '../../domain/repositories/user.repository.inter
 import { UserEntity } from '../../domain/entities/user.entity';
 import { SmsVerificationService } from './sms-verification.service';
 import { PrismaService } from '../../infrastructure/persistence/prisma/prisma.service';
+import { REDIS_CLIENT } from '../../infrastructure/redis/redis.module';
 
 jest.mock('bcrypt', () => ({
   hash: jest.fn().mockResolvedValue('$2b$12$hashedpassword'),
@@ -32,7 +33,7 @@ const mockUser = new UserEntity(
   null,
   new Date(),
   new Date(),
-  '010-1234-5678',
+  '01012345678',
   'encrypted-rrn',
   '서울시 강남구',
   '101호',
@@ -66,7 +67,11 @@ const mockConfigService = {
 };
 
 const mockPrisma = {
-  user: { findMany: jest.fn().mockResolvedValue([]) },
+  user: {
+    findMany: jest.fn().mockResolvedValue([]),
+    findUnique: jest.fn().mockResolvedValue({ lockedAt: null }),
+    update: jest.fn().mockResolvedValue({}),
+  },
   notification: { createMany: jest.fn().mockResolvedValue({ count: 0 }) },
   refreshToken: {
     create: jest.fn().mockResolvedValue({}),
@@ -83,11 +88,19 @@ const mockSmsVerification = {
   verifyCode: jest.fn(),
 };
 
+const mockRedis = {
+  set: jest.fn().mockResolvedValue('OK'),
+  get: jest.fn().mockResolvedValue(null),
+  del: jest.fn().mockResolvedValue(1),
+  ttl: jest.fn().mockResolvedValue(180),
+};
+
 describe('AuthService', () => {
   let service: AuthService;
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    mockPrisma.user.findUnique.mockResolvedValue({ lockedAt: null });
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -97,6 +110,7 @@ describe('AuthService', () => {
         { provide: ConfigService, useValue: mockConfigService },
         { provide: PrismaService, useValue: mockPrisma },
         { provide: SmsVerificationService, useValue: mockSmsVerification },
+        { provide: REDIS_CLIENT, useValue: mockRedis },
       ],
     }).compile();
 
@@ -104,15 +118,17 @@ describe('AuthService', () => {
   });
 
   describe('login', () => {
-    it('should login with valid email and password', async () => {
+    it('should return SMS verification requirement on valid credentials', async () => {
       mockUserRepository.findByEmail.mockResolvedValue(mockUser);
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
 
       const result = await service.login('test@test.com', 'password123');
 
-      expect(result.user.id).toBe('user-1');
-      expect(result.user.email).toBe('test@test.com');
-      expect(result.tokens.accessToken).toBe('mock-access-token');
+      expect(result.requireSmsVerification).toBe(true);
+      expect(result.sessionId).toBeDefined();
+      expect(result.maskedPhone).toBe('010****5678');
+      expect(mockSmsVerification.sendVerificationCode).toHaveBeenCalledWith('01012345678');
+      expect(mockRedis.set).toHaveBeenCalled();
     });
 
     it('should login with valid username', async () => {
@@ -122,7 +138,8 @@ describe('AuthService', () => {
 
       const result = await service.login('testuser', 'password123');
 
-      expect(result.user.username).toBe('testuser');
+      expect(result.requireSmsVerification).toBe(true);
+      expect(result.sessionId).toBeDefined();
     });
 
     it('should throw on invalid credentials (user not found)', async () => {
@@ -140,6 +157,16 @@ describe('AuthService', () => {
 
       await expect(service.login('test@test.com', 'wrongpassword')).rejects.toThrow(
         UnauthorizedException,
+      );
+    });
+
+    it('should reject locked account', async () => {
+      mockUserRepository.findByEmail.mockResolvedValue(mockUser);
+      mockPrisma.user.findUnique.mockResolvedValue({ lockedAt: new Date() });
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+
+      await expect(service.login('test@test.com', 'password')).rejects.toThrow(
+        'Account is locked',
       );
     });
 
@@ -180,6 +207,66 @@ describe('AuthService', () => {
 
       await expect(service.login('rejected@test.com', 'password')).rejects.toThrow(
         'Account has been rejected',
+      );
+    });
+  });
+
+  describe('verifyLoginSms', () => {
+    it('should return tokens on valid SMS code', async () => {
+      const sessionData = JSON.stringify({ userId: 'user-1', phone: '01012345678', attemptsLeft: 5 });
+      mockRedis.get
+        .mockResolvedValueOnce(sessionData) // session lookup
+        .mockResolvedValueOnce('123456');   // SMS code lookup
+      mockUserRepository.findById.mockResolvedValue(mockUser);
+
+      const result = await service.verifyLoginSms('session-id', '123456');
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.user.id).toBe('user-1');
+        expect(result.tokens.accessToken).toBe('mock-access-token');
+      }
+    });
+
+    it('should decrement attempts on wrong code', async () => {
+      const sessionData = JSON.stringify({ userId: 'user-1', phone: '01012345678', attemptsLeft: 3 });
+      mockRedis.get
+        .mockResolvedValueOnce(sessionData) // session lookup
+        .mockResolvedValueOnce('123456');   // SMS code lookup
+
+      const result = await service.verifyLoginSms('session-id', '999999');
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.attemptsLeft).toBe(2);
+      }
+    });
+
+    it('should lock account when attempts exhausted', async () => {
+      const sessionData = JSON.stringify({ userId: 'user-1', phone: '01012345678', attemptsLeft: 1 });
+      mockRedis.get
+        .mockResolvedValueOnce(sessionData) // session lookup
+        .mockResolvedValueOnce('123456');   // SMS code lookup
+
+      const result = await service.verifyLoginSms('session-id', '999999');
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.attemptsLeft).toBe(0);
+      }
+      expect(mockPrisma.user.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'user-1' },
+          data: expect.objectContaining({ lockedReason: 'SMS verification attempts exceeded' }),
+        }),
+      );
+    });
+
+    it('should throw on expired session', async () => {
+      mockRedis.get.mockResolvedValueOnce(null);
+
+      await expect(service.verifyLoginSms('expired-session', '123456')).rejects.toThrow(
+        'Session expired',
       );
     });
   });
@@ -254,7 +341,7 @@ describe('AuthService', () => {
     it('should detect duplicate phone', async () => {
       mockUserRepository.findByPhone.mockResolvedValue(mockUser);
 
-      const result = await service.checkDuplicate('phone', '010-1234-5678');
+      const result = await service.checkDuplicate('phone', '01012345678');
 
       expect(result).toBe(true);
     });
