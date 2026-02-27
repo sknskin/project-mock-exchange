@@ -12,12 +12,14 @@ interface MessageInputProps {
   focusRef?: React.MutableRefObject<(() => void) | null>;
   participants?: ChatParticipant[];
   currentUserId?: string;
+  onTyping?: () => void;
 }
 
-export default function MessageInput({ onSend, disabled, focusRef, participants, currentUserId }: MessageInputProps) {
+export default function MessageInput({ onSend, disabled, focusRef, participants, currentUserId, onTyping }: MessageInputProps) {
   const { t } = useTranslation();
   const [text, setText] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
   const [mentionIndex, setMentionIndex] = useState(0);
   const [mentionStart, setMentionStart] = useState(-1);
@@ -141,6 +143,14 @@ export default function MessageInput({ onSend, disabled, focusRef, participants,
     const value = e.target.value;
     setText(value);
     detectMention(value, e.target.selectionStart ?? value.length);
+    // 타이핑 이벤트 디바운스 (2초) (Debounced typing event – 2s)
+    if (onTyping && value.trim()) {
+      if (!typingTimerRef.current) {
+        onTyping();
+      }
+      if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+      typingTimerRef.current = setTimeout(() => { typingTimerRef.current = null; }, 2000);
+    }
   };
 
   return (

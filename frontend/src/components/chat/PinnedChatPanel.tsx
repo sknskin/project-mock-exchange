@@ -11,7 +11,7 @@ import CreateRoomModal from './CreateRoomModal';
 export default function PinnedChatPanel() {
   const { isOpen, isPinned, view, activeRoomId, closeChat, backToList } = useChatStore();
   const leaveRoom = useLeaveRoom();
-  const { joinRoom, leaveRoom: leaveSocketRoom } = useChatSocket();
+  const { joinRoom, leaveRoom: leaveSocketRoom, emitTyping } = useChatSocket();
 
   const visible = isOpen && isPinned;
 
@@ -37,6 +37,7 @@ export default function PinnedChatPanel() {
           joinRoom={joinRoom}
           leaveSocketRoom={leaveSocketRoom}
           onLeaveRoom={handleLeaveRoom}
+          emitTyping={emitTyping}
         />
       )}
       {view === 'create-room' && <CreateRoomModal />}

@@ -18,7 +18,7 @@ type DragMode = 'move' | 'resize-se' | 'resize-sw' | 'resize-ne' | 'resize-nw' |
 export default function ChatPanel() {
   const { isOpen, isPinned, view, activeRoomId, position, size, closeChat, backToList, setPosition, setSize } = useChatStore();
   const leaveRoom = useLeaveRoom();
-  const { joinRoom, leaveRoom: leaveSocketRoom } = useChatSocket();
+  const { joinRoom, leaveRoom: leaveSocketRoom, emitTyping } = useChatSocket();
 
   const panelRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{
@@ -170,6 +170,7 @@ export default function ChatPanel() {
               joinRoom={joinRoom}
               leaveSocketRoom={leaveSocketRoom}
               onLeaveRoom={handleLeaveRoom}
+              emitTyping={emitTyping}
             />
           )}
           {view === 'create-room' && <CreateRoomModal />}

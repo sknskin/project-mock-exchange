@@ -7,7 +7,7 @@
  */
 'use client';
 
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useQueryClient, QueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth';
@@ -22,6 +22,50 @@ const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:3000';
 let sharedSocket: Socket | null = null;
 let activeToken: string | null = null;
 let refCount = 0;
+
+/* ── 타이핑 상태 관리 / Typing state management ── */
+const typingMap = new Map<string, Map<string, { username: string; timer: ReturnType<typeof setTimeout> }>>();
+const typingListeners = new Set<() => void>();
+
+function setTypingUser(roomId: string, userId: string, username: string) {
+  if (!typingMap.has(roomId)) typingMap.set(roomId, new Map());
+  const room = typingMap.get(roomId)!;
+  const existing = room.get(userId);
+  if (existing) clearTimeout(existing.timer);
+  const timer = setTimeout(() => {
+    room.delete(userId);
+    if (room.size === 0) typingMap.delete(roomId);
+    typingListeners.forEach((cb) => cb());
+  }, 3000);
+  room.set(userId, { username, timer });
+  typingListeners.forEach((cb) => cb());
+}
+
+function getTypingUsers(roomId: string): string[] {
+  const room = typingMap.get(roomId);
+  if (!room) return [];
+  return Array.from(room.values()).map((v) => v.username);
+}
+
+/** 특정 방의 타이핑 중인 사용자 목록 훅 (Hook: typing users for a room) */
+export function useTypingUsers(roomId: string): string[] {
+  const [users, setUsers] = useState<string[]>([]);
+
+  useEffect(() => {
+    const cb = () => {
+      const next = getTypingUsers(roomId);
+      setUsers((prev) => {
+        if (prev.length === next.length && prev.every((u, i) => u === next[i])) return prev;
+        return next;
+      });
+    };
+    typingListeners.add(cb);
+    cb();
+    return () => { typingListeners.delete(cb); };
+  }, [roomId]);
+
+  return users;
+}
 
 function bindListeners(socket: Socket, qc: QueryClient) {
   socket.on('connect', () => {
@@ -47,7 +91,8 @@ function bindListeners(socket: Socket, qc: QueryClient) {
     qc.invalidateQueries({ queryKey: ['chat-rooms'] });
     const me = useAuthStore.getState().user;
     if (data.senderId && me?.id === data.senderId) return;
-    const locale = useSettingsStore.getState().locale;
+    const { locale, notificationPrefs: prefs } = useSettingsStore.getState();
+    if (!prefs.chat) return;
     useLiveToastStore.getState().addToast({
       category: 'chat-message',
       title: data.senderName || data.senderUsername || t('liveToast.chatMessage', locale),
@@ -68,13 +113,21 @@ function bindListeners(socket: Socket, qc: QueryClient) {
   // 채팅방 초대 (Chat room invitation)
   socket.on('chat:invited', (data: { roomId?: string }) => {
     qc.invalidateQueries({ queryKey: ['chat-rooms'] });
-    const locale = useSettingsStore.getState().locale;
+    const { locale, notificationPrefs: prefs } = useSettingsStore.getState();
+    if (!prefs.chat) return;
     useLiveToastStore.getState().addToast({
       category: 'chat-invited',
       title: t('liveToast.chatInvited', locale),
       message: t('liveToast.chatInvitedMsg', locale),
       chatRoomId: data.roomId,
     });
+  });
+
+  // 타이핑 인디케이터 (Typing indicator)
+  socket.on('chat:typing', (data: { roomId: string; userId: string; username: string }) => {
+    if (data.roomId && data.userId && data.username) {
+      setTypingUser(data.roomId, data.userId, data.username);
+    }
   });
 
   // 참여자 변경 (Participant update – invite/leave/kick)
@@ -86,7 +139,8 @@ function bindListeners(socket: Socket, qc: QueryClient) {
   // 채팅방 퇴장 (Kicked from chat room)
   socket.on('chat:kicked', () => {
     qc.invalidateQueries({ queryKey: ['chat-rooms'] });
-    const locale = useSettingsStore.getState().locale;
+    const { locale, notificationPrefs: prefs } = useSettingsStore.getState();
+    if (!prefs.chat) return;
     useLiveToastStore.getState().addToast({
       category: 'chat-kicked',
       title: t('liveToast.chatKicked', locale),
@@ -98,7 +152,8 @@ function bindListeners(socket: Socket, qc: QueryClient) {
   socket.on('notification:trade', (data: { title?: string; message?: string }) => {
     qc.invalidateQueries({ queryKey: ['notifications'] });
     qc.invalidateQueries({ queryKey: ['unread-count'] });
-    const locale = useSettingsStore.getState().locale;
+    const { locale, notificationPrefs: prefs } = useSettingsStore.getState();
+    if (!prefs.trade) return;
     useLiveToastStore.getState().addToast({
       category: 'trade',
       title: data.title || t('liveToast.trade', locale),
@@ -112,7 +167,8 @@ function bindListeners(socket: Socket, qc: QueryClient) {
     qc.invalidateQueries({ queryKey: ['notifications'] });
     qc.invalidateQueries({ queryKey: ['unread-count'] });
     qc.invalidateQueries({ queryKey: ['price-alerts'] });
-    const locale = useSettingsStore.getState().locale;
+    const { locale, notificationPrefs: prefs } = useSettingsStore.getState();
+    if (!prefs.priceAlert) return;
     useLiveToastStore.getState().addToast({
       category: 'price-alert',
       title: data.title || t('liveToast.priceAlert', locale),
@@ -127,7 +183,8 @@ function bindListeners(socket: Socket, qc: QueryClient) {
   }) => {
     const me = useAuthStore.getState().user;
     if (data.authorId && me?.id === data.authorId) return;
-    const locale = useSettingsStore.getState().locale;
+    const { locale, notificationPrefs: prefs } = useSettingsStore.getState();
+    if (!prefs.announcement) return;
     useLiveToastStore.getState().addToast({
       category: 'announcement-new',
       title: t('liveToast.announcementNew', locale),
@@ -142,7 +199,8 @@ function bindListeners(socket: Socket, qc: QueryClient) {
   }) => {
     const me = useAuthStore.getState().user;
     if (data.authorId && me?.id === data.authorId) return;
-    const locale = useSettingsStore.getState().locale;
+    const { locale, notificationPrefs: prefs } = useSettingsStore.getState();
+    if (!prefs.announcement) return;
     useLiveToastStore.getState().addToast({
       category: 'announcement-updated',
       title: t('liveToast.announcementUpdated', locale),
@@ -153,7 +211,8 @@ function bindListeners(socket: Socket, qc: QueryClient) {
 
   // 가입 승인 (Registration approved)
   socket.on('notification:registration-approved', () => {
-    const locale = useSettingsStore.getState().locale;
+    const { locale, notificationPrefs: prefs } = useSettingsStore.getState();
+    if (!prefs.registration) return;
     useLiveToastStore.getState().addToast({
       category: 'registration-approved',
       title: t('liveToast.registrationApproved', locale),
@@ -164,7 +223,8 @@ function bindListeners(socket: Socket, qc: QueryClient) {
 
   // 가입 반려 (Registration rejected)
   socket.on('notification:registration-rejected', (data: { reason?: string }) => {
-    const locale = useSettingsStore.getState().locale;
+    const { locale, notificationPrefs: prefs } = useSettingsStore.getState();
+    if (!prefs.registration) return;
     useLiveToastStore.getState().addToast({
       category: 'registration-rejected',
       title: t('liveToast.registrationRejected', locale),
@@ -176,7 +236,8 @@ function bindListeners(socket: Socket, qc: QueryClient) {
   socket.on('notification:registration-request', (data: { username?: string; name?: string }) => {
     const me = useAuthStore.getState().user;
     if (!me || (me.role !== 'ADMIN' && me.role !== 'SYSTEM')) return;
-    const locale = useSettingsStore.getState().locale;
+    const { locale, notificationPrefs: prefs } = useSettingsStore.getState();
+    if (!prefs.registration) return;
     useLiveToastStore.getState().addToast({
       category: 'registration-request',
       title: t('liveToast.registrationRequest', locale),
