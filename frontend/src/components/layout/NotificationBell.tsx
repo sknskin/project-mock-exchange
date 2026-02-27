@@ -23,7 +23,7 @@ import { cn } from '@/lib/format';
 import { useChatStore } from '@/stores/chat';
 import type { NotificationItem } from '@/types';
 
-const DROPDOWN_LIMIT = 20;
+const DROPDOWN_LIMIT = 50;
 
 function getRelativeTime(dateString: string, locale: string): string {
   const date = new Date(dateString);
