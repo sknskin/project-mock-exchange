@@ -1,0 +1,445 @@
+/**
+ * @file 포트폴리오 분석 컴포넌트
+ * @description 자산 배분 파이차트, 손익 분석, 종목별 수익률, 일별 손익 차트
+ *
+ * @file Portfolio Analytics Component
+ * @description Asset allocation pie chart, P&L breakdown, per-asset performance, daily P&L chart
+ */
+'use client';
+
+import { useMemo } from 'react';
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  Tooltip,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  ReferenceLine,
+} from 'recharts';
+import { cn, formatCurrencyDisplay, formatPercent } from '@/lib/format';
+import { useTranslation } from '@/hooks/useTranslation';
+import { useExchangeRate } from '@/hooks/useExchangeRate';
+import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
+import { useOrders } from '@/hooks/useOrders';
+import { PieChart as PieChartIcon, TrendingUp, BarChart3, Activity } from 'lucide-react';
+import type { Portfolio } from '@/types';
+
+interface PortfolioAnalyticsProps {
+  portfolio: Portfolio;
+}
+
+const CHART_COLORS = [
+  '#3182F6', '#F04452', '#00BFA5', '#FF8A00', '#8B5CF6',
+  '#EC4899', '#06B6D4', '#F59E0B', '#6366F1', '#10B981',
+];
+
+export default function PortfolioAnalytics({ portfolio }: PortfolioAnalyticsProps) {
+  const { t } = useTranslation();
+  const { data: rateData } = useExchangeRate();
+  const { display: currencyMode } = useCurrencyDisplay();
+  const rate = rateData?.rate;
+  const fmt = (v: number) => formatCurrencyDisplay(v, currencyMode, rate);
+  const { data: filledOrders } = useOrders('FILLED');
+
+  // --- Asset Allocation Pie Data ---
+  const allocationData = useMemo(() => {
+    const items: { name: string; value: number; color: string }[] = [];
+
+    portfolio.holdings
+      .slice()
+      .sort((a, b) => b.value - a.value)
+      .forEach((h, i) => {
+        items.push({
+          name: h.name || h.symbol,
+          value: h.value,
+          color: CHART_COLORS[i % CHART_COLORS.length],
+        });
+      });
+
+    if (portfolio.cashBalance > 0) {
+      items.push({
+        name: t('portfolio.analytics.cash'),
+        value: portfolio.cashBalance,
+        color: '#4E5968',
+      });
+    }
+
+    return items;
+  }, [portfolio, t]);
+
+  // --- Unrealized P&L (from current holdings) ---
+  const unrealizedPnl = useMemo(() => {
+    return portfolio.holdings.reduce((sum, h) => sum + h.pnl, 0);
+  }, [portfolio.holdings]);
+
+  // --- Realized P&L (from filled sell orders) ---
+  const realizedPnl = useMemo(() => {
+    if (!filledOrders) return 0;
+    return filledOrders
+      .filter((o) => o.side === 'SELL' && o.filledPrice != null && o.filledQuantity > 0)
+      .reduce((sum, o) => {
+        // Approximate realized: sold value - cost basis (we use filled price vs order price as proxy)
+        const sellValue = (o.filledPrice ?? 0) * o.filledQuantity;
+        const costBasis = (o.price ?? o.filledPrice ?? 0) * o.filledQuantity;
+        return sum + (sellValue - costBasis);
+      }, 0);
+  }, [filledOrders]);
+
+  const totalPnl = realizedPnl + unrealizedPnl;
+
+  // --- Daily P&L from filled orders ---
+  const dailyPnlData = useMemo(() => {
+    if (!filledOrders || filledOrders.length === 0) return [];
+
+    // Group orders by date and calculate daily cumulative value
+    const dailyMap = new Map<string, { buys: number; sells: number }>();
+
+    filledOrders.forEach((order) => {
+      const date = new Date(order.createdAt).toISOString().split('T')[0];
+      const existing = dailyMap.get(date) || { buys: 0, sells: 0 };
+      const value = (order.filledPrice ?? order.price ?? 0) * (order.filledQuantity || order.quantity);
+
+      if (order.side === 'BUY') {
+        existing.buys += value;
+      } else {
+        existing.sells += value;
+      }
+      dailyMap.set(date, existing);
+    });
+
+    // Calculate daily net P&L (sells - buys as a proxy for daily profit)
+    const entries = Array.from(dailyMap.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, { buys, sells }]) => ({
+        date: date.slice(5), // MM-DD format
+        pnl: sells - buys,
+      }));
+
+    // Cumulative P&L
+    let cumulative = 0;
+    return entries.map((entry) => {
+      cumulative += entry.pnl;
+      return { ...entry, cumPnl: cumulative };
+    });
+  }, [filledOrders]);
+
+  // --- No data state ---
+  if (portfolio.holdings.length === 0 && (!filledOrders || filledOrders.length === 0)) {
+    return (
+      <div className="py-24 flex flex-col items-center text-center">
+        <BarChart3 className="w-10 h-10 text-text-quaternary/40 mb-3" />
+        <p className="text-text-quaternary text-[14px] whitespace-pre-line">
+          {t('portfolio.analytics.noData')}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6 pb-8">
+      {/* Asset Allocation Pie Chart */}
+      {allocationData.length > 0 && (
+        <section className="py-4 border-b border-border/60">
+          <div className="flex items-center gap-2 mb-1">
+            <PieChartIcon className="w-4 h-4 text-accent" />
+            <h2 className="text-[14px] font-bold text-text-secondary">
+              {t('portfolio.analytics.assetAllocation')}
+            </h2>
+          </div>
+          <p className="text-[12px] text-text-quaternary mb-4">
+            {t('portfolio.analytics.assetAllocationDesc')}
+          </p>
+
+          <div className="flex flex-col sm:flex-row items-center gap-4">
+            {/* Pie Chart */}
+            <div className="w-[180px] h-[180px] shrink-0">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={allocationData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={80}
+                    dataKey="value"
+                    stroke="none"
+                  >
+                    {allocationData.map((entry, index) => (
+                      <Cell key={index} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#1E1E24',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      borderRadius: '8px',
+                      fontSize: '12px',
+                      color: '#ECECEC',
+                    }}
+                    formatter={(value?: number) => [fmt(value ?? 0), '']}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Legend */}
+            <div className="flex-1 w-full space-y-2">
+              {allocationData.map((item, i) => {
+                const percent = portfolio.totalValue > 0
+                  ? ((item.value / portfolio.totalValue) * 100).toFixed(1)
+                  : '0.0';
+                return (
+                  <div key={i} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="w-2.5 h-2.5 rounded-full shrink-0"
+                        style={{ backgroundColor: item.color }}
+                      />
+                      <span className="text-[13px] text-text-primary truncate max-w-[140px]">
+                        {item.name}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-[12px] text-text-tertiary tabular-nums">
+                        {percent}%
+                      </span>
+                      <span className="text-[12px] text-text-secondary font-medium tabular-nums min-w-[80px] text-right">
+                        {fmt(item.value)}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* P&L Breakdown */}
+      <section className="py-4 border-b border-border/60">
+        <div className="flex items-center gap-2 mb-4">
+          <TrendingUp className="w-4 h-4 text-accent" />
+          <h2 className="text-[14px] font-bold text-text-secondary">
+            {t('portfolio.analytics.pnlBreakdown')}
+          </h2>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {/* Realized P&L */}
+          <div className="p-4 rounded-xl bg-bg-secondary">
+            <div className="text-[12px] text-text-tertiary mb-1">
+              {t('portfolio.analytics.realizedPnl')}
+            </div>
+            <div
+              className={cn(
+                'text-[18px] font-bold tabular-nums',
+                realizedPnl >= 0 ? 'text-rise' : 'text-fall',
+              )}
+            >
+              {realizedPnl >= 0 ? '+' : ''}{fmt(realizedPnl)}
+            </div>
+            <div className="text-[11px] text-text-quaternary mt-1">
+              {t('portfolio.analytics.realizedDesc')}
+            </div>
+          </div>
+
+          {/* Unrealized P&L */}
+          <div className="p-4 rounded-xl bg-bg-secondary">
+            <div className="text-[12px] text-text-tertiary mb-1">
+              {t('portfolio.analytics.unrealizedPnl')}
+            </div>
+            <div
+              className={cn(
+                'text-[18px] font-bold tabular-nums',
+                unrealizedPnl >= 0 ? 'text-rise' : 'text-fall',
+              )}
+            >
+              {unrealizedPnl >= 0 ? '+' : ''}{fmt(unrealizedPnl)}
+            </div>
+            <div className="text-[11px] text-text-quaternary mt-1">
+              {t('portfolio.analytics.unrealizedDesc')}
+            </div>
+          </div>
+
+          {/* Total P&L */}
+          <div className="p-4 rounded-xl bg-bg-secondary">
+            <div className="text-[12px] text-text-tertiary mb-1">
+              {t('portfolio.analytics.totalPnl')}
+            </div>
+            <div
+              className={cn(
+                'text-[18px] font-bold tabular-nums',
+                totalPnl >= 0 ? 'text-rise' : 'text-fall',
+              )}
+            >
+              {totalPnl >= 0 ? '+' : ''}{fmt(totalPnl)}
+            </div>
+            <div className="flex items-center gap-1.5 mt-1">
+              <span
+                className={cn(
+                  'text-[11px] font-bold px-1.5 py-0.5 rounded',
+                  totalPnl >= 0 ? 'bg-rise/12 text-rise' : 'bg-fall/12 text-fall',
+                )}
+              >
+                {totalPnl >= 0
+                  ? t('portfolio.analytics.profit')
+                  : t('portfolio.analytics.loss')}
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Per-Asset Performance */}
+      {portfolio.holdings.length > 0 && (
+        <section className="py-4 border-b border-border/60">
+          <div className="flex items-center gap-2 mb-4">
+            <BarChart3 className="w-4 h-4 text-accent" />
+            <h2 className="text-[14px] font-bold text-text-secondary">
+              {t('portfolio.analytics.assetPerformance')}
+            </h2>
+          </div>
+
+          <div className="space-y-3">
+            {portfolio.holdings
+              .slice()
+              .sort((a, b) => b.pnlPercent - a.pnlPercent)
+              .map((holding) => {
+                const isPositive = holding.pnl >= 0;
+                const invested = holding.averagePrice * holding.quantity;
+                const barWidth = Math.min(Math.abs(holding.pnlPercent), 100);
+
+                return (
+                  <div
+                    key={holding.symbol}
+                    className="p-3 rounded-xl bg-bg-secondary"
+                  >
+                    {/* Header row */}
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[14px] font-semibold text-text-primary">
+                          {holding.name || holding.symbol}
+                        </span>
+                        <span className="text-[11px] text-text-quaternary">
+                          {holding.symbol}
+                        </span>
+                      </div>
+                      <span
+                        className={cn(
+                          'text-[14px] font-bold tabular-nums',
+                          isPositive ? 'text-rise' : 'text-fall',
+                        )}
+                      >
+                        {formatPercent(holding.pnlPercent)}
+                      </span>
+                    </div>
+
+                    {/* Performance bar */}
+                    <div className="h-2 rounded-full bg-bg-tertiary overflow-hidden mb-2">
+                      <div
+                        className={cn(
+                          'h-full rounded-full transition-all',
+                          isPositive ? 'bg-rise' : 'bg-fall',
+                        )}
+                        style={{ width: `${Math.max(barWidth, 2)}%` }}
+                      />
+                    </div>
+
+                    {/* Detail row */}
+                    <div className="flex items-center justify-between text-[12px]">
+                      <div className="flex items-center gap-4">
+                        <span className="text-text-quaternary">
+                          {t('portfolio.analytics.invested')}{' '}
+                          <span className="text-text-tertiary font-medium tabular-nums">
+                            {fmt(invested)}
+                          </span>
+                        </span>
+                        <span className="text-text-quaternary">
+                          {t('portfolio.analytics.currentValue')}{' '}
+                          <span className="text-text-tertiary font-medium tabular-nums">
+                            {fmt(holding.value)}
+                          </span>
+                        </span>
+                      </div>
+                      <span
+                        className={cn(
+                          'font-semibold tabular-nums',
+                          isPositive ? 'text-rise' : 'text-fall',
+                        )}
+                      >
+                        {isPositive ? '+' : ''}{fmt(holding.pnl)}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
+        </section>
+      )}
+
+      {/* Daily P&L Line Chart */}
+      {dailyPnlData.length > 1 && (
+        <section className="py-4">
+          <div className="flex items-center gap-2 mb-1">
+            <Activity className="w-4 h-4 text-accent" />
+            <h2 className="text-[14px] font-bold text-text-secondary">
+              {t('portfolio.analytics.dailyPnl')}
+            </h2>
+          </div>
+          <p className="text-[12px] text-text-quaternary mb-4">
+            {t('portfolio.analytics.dailyPnlDesc')}
+          </p>
+
+          <div className="w-full h-[200px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={dailyPnlData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 11, fill: '#6B7683' }}
+                  axisLine={{ stroke: 'rgba(255,255,255,0.08)' }}
+                  tickLine={false}
+                />
+                <YAxis
+                  tick={{ fontSize: 11, fill: '#6B7683' }}
+                  axisLine={false}
+                  tickLine={false}
+                  tickFormatter={(v) => {
+                    if (Math.abs(v) >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M`;
+                    if (Math.abs(v) >= 1_000) return `${(v / 1_000).toFixed(0)}K`;
+                    return v.toString();
+                  }}
+                />
+                <ReferenceLine y={0} stroke="rgba(255,255,255,0.15)" strokeDasharray="3 3" />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#1E1E24',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: '8px',
+                    fontSize: '12px',
+                    color: '#ECECEC',
+                  }}
+                  formatter={(value?: number) => [fmt(value ?? 0), t('portfolio.analytics.totalPnl')]}
+                  labelFormatter={(label) => label}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="cumPnl"
+                  stroke="#3182F6"
+                  strokeWidth={2}
+                  dot={false}
+                  activeDot={{ r: 4, fill: '#3182F6', stroke: '#1E1E24', strokeWidth: 2 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </section>
+      )}
+    </div>
+  );
+}
