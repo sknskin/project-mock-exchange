@@ -20,8 +20,8 @@ export default function BottomNav() {
   const { t } = useTranslation();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-bg-primary/95 backdrop-blur-md border-t border-border lg:hidden safe-bottom">
-      <div className="flex items-center justify-around h-[52px]">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-bg-primary/95 backdrop-blur-md border-t border-border lg:hidden safe-bottom landscape-hide-sm" role="navigation" aria-label="Bottom navigation">
+      <div className="flex items-center justify-around h-[48px] md:h-[52px]">
         {/* 항상 표시 / Always visible */}
         <Link
           href="/dashboard"

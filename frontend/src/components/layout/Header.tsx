@@ -16,7 +16,7 @@ import { useAuthStore } from '@/stores/auth';
 import { useSettingsStore } from '@/stores/settings';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/format';
-import { LogOut, Search, Menu, X, Megaphone, Newspaper, Users, BarChart3, LayoutDashboard, Briefcase, ClipboardList, Trophy, ChevronDown, User, Sun, Moon, Globe, HelpCircle } from 'lucide-react';
+import { LogOut, Search, Menu, X, Megaphone, Newspaper, Users, BarChart3, LayoutDashboard, Briefcase, ClipboardList, Trophy, ChevronDown, User, Sun, Moon, Globe, HelpCircle, Settings, Activity } from 'lucide-react';
 import VirtuExLogo from '@/components/ui/VirtuExLogo';
 import NotificationBell from '@/components/layout/NotificationBell';
 import ChatButton from '@/components/chat/ChatButton';
@@ -56,6 +56,7 @@ export default function Header() {
           { href: '/portfolio', label: t('nav.portfolio'), icon: Briefcase },
           { href: '/orders', label: t('nav.orders'), icon: ClipboardList },
           { href: '/leaderboard', label: t('nav.leaderboard'), icon: Trophy },
+          { href: '/community', label: t('nav.community'), icon: Users },
         ]
       : []),
     ...(isAuthenticated ? [{ href: '/announcements', label: t('nav.announcements'), icon: Megaphone }] : []),
@@ -63,6 +64,8 @@ export default function Header() {
       ? [
           { href: '/admin/users', label: t('nav.userManagement'), icon: Users },
           { href: '/admin/stats', label: t('nav.statistics'), icon: BarChart3 },
+          { href: '/admin/settings', label: t('nav.settings'), icon: Settings },
+          { href: '/admin/health', label: t('nav.health'), icon: Activity },
         ]
       : []),
   ];
@@ -102,21 +105,21 @@ export default function Header() {
     <>
       <header className="fixed top-0 left-0 right-0 z-40 bg-bg-primary/95 backdrop-blur-md border-b border-border">
         <div className="max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-10 h-[60px] flex items-center justify-between">
-          <div className="flex items-center gap-10">
+          <div className="flex items-center gap-6 lg:gap-10">
             <Link href="/" className="flex items-center gap-2">
               <VirtuExLogo size={24} />
-              <span className="font-extrabold text-[20px] text-text-primary tracking-tight">
+              <span className="font-extrabold text-[20px] text-text-primary tracking-tight hidden sm:inline">
                 VirtuEx
               </span>
             </Link>
 
             {/* 데스크톱 네비게이션: 모든 항목 렌더, CSS 클래스로 가시성 제어 */}
             {/* Desktop nav: all items rendered, CSS classes control visibility */}
-            <nav className="hidden lg:flex items-center gap-6">
+            <nav className="hidden lg:flex items-center gap-4 xl:gap-6" role="navigation" aria-label="Main navigation">
               <Link
                 href="/dashboard"
                 className={cn(
-                  'text-[14px] font-medium transition-colors py-1',
+                  'text-[13px] xl:text-[14px] font-medium transition-colors py-1 whitespace-nowrap',
                   pathname === '/dashboard' || pathname.startsWith('/dashboard/')
                     ? 'text-text-primary' : 'text-text-tertiary hover:text-text-primary',
                 )}
@@ -127,7 +130,7 @@ export default function Header() {
               <Link
                 href="/news"
                 className={cn(
-                  'text-[14px] font-medium transition-colors py-1',
+                  'text-[13px] xl:text-[14px] font-medium transition-colors py-1 whitespace-nowrap',
                   pathname === '/news' || pathname.startsWith('/news/')
                     ? 'text-text-primary' : 'text-text-tertiary hover:text-text-primary',
                 )}
@@ -140,7 +143,7 @@ export default function Header() {
                 <Link
                   href="/help"
                   className={cn(
-                    'text-[14px] font-medium transition-colors py-1',
+                    'text-[13px] xl:text-[14px] font-medium transition-colors py-1 whitespace-nowrap',
                     pathname === '/help' || pathname.startsWith('/help/')
                       ? 'text-text-primary' : 'text-text-tertiary hover:text-text-primary',
                   )}
@@ -154,7 +157,7 @@ export default function Header() {
                 <Link
                   href="/portfolio"
                   className={cn(
-                    'text-[14px] font-medium transition-colors py-1',
+                    'text-[13px] xl:text-[14px] font-medium transition-colors py-1 whitespace-nowrap',
                     pathname === '/portfolio' || pathname.startsWith('/portfolio/')
                       ? 'text-text-primary' : 'text-text-tertiary hover:text-text-primary',
                   )}
@@ -164,7 +167,7 @@ export default function Header() {
                 <Link
                   href="/orders"
                   className={cn(
-                    'text-[14px] font-medium transition-colors py-1',
+                    'text-[13px] xl:text-[14px] font-medium transition-colors py-1 whitespace-nowrap',
                     pathname === '/orders' || pathname.startsWith('/orders/')
                       ? 'text-text-primary' : 'text-text-tertiary hover:text-text-primary',
                   )}
@@ -174,12 +177,22 @@ export default function Header() {
                 <Link
                   href="/leaderboard"
                   className={cn(
-                    'text-[14px] font-medium transition-colors py-1',
+                    'text-[13px] xl:text-[14px] font-medium transition-colors py-1 whitespace-nowrap',
                     pathname === '/leaderboard' || pathname.startsWith('/leaderboard/')
                       ? 'text-text-primary' : 'text-text-tertiary hover:text-text-primary',
                   )}
                 >
                   {t('nav.leaderboard')}
+                </Link>
+                <Link
+                  href="/community"
+                  className={cn(
+                    'text-[13px] xl:text-[14px] font-medium transition-colors py-1 whitespace-nowrap',
+                    pathname === '/community' || pathname.startsWith('/community/')
+                      ? 'text-text-primary' : 'text-text-tertiary hover:text-text-primary',
+                  )}
+                >
+                  {t('nav.community')}
                 </Link>
               </div>
 
@@ -187,7 +200,7 @@ export default function Header() {
                 <Link
                   href="/announcements"
                   className={cn(
-                    'text-[14px] font-medium transition-colors py-1',
+                    'text-[13px] xl:text-[14px] font-medium transition-colors py-1 whitespace-nowrap',
                     pathname === '/announcements' || pathname.startsWith('/announcements/')
                       ? 'text-text-primary' : 'text-text-tertiary hover:text-text-primary',
                   )}
@@ -258,6 +271,20 @@ export default function Header() {
                             >
                               <BarChart3 className="w-4 h-4 text-accent" />
                               {t('nav.statistics')}
+                            </Link>
+                            <Link
+                              href="/admin/settings"
+                              className="flex items-center gap-3 w-full px-3 py-2.5 text-[13px] font-medium text-text-primary hover:bg-accent/10 transition-colors"
+                            >
+                              <Settings className="w-4 h-4 text-accent" />
+                              {t('nav.settings')}
+                            </Link>
+                            <Link
+                              href="/admin/health"
+                              className="flex items-center gap-3 w-full px-3 py-2.5 text-[13px] font-medium text-text-primary hover:bg-accent/10 transition-colors"
+                            >
+                              <Activity className="w-4 h-4 text-accent" />
+                              {t('nav.health')}
                             </Link>
                           </div>
                           <div className="border-t border-border my-1" />
@@ -341,14 +368,14 @@ export default function Header() {
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-black/60" onClick={() => setMobileMenuOpen(false)} />
-          <div className="absolute top-0 right-0 w-[280px] h-full bg-bg-primary border-l border-border animate-slide-in-right">
+          <div className="absolute top-0 right-0 w-[280px] md:w-[340px] h-full max-h-[100dvh] bg-bg-primary border-l border-border animate-slide-in-right overflow-y-auto">
             <div className="flex items-center justify-between px-6 h-[60px] border-b border-border">
               <span className="text-[16px] font-bold text-text-primary">{t('nav.menu')}</span>
               <button onClick={() => setMobileMenuOpen(false)} className="p-2 text-text-tertiary">
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <nav className="px-4 py-5 space-y-1 overflow-y-auto">
+            <nav className="px-4 py-5 space-y-1 overflow-y-auto" role="navigation" aria-label="Mobile navigation">
               {mobileNavItems.map((item) => (
                 <Link
                   key={item.href}
