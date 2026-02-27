@@ -14,6 +14,7 @@ import { useWebSocket } from '@/hooks/useWebSocket';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuthStore } from '@/stores/auth';
 import { useWatchlist, useAddWatchlist, useRemoveWatchlist } from '@/hooks/useWatchlist';
+import AiInsights from '@/components/trading/AiInsights';
 import AssetList from '@/components/market/AssetList';
 import MarketIndexSummary from '@/components/market/MarketIndexSummary';
 import MarketTicker from '@/components/market/MarketTicker';
@@ -175,13 +176,13 @@ export default function DashboardPage() {
         </>
       )}
 
-      <div className="flex items-end gap-3 sm:gap-7 pt-7 pb-0 border-b border-border overflow-x-auto scrollbar-hide">
+      <div className="flex items-end gap-3 sm:gap-5 md:gap-7 pt-7 pb-0 border-b border-border overflow-x-auto scrollbar-hide">
         {mainTabs.map((tab) => (
           <button
             key={tab.key}
             onClick={() => handleMainTabChange(tab.key)}
             className={cn(
-              'pb-3.5 text-[14px] sm:text-[15px] font-bold transition-colors relative whitespace-nowrap',
+              'pb-3.5 text-[13px] sm:text-[14px] md:text-[15px] font-bold transition-colors relative whitespace-nowrap shrink-0',
               activeMainTab === tab.key
                 ? 'text-text-primary'
                 : 'text-text-quaternary hover:text-text-tertiary',
@@ -193,7 +194,7 @@ export default function DashboardPage() {
             )}
           </button>
         ))}
-        <span className="ml-auto mb-2.5 hidden sm:inline-flex items-center gap-2 shrink-0">
+        <span className="ml-auto mb-2.5 hidden md:inline-flex items-center gap-2 shrink-0">
           <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/20">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
             <span className="text-[10px] font-semibold text-emerald-400">{t('filter.crypto')}: Binance</span>
@@ -218,6 +219,11 @@ export default function DashboardPage() {
           onToggleWatchlist={handleToggleWatchlist}
         />
       )}
+
+      {/* AI 분석 / AI Insights */}
+      <div className="mt-8">
+        <AiInsights />
+      </div>
 
       {/* 스포트라이트 검색 모달 / Spotlight search modal */}
       <SpotlightSearch

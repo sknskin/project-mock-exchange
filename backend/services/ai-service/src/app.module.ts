@@ -10,6 +10,7 @@ import { ConfigModule } from '@nestjs/config';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TerminusModule } from '@nestjs/terminus';
 import { HealthController } from './health/health.controller';
+import { AnalysisModule } from './analysis/analysis.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { HealthController } from './health/health.controller';
     }),
     CqrsModule.forRoot(),
     TerminusModule,
+    AnalysisModule,
   ],
   controllers: [HealthController],
 })
