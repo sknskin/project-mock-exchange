@@ -5,7 +5,7 @@
  * @file Place Order DTO
  * @description Data Transfer Object for validating order placement requests
  */
-import { IsString, IsEnum, IsOptional, IsNotEmpty, Matches } from 'class-validator';
+import { IsString, IsEnum, IsOptional, IsNotEmpty, IsIn, Matches } from 'class-validator';
 
 export class PlaceOrderRequestDto {
   @IsString()
@@ -30,4 +30,13 @@ export class PlaceOrderRequestDto {
   @IsString()
   @IsNotEmpty()
   idempotencyKey: string;
+
+  @IsOptional()
+  @IsString()
+  @Matches(/^\d+(\.\d+)?$/, { message: 'triggerPrice must be a valid decimal string' })
+  triggerPrice?: string;
+
+  @IsOptional()
+  @IsIn(['STOP_LOSS', 'TAKE_PROFIT'])
+  triggerType?: string;
 }

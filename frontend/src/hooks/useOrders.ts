@@ -43,14 +43,16 @@ export function usePlaceOrder() {
   return useMutation({
     mutationFn: async (order: PlaceOrderRequest) => {
       // 백엔드 DTO는 quantity/price를 decimal 문자열로, idempotencyKey를 필수로 요구
-      const payload = {
+      const payload: Record<string, string> = {
         symbol: order.symbol,
         side: order.side,
         type: order.type,
         quantity: order.quantity.toString(),
-        ...(order.price != null ? { price: order.price.toString() } : {}),
         idempotencyKey: crypto.randomUUID(),
       };
+      if (order.price != null) payload.price = order.price.toString();
+      if (order.triggerPrice != null) payload.triggerPrice = order.triggerPrice.toString();
+      if (order.triggerType) payload.triggerType = order.triggerType;
       const { data } = await api.post('/api/orders', payload);
       return data.data ?? data;
     },

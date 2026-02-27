@@ -35,7 +35,7 @@ export class OrderProxyController {
   @Post()
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: '주문 생성', description: '시장가/지정가 주문을 생성합니다' })
+  @ApiOperation({ summary: '주문 생성', description: '시장가/지정가/손절/익절 주문을 생성합니다' })
   @ApiResponse({ status: 201, description: '주문 접수 성공' })
   @ApiResponse({ status: 400, description: '유효성 검사 실패' })
   @ApiResponse({ status: 401, description: '인증 필요' })

@@ -90,6 +90,9 @@ export interface Order {
   price: number | null;
   filledQuantity: number;
   filledPrice: number | null;
+  triggerPrice?: number | null;
+  triggerType?: 'STOP_LOSS' | 'TAKE_PROFIT' | null;
+  triggered?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -100,6 +103,8 @@ export interface PlaceOrderRequest {
   type: 'MARKET' | 'LIMIT';
   quantity: number;
   price?: number;
+  triggerPrice?: number;
+  triggerType?: 'STOP_LOSS' | 'TAKE_PROFIT';
 }
 
 export interface Portfolio {

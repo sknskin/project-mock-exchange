@@ -25,6 +25,9 @@ export class OrderAggregate extends AggregateRoot {
   private _remainingQuantity: Decimal;
   private _status: OrderStatus;
   private _idempotencyKey: string;
+  private _triggerPrice: Decimal | null;
+  private _triggerType: string | null;
+  private _triggered: boolean;
 
   get orderId() { return this._orderId; }
   get idempotencyKey() { return this._idempotencyKey; }
@@ -37,6 +40,9 @@ export class OrderAggregate extends AggregateRoot {
   get filledQuantity() { return this._filledQuantity; }
   get remainingQuantity() { return this._remainingQuantity; }
   get status() { return this._status; }
+  get triggerPrice() { return this._triggerPrice; }
+  get triggerType() { return this._triggerType; }
+  get triggered() { return this._triggered; }
 
   static streamId(orderId: string): string {
     return `order-${orderId}`;
@@ -51,6 +57,8 @@ export class OrderAggregate extends AggregateRoot {
     price: string | null;
     quantity: string;
     idempotencyKey: string;
+    triggerPrice?: string | null;
+    triggerType?: string | null;
   }): OrderAggregate {
     const order = new OrderAggregate();
     order.raise(ORDER_EVENT_TYPES.ORDER_PLACED, {
@@ -62,6 +70,8 @@ export class OrderAggregate extends AggregateRoot {
       price: params.price,
       quantity: params.quantity,
       idempotencyKey: params.idempotencyKey,
+      triggerPrice: params.triggerPrice || null,
+      triggerType: params.triggerType || null,
     });
     return order;
   }
@@ -140,6 +150,9 @@ export class OrderAggregate extends AggregateRoot {
     this._remainingQuantity = new Decimal(data.quantity as string);
     this._status = 'PENDING';
     this._idempotencyKey = data.idempotencyKey as string;
+    this._triggerPrice = data.triggerPrice ? new Decimal(data.triggerPrice as string) : null;
+    this._triggerType = (data.triggerType as string) || null;
+    this._triggered = false;
   }
 
   protected onMatched(data: Record<string, unknown>): void {

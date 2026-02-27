@@ -32,6 +32,8 @@ export interface PlaceOrderParams {
   price?: string;
   quantity: string;
   idempotencyKey: string;
+  triggerPrice?: string;
+  triggerType?: string;
 }
 
 @Injectable()
@@ -95,6 +97,7 @@ export class OrderService {
     }
 
     // 5. 주문 애그리거트 생성 및 ORDER_PLACED 이벤트 발행 / Create Order Aggregate and raise ORDER_PLACED event
+    const isConditional = !!params.triggerPrice && !!params.triggerType;
     const orderId = generateOrderId();
     const order = OrderAggregate.place({
       orderId,
@@ -105,6 +108,8 @@ export class OrderService {
       price: params.type === 'LIMIT' ? params.price! : executionPrice.toString(),
       quantity: params.quantity,
       idempotencyKey: params.idempotencyKey,
+      triggerPrice: params.triggerPrice || null,
+      triggerType: params.triggerType || null,
     });
 
     // 6. 이벤트 스토어에 이벤트 저장 / Persist events to event store
@@ -131,6 +136,15 @@ export class OrderService {
 
     // 7. 읽기 모델에 투영 / Project to read model
     await this.projectOrderPlaced(orderId, params, executionPrice);
+
+    // 7.5 조건부 주문은 매칭 엔진을 건너뛰고 트리거 대기 / Conditional orders skip matching and wait for trigger
+    if (isConditional) {
+      return {
+        orderId,
+        status: 'PENDING',
+        fills: [],
+      };
+    }
 
     // 8. 시장가 주문은 즉시 체결, 지정가 주문은 교차 시도 / For market orders, execute immediately. For limit orders, try crossing first.
     let fills: MatchResult[] = [];
@@ -330,6 +344,124 @@ export class OrderService {
     });
 
     return { orderId, status: order.status };
+  }
+
+  /**
+   * 조건부 주문의 트리거 확인 / Check conditional order triggers
+   * 현재가가 트리거 조건에 도달하면 시장가로 자동 실행합니다
+   * Auto-executes as a market order when trigger conditions are met
+   */
+  async checkTriggers(symbol: string, currentPrice: string): Promise<{ triggered: number }> {
+    const price = new Decimal(currentPrice);
+
+    // 해당 심볼의 미발동 조건부 주문 조회 / Query untriggered conditional orders for this symbol
+    const conditionalOrders = await this.prisma.orderRead.findMany({
+      where: {
+        symbol,
+        triggerType: { not: null },
+        triggered: false,
+        status: 'PENDING',
+      },
+    });
+
+    let triggeredCount = 0;
+
+    for (const order of conditionalOrders) {
+      if (!order.triggerPrice || !order.triggerType) continue;
+
+      const triggerPrice = new Decimal(order.triggerPrice.toString());
+      let shouldTrigger = false;
+
+      if (order.triggerType === 'STOP_LOSS') {
+        // 매수 손절: 현재가 >= 트리거가 / BUY stop-loss: trigger when price rises to or above
+        // 매도 손절: 현재가 <= 트리거가 / SELL stop-loss: trigger when price falls to or below
+        shouldTrigger = order.side === 'BUY'
+          ? price.gte(triggerPrice)
+          : price.lte(triggerPrice);
+      } else if (order.triggerType === 'TAKE_PROFIT') {
+        // 매수 익절: 현재가 <= 트리거가 / BUY take-profit: trigger when price falls to or below
+        // 매도 익절: 현재가 >= 트리거가 / SELL take-profit: trigger when price rises to or above
+        shouldTrigger = order.side === 'BUY'
+          ? price.lte(triggerPrice)
+          : price.gte(triggerPrice);
+      }
+
+      if (shouldTrigger) {
+        // 트리거 발동 표시 / Mark as triggered
+        await this.prisma.orderRead.update({
+          where: { orderId: order.orderId },
+          data: { triggered: true, updatedAt: new Date() },
+        });
+
+        // 시장가 주문으로 매칭 엔진 실행 / Execute as market order via matching engine
+        try {
+          const marketPrice = await this.getMarketPrice(symbol);
+          if (!marketPrice) continue;
+
+          const streamId = OrderAggregate.streamId(order.orderId);
+          const events = await this.eventStore.readStream(streamId);
+          const aggregate = new OrderAggregate();
+          aggregate.loadFromHistory(events);
+
+          const correlationId = generateCorrelationId();
+          const fills = this.matchingEngine.matchMarketOrder({
+            orderId: order.orderId,
+            userId: order.userId,
+            symbol: order.symbol,
+            side: order.side as 'BUY' | 'SELL',
+            quantity: new Decimal(order.remainingQuantity.toString()),
+            marketPrice,
+          });
+
+          for (const fill of fills) {
+            aggregate.match(
+              fill.matchedQuantity,
+              fill.matchedPrice,
+              fill.tradeId,
+              fill.buyOrderId === order.orderId ? fill.sellOrderId : fill.buyOrderId,
+            );
+
+            for (const event of aggregate.uncommittedEvents) {
+              await this.eventStore.appendEvent(
+                {
+                  streamId,
+                  expectedVersion: aggregate.version - aggregate.uncommittedEvents.length + aggregate.uncommittedEvents.indexOf(event),
+                  eventType: event.eventType,
+                  eventData: event.eventData,
+                  metadata: { correlationId, userId: order.userId },
+                  eventId: generateEventId(),
+                },
+                {
+                  topic: KAFKA_TOPICS.ORDERS_EVENTS,
+                  partitionKey: order.orderId,
+                },
+              );
+            }
+            aggregate.clearUncommittedEvents();
+
+            await this.projectTrade(fill);
+            await this.settleTrade(fill);
+          }
+
+          // 읽기 모델 갱신 / Update read model
+          await this.prisma.orderRead.update({
+            where: { orderId: order.orderId },
+            data: {
+              filledQuantity: aggregate.filledQuantity?.toString() || '0',
+              remainingQuantity: aggregate.remainingQuantity?.toString() || '0',
+              status: aggregate.status,
+              updatedAt: new Date(),
+            },
+          });
+
+          triggeredCount++;
+        } catch (error: unknown) {
+          this.logger.error(`Failed to execute triggered order ${order.orderId}: ${error}`);
+        }
+      }
+    }
+
+    return { triggered: triggeredCount };
   }
 
   // ---- 비공개 헬퍼 메서드 / Private helpers ----
@@ -608,6 +740,9 @@ export class OrderService {
         filledQuantity: new Decimal(0),
         remainingQuantity: new Decimal(params.quantity),
         status: 'PENDING',
+        triggerPrice: params.triggerPrice ? new Decimal(params.triggerPrice) : null,
+        triggerType: params.triggerType || null,
+        triggered: false,
         idempotencyKey: params.idempotencyKey,
         createdAt: new Date(),
         updatedAt: new Date(),

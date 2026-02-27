@@ -1,9 +1,9 @@
 /**
  * @file 주문 폼 컴포넌트
- * @description 시장가/지정가 매수/매도 주문을 입력하는 폼
+ * @description 시장가/지정가/손절/익절 매수/매도 주문을 입력하는 폼
  *
  * @file Order Form Component
- * @description Form for entering market/limit buy/sell orders
+ * @description Form for entering market/limit/stop-loss/take-profit buy/sell orders
  */
 'use client';
 
@@ -26,9 +26,13 @@ interface OrderFormProps {
   onSuccess?: () => void;
 }
 
+type OrderFormType = 'MARKET' | 'LIMIT' | 'STOP_LOSS' | 'TAKE_PROFIT';
+
 const typeTabKeys: { key: string; i18nKey: TranslationKey }[] = [
   { key: 'MARKET', i18nKey: 'order.market' },
   { key: 'LIMIT', i18nKey: 'order.limit' },
+  { key: 'STOP_LOSS', i18nKey: 'order.stopLoss' },
+  { key: 'TAKE_PROFIT', i18nKey: 'order.takeProfit' },
 ];
 
 export default function OrderForm({
@@ -41,9 +45,10 @@ export default function OrderForm({
   const { data: rateData } = useExchangeRate();
   const currencyMode = useCurrencyDisplay((s) => s.display);
   const rate = rateData?.rate;
-  const [orderType, setOrderType] = useState<'MARKET' | 'LIMIT'>('MARKET');
+  const [orderType, setOrderType] = useState<OrderFormType>('MARKET');
   const [quantity, setQuantity] = useState('');
   const [price, setPrice] = useState(currentPrice.toString());
+  const [triggerPrice, setTriggerPrice] = useState('');
   const placeOrder = usePlaceOrder();
   const { data: portfolio } = usePortfolio();
 
@@ -53,8 +58,11 @@ export default function OrderForm({
   );
 
   const isBuy = side === 'BUY';
-  const estimatedTotal =
-    orderType === 'MARKET'
+  const isConditional = orderType === 'STOP_LOSS' || orderType === 'TAKE_PROFIT';
+
+  const estimatedTotal = isConditional
+    ? parseFloat(quantity || '0') * parseFloat(triggerPrice || '0')
+    : orderType === 'MARKET'
       ? parseFloat(quantity || '0') * currentPrice
       : parseFloat(quantity || '0') * parseFloat(price || '0');
 
@@ -62,16 +70,25 @@ export default function OrderForm({
 
   const handleSubmit = async () => {
     if (!quantity || parseFloat(quantity) <= 0) return;
+    if (isConditional && (!triggerPrice || parseFloat(triggerPrice) <= 0)) return;
 
     try {
       await placeOrder.mutateAsync({
         symbol,
         side,
-        type: orderType,
+        // 조건부 주문은 MARKET 타입으로 전송 / Conditional orders sent as MARKET type
+        type: isConditional ? 'MARKET' : orderType as 'MARKET' | 'LIMIT',
         quantity: parseFloat(quantity),
         ...(orderType === 'LIMIT' ? { price: parseFloat(price) } : {}),
+        ...(isConditional
+          ? {
+              triggerPrice: parseFloat(triggerPrice),
+              triggerType: orderType as 'STOP_LOSS' | 'TAKE_PROFIT',
+            }
+          : {}),
       });
       setQuantity('');
+      setTriggerPrice('');
       onSuccess?.();
     } catch {
       // 에러는 쿼리 클라이언트에서 처리 / Error handled by query client
@@ -83,9 +100,18 @@ export default function OrderForm({
       <Tabs
         tabs={typeTabs}
         activeTab={orderType}
-        onChange={(key) => setOrderType(key as 'MARKET' | 'LIMIT')}
+        onChange={(key) => setOrderType(key as OrderFormType)}
         variant="pill"
       />
+
+      {/* 조건부 주문 설명 / Conditional order description */}
+      {isConditional && (
+        <p className="text-[11px] text-text-quaternary leading-relaxed">
+          {orderType === 'STOP_LOSS'
+            ? t('order.stopLossDesc')
+            : t('order.takeProfitDesc')}
+        </p>
+      )}
 
       {orderType === 'LIMIT' && (
         <Input
@@ -94,6 +120,16 @@ export default function OrderForm({
           value={price}
           onChange={(e) => setPrice(e.target.value)}
           placeholder={t('order.pricePlaceholder')}
+        />
+      )}
+
+      {isConditional && (
+        <Input
+          label={`${t('order.triggerPrice')} (${currencyMode === 'krw' ? 'KRW' : 'USD'})`}
+          type="number"
+          value={triggerPrice}
+          onChange={(e) => setTriggerPrice(e.target.value)}
+          placeholder={t('order.triggerPricePlaceholder')}
         />
       )}
 
@@ -131,7 +167,10 @@ export default function OrderForm({
         fullWidth
         onClick={handleSubmit}
         disabled={
-          placeOrder.isPending || !quantity || parseFloat(quantity) <= 0
+          placeOrder.isPending ||
+          !quantity ||
+          parseFloat(quantity) <= 0 ||
+          (isConditional && (!triggerPrice || parseFloat(triggerPrice) <= 0))
         }
       >
         {placeOrder.isPending

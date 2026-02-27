@@ -43,6 +43,14 @@ export class OrderController {
       throw new BadRequestException('Limit orders require a price');
     }
 
+    // 조건부 주문 유효성 검사 / Validate conditional order fields
+    if (dto.triggerType && !dto.triggerPrice) {
+      throw new BadRequestException('Trigger price is required for stop-loss/take-profit orders');
+    }
+    if (dto.triggerPrice && !dto.triggerType) {
+      throw new BadRequestException('Trigger type is required when trigger price is set');
+    }
+
     const result = await this.orderService.placeOrder({
       userId,
       symbol: dto.symbol,
@@ -51,8 +59,21 @@ export class OrderController {
       price: dto.price,
       quantity: dto.quantity,
       idempotencyKey: dto.idempotencyKey,
+      triggerPrice: dto.triggerPrice,
+      triggerType: dto.triggerType,
     });
 
+    return { success: true, data: result };
+  }
+
+  @Post('check-triggers')
+  async checkTriggers(
+    @Body() body: { symbol: string; currentPrice: string },
+  ) {
+    if (!body.symbol || !body.currentPrice) {
+      throw new BadRequestException('symbol and currentPrice are required');
+    }
+    const result = await this.orderService.checkTriggers(body.symbol, body.currentPrice);
     return { success: true, data: result };
   }
 

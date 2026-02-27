@@ -20,6 +20,9 @@ model OrderRead {
   filledQuantity    Decimal  @default(0) @map("filled_quantity") @db.Decimal(20, 8)
   remainingQuantity Decimal  @map("remaining_quantity") @db.Decimal(20, 8)
   status            String   @db.VarChar(20)
+  triggerPrice      Decimal? @map("trigger_price") @db.Decimal(20, 8)
+  triggerType       String?  @map("trigger_type") @db.VarChar(20)
+  triggered         Boolean  @default(false)
   idempotencyKey    String?  @unique @map("idempotency_key") @db.VarChar(255)
   createdAt         DateTime @map("created_at") @db.Timestamptz()
   updatedAt         DateTime @map("updated_at") @db.Timestamptz()
@@ -27,6 +30,7 @@ model OrderRead {
 
   @@index([userId, createdAt(sort: Desc)])
   @@index([symbol, status])
+  @@index([symbol, triggerType, triggered])
   @@map("orders_read")
 }
 
