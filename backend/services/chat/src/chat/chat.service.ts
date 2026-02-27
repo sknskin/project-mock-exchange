@@ -426,6 +426,27 @@ export class ChatService {
     return { success: true, deletedMessageId: messageId };
   }
 
+  async deleteRoom(roomId: string, _userId: string, role?: string) {
+    const room = await this.prisma.room.findUnique({ where: { id: roomId } });
+    if (!room) throw new NotFoundException('Room not found');
+
+    const isSystem = role === 'SYSTEM';
+    const isAdmin = role === 'ADMIN';
+    if (!isSystem && !isAdmin) {
+      throw new ForbiddenException('Only admins can delete rooms');
+    }
+
+    // 관련 데이터 삭제 순서: ReadReceipt → Message → Participant → Room
+    await this.prisma.readReceipt.deleteMany({
+      where: { message: { roomId } },
+    });
+    await this.prisma.message.deleteMany({ where: { roomId } });
+    await this.prisma.participant.deleteMany({ where: { roomId } });
+    await this.prisma.room.delete({ where: { id: roomId } });
+
+    return { success: true, deletedRoomId: roomId };
+  }
+
   async getRoomParticipants(roomId: string) {
     return this.prisma.participant.findMany({
       where: { roomId, leftAt: null },

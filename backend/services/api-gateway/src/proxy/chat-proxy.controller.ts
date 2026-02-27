@@ -224,6 +224,9 @@ export class ChatProxyController {
   @ApiResponse({ status: 403, description: '권한 없음' })
   async kickUser(@Param('id') id: string, @Req() req: Request, @Res() res: Response) {
     const user = req.user as { id: string; username: string; role?: string };
+    if (user.role !== 'ADMIN' && user.role !== 'SYSTEM') {
+      return res.status(403).json({ success: false, message: 'Forbidden: admin only' });
+    }
     const result = await this.proxyService.forward('chat', {
       method: 'POST',
       url: `/rooms/${id}/kick`,
@@ -295,6 +298,35 @@ export class ChatProxyController {
         'x-user-username': user.username,
       },
     });
+    return res.status(result.status).json(result.data);
+  }
+
+  // 채팅방 삭제 (관리자 전용) (Delete room (admin only))
+  @Delete('rooms/:id')
+  @ApiOperation({ summary: '채팅방 삭제', description: '채팅방을 삭제합니다 (관리자 전용)' })
+  @ApiParam({ name: 'id', description: '채팅방 ID' })
+  @ApiResponse({ status: 200, description: '삭제 성공' })
+  @ApiResponse({ status: 403, description: '권한 없음' })
+  async deleteRoom(@Param('id') id: string, @Req() req: Request, @Res() res: Response) {
+    const user = req.user as { id: string; username: string; role?: string };
+    if (user.role !== 'ADMIN' && user.role !== 'SYSTEM') {
+      return res.status(403).json({ success: false, message: 'Forbidden: admin only' });
+    }
+    const result = await this.proxyService.forward('chat', {
+      method: 'DELETE',
+      url: `/rooms/${id}`,
+      headers: {
+        'x-user-id': user.id,
+        'x-user-username': user.username,
+        'x-user-role': user.role || '',
+      },
+    });
+
+    // 채팅방 삭제 알림 (Notify room deletion)
+    if (result.status < 400) {
+      this.chatGateway.broadcastMessage(id, { type: 'room-deleted', roomId: id });
+    }
+
     return res.status(result.status).json(result.data);
   }
 

@@ -168,9 +168,9 @@ export default function InviteModal({ roomId, existingParticipantIds, onClose }:
                       <p className="text-[11px] text-text-tertiary truncate">
                         @{u.username}
                         {onlineUserIds.has(u.id) ? (
-                          <span className="ml-1.5 text-green-500">Online</span>
+                          <span className="ml-1.5 text-green-500">{t('chat.online')}</span>
                         ) : (
-                          <span className="ml-1.5 text-text-quaternary">Offline</span>
+                          <span className="ml-1.5 text-text-quaternary">{t('chat.offline')}</span>
                         )}
                       </p>
                     </div>

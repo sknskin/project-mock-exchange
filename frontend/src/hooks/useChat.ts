@@ -148,6 +148,19 @@ export function useRenameRoom() {
   });
 }
 
+export function useDeleteRoom() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (roomId: string) => {
+      const { data } = await api.delete(`/api/chat/rooms/${roomId}`);
+      return data.data as { success: boolean; deletedRoomId: string };
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['chat-rooms'] });
+    },
+  });
+}
+
 export function useDeleteMessage() {
   const qc = useQueryClient();
   return useMutation({

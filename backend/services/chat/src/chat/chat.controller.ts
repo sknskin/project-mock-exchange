@@ -146,6 +146,16 @@ export class ChatController {
     return { success: true, data: result };
   }
 
+  @Delete('rooms/:id')
+  async deleteRoom(
+    @Param('id') roomId: string,
+    @Headers('x-user-id') userId: string,
+    @Headers('x-user-role') role?: string,
+  ) {
+    const result = await this.chatService.deleteRoom(roomId, userId, role);
+    return { success: true, data: result };
+  }
+
   @Delete('rooms/:roomId/messages/:messageId')
   async deleteMessage(
     @Param('roomId') roomId: string,

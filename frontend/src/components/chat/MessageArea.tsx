@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { ArrowLeft, UserPlus, LogOut, Users, PanelRightOpen, X, Ban } from 'lucide-react';
+import { Fragment, useEffect, useRef, useState, useCallback } from 'react';
+import { ArrowLeft, UserPlus, LogOut, Users, PanelRightOpen, X, Ban, Trash2 } from 'lucide-react';
 import { useChatStore } from '@/stores/chat';
-import { useChatMessages, useSendMessage, useMarkRoomRead, useChatRooms, useKickFromRoom } from '@/hooks/useChat';
+import { useChatMessages, useSendMessage, useMarkRoomRead, useChatRooms, useKickFromRoom, useDeleteRoom } from '@/hooks/useChat';
 import { useAuthStore } from '@/stores/auth';
 import { usePresenceStore } from '@/stores/presence';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -12,6 +12,7 @@ import Tooltip from '@/components/ui/Tooltip';
 import MessageBubble from './MessageBubble';
 import MessageInput from './MessageInput';
 import InviteModal from './InviteModal';
+import { useTypingUsers } from '@/hooks/useChatSocket';
 import type { ChatRoom, ChatMessage } from '@/types';
 import type { TranslationKey } from '@/lib/i18n';
 
@@ -42,9 +43,10 @@ interface MessageAreaProps {
   joinRoom: (roomId: string) => void;
   leaveSocketRoom: (roomId: string) => void;
   onLeaveRoom: () => void;
+  emitTyping: (roomId: string) => void;
 }
 
-export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeaveRoom }: MessageAreaProps) {
+export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeaveRoom, emitTyping }: MessageAreaProps) {
   const { t, locale } = useTranslation();
   const backToList = useChatStore((s) => s.backToList);
   const togglePin = useChatStore((s) => s.togglePin);
@@ -56,6 +58,7 @@ export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeave
   const sendMessage = useSendMessage();
   const markRead = useMarkRoomRead();
   const kickFromRoom = useKickFromRoom();
+  const deleteRoom = useDeleteRoom();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -64,10 +67,13 @@ export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeave
   const [showMenu, setShowMenu] = useState(false);
   const [leaveConfirm, setLeaveConfirm] = useState(false);
   const [kickTarget, setKickTarget] = useState<{ userId: string; username: string } | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
   const prevMessageCountRef = useRef(0);
   const lastMarkedLengthRef = useRef(0);
 
   const isAdmin = user?.role === 'SYSTEM' || user?.role === 'ADMIN';
+  const typingUsers = useTypingUsers(roomId);
+  const handleTyping = useCallback(() => emitTyping(roomId), [roomId, emitTyping]);
 
   const room: ChatRoom | undefined = rooms?.find((r) => r.id === roomId);
   const messages = data?.pages.flatMap((p) => p.items) ?? [];
@@ -233,6 +239,15 @@ export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeave
                 <LogOut className="w-3.5 h-3.5" />
                 {t('chat.leaveRoom')}
               </button>
+              {isAdmin && (
+                <button
+                  onClick={() => { setShowMenu(false); setDeleteConfirm(true); }}
+                  className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-[12px] font-medium text-danger hover:bg-bg-tertiary transition-colors"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  {t('chat.deleteRoom')}
+                </button>
+              )}
               </div>
             </div>
           )}
@@ -277,27 +292,46 @@ export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeave
           </div>
         ) : (
           messages.map((msg, i) => {
+            const prevMsg = i > 0 ? messages[i - 1] : null;
+            // 날짜 구분선 (Date separator)
+            const msgDate = new Date(msg.createdAt).toLocaleDateString(locale, { year: 'numeric', month: 'long', day: 'numeric' });
+            const prevDate = prevMsg ? new Date(prevMsg.createdAt).toLocaleDateString(locale, { year: 'numeric', month: 'long', day: 'numeric' }) : null;
+            const showDateSep = !prevDate || msgDate !== prevDate;
+
+            const dateSep = showDateSep ? (
+              <div key={`date-${msg.id}`} className="flex items-center gap-3 my-3">
+                <div className="flex-1 h-px bg-border/60" />
+                <span className="text-[10px] text-text-quaternary font-medium shrink-0">{msgDate}</span>
+                <div className="flex-1 h-px bg-border/60" />
+              </div>
+            ) : null;
+
             // 자동 생성 시스템 메시지 (초대/퇴장/강퇴) - senderId가 nil UUID
             const isAutoSystem = msg.senderRole === 'SYSTEM' && msg.senderId === '00000000-0000-0000-0000-000000000000';
             if (isAutoSystem) {
-              return <SystemMessageRow key={msg.id} message={msg} t={t} />;
+              return <Fragment key={msg.id}>{dateSep}<SystemMessageRow message={msg} t={t} /></Fragment>;
             }
-            const prevMsg = i > 0 ? messages[i - 1] : null;
-            const showSender = !prevMsg || prevMsg.senderId !== msg.senderId || (prevMsg.senderRole === 'SYSTEM' && prevMsg.senderId === '00000000-0000-0000-0000-000000000000');
+            const showSender = !prevMsg || prevMsg.senderId !== msg.senderId || (prevMsg.senderRole === 'SYSTEM' && prevMsg.senderId === '00000000-0000-0000-0000-000000000000') || showDateSep;
             return (
-              <MessageBubble
-                key={msg.id}
+              <Fragment key={msg.id}>{dateSep}<MessageBubble
                 message={msg}
                 isMine={msg.senderId === user?.id}
                 showSender={showSender}
                 locale={locale}
                 userRole={user?.role}
-              />
+              /></Fragment>
             );
           })
         )}
         <div ref={messagesEndRef} />
       </div>
+
+      {/* 타이핑 인디케이터 (Typing indicator) */}
+      {typingUsers.length > 0 && (
+        <div className="px-4 py-1 text-[11px] text-text-tertiary truncate">
+          <span className="font-medium">{typingUsers.join(', ')}</span> {t('chat.typing')}
+        </div>
+      )}
 
       {/* 입력란 (Input) */}
       <MessageInput
@@ -306,6 +340,7 @@ export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeave
         focusRef={inputFocusRef}
         participants={room?.participants}
         currentUserId={user?.id}
+        onTyping={handleTyping}
       />
 
       {/* 초대 모달 (Invite Modal) */}
@@ -358,6 +393,34 @@ export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeave
               </button>
               <button
                 onClick={() => setKickTarget(null)}
+                className="flex-1 h-9 rounded-xl border border-border text-[13px] font-semibold text-text-secondary hover:bg-bg-secondary transition-colors"
+              >
+                {t('modal.cancel')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 채팅방 삭제 확인 모달 (Delete Room Confirm Modal) */}
+      {deleteConfirm && (
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 rounded-2xl">
+          <div className="bg-bg-primary border border-border rounded-2xl p-5 w-[260px] shadow-2xl">
+            <p className="text-[13px] text-text-primary text-center whitespace-pre-line leading-relaxed">
+              {t('chat.deleteRoomConfirm')}
+            </p>
+            <div className="flex gap-2.5 mt-4">
+              <button
+                onClick={() => {
+                  deleteRoom.mutate(roomId, { onSuccess: () => { setDeleteConfirm(false); backToList(); } });
+                }}
+                disabled={deleteRoom.isPending}
+                className="flex-1 h-9 rounded-xl bg-danger text-white text-[13px] font-semibold hover:bg-danger/85 transition-colors disabled:opacity-50"
+              >
+                {t('chat.deleteRoom')}
+              </button>
+              <button
+                onClick={() => setDeleteConfirm(false)}
                 className="flex-1 h-9 rounded-xl border border-border text-[13px] font-semibold text-text-secondary hover:bg-bg-secondary transition-colors"
               >
                 {t('modal.cancel')}
