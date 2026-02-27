@@ -34,7 +34,7 @@ const COOKIE_OPTIONS = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
   sameSite: 'lax' as const,
-  path: '/auth',
+  path: '/api/auth',
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
 };
 
@@ -144,7 +144,7 @@ export class AuthController {
       await this.authService.logout(token);
     }
 
-    res.clearCookie(REFRESH_TOKEN_COOKIE, { path: '/auth' });
+    res.clearCookie(REFRESH_TOKEN_COOKIE, { path: '/api/auth' });
 
     return { success: true, message: 'Logged out' };
   }
