@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Req, Res } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
+import { Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { Request, Response } from 'express';
 import { ProxyService } from './proxy.service';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @ApiTags('News')
 @Controller('api/news')
@@ -24,8 +25,11 @@ export class NewsProxyController {
   }
 
   @Get('scrape-status')
-  @ApiOperation({ summary: '스크래핑 상태 조회', description: '뉴스 스크래핑 작업의 현재 상태를 조회합니다.' })
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '스크래핑 상태 조회', description: '뉴스 스크래핑 작업의 현재 상태를 조회합니다. (관리자 전용)' })
   @ApiResponse({ status: 200, description: '스크래핑 상태 조회 성공' })
+  @ApiResponse({ status: 401, description: '인증 필요' })
   async scrapeStatus(@Res() res: Response) {
     const result = await this.proxyService.forward('market-data', {
       method: 'GET',
@@ -35,8 +39,11 @@ export class NewsProxyController {
   }
 
   @Post('scrape')
-  @ApiOperation({ summary: '뉴스 스크래핑 실행', description: '뉴스 스크래핑 작업을 수동으로 트리거합니다.' })
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '뉴스 스크래핑 실행', description: '뉴스 스크래핑 작업을 수동으로 트리거합니다. (관리자 전용)' })
   @ApiResponse({ status: 200, description: '스크래핑 실행 성공' })
+  @ApiResponse({ status: 401, description: '인증 필요' })
   @ApiResponse({ status: 500, description: '스크래핑 실행 실패' })
   async triggerScrape(@Req() req: Request, @Res() res: Response) {
     const result = await this.proxyService.forward('market-data', {
