@@ -73,7 +73,8 @@ export default function PriceAlertModal({ isOpen, onClose, symbol, currentPrice 
     const displayedPrice = parseFloat(targetPrice);
     if (!displayedPrice || displayedPrice <= 0) return;
     const basePrice = toBasePrice(displayedPrice);
-    createAlert.mutate({ symbol, targetPrice: basePrice, condition }, {
+    const currency = currencyPrefix === '₩' ? 'KRW' : 'USD';
+    createAlert.mutate({ symbol, targetPrice: basePrice, condition, currency, displayTargetPrice: displayedPrice }, {
       onSuccess: () => {
         const displayed = toDisplayPrice(currentPrice);
         setTargetPrice(currencyPrefix === '₩' ? Math.round(displayed).toString() : displayed.toFixed(2));

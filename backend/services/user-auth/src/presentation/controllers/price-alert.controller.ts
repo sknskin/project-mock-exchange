@@ -20,7 +20,7 @@ import { JwtAuthGuard } from '../../infrastructure/config/jwt-auth.guard';
 import { CurrentUser } from '../../infrastructure/config/current-user.decorator';
 import { UserDto } from '@virtuex/common';
 import { PrismaService } from '../../infrastructure/persistence/prisma/prisma.service';
-import { IsString, IsNotEmpty, IsNumber, IsEnum } from 'class-validator';
+import { IsString, IsNotEmpty, IsNumber, IsEnum, IsOptional } from 'class-validator';
 import { InternalAuthGuard } from '../../common/guards/internal-auth.guard';
 
 enum AlertConditionDto {
@@ -38,6 +38,14 @@ class CreatePriceAlertDto {
 
   @IsEnum(AlertConditionDto)
   condition: AlertConditionDto;
+
+  @IsOptional()
+  @IsString()
+  currency?: string;
+
+  @IsOptional()
+  @IsNumber()
+  displayTargetPrice?: number;
 }
 
 @Controller('price-alerts')
@@ -64,6 +72,8 @@ export class PriceAlertController {
         symbol: dto.symbol,
         targetPrice: dto.targetPrice,
         condition: dto.condition,
+        currency: dto.currency || 'USD',
+        displayTargetPrice: dto.displayTargetPrice ?? null,
       },
     });
 
@@ -97,6 +107,8 @@ export class PriceAlertController {
         symbol: true,
         targetPrice: true,
         condition: true,
+        currency: true,
+        displayTargetPrice: true,
       },
     });
     return { success: true, data: { items } };

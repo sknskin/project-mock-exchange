@@ -172,14 +172,16 @@ enum AlertCondition {
 }
 
 model PriceAlert {
-  id          String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId      String         @map("user_id") @db.Uuid
-  symbol      String         @db.VarChar(20)
-  targetPrice Decimal        @map("target_price") @db.Decimal(20, 8)
-  condition   AlertCondition
-  isActive    Boolean        @default(true) @map("is_active")
-  triggeredAt DateTime?      @map("triggered_at") @db.Timestamptz()
-  createdAt   DateTime       @default(now()) @map("created_at") @db.Timestamptz()
+  id                  String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId              String         @map("user_id") @db.Uuid
+  symbol              String         @db.VarChar(20)
+  targetPrice         Decimal        @map("target_price") @db.Decimal(20, 8)
+  condition           AlertCondition
+  currency            String         @default("USD") @db.VarChar(5)
+  displayTargetPrice  Decimal?       @map("display_target_price") @db.Decimal(20, 2)
+  isActive            Boolean        @default(true) @map("is_active")
+  triggeredAt         DateTime?      @map("triggered_at") @db.Timestamptz()
+  createdAt           DateTime       @default(now()) @map("created_at") @db.Timestamptz()
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

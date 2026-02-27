@@ -31,7 +31,7 @@ export function useCreatePriceAlert() {
   const { t } = useTranslation();
 
   return useMutation({
-    mutationFn: async (payload: { symbol: string; targetPrice: number; condition: 'ABOVE' | 'BELOW' }) => {
+    mutationFn: async (payload: { symbol: string; targetPrice: number; condition: 'ABOVE' | 'BELOW'; currency?: string; displayTargetPrice?: number }) => {
       const { data } = await api.post('/api/price-alerts', payload);
       return data;
     },

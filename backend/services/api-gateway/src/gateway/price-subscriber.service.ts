@@ -20,6 +20,8 @@ interface CachedAlert {
   symbol: string;
   targetPrice: number;
   condition: 'ABOVE' | 'BELOW';
+  currency: string;
+  displayTargetPrice: number | null;
 }
 
 @Injectable()
@@ -99,6 +101,8 @@ export class PriceSubscriberService implements OnModuleInit, OnModuleDestroy {
         symbol: a.symbol,
         targetPrice: Number(a.targetPrice),
         condition: a.condition,
+        currency: a.currency || 'USD',
+        displayTargetPrice: a.displayTargetPrice ? Number(a.displayTargetPrice) : null,
       }));
 
       const bySymbol = new Map<string, CachedAlert[]>();
@@ -145,11 +149,24 @@ export class PriceSubscriberService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  private formatPrice(price: number, currency: string): string {
+    if (currency === 'KRW') {
+      return `₩${Math.round(price).toLocaleString()}`;
+    }
+    return `$${price.toFixed(2)}`;
+  }
+
   private async handleTriggeredAlert(alert: CachedAlert, currentPrice: number) {
     try {
       const condLabel = alert.condition === 'ABOVE' ? '↑' : '↓';
-      const title = `${alert.symbol} ${condLabel} $${alert.targetPrice}`;
-      const message = `Current: $${currentPrice.toFixed(2)}`;
+      const displayPrice = alert.displayTargetPrice ?? alert.targetPrice;
+      const title = `${alert.symbol} ${condLabel} ${this.formatPrice(displayPrice, alert.currency)}`;
+      const message = `Current: ${this.formatPrice(
+        alert.currency === 'KRW' && alert.displayTargetPrice
+          ? currentPrice * (alert.displayTargetPrice / alert.targetPrice)
+          : currentPrice,
+        alert.currency,
+      )}`;
 
       // 알림을 트리거 완료로 표시 (Mark alert as triggered)
       await axios.post(`${this.userAuthUrl}/price-alerts/${alert.id}/trigger`, {}, {
