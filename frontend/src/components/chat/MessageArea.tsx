@@ -163,11 +163,11 @@ export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeave
             </button>
           </Tooltip>
           {showMenu && (
-            <div className="absolute right-0 top-full mt-1 w-[220px] bg-bg-secondary border border-border rounded-xl shadow-2xl overflow-hidden z-10">
+            <div className="absolute right-0 top-full mt-1 w-[220px] max-h-[360px] bg-bg-secondary border border-border rounded-xl shadow-2xl overflow-hidden z-10 flex flex-col">
               {/* 관리자/시스템용 참여자 목록 (Participant list for admin/system) */}
               {isAdmin && room && (
-                <div className="border-b border-border">
-                  <p className="px-3.5 pt-2 pb-1 text-[10px] font-bold text-text-quaternary uppercase tracking-wider">Participants</p>
+                <div className="border-b border-border overflow-y-auto overscroll-contain shrink min-h-0">
+                  <p className="px-3.5 pt-2 pb-1 text-[10px] font-bold text-text-quaternary uppercase tracking-wider sticky top-0 bg-bg-secondary">Participants</p>
                   {room.participants.map((p) => (
                     <div key={p.userId} className="flex items-center gap-2 px-3.5 py-1.5">
                       <div className="relative shrink-0">
@@ -195,6 +195,7 @@ export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeave
                   ))}
                 </div>
               )}
+              <div className="shrink-0 border-t border-border">
               <button
                 onClick={() => { setShowMenu(false); setShowInvite(true); }}
                 className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-[12px] font-medium text-text-primary hover:bg-bg-tertiary transition-colors"
@@ -209,6 +210,7 @@ export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeave
                 <LogOut className="w-3.5 h-3.5" />
                 {t('chat.leaveRoom')}
               </button>
+              </div>
             </div>
           )}
         </div>
