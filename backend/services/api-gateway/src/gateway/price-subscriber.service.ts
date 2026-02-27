@@ -36,6 +36,7 @@ export class PriceSubscriberService implements OnModuleInit, OnModuleDestroy {
   private alertsBySymbol = new Map<string, CachedAlert[]>();
   private alertRefreshInterval: ReturnType<typeof setInterval> | null = null;
   private readonly userAuthUrl: string;
+  private readonly internalToken: string;
 
   constructor(
     private readonly configService: ConfigService,
@@ -44,6 +45,7 @@ export class PriceSubscriberService implements OnModuleInit, OnModuleDestroy {
   ) {
     const port = this.configService.get('USER_AUTH_PORT', 3007);
     this.userAuthUrl = `http://localhost:${port}`;
+    this.internalToken = this.configService.get<string>('INTERNAL_SERVICE_SECRET', '');
   }
 
   async onModuleInit() {
@@ -87,7 +89,10 @@ export class PriceSubscriberService implements OnModuleInit, OnModuleDestroy {
 
   private async refreshAlerts() {
     try {
-      const res = await axios.get(`${this.userAuthUrl}/price-alerts/active`, { timeout: 5000 });
+      const res = await axios.get(`${this.userAuthUrl}/price-alerts/active`, {
+        timeout: 5000,
+        headers: { 'x-internal-token': this.internalToken },
+      });
       const items: CachedAlert[] = (res.data?.data?.items || []).map((a: any) => ({
         id: a.id,
         userId: a.userId,
@@ -147,7 +152,10 @@ export class PriceSubscriberService implements OnModuleInit, OnModuleDestroy {
       const message = `Current: $${currentPrice.toFixed(2)}`;
 
       // 알림을 트리거 완료로 표시 (Mark alert as triggered)
-      await axios.post(`${this.userAuthUrl}/price-alerts/${alert.id}/trigger`, {}, { timeout: 5000 });
+      await axios.post(`${this.userAuthUrl}/price-alerts/${alert.id}/trigger`, {}, {
+        timeout: 5000,
+        headers: { 'x-internal-token': this.internalToken },
+      });
 
       // WebSocket 알림 전송 (Send WebSocket notification)
       this.chatGateway.notifyUser(alert.userId, 'notification:price-alert', {
@@ -170,7 +178,10 @@ export class PriceSubscriberService implements OnModuleInit, OnModuleDestroy {
           message,
           link: `/asset/${alert.symbol}`,
         },
-        { timeout: 5000 },
+        {
+          timeout: 5000,
+          headers: { 'x-internal-token': this.internalToken },
+        },
       ).catch(() => {});
 
       this.logger.log(`Price alert triggered: ${alert.symbol} ${alert.condition} ${alert.targetPrice} for user ${alert.userId}`);

@@ -41,11 +41,12 @@ class CreatePriceAlertDto {
 }
 
 @Controller('price-alerts')
-@UseGuards(InternalAuthGuard, JwtAuthGuard)
+@UseGuards(InternalAuthGuard)
 export class PriceAlertController {
   constructor(private readonly prisma: PrismaService) {}
 
   @Post()
+  @UseGuards(JwtAuthGuard)
   async create(
     @CurrentUser() user: UserDto,
     @Body() dto: CreatePriceAlertDto,
@@ -70,6 +71,7 @@ export class PriceAlertController {
   }
 
   @Get()
+  @UseGuards(JwtAuthGuard)
   async list(
     @CurrentUser() user: UserDto,
     @Query('symbol') symbol?: string,
@@ -101,6 +103,7 @@ export class PriceAlertController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard)
   async remove(
     @CurrentUser() user: UserDto,
     @Param('id') id: string,

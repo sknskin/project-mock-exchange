@@ -7,12 +7,14 @@
  */
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Trash2, Bell, ArrowUp, ArrowDown } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { usePriceAlerts, useCreatePriceAlert, useDeletePriceAlert } from '@/hooks/usePriceAlert';
-import { cn } from '@/lib/format';
+import { useExchangeRate } from '@/hooks/useExchangeRate';
+import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
+import { cn, isKRW, formatPriceDisplay } from '@/lib/format';
 
 interface PriceAlertModalProps {
   isOpen: boolean;
@@ -26,26 +28,61 @@ export default function PriceAlertModal({ isOpen, onClose, symbol, currentPrice 
   const { data: alerts } = usePriceAlerts(symbol);
   const createAlert = useCreatePriceAlert();
   const deleteAlert = useDeletePriceAlert();
+  const { data: rateData } = useExchangeRate();
+  const currencyMode = useCurrencyDisplay((s) => s.display);
+  const rate = rateData?.rate;
 
   const [condition, setCondition] = useState<'ABOVE' | 'BELOW'>('ABOVE');
   const [targetPrice, setTargetPrice] = useState('');
 
+  // 표시 통화에 맞게 가격 변환 (Convert price to display currency)
+  const toDisplayPrice = useCallback((basePrice: number): number => {
+    const wantKRW = currencyMode === 'krw';
+    if (isKRW(symbol)) {
+      return (!wantKRW && rate) ? basePrice / rate : basePrice;
+    }
+    return (wantKRW && rate) ? basePrice * rate : basePrice;
+  }, [currencyMode, rate, symbol]);
+
+  // 표시 통화에서 기본 통화로 역변환 (Convert display currency back to base)
+  const toBasePrice = useCallback((displayPrice: number): number => {
+    const wantKRW = currencyMode === 'krw';
+    if (isKRW(symbol)) {
+      return (!wantKRW && rate) ? displayPrice * rate : displayPrice;
+    }
+    return (wantKRW && rate) ? displayPrice / rate : displayPrice;
+  }, [currencyMode, rate, symbol]);
+
+  // 통화 접두사 (Currency prefix)
+  const currencyPrefix = (() => {
+    const wantKRW = currencyMode === 'krw';
+    if (isKRW(symbol)) return wantKRW ? '₩' : '$';
+    return wantKRW ? '₩' : '$';
+  })();
+
   useEffect(() => {
     if (isOpen && currentPrice > 0) {
-      setTargetPrice(currentPrice.toFixed(2));
+      const displayed = toDisplayPrice(currentPrice);
+      setTargetPrice(currencyPrefix === '₩' ? Math.round(displayed).toString() : displayed.toFixed(2));
     }
-  }, [isOpen, currentPrice]);
+  }, [isOpen, currentPrice, toDisplayPrice, currencyPrefix]);
 
   if (!isOpen) return null;
 
   const handleCreate = () => {
-    const price = parseFloat(targetPrice);
-    if (!price || price <= 0) return;
-    createAlert.mutate({ symbol, targetPrice: price, condition }, {
+    const displayedPrice = parseFloat(targetPrice);
+    if (!displayedPrice || displayedPrice <= 0) return;
+    const basePrice = toBasePrice(displayedPrice);
+    createAlert.mutate({ symbol, targetPrice: basePrice, condition }, {
       onSuccess: () => {
-        setTargetPrice(currentPrice.toFixed(2));
+        const displayed = toDisplayPrice(currentPrice);
+        setTargetPrice(currencyPrefix === '₩' ? Math.round(displayed).toString() : displayed.toFixed(2));
       },
     });
+  };
+
+  const formatAlertPrice = (basePrice: string | number) => {
+    return formatPriceDisplay(Number(basePrice), symbol, currencyMode, rate);
   };
 
   const activeAlerts = alerts?.filter((a) => a.isActive) ?? [];
@@ -99,7 +136,7 @@ export default function PriceAlertModal({ isOpen, onClose, symbol, currentPrice 
           <div>
             <label className="text-[12px] text-text-tertiary mb-1 block">{t('alert.targetPrice')}</label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[13px] text-text-tertiary">$</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[13px] text-text-tertiary">{currencyPrefix}</span>
               <input
                 type="number"
                 step="any"
@@ -136,7 +173,7 @@ export default function PriceAlertModal({ isOpen, onClose, symbol, currentPrice 
                       <ArrowDown className="w-3.5 h-3.5 text-fall" />
                     )}
                     <span className="text-[13px] font-semibold text-text-primary tabular-nums">
-                      ${Number(alert.targetPrice).toFixed(2)}
+                      {formatAlertPrice(alert.targetPrice)}
                     </span>
                     <span className="text-[11px] px-1.5 py-0.5 rounded bg-accent/10 text-accent font-medium">
                       {t('alert.active')}
@@ -159,7 +196,7 @@ export default function PriceAlertModal({ isOpen, onClose, symbol, currentPrice 
                       <ArrowDown className="w-3.5 h-3.5 text-text-quaternary" />
                     )}
                     <span className="text-[13px] text-text-tertiary tabular-nums line-through">
-                      ${Number(alert.targetPrice).toFixed(2)}
+                      {formatAlertPrice(alert.targetPrice)}
                     </span>
                     <span className="text-[11px] px-1.5 py-0.5 rounded bg-bg-secondary text-text-quaternary font-medium">
                       {t('alert.triggered')}
