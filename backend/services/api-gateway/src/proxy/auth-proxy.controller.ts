@@ -45,13 +45,28 @@ export class AuthProxyController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: '로그인', description: '이메일/아이디와 비밀번호로 로그인합니다' })
-  @ApiResponse({ status: 200, description: '로그인 성공 (access token + refresh cookie)' })
+  @ApiOperation({ summary: '로그인', description: '이메일/아이디와 비밀번호로 로그인합니다 (SMS 인증 필요)' })
+  @ApiResponse({ status: 200, description: 'SMS 인증 요청 (sessionId + maskedPhone)' })
   @ApiResponse({ status: 401, description: '인증 실패' })
-  async login(@Body() body: unknown, @Req() req: Request, @Res() res: Response) {
+  async login(@Body() body: unknown, @Res() res: Response) {
     const result = await this.proxyService.forward('user-auth', {
       method: 'POST',
       url: '/auth/login',
+      data: body,
+    });
+
+    return res.status(result.status).json(result.data);
+  }
+
+  @Post('login/verify-sms')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '로그인 SMS 인증', description: '로그인 2단계 SMS 인증번호를 검증합니다' })
+  @ApiResponse({ status: 200, description: '인증 성공 (access token + refresh cookie)' })
+  @ApiResponse({ status: 401, description: '인증 실패 또는 세션 만료' })
+  async verifyLoginSms(@Body() body: unknown, @Req() req: Request, @Res() res: Response) {
+    const result = await this.proxyService.forward('user-auth', {
+      method: 'POST',
+      url: '/auth/login/verify-sms',
       data: body,
       headers: {
         Cookie: req.headers.cookie || '',
@@ -59,9 +74,9 @@ export class AuthProxyController {
     });
 
     // user-auth에서 Set-Cookie 헤더 전달 / Forward Set-Cookie headers from user-auth
-    const setCookieHeader = (result.data as Record<string, unknown>)?.['set-cookie'];
+    const setCookieHeader = result.headers?.['set-cookie'];
     if (setCookieHeader) {
-      res.setHeader('Set-Cookie', setCookieHeader as string);
+      res.setHeader('Set-Cookie', setCookieHeader);
     }
 
     return res.status(result.status).json(result.data);
@@ -80,6 +95,13 @@ export class AuthProxyController {
         Cookie: req.headers.cookie || '',
       },
     });
+
+    // user-auth에서 Set-Cookie 헤더 전달 / Forward Set-Cookie headers from user-auth
+    const setCookieHeader = result.headers?.['set-cookie'];
+    if (setCookieHeader) {
+      res.setHeader('Set-Cookie', setCookieHeader);
+    }
+
     return res.status(result.status).json(result.data);
   }
 
