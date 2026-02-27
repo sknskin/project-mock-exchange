@@ -26,7 +26,8 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts';
-import { Users, LogIn, Eye, FileText, TrendingUp, Activity, ShoppingCart, ArrowUpRight, ArrowDownRight, Minus, BarChart2, BarChart3, Heart, MessageSquare, MessagesSquare, CalendarCheck } from 'lucide-react';
+import { Users, LogIn, Eye, FileText, TrendingUp, Activity, ShoppingCart, ArrowUpRight, ArrowDownRight, Minus, BarChart2, BarChart3, Heart, MessageSquare, MessagesSquare, CalendarCheck, ClipboardList, Info } from 'lucide-react';
+import Skeleton from '@/components/ui/Skeleton';
 import {
   useStatOverview,
   useStatOverviewTrend,
@@ -90,6 +91,7 @@ const STAT_TABS = [
   { key: 'trading', labelKey: 'stats.tab.trading' as const, icon: ShoppingCart },
   { key: 'content', labelKey: 'stats.tab.content' as const, icon: FileText },
   { key: 'chat', labelKey: 'stats.tab.chat' as const, icon: MessageSquare },
+  { key: 'audit', labelKey: 'admin.stats.orderAudit' as const, icon: ClipboardList },
 ];
 
 // ===== Shared chart card wrapper =====
@@ -278,9 +280,9 @@ export default function AdminStatsPage() {
   }, [user, router]);
 
   // Fetch data
-  const { data: overview } = useStatOverview();
+  const { data: overview, isLoading: overviewLoading } = useStatOverview();
   const { data: trend } = useStatOverviewTrend();
-  const { data: registrations } = useStatRegistrations(period, days);
+  const { data: registrations, isLoading: registrationsLoading } = useStatRegistrations(period, days);
   const { data: registrationsApproved } = useStatRegistrationsApproved(period, days);
   const { data: logins } = useStatLogins(period, days);
   const { data: pageViews } = useStatPageViews(period, days);
@@ -465,6 +467,19 @@ export default function AdminStatsPage() {
             <h2 className="text-[12px] font-semibold text-text-quaternary uppercase tracking-wider mb-3">
               {t('stats.overview')}
             </h2>
+            {overviewLoading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="bg-bg-secondary rounded-2xl p-5 border border-border flex items-center gap-4">
+                    <Skeleton className="w-10 h-10 rounded-xl shrink-0" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="w-20 h-5" />
+                      <Skeleton className="w-28 h-3" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <OverviewCard
                 icon={Users}
@@ -510,9 +525,20 @@ export default function AdminStatsPage() {
                 sparklineData={logins?.map((l) => l.count)}
               />
             </div>
+            )}
           </div>
 
           {/* 주요 그래프 6개 */}
+          {registrationsLoading ? (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="bg-bg-secondary rounded-2xl p-5 border border-border">
+                  <Skeleton className="w-32 h-4 mb-4" />
+                  <Skeleton className="w-full h-[240px] rounded-lg" />
+                </div>
+              ))}
+            </div>
+          ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* 1) 가입자 추이 그래프 */}
             <ChartCard title={t('stats.registrations')}>
@@ -628,6 +654,7 @@ export default function AdminStatsPage() {
               )}
             </ChartCard>
           </div>
+          )}
         </section>
       )}
 
@@ -1394,6 +1421,68 @@ export default function AdminStatsPage() {
             </ChartCard>
           )}
 
+        </div>
+      )}
+
+      {/* ===== Order Audit Tab ===== */}
+      {tab === 'audit' && (
+        <div className="space-y-4">
+          {/* Description */}
+          <div className="flex items-start gap-2.5 px-4 py-3 rounded-xl bg-accent/5 border border-accent/20">
+            <Info className="w-4 h-4 text-accent mt-0.5 shrink-0" />
+            <span className="text-[13px] text-text-secondary">
+              {t('admin.stats.orderAudit.desc')}
+            </span>
+          </div>
+
+          {/* Order audit table */}
+          <div className="bg-bg-secondary rounded-2xl border border-border overflow-hidden">
+            {/* Desktop table */}
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full min-w-[800px]">
+                <thead>
+                  <tr className="border-b border-border/80">
+                    <th className="px-4 py-2.5 text-left text-[11px] font-medium text-text-quaternary">
+                      {t('admin.stats.orderAudit.id')}
+                    </th>
+                    <th className="px-4 py-2.5 text-left text-[11px] font-medium text-text-quaternary">
+                      {t('admin.stats.orderAudit.user')}
+                    </th>
+                    <th className="px-4 py-2.5 text-left text-[11px] font-medium text-text-quaternary">
+                      {t('admin.stats.orderAudit.symbol')}
+                    </th>
+                    <th className="px-4 py-2.5 text-center text-[11px] font-medium text-text-quaternary">
+                      {t('admin.stats.orderAudit.side')}
+                    </th>
+                    <th className="px-4 py-2.5 text-right text-[11px] font-medium text-text-quaternary">
+                      {t('admin.stats.orderAudit.qty')}
+                    </th>
+                    <th className="px-4 py-2.5 text-right text-[11px] font-medium text-text-quaternary">
+                      {t('admin.stats.orderAudit.price')}
+                    </th>
+                    <th className="px-4 py-2.5 text-center text-[11px] font-medium text-text-quaternary">
+                      {t('admin.stats.orderAudit.status')}
+                    </th>
+                    <th className="px-4 py-2.5 text-right text-[11px] font-medium text-text-quaternary">
+                      {t('admin.stats.orderAudit.time')}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td colSpan={8} className="px-4 py-20 text-center text-[14px] text-text-quaternary">
+                      {t('admin.stats.orderAudit.noData')}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile view */}
+            <div className="sm:hidden px-4 py-20 text-center text-[14px] text-text-quaternary">
+              {t('admin.stats.orderAudit.noData')}
+            </div>
+          </div>
         </div>
       )}
     </div>
