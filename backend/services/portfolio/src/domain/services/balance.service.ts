@@ -542,6 +542,18 @@ export class BalanceService {
   }
 
   /**
+   * 특정 심볼의 보유 자산을 조회합니다.
+   *
+   * Get a specific holding for a user by symbol.
+   */
+  async getHoldingBySymbol(userId: string, symbol: string): Promise<HoldingInfo | null> {
+    const holding = await this.prisma.holding.findUnique({
+      where: { userId_symbol: { userId, symbol } },
+    });
+    return holding ? this.toHoldingInfo(holding) : null;
+  }
+
+  /**
    * 사용자의 모든 거래 내역을 최신순으로 조회합니다.
    *
    * Get all transactions for a user, ordered by most recent first.

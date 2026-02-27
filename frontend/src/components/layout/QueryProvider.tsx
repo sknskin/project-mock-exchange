@@ -21,6 +21,7 @@ const ERROR_MAP_KO: [RegExp, string][] = [
   [/Account not found/i, '계좌가 존재하지 않습니다. 먼저 입금해 주세요'],
   [/Failed to reserve funds/i, '자금 예약에 실패했습니다. 잔액을 확인해 주세요'],
   [/Symbol .+ not found|price unavailable/i, '해당 종목을 찾을 수 없거나 시세 정보가 없습니다'],
+  [/No holding found/i, '해당 자산을 보유하고 있지 않습니다'],
   [/Insufficient holdings/i, '보유 수량이 부족합니다'],
   [/Order not found/i, '주문을 찾을 수 없습니다'],
   [/Unauthorized/i, '로그인이 필요합니다'],

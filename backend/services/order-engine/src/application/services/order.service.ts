@@ -86,9 +86,12 @@ export class OrderService {
     const quantity = new Decimal(params.quantity);
     const totalCost = executionPrice.mul(quantity);
 
-    // 4. 매수 주문 시 자금 예약 / For BUY orders, reserve funds in portfolio service
+    // 4. 매수 주문 시 자금 예약, 매도 주문 시 보유량 검증
+    // For BUY orders reserve funds, for SELL orders validate holdings
     if (params.side === 'BUY') {
       await this.reserveFunds(params.userId, totalCost.toString(), 'pending');
+    } else {
+      await this.validateHoldings(params.userId, params.symbol, params.quantity);
     }
 
     // 5. 주문 애그리거트 생성 및 ORDER_PLACED 이벤트 발행 / Create Order Aggregate and raise ORDER_PLACED event
@@ -511,6 +514,46 @@ export class OrderService {
       );
     } catch (error: unknown) {
       this.logger.error(`Failed to release funds for order ${orderId}: ${error}`);
+    }
+  }
+
+  private async validateHoldings(
+    userId: string,
+    symbol: string,
+    quantity: string,
+  ): Promise<void> {
+    try {
+      const response = await axios.get(
+        `${this.portfolioUrl}/portfolio/internal/holding`,
+        {
+          params: { symbol },
+          headers: { 'x-user-id': userId, 'x-internal-token': this.internalToken },
+          timeout: 5000,
+        },
+      );
+
+      const holding = response.data?.data;
+      if (!holding || parseFloat(holding.quantity) <= 0) {
+        throw new BadRequestException(`No holding found for symbol ${symbol}`);
+      }
+
+      const available = parseFloat(holding.quantity);
+      const requested = parseFloat(quantity);
+      if (available < requested) {
+        throw new BadRequestException(
+          `Insufficient holdings: available ${available} ${symbol}, requested ${requested}`,
+        );
+      }
+    } catch (error: any) {
+      if (error instanceof BadRequestException) throw error;
+      const respMsg = error?.response?.data?.message;
+      if (respMsg) {
+        const msg = typeof respMsg === 'string' ? respMsg : Array.isArray(respMsg) ? respMsg[0] : '';
+        if (msg) {
+          throw new BadRequestException(msg);
+        }
+      }
+      throw new BadRequestException(`Insufficient holdings for ${symbol}`);
     }
   }
 

@@ -7,9 +7,11 @@
  */
 import {
   Controller,
+  Get,
   Post,
   Body,
   Headers,
+  Query,
   BadRequestException,
   UseGuards,
 } from '@nestjs/common';
@@ -79,6 +81,19 @@ export class InternalController {
       body.tradeId,
     );
     return { success: true, data: result };
+  }
+
+  @Get('holding')
+  async getHolding(
+    @Headers('x-user-id') userId: string,
+    @Query('symbol') symbol: string,
+  ) {
+    this.validateUserId(userId);
+    if (!symbol) {
+      throw new BadRequestException('symbol query parameter is required');
+    }
+    const holding = await this.balanceService.getHoldingBySymbol(userId, symbol);
+    return { success: true, data: holding };
   }
 
   private validateUserId(userId: string): void {
