@@ -106,6 +106,12 @@ const translations = {
     'error.notFoundDesc': '요청하신 페이지가 존재하지 않거나 이동되었습니다.',
     'error.connectionFailed': '서버 연결 실패',
     'error.connectionDesc': '서버에 연결할 수 없습니다. 서비스가 점검 중이거나 네트워크 상태를 확인해주세요.',
+    'error.pageLoadFailed': '페이지를 불러올 수 없습니다',
+    'error.pageLoadDesc': '이 페이지를 불러오는 중 오류가 발생했습니다.\n다시 시도하거나 대시보드로 이동해주세요.',
+    'error.goDashboard': '대시보드로',
+    'error.authFailed': '인증 오류',
+    'error.authDesc': '로그인 처리 중 문제가 발생했습니다.\n다시 시도해주세요.',
+    'error.goLogin': '로그인으로',
 
     // Exchange Rate
     'exchange.unit': '원',
@@ -1255,6 +1261,12 @@ const translations = {
     'error.notFoundDesc': 'The page you requested does not exist or has been moved.',
     'error.connectionFailed': 'Connection Failed',
     'error.connectionDesc': 'Unable to connect to the server. The service may be under maintenance or please check your network.',
+    'error.pageLoadFailed': 'Could Not Load Page',
+    'error.pageLoadDesc': 'An error occurred while loading this page.\nPlease retry or go to the dashboard.',
+    'error.goDashboard': 'Dashboard',
+    'error.authFailed': 'Authentication Error',
+    'error.authDesc': 'Something went wrong during authentication.\nPlease try again.',
+    'error.goLogin': 'Go to Login',
 
     // Exchange Rate
     'exchange.unit': 'KRW',
