@@ -14,13 +14,15 @@ import TransactionList from '@/components/portfolio/TransactionList';
 import ExchangeRateBar from '@/components/market/ExchangeRateBar';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import Skeleton from '@/components/ui/Skeleton';
-import { useOrders, useCancelOrder, useModifyOrder, useTradeHistory } from '@/hooks/useOrders';
+import ServiceError from '@/components/ui/ServiceError';
+import { useOrders, useCancelOrder, useModifyOrder, useTradeHistory, type TradeHistory } from '@/hooks/useOrders';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn, formatPrice, formatQuantity, formatDate, formatCurrencyDisplay } from '@/lib/format';
 import { useAuthStore } from '@/stores/auth';
-import { Search, ChevronDown, ClipboardList, Check, BarChart, LayoutDashboard } from 'lucide-react';
+import { Search, ChevronDown, ClipboardList, Check, BarChart, LayoutDashboard, TrendingUp, Activity, Download } from 'lucide-react';
+import { exportToCSV } from '@/lib/export';
 import type { TranslationKey } from '@/lib/i18n';
 import type { Order } from '@/types';
 
@@ -96,19 +98,206 @@ function StatusDropdown({
   );
 }
 
+/* ─── Analysis Tab ─── */
+interface AnalysisTabProps {
+  trades: TradeHistory[];
+  userId: string;
+  isLoading: boolean;
+  error: unknown;
+  refetch: () => void;
+  t: (key: TranslationKey) => string;
+  fmt: (v: number) => string;
+}
+
+function AnalysisTab({ trades, userId, isLoading, error, refetch, t, fmt }: AnalysisTabProps) {
+  const stats = useMemo(() => {
+    if (!trades.length) return null;
+
+    const totalTrades = trades.length;
+    const totalVolume = trades.reduce((sum, tr) => sum + tr.total, 0);
+    const avgTradeSize = totalVolume / totalTrades;
+
+    // Win rate: per-symbol, compare user's avg sell price vs avg buy price
+    const symbolMap: Record<string, { buyTotal: number; buyQty: number; sellTotal: number; sellQty: number }> = {};
+    for (const tr of trades) {
+      if (!symbolMap[tr.symbol]) symbolMap[tr.symbol] = { buyTotal: 0, buyQty: 0, sellTotal: 0, sellQty: 0 };
+      const isBuyer = tr.buyerId === userId;
+      if (isBuyer) {
+        symbolMap[tr.symbol].buyTotal += tr.price * tr.quantity;
+        symbolMap[tr.symbol].buyQty += tr.quantity;
+      } else {
+        symbolMap[tr.symbol].sellTotal += tr.price * tr.quantity;
+        symbolMap[tr.symbol].sellQty += tr.quantity;
+      }
+    }
+
+    let wins = 0;
+    let losses = 0;
+    for (const sym of Object.keys(symbolMap)) {
+      const s = symbolMap[sym];
+      if (s.buyQty > 0 && s.sellQty > 0) {
+        const avgBuy = s.buyTotal / s.buyQty;
+        const avgSell = s.sellTotal / s.sellQty;
+        if (avgSell > avgBuy) wins++;
+        else losses++;
+      }
+    }
+    const winRate = wins + losses > 0 ? (wins / (wins + losses)) * 100 : 0;
+
+    // Time distribution (24h)
+    const hourCounts = Array.from({ length: 24 }, () => 0);
+    for (const tr of trades) {
+      const hour = new Date(tr.executedAt).getHours();
+      hourCounts[hour]++;
+    }
+    const maxHourCount = Math.max(...hourCounts, 1);
+
+    // Symbol breakdown
+    const breakdown = Object.entries(symbolMap).map(([symbol, s]) => ({
+      symbol,
+      buyCount: trades.filter((tr) => tr.symbol === symbol && tr.buyerId === userId).length,
+      sellCount: trades.filter((tr) => tr.symbol === symbol && tr.sellerId === userId).length,
+      totalQty: s.buyQty + s.sellQty,
+      avgPrice: (s.buyTotal + s.sellTotal) / (s.buyQty + s.sellQty),
+      volume: s.buyTotal + s.sellTotal,
+    }));
+
+    return { totalTrades, totalVolume, avgTradeSize, winRate, wins, losses, hourCounts, maxHourCount, breakdown };
+  }, [trades, userId]);
+
+  /* Loading */
+  if (isLoading) {
+    return (
+      <div className="space-y-3 pt-2">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} className="w-full h-20 rounded-xl" />
+        ))}
+      </div>
+    );
+  }
+
+  /* Error */
+  if (error) {
+    return <ServiceError onRetry={refetch} />;
+  }
+
+  /* Empty */
+  if (!trades.length || !stats) {
+    return (
+      <div className="py-24 flex flex-col items-center text-center">
+        <Activity className="w-10 h-10 text-text-quaternary/40 mb-3" />
+        <p className="text-text-quaternary text-[14px] whitespace-pre-line">
+          {t('orders.analysisEmptyState')}
+        </p>
+        <Link
+          href="/dashboard"
+          className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 text-[13px] font-semibold text-accent bg-accent/10 rounded-lg hover:bg-accent/20 transition-colors"
+        >
+          <LayoutDashboard className="w-3.5 h-3.5" />
+          {t('orders.goToDashboard')}
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Summary stats cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
+        {[
+          { label: t('orders.analysisTotalTrades'), value: stats.totalTrades.toLocaleString(), sub: t('orders.analysisTrades') },
+          { label: t('orders.analysisTotalVolume'), value: fmt(stats.totalVolume) },
+          { label: t('orders.analysisAvgTradeSize'), value: fmt(stats.avgTradeSize) },
+          {
+            label: t('orders.analysisWinRate'),
+            value: `${stats.winRate.toFixed(1)}%`,
+            sub: `${t('orders.analysisWins')}: ${stats.wins} / ${t('orders.analysisLosses')}: ${stats.losses}`,
+          },
+        ].map((card) => (
+          <div key={card.label} className="bg-bg-secondary/60 border border-border/60 rounded-xl px-3 md:px-4 py-3 md:py-4">
+            <div className="text-[10px] md:text-[11px] text-text-quaternary font-medium mb-1 truncate">{card.label}</div>
+            <div className="text-[16px] md:text-[18px] font-extrabold text-text-primary tabular-nums truncate">{card.value}</div>
+            {card.sub && <div className="text-[10px] text-text-quaternary mt-0.5 truncate">{card.sub}</div>}
+          </div>
+        ))}
+      </div>
+
+      {/* Time distribution chart */}
+      <div>
+        <h3 className="text-[14px] font-bold text-text-secondary mb-3">{t('orders.analysisTimeDistribution')}</h3>
+        <div className="bg-bg-secondary/60 border border-border/60 rounded-xl p-3 md:p-4 space-y-1.5">
+          {stats.hourCounts.map((count, hour) => (
+            <div key={hour} className="flex items-center gap-2">
+              <span className="w-8 text-[11px] text-text-quaternary tabular-nums text-right shrink-0">
+                {String(hour).padStart(2, '0')}{t('orders.analysisTimeHour')}
+              </span>
+              <div className="flex-1 h-5 bg-bg-tertiary rounded overflow-hidden">
+                <div
+                  className="h-full bg-accent rounded transition-all"
+                  style={{ width: `${(count / stats.maxHourCount) * 100}%` }}
+                />
+              </div>
+              <span className="w-6 text-[11px] text-text-tertiary tabular-nums text-right shrink-0">
+                {count}
+              </span>
+            </div>
+          ))}
+          <div className="flex items-center justify-between pt-1">
+            <span className="text-[10px] text-text-quaternary">{t('orders.analysisTimeHour')}</span>
+            <span className="text-[10px] text-text-quaternary">{t('orders.analysisTradeCount')}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Symbol breakdown table */}
+      <div>
+        <h3 className="text-[14px] font-bold text-text-secondary mb-3">{t('orders.analysisSymbolBreakdown')}</h3>
+        <div className="bg-bg-secondary/60 border border-border/60 rounded-xl overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="border-b border-border/60">
+                  <th className="px-3 md:px-4 py-2.5 text-[11px] md:text-[12px] font-semibold text-text-quaternary">{t('orders.analysisSymbol')}</th>
+                  <th className="px-3 md:px-4 py-2.5 text-[11px] md:text-[12px] font-semibold text-text-quaternary text-right">{t('orders.analysisBuyCount')}</th>
+                  <th className="px-3 md:px-4 py-2.5 text-[11px] md:text-[12px] font-semibold text-text-quaternary text-right">{t('orders.analysisSellCount')}</th>
+                  <th className="px-3 md:px-4 py-2.5 text-[11px] md:text-[12px] font-semibold text-text-quaternary text-right">{t('orders.analysisTotalQty')}</th>
+                  <th className="px-3 md:px-4 py-2.5 text-[11px] md:text-[12px] font-semibold text-text-quaternary text-right">{t('orders.analysisAvgPrice')}</th>
+                  <th className="px-3 md:px-4 py-2.5 text-[11px] md:text-[12px] font-semibold text-text-quaternary text-right">{t('orders.analysisVolume')}</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/30">
+                {stats.breakdown.map((row) => (
+                  <tr key={row.symbol} className="hover:bg-bg-tertiary/40 transition-colors">
+                    <td className="px-3 md:px-4 py-2.5 text-[12px] md:text-[13px] font-semibold text-text-primary">{row.symbol}</td>
+                    <td className="px-3 md:px-4 py-2.5 text-[12px] md:text-[13px] text-rise tabular-nums text-right">{row.buyCount}</td>
+                    <td className="px-3 md:px-4 py-2.5 text-[12px] md:text-[13px] text-fall tabular-nums text-right">{row.sellCount}</td>
+                    <td className="px-3 md:px-4 py-2.5 text-[12px] md:text-[13px] text-text-secondary tabular-nums text-right">{row.totalQty.toLocaleString(undefined, { maximumFractionDigits: 8 })}</td>
+                    <td className="px-3 md:px-4 py-2.5 text-[12px] md:text-[13px] text-text-secondary tabular-nums text-right">{fmt(row.avgPrice)}</td>
+                    <td className="px-3 md:px-4 py-2.5 text-[12px] md:text-[13px] text-text-primary font-medium tabular-nums text-right">{fmt(row.volume)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function OrdersPage() {
   const { t } = useTranslation();
   const { data: rateData } = useExchangeRate();
   const { display: currencyMode } = useCurrencyDisplay();
   const rate = rateData?.rate;
   const fmt = (v: number) => formatCurrencyDisplay(v, currencyMode, rate);
-  const [tab, setTab] = useState<'orders' | 'trades'>('orders');
+  const [tab, setTab] = useState<'orders' | 'trades' | 'analysis'>('orders');
   const [statusFilter, setStatusFilter] = useState('all');
   const [searchInput, setSearchInput] = useState('');
   const [symbolSearch, setSymbolSearch] = useState('');
   const user = useAuthStore((s) => s.user);
-  const { data: trades, isLoading: tradesLoading } = useTradeHistory();
-  const { data: orders, isLoading } = useOrders(
+  const { data: trades, isLoading: tradesLoading, error: tradesError, refetch: refetchTrades } = useTradeHistory();
+  const { data: orders, isLoading, error: ordersError, refetch: refetchOrders } = useOrders(
     statusFilter === 'all' ? undefined : statusFilter,
   );
   const cancelOrder = useCancelOrder();
@@ -174,9 +363,9 @@ export default function OrdersPage() {
   return (
     <AuthGuard>
       <div>
-        <div className="py-6 flex items-center gap-2.5">
+        <div className="py-4 md:py-6 flex items-center gap-2.5">
           <ClipboardList className="w-5 h-5 text-accent" />
-          <h1 className="text-[20px] font-extrabold text-text-primary">{t('orders.title')}</h1>
+          <h1 className="text-[18px] md:text-[20px] font-extrabold text-text-primary">{t('orders.title')}</h1>
         </div>
 
         <ExchangeRateBar />
@@ -203,6 +392,17 @@ export default function OrdersPage() {
             )}
           >
             {t('orders.tradeHistory')}
+          </button>
+          <button
+            onClick={() => setTab('analysis')}
+            className={cn(
+              'px-4 py-2 text-[13px] font-semibold rounded-lg transition-colors',
+              tab === 'analysis'
+                ? 'bg-accent text-white'
+                : 'bg-bg-secondary text-text-tertiary hover:text-text-primary',
+            )}
+          >
+            {t('orders.analysis')}
           </button>
         </div>
 
@@ -232,22 +432,24 @@ export default function OrdersPage() {
 
             {/* 주문 요약 통계 / Order Summary Stats */}
             {!isLoading && orders && orders.length > 0 && (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
+              <div className="grid grid-cols-3 gap-2 md:gap-3 mb-5">
                 {[
                   { label: t('orders.totalOrders'), value: orders.length, color: 'text-text-primary' },
                   { label: t('orders.filledOrders'), value: orders.filter((o) => o.status === 'FILLED').length, color: 'text-success' },
                   { label: t('orders.pendingOrders'), value: orders.filter((o) => o.status === 'PENDING').length, color: 'text-warning' },
                 ].map((stat) => (
-                  <div key={stat.label} className="bg-bg-secondary/60 border border-border/60 rounded-xl px-4 py-3 text-center">
-                    <div className={cn('text-[20px] font-extrabold tabular-nums', stat.color)}>{stat.value}</div>
-                    <div className="text-[11px] text-text-quaternary font-medium mt-0.5">{stat.label}</div>
+                  <div key={stat.label} className="bg-bg-secondary/60 border border-border/60 rounded-xl px-3 md:px-4 py-2.5 md:py-3 text-center">
+                    <div className={cn('text-[17px] md:text-[20px] font-extrabold tabular-nums', stat.color)}>{stat.value}</div>
+                    <div className="text-[10px] md:text-[11px] text-text-quaternary font-medium mt-0.5 truncate">{stat.label}</div>
                   </div>
                 ))}
               </div>
             )}
 
             <div>
-              {isLoading ? (
+              {ordersError ? (
+                <ServiceError onRetry={refetchOrders} />
+              ) : isLoading ? (
                 <div className="space-y-3">
                   {Array.from({ length: 5 }).map((_, i) => (
                     <Skeleton key={i} className="w-full h-16 rounded-xl" />
@@ -299,11 +501,11 @@ export default function OrdersPage() {
                         </div>
                       ) : (
                         <>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2.5">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 md:gap-2.5 min-w-0">
                               <span
                                 className={cn(
-                                  'text-[12px] font-bold px-2 py-1 rounded-lg',
+                                  'text-[11px] md:text-[12px] font-bold px-2 py-1 rounded-lg shrink-0',
                                   order.side === 'BUY'
                                     ? 'bg-rise/12 text-rise'
                                     : 'bg-fall/12 text-fall',
@@ -311,32 +513,38 @@ export default function OrdersPage() {
                               >
                                 {order.side === 'BUY' ? t('orders.buy') : t('orders.sell')}
                               </span>
-                              <span className="text-[14px] font-semibold text-text-primary">
+                              {order.triggerType && (
+                                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-warning/12 text-warning shrink-0">
+                                  {order.triggerType === 'STOP_LOSS' ? t('order.stopLoss') : t('order.takeProfit')}
+                                  {' '}@ {formatPrice(order.triggerPrice!)}
+                                </span>
+                              )}
+                              <span className="text-[13px] md:text-[14px] font-semibold text-text-primary truncate">
                                 {order.symbol}
                               </span>
                             </div>
-                            <div className="flex items-center gap-1.5">
+                            <div className="flex items-center gap-1.5 shrink-0">
                               <button
                                 onClick={() => startEditing(order)}
-                                className="px-2 py-1 text-[11px] font-medium text-text-tertiary border border-border rounded-md hover:text-accent hover:border-accent/50 transition-colors"
+                                className="px-2 py-1 text-[10px] md:text-[11px] font-medium text-text-tertiary border border-border rounded-md hover:text-accent hover:border-accent/50 transition-colors whitespace-nowrap"
                               >
                                 {t('orders.modify')}
                               </button>
                               <button
                                 onClick={() => setCancelTargetId(order.id)}
                                 disabled={cancelOrder.isPending}
-                                className="px-2 py-1 text-[11px] font-medium text-fall border border-fall/30 rounded-md hover:bg-fall/10 transition-colors"
+                                className="px-2 py-1 text-[10px] md:text-[11px] font-medium text-fall border border-fall/30 rounded-md hover:bg-fall/10 transition-colors whitespace-nowrap"
                               >
                                 {t('orders.cancel')}
                               </button>
                             </div>
                           </div>
-                          <div className="flex items-center justify-between mt-2">
-                            <span className="text-[12px] text-text-quaternary">
+                          <div className="flex items-center justify-between mt-2 gap-2">
+                            <span className="text-[11px] md:text-[12px] text-text-quaternary truncate">
                               {formatQuantity(order.quantity)}{t('orders.unit')} ·{' '}
                               {order.price ? formatPrice(order.price) : t('orders.marketPrice')}
                             </span>
-                            <span className="text-[12px] text-text-quaternary">
+                            <span className="text-[11px] md:text-[12px] text-text-quaternary shrink-0">
                               {formatDate(order.createdAt)}
                             </span>
                           </div>
@@ -359,6 +567,20 @@ export default function OrdersPage() {
                       </Link>
                     </div>
                   )}
+                </div>
+              ) : filteredOrders && filteredOrders.length === 0 ? (
+                <div className="py-24 flex flex-col items-center text-center">
+                  <ClipboardList className="w-10 h-10 text-text-quaternary/40 mb-3" />
+                  <p className="text-text-quaternary text-[14px] whitespace-pre-line">
+                    {t('orders.emptyAll')}
+                  </p>
+                  <Link
+                    href="/dashboard"
+                    className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 text-[13px] font-semibold text-accent bg-accent/10 rounded-lg hover:bg-accent/20 transition-colors"
+                  >
+                    <LayoutDashboard className="w-3.5 h-3.5" />
+                    {t('orders.goToDashboard')}
+                  </Link>
                 </div>
               ) : (
                 <TransactionList orders={filteredOrders ?? []} />
@@ -399,7 +621,41 @@ export default function OrdersPage() {
               </div>
             </div>
 
-            {tradesLoading ? (
+            <div className="flex justify-end mb-3">
+              <button
+                onClick={() => {
+                  if (!filteredTrades.length) return;
+                  exportToCSV(
+                    filteredTrades.map((trade) => ({
+                      symbol: trade.symbol,
+                      side: trade.buyerId === user?.id ? 'BUY' : 'SELL',
+                      price: trade.price,
+                      quantity: trade.quantity,
+                      total: trade.total,
+                      executedAt: new Date(trade.executedAt).toLocaleString(),
+                    })),
+                    `trades-${new Date().toISOString().slice(0, 10)}`,
+                    [
+                      { key: 'symbol', label: t('orders.analysisSymbol') },
+                      { key: 'side', label: t('orders.side' as any) || 'Side' },
+                      { key: 'price', label: t('orders.price') },
+                      { key: 'quantity', label: t('orders.quantity') },
+                      { key: 'total', label: t('orders.totalAmount') },
+                      { key: 'executedAt', label: t('orders.executedAt' as any) || 'Date' },
+                    ],
+                  );
+                }}
+                disabled={!filteredTrades.length}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium text-text-tertiary hover:text-text-primary border border-border rounded-lg hover:bg-bg-secondary transition-colors disabled:opacity-40 disabled:pointer-events-none"
+              >
+                <Download className="w-3.5 h-3.5" />
+                {t('export.csv')}
+              </button>
+            </div>
+
+            {tradesError ? (
+              <ServiceError onRetry={refetchTrades} />
+            ) : tradesLoading ? (
               <div className="space-y-2 pt-2">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <Skeleton key={i} className="w-full h-16 rounded-xl" />
@@ -410,24 +666,24 @@ export default function OrdersPage() {
                 {filteredTrades.map((trade) => {
                   const isBuyer = trade.buyerId === user?.id;
                   return (
-                    <div key={trade.tradeId} className="py-3 flex items-center gap-3">
+                    <div key={trade.tradeId} className="py-3 flex items-center gap-2 md:gap-3">
                       <div className={cn(
-                        'w-10 h-6 rounded text-[11px] font-bold flex items-center justify-center',
+                        'w-9 md:w-10 h-6 rounded text-[10px] md:text-[11px] font-bold flex items-center justify-center shrink-0',
                         isBuyer ? 'bg-rise/12 text-rise' : 'bg-fall/12 text-fall',
                       )}>
                         {isBuyer ? t('orders.buy') : t('orders.sell')}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="text-[14px] font-semibold text-text-primary">{trade.symbol}</div>
-                        <div className="text-[12px] text-text-quaternary">
+                        <div className="text-[13px] md:text-[14px] font-semibold text-text-primary truncate">{trade.symbol}</div>
+                        <div className="text-[11px] md:text-[12px] text-text-quaternary truncate">
                           {new Date(trade.executedAt).toLocaleString()}
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className="text-[13px] font-medium text-text-primary tabular-nums">
+                      <div className="text-right shrink-0 min-w-0 max-w-[45%]">
+                        <div className="text-[12px] md:text-[13px] font-medium text-text-primary tabular-nums truncate">
                           {fmt(trade.price)} × {trade.quantity.toLocaleString(undefined, { maximumFractionDigits: 8 })}
                         </div>
-                        <div className="text-[12px] text-text-tertiary tabular-nums">
+                        <div className="text-[11px] md:text-[12px] text-text-tertiary tabular-nums truncate">
                           {t('orders.totalAmount')}: {fmt(trade.total)}
                         </div>
                       </div>
@@ -438,12 +694,23 @@ export default function OrdersPage() {
             ) : (
               <div className="py-24 flex flex-col items-center text-center">
                 <BarChart className="w-10 h-10 text-text-quaternary/40 mb-3" />
-                <p className="text-text-quaternary text-[14px]">
+                <p className="text-text-quaternary text-[14px] whitespace-pre-line">
                   {t('orders.emptyTrades')}
                 </p>
+                <Link
+                  href="/dashboard"
+                  className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 text-[13px] font-semibold text-accent bg-accent/10 rounded-lg hover:bg-accent/20 transition-colors"
+                >
+                  <LayoutDashboard className="w-3.5 h-3.5" />
+                  {t('orders.goToDashboard')}
+                </Link>
               </div>
             )}
           </div>
+        )}
+
+        {tab === 'analysis' && (
+          <AnalysisTab trades={trades ?? []} userId={user?.id ?? ''} isLoading={tradesLoading} error={tradesError} refetch={refetchTrades} t={t} fmt={fmt} />
         )}
       </div>
 
