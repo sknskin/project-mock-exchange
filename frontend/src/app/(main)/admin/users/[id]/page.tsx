@@ -399,9 +399,6 @@ export default function AdminUserDetailPage({
                 {getModalMessage()}
               </p>
               <div className="mt-4">
-                <label className="text-[13px] text-text-tertiary block mb-1.5">
-                  {t('admin.users.noteLabel')}
-                </label>
                 <textarea
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
