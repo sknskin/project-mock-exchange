@@ -170,12 +170,15 @@ export function useDeleteMessage() {
   });
 }
 
-export function useSearchUsers(query: string) {
+export function useSearchUsers(query: string, excludeIds?: string[]) {
   return useQuery({
-    queryKey: ['chat-user-search', query],
+    queryKey: ['chat-user-search', query, excludeIds],
     queryFn: async () => {
       const { data } = await api.get('/api/chat/users/search', {
-        params: { q: query || '' },
+        params: {
+          q: query || '',
+          excludeIds: excludeIds?.join(',') || undefined,
+        },
       });
       return data.data as ChatUserSearchResult[];
     },

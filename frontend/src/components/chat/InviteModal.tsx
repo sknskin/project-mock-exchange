@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Search, X, Check } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Search, X, Check, CheckCheck } from 'lucide-react';
 import { useInviteToRoom, useSearchUsers } from '@/hooks/useChat';
 import { useAuthStore } from '@/stores/auth';
 import { usePresenceStore } from '@/stores/presence';
@@ -24,7 +24,7 @@ export default function InviteModal({ roomId, existingParticipantIds, onClose }:
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [selectedUsers, setSelectedUsers] = useState<ChatUserSearchResult[]>([]);
 
-  const { data: searchResults, isLoading: searching } = useSearchUsers(debouncedQuery);
+  const { data: searchResults, isLoading: searching } = useSearchUsers(debouncedQuery, existingParticipantIds);
   const onlineUserIds = usePresenceStore((s) => s.onlineUserIds);
 
   useEffect(() => {
@@ -32,12 +32,15 @@ export default function InviteModal({ roomId, existingParticipantIds, onClose }:
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  const filteredResults = searchResults?.filter(
-    (u) =>
-      u.id !== user?.id &&
-      !existingParticipantIds.includes(u.id) &&
-      !selectedUsers.some((s) => s.id === u.id),
-  );
+  const filteredResults = useMemo(() =>
+    searchResults?.filter(
+      (u) =>
+        u.id !== user?.id &&
+        !existingParticipantIds.includes(u.id),
+    ) ?? [],
+  [searchResults, user?.id, existingParticipantIds]);
+
+  const allSelected = filteredResults.length > 0 && filteredResults.every((u) => selectedUsers.some((s) => s.id === u.id));
 
   const toggleUser = (u: ChatUserSearchResult) => {
     setSelectedUsers((prev) =>
@@ -45,6 +48,19 @@ export default function InviteModal({ roomId, existingParticipantIds, onClose }:
         ? prev.filter((s) => s.id !== u.id)
         : [...prev, u],
     );
+  };
+
+  const handleSelectAll = () => {
+    if (allSelected) {
+      const filteredIds = new Set(filteredResults.map((u) => u.id));
+      setSelectedUsers((prev) => prev.filter((s) => !filteredIds.has(s.id)));
+    } else {
+      setSelectedUsers((prev) => {
+        const existingIds = new Set(prev.map((s) => s.id));
+        const newUsers = filteredResults.filter((u) => !existingIds.has(u.id));
+        return [...prev, ...newUsers];
+      });
+    }
   };
 
   const handleInvite = async () => {
@@ -95,22 +111,38 @@ export default function InviteModal({ roomId, existingParticipantIds, onClose }:
           </div>
         )}
 
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-text-quaternary" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={t('chat.searchUserPlaceholder')}
-            className="w-full pl-9 pr-3.5 py-2.5 bg-bg-secondary rounded-xl text-[13px] text-text-primary placeholder:text-text-quaternary outline-none"
-          />
+        {/* Search + Select All */}
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-text-quaternary" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={t('chat.searchUserPlaceholder')}
+              className="w-full pl-9 pr-3.5 py-2.5 bg-bg-secondary rounded-xl text-[13px] text-text-primary placeholder:text-text-quaternary outline-none"
+            />
+          </div>
+          {filteredResults.length > 0 && (
+            <button
+              onClick={handleSelectAll}
+              className={cn(
+                'shrink-0 p-2.5 rounded-xl transition-colors',
+                allSelected
+                  ? 'bg-accent/10 text-accent'
+                  : 'bg-bg-secondary text-text-tertiary hover:text-text-primary',
+              )}
+              title={allSelected ? t('chat.deselectAll') : t('chat.selectAll')}
+            >
+              <CheckCheck className="w-4 h-4" />
+            </button>
+          )}
         </div>
 
         {/* Results */}
         {searching ? (
           <p className="text-[12px] text-text-quaternary text-center py-4">{t('common.loading')}</p>
-        ) : filteredResults && filteredResults.length > 0 ? (
+        ) : filteredResults.length > 0 ? (
           <ul className="space-y-0.5">
             {filteredResults.map((u) => {
               const isSelected = selectedUsers.some((s) => s.id === u.id);

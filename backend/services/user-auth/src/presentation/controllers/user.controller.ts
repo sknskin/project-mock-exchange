@@ -37,14 +37,28 @@ export class UserController {
 
   @Public()
   @Get('search')
-  async search(@Query('q') q: string) {
+  async search(
+    @Query('q') q: string,
+    @Query('excludeIds') excludeIds?: string,
+  ) {
     const where: Record<string, unknown> = {
       isActive: true,
       approvalStatus: 'APPROVED',
     };
 
     if (q && q.trim().length > 0) {
-      where.username = { contains: q.trim(), mode: 'insensitive' };
+      const trimmed = q.trim();
+      where.OR = [
+        { username: { contains: trimmed, mode: 'insensitive' } },
+        { name: { contains: trimmed, mode: 'insensitive' } },
+      ];
+    }
+
+    if (excludeIds) {
+      const ids = excludeIds.split(',').filter(Boolean);
+      if (ids.length > 0) {
+        where.id = { notIn: ids };
+      }
     }
 
     const users = await this.prisma.user.findMany({
@@ -54,7 +68,6 @@ export class UserController {
         username: true,
         name: true,
       },
-      take: 20,
       orderBy: { username: 'asc' },
     });
 
