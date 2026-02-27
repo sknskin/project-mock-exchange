@@ -19,6 +19,7 @@ export class ProxyService {
   }
 
   private initClients() {
+    const internalToken = this.configService.get<string>('INTERNAL_SERVICE_SECRET', '');
     const services = {
       'user-auth': `http://localhost:${this.configService.get('USER_AUTH_PORT', 3007)}`,
       'market-data': `http://localhost:${this.configService.get('MARKET_DATA_PORT', 3001)}`,
@@ -35,7 +36,10 @@ export class ProxyService {
         axios.create({
           baseURL,
           timeout: 10000,
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'x-internal-token': internalToken,
+          },
         }),
       );
     }

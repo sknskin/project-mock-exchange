@@ -11,9 +11,12 @@ import {
   Body,
   Headers,
   BadRequestException,
+  UseGuards,
 } from '@nestjs/common';
 import { BalanceService } from '../../domain/services/balance.service';
+import { InternalAuthGuard } from '../../common/guards/internal-auth.guard';
 
+@UseGuards(InternalAuthGuard)
 @Controller('portfolio/internal')
 export class InternalController {
   constructor(private readonly balanceService: BalanceService) {}

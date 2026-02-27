@@ -1,10 +1,25 @@
-import { Controller, Get, Post, Query, Body } from '@nestjs/common';
+import { Controller, Get, Post, Param, Query, Body, NotFoundException, UseGuards } from '@nestjs/common';
 import { Public } from '../../infrastructure/config/jwt-auth.guard';
 import { PrismaService } from '../../infrastructure/persistence/prisma/prisma.service';
+import { InternalAuthGuard } from '../../common/guards/internal-auth.guard';
 
+@UseGuards(InternalAuthGuard)
 @Controller('users')
 export class UserController {
   constructor(private readonly prisma: PrismaService) {}
+
+  @Public()
+  @Get(':id/status')
+  async getStatus(@Param('id') id: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      select: { isActive: true, approvalStatus: true },
+    });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    return { isActive: user.isActive, approvalStatus: user.approvalStatus };
+  }
 
   @Public()
   @Post('by-ids')

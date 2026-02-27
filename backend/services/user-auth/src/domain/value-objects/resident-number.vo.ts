@@ -36,8 +36,8 @@ export class ResidentNumber {
     return { valid: true };
   }
 
-  encrypt(secret: string): string {
-    const key = scryptSync(secret, 'virtuex-salt', KEY_LENGTH);
+  encrypt(secret: string, salt: string = 'virtuex-salt'): string {
+    const key = scryptSync(secret, salt, KEY_LENGTH);
     const iv = randomBytes(IV_LENGTH);
     const cipher = createCipheriv(ALGORITHM, key, iv);
 
@@ -49,9 +49,9 @@ export class ResidentNumber {
     return `${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted}`;
   }
 
-  static decrypt(encrypted: string, secret: string): string {
+  static decrypt(encrypted: string, secret: string, salt: string = 'virtuex-salt'): string {
     const [ivHex, authTagHex, data] = encrypted.split(':');
-    const key = scryptSync(secret, 'virtuex-salt', KEY_LENGTH);
+    const key = scryptSync(secret, salt, KEY_LENGTH);
     const iv = Buffer.from(ivHex, 'hex');
     const authTag = Buffer.from(authTagHex, 'hex');
 

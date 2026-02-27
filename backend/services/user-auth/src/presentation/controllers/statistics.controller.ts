@@ -18,7 +18,9 @@ import { JwtAuthGuard } from '../../infrastructure/config/jwt-auth.guard';
 import { CurrentUser } from '../../infrastructure/config/current-user.decorator';
 import { UserDto, USER_ROLE } from '@virtuex/common';
 import { PrismaService } from '../../infrastructure/persistence/prisma/prisma.service';
+import { InternalAuthGuard } from '../../common/guards/internal-auth.guard';
 
+@UseGuards(InternalAuthGuard)
 @Controller('statistics')
 export class StatisticsController {
   constructor(private readonly prisma: PrismaService) {}

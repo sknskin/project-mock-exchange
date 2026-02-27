@@ -26,9 +26,10 @@ import { JwtAuthGuard, Public, OptionalAuth } from '../../infrastructure/config/
 import { CurrentUser } from '../../infrastructure/config/current-user.decorator';
 import { AnnouncementService } from '../../application/services/announcement.service';
 import { UserDto } from '@virtuex/common';
+import { InternalAuthGuard } from '../../common/guards/internal-auth.guard';
 
 @Controller('announcements')
-@UseGuards(JwtAuthGuard)
+@UseGuards(InternalAuthGuard, JwtAuthGuard)
 export class AnnouncementController {
   constructor(private readonly announcementService: AnnouncementService) {
     const uploadsDir = path.join(process.cwd(), 'uploads');

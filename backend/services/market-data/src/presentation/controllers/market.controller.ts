@@ -5,9 +5,11 @@
  * @file Market Data Controller
  * @description Handles market data API endpoints: prices, assets, candlesticks
  */
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { MarketDataService } from '../../application/services/market-data.service';
+import { InternalAuthGuard } from '../../common/guards/internal-auth.guard';
 
+@UseGuards(InternalAuthGuard)
 @Controller('market')
 export class MarketController {
   constructor(private readonly marketDataService: MarketDataService) {}

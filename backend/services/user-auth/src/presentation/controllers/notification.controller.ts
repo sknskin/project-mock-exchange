@@ -21,7 +21,9 @@ import { JwtAuthGuard } from '../../infrastructure/config/jwt-auth.guard';
 import { CurrentUser } from '../../infrastructure/config/current-user.decorator';
 import { UserDto } from '@virtuex/common';
 import { PrismaService } from '../../infrastructure/persistence/prisma/prisma.service';
+import { InternalAuthGuard } from '../../common/guards/internal-auth.guard';
 
+@UseGuards(InternalAuthGuard)
 @Controller('notifications')
 export class NotificationController {
   constructor(private readonly prisma: PrismaService) {}

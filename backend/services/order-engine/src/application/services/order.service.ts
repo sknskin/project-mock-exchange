@@ -39,6 +39,7 @@ export class OrderService {
   private readonly logger = new Logger(OrderService.name);
   private readonly marketDataUrl: string;
   private readonly portfolioUrl: string;
+  private readonly internalToken: string;
 
   constructor(
     private readonly eventStore: EventStoreService,
@@ -48,12 +49,13 @@ export class OrderService {
   ) {
     this.marketDataUrl = this.config.get<string>(
       'MARKET_DATA_URL',
-      'http://localhost:3003',
+      'http://localhost:3001',
     );
     this.portfolioUrl = this.config.get<string>(
       'PORTFOLIO_URL',
-      'http://localhost:3004',
+      'http://localhost:3003',
     );
+    this.internalToken = this.config.get<string>('INTERNAL_SERVICE_SECRET', '');
   }
 
   async placeOrder(params: PlaceOrderParams): Promise<{
@@ -230,8 +232,8 @@ export class OrderService {
     this.matchingEngine.removeFromOrderBook(orderId, order.symbol, order.side);
   }
 
-  async getOrder(orderId: string): Promise<unknown> {
-    return this.prisma.orderRead.findUnique({ where: { orderId } });
+  async getOrder(orderId: string, userId: string): Promise<unknown> {
+    return this.prisma.orderRead.findFirst({ where: { orderId, userId } });
   }
 
   async getUserOrders(userId: string, limit = 50, offset = 0, status?: string): Promise<unknown[]> {
@@ -458,7 +460,7 @@ export class OrderService {
     try {
       const response = await axios.get(
         `${this.marketDataUrl}/market/prices/${symbol}`,
-        { timeout: 5000 },
+        { timeout: 5000, headers: { 'x-internal-token': this.internalToken } },
       );
       if (response.data?.success && response.data?.data?.price) {
         return new Decimal(response.data.data.price);
@@ -479,7 +481,7 @@ export class OrderService {
       await axios.post(
         `${this.portfolioUrl}/portfolio/internal/reserve`,
         { amount },
-        { headers: { 'x-user-id': userId }, timeout: 5000 },
+        { headers: { 'x-user-id': userId, 'x-internal-token': this.internalToken }, timeout: 5000 },
       );
     } catch (error: any) {
       // axios 에러의 경우 portfolio 서비스의 실제 에러 메시지를 추출
@@ -505,7 +507,7 @@ export class OrderService {
       await axios.post(
         `${this.portfolioUrl}/portfolio/internal/release`,
         { amount, orderId },
-        { headers: { 'x-user-id': userId }, timeout: 5000 },
+        { headers: { 'x-user-id': userId, 'x-internal-token': this.internalToken }, timeout: 5000 },
       );
     } catch (error: unknown) {
       this.logger.error(`Failed to release funds for order ${orderId}: ${error}`);
@@ -524,7 +526,7 @@ export class OrderService {
             price: fill.matchedPrice,
             tradeId: fill.tradeId,
           },
-          { headers: { 'x-user-id': fill.buyerId }, timeout: 5000 },
+          { headers: { 'x-user-id': fill.buyerId, 'x-internal-token': this.internalToken }, timeout: 5000 },
         );
       }
 
@@ -538,7 +540,7 @@ export class OrderService {
             price: fill.matchedPrice,
             tradeId: fill.tradeId,
           },
-          { headers: { 'x-user-id': fill.sellerId }, timeout: 5000 },
+          { headers: { 'x-user-id': fill.sellerId, 'x-internal-token': this.internalToken }, timeout: 5000 },
         );
       }
     } catch (error: unknown) {

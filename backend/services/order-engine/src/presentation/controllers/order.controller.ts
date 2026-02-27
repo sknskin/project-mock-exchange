@@ -16,12 +16,15 @@ import {
   Headers,
   Query,
   BadRequestException,
+  UseGuards,
 } from '@nestjs/common';
 import { OrderService } from '../../application/services/order.service';
 import { PrismaService } from '../../infrastructure/persistence/prisma/prisma.service';
 import { PlaceOrderRequestDto } from '../dto/place-order.dto';
 import { ModifyOrderRequestDto } from '../dto/modify-order.dto';
+import { InternalAuthGuard } from '../../common/guards/internal-auth.guard';
 
+@UseGuards(InternalAuthGuard)
 @Controller('orders')
 export class OrderController {
   constructor(
@@ -85,7 +88,7 @@ export class OrderController {
     @Param('orderId') orderId: string,
   ) {
     this.validateUserId(userId);
-    const order = await this.orderService.getOrder(orderId);
+    const order = await this.orderService.getOrder(orderId, userId);
     if (!order) {
       return { success: false, message: 'Order not found' };
     }

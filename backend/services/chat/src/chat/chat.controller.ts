@@ -9,12 +9,15 @@ import {
   Headers,
   DefaultValuePipe,
   ParseIntPipe,
+  UseGuards,
 } from '@nestjs/common';
 import { ChatService } from './chat.service';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { SendMessageDto } from './dto/send-message.dto';
 import { InviteUserDto } from './dto/invite-user.dto';
+import { InternalAuthGuard } from '../common/guards/internal-auth.guard';
 
+@UseGuards(InternalAuthGuard)
 @Controller()
 export class ChatController {
   constructor(private readonly chatService: ChatService) {}

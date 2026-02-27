@@ -13,11 +13,14 @@ import {
   Headers,
   Query,
   BadRequestException,
+  UseGuards,
 } from '@nestjs/common';
 import { BalanceService } from '../../domain/services/balance.service';
 import { DepositDto } from '../dto/deposit.dto';
 import { WithdrawDto } from '../dto/withdraw.dto';
+import { InternalAuthGuard } from '../../common/guards/internal-auth.guard';
 
+@UseGuards(InternalAuthGuard)
 @Controller('portfolio')
 export class PortfolioController {
   constructor(private readonly balanceService: BalanceService) {}

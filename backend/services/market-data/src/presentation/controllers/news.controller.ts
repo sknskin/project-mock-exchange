@@ -1,7 +1,9 @@
-import { Controller, Get, Post, Query } from '@nestjs/common';
+import { Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import { NewsService } from '../../application/services/news.service';
 import { NewsCategory } from '../../../generated/prisma';
+import { InternalAuthGuard } from '../../common/guards/internal-auth.guard';
 
+@UseGuards(InternalAuthGuard)
 @Controller('news')
 export class NewsController {
   constructor(private readonly newsService: NewsService) {}

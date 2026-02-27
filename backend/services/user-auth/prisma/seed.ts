@@ -16,8 +16,8 @@ const ALGORITHM = 'aes-256-gcm';
 const KEY_LENGTH = 32;
 const IV_LENGTH = 16;
 
-function encryptRrn(raw: string, secret: string): string {
-  const key = scryptSync(secret, 'virtuex-salt', KEY_LENGTH);
+function encryptRrn(raw: string, secret: string, salt: string = 'virtuex-salt'): string {
+  const key = scryptSync(secret, salt, KEY_LENGTH);
   const iv = randomBytes(IV_LENGTH);
   const cipher = createCipheriv(ALGORITHM, key, iv);
   let encrypted = cipher.update(raw, 'utf8', 'hex');
@@ -39,7 +39,8 @@ async function main() {
   if (!jwtSecret) {
     throw new Error('JWT_SECRET environment variable is required');
   }
-  const encryptedRrn = encryptRrn('9311171052812', jwtSecret);
+  const encryptionSalt = process.env.ENCRYPTION_SALT || 'virtuex-salt';
+  const encryptedRrn = encryptRrn('9311171052812', jwtSecret, encryptionSalt);
 
   const systemUser = await prisma.user.create({
     data: {

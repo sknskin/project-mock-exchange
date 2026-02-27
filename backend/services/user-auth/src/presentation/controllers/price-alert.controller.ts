@@ -21,6 +21,7 @@ import { CurrentUser } from '../../infrastructure/config/current-user.decorator'
 import { UserDto } from '@virtuex/common';
 import { PrismaService } from '../../infrastructure/persistence/prisma/prisma.service';
 import { IsString, IsNotEmpty, IsNumber, IsEnum } from 'class-validator';
+import { InternalAuthGuard } from '../../common/guards/internal-auth.guard';
 
 enum AlertConditionDto {
   ABOVE = 'ABOVE',
@@ -40,7 +41,7 @@ class CreatePriceAlertDto {
 }
 
 @Controller('price-alerts')
-@UseGuards(JwtAuthGuard)
+@UseGuards(InternalAuthGuard, JwtAuthGuard)
 export class PriceAlertController {
   constructor(private readonly prisma: PrismaService) {}
 

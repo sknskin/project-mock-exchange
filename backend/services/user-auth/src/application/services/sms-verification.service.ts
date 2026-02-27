@@ -5,7 +5,7 @@
  * @file SMS Verification Service
  * @description Handles SMS verification code sending and validation using Redis
  */
-import { Injectable, Logger, Inject, BadRequestException } from '@nestjs/common';
+import { Injectable, Logger, Inject, BadRequestException, HttpException } from '@nestjs/common';
 import Redis from 'ioredis';
 import { REDIS_CLIENT } from '../../infrastructure/redis/redis.module';
 
@@ -14,6 +14,7 @@ export class SmsVerificationService {
   private readonly logger = new Logger(SmsVerificationService.name);
   private readonly CODE_TTL = 180; // 3분 / 3 minutes
   private readonly VERIFIED_TTL = 600; // 10분 / 10 minutes
+  private readonly MAX_ATTEMPTS = 5;
 
   constructor(
     @Inject(REDIS_CLIENT) private readonly redis: Redis,
@@ -24,12 +25,20 @@ export class SmsVerificationService {
     const key = `sms:verify:${phone}`;
 
     await this.redis.set(key, code, 'EX', this.CODE_TTL);
+    await this.redis.del(`sms:attempts:${phone}`);
 
     // 모의: 실제 SMS 대신 콘솔에 인증코드 출력 / Mock: log code to console instead of sending real SMS
     this.logger.log(`[MOCK SMS] Verification code for ${phone}: ${code}`);
   }
 
   async verifyCode(phone: string, code: string): Promise<boolean> {
+    const attemptsKey = `sms:attempts:${phone}`;
+    const attempts = await this.redis.get(attemptsKey);
+
+    if (attempts && parseInt(attempts) >= this.MAX_ATTEMPTS) {
+      throw new HttpException('Too many verification attempts. Please request a new code.', 429);
+    }
+
     const key = `sms:verify:${phone}`;
     const stored = await this.redis.get(key);
 
@@ -38,11 +47,14 @@ export class SmsVerificationService {
     }
 
     if (stored !== code) {
+      await this.redis.incr(attemptsKey);
+      await this.redis.expire(attemptsKey, this.CODE_TTL);
       throw new BadRequestException('Invalid verification code');
     }
 
     // 전화번호 인증 완료 처리 / Mark phone as verified
     await this.redis.del(key);
+    await this.redis.del(attemptsKey);
     await this.redis.set(`sms:verified:${phone}`, '1', 'EX', this.VERIFIED_TTL);
 
     this.logger.log(`Phone verified: ${phone}`);

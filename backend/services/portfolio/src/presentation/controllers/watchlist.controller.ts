@@ -13,9 +13,12 @@ import {
   Param,
   Headers,
   BadRequestException,
+  UseGuards,
 } from '@nestjs/common';
 import { WatchlistService } from '../../domain/services/watchlist.service';
+import { InternalAuthGuard } from '../../common/guards/internal-auth.guard';
 
+@UseGuards(InternalAuthGuard)
 @Controller('portfolio/watchlist')
 export class WatchlistController {
   constructor(private readonly watchlistService: WatchlistService) {}

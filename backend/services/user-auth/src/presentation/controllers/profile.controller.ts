@@ -19,9 +19,10 @@ import { JwtAuthGuard } from '../../infrastructure/config/jwt-auth.guard';
 import { CurrentUser } from '../../infrastructure/config/current-user.decorator';
 import { UserDto } from '@virtuex/common';
 import { PrismaService } from '../../infrastructure/persistence/prisma/prisma.service';
+import { InternalAuthGuard } from '../../common/guards/internal-auth.guard';
 
 @Controller('profile')
-@UseGuards(JwtAuthGuard)
+@UseGuards(InternalAuthGuard, JwtAuthGuard)
 export class ProfileController {
   constructor(private readonly prisma: PrismaService) {}
 
