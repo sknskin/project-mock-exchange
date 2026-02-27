@@ -31,6 +31,7 @@ import {
   useStatOverview,
   useStatOverviewTrend,
   useStatRegistrations,
+  useStatRegistrationsApproved,
   useStatLogins,
   useStatPageViews,
   useStatAnnouncements,
@@ -280,6 +281,7 @@ export default function AdminStatsPage() {
   const { data: overview } = useStatOverview();
   const { data: trend } = useStatOverviewTrend();
   const { data: registrations } = useStatRegistrations(period, days);
+  const { data: registrationsApproved } = useStatRegistrationsApproved(period, days);
   const { data: logins } = useStatLogins(period, days);
   const { data: pageViews } = useStatPageViews(period, days);
   const { data: hourlyPageViews } = useStatPageViews('hourly', 1);
@@ -639,7 +641,7 @@ export default function AdminStatsPage() {
             <OverviewCard icon={Users} value={overview?.pendingUsers} label={t('stats.pendingUsers')} iconColor={CHART_COLORS.red} />
           </div>
 
-          {/* Registration Timeline - AreaChart */}
+          {/* Registration Requests Timeline - AreaChart */}
           <ChartCard title={t('stats.registrations')} description={t('stats.desc.registrations')}>
             {hasChartData(registrations) ? (
               <ResponsiveContainer width="100%" height={280}>
@@ -674,6 +676,49 @@ export default function AdminStatsPage() {
                     fill="url(#registrationGrad)"
                     dot={false}
                     activeDot={{ r: 4, fill: CHART_COLORS.blue }}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <EmptyChart />
+            )}
+          </ChartCard>
+
+          {/* Approved Registrations Timeline - AreaChart */}
+          <ChartCard title={t('stats.registrationsApproved')} description={t('stats.desc.registrationsApproved')}>
+            {hasChartData(registrationsApproved) ? (
+              <ResponsiveContainer width="100%" height={280}>
+                <AreaChart data={registrationsApproved ?? []} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="registrationApprovedGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={CHART_COLORS.green} stopOpacity={0.25} />
+                      <stop offset="95%" stopColor={CHART_COLORS.green} stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
+                  <XAxis
+                    dataKey="label"
+                    tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }}
+                    axisLine={{ stroke: AXIS_LINE_STROKE }}
+                    tickLine={false}
+                    interval="preserveStartEnd"
+                    tickFormatter={(v: string) => v.length > 8 ? v.slice(5) : v}
+                  />
+                  <YAxis
+                    tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }}
+                    axisLine={{ stroke: AXIS_LINE_STROKE }}
+                    tickLine={false}
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Area
+                    type="monotone"
+                    dataKey="count"
+                    name={t('stats.registrationsApproved')}
+                    stroke={CHART_COLORS.green}
+                    strokeWidth={2}
+                    fill="url(#registrationApprovedGrad)"
+                    dot={false}
+                    activeDot={{ r: 4, fill: CHART_COLORS.green }}
                   />
                 </AreaChart>
               </ResponsiveContainer>

@@ -484,6 +484,18 @@ export function useStatRegistrations(period: string, days: number) {
   });
 }
 
+export function useStatRegistrationsApproved(period: string, days: number) {
+  return useQuery({
+    queryKey: ['stat-registrations-approved', period, days],
+    queryFn: async () => {
+      const { data } = await api.get('/api/statistics/registrations-approved', {
+        params: { period, days },
+      });
+      return data.data as TimelineEntry[];
+    },
+  });
+}
+
 export function useStatLogins(period: string, days: number) {
   return useQuery({
     queryKey: ['stat-logins', period, days],

@@ -89,6 +89,36 @@ export class StatisticsController {
     return { success: true, data: grouped };
   }
 
+  @Get('registrations-approved')
+  @UseGuards(JwtAuthGuard)
+  async approvedRegistrationStats(
+    @CurrentUser() user: UserDto,
+    @Query('period') period: string = 'daily',
+    @Query('days') days: string = '30',
+  ) {
+    this.assertAdmin(user);
+    const daysNum = parseInt(days) || 30;
+    const since = new Date(Date.now() - daysNum * 86400000);
+
+    const users = await this.prisma.user.findMany({
+      where: {
+        approvalStatus: 'APPROVED',
+        approvedAt: { gte: since },
+      },
+      select: { approvedAt: true },
+      orderBy: { approvedAt: 'asc' },
+    });
+
+    const grouped = groupByPeriod(
+      users
+        .filter((u) => u.approvedAt !== null)
+        .map((u) => ({ date: u.approvedAt!, value: 1 })),
+      period,
+    );
+
+    return { success: true, data: grouped };
+  }
+
   @Get('logins')
   @UseGuards(JwtAuthGuard)
   async loginStats(
@@ -323,6 +353,7 @@ export class StatisticsController {
     const [byRole, byStatus] = await Promise.all([
       this.prisma.user.groupBy({
         by: ['role'],
+        where: { approvalStatus: 'APPROVED' },
         _count: true,
       }),
       this.prisma.user.groupBy({

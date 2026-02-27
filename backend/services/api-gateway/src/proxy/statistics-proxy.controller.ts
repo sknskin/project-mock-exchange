@@ -70,6 +70,24 @@ export class StatisticsProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  @Get('registrations-approved')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '승인 완료 가입 통계 조회', description: '기간별 승인 완료된 가입 통계를 조회합니다.' })
+  @ApiQuery({ name: 'period', required: false, description: '집계 주기' })
+  @ApiQuery({ name: 'days', required: false, description: '조회 기간(일)' })
+  @ApiResponse({ status: 200, description: '승인 가입 통계 조회 성공' })
+  @ApiResponse({ status: 401, description: '인증 실패' })
+  async registrationsApproved(@Req() req: Request, @Res() res: Response) {
+    const result = await this.proxyService.forward('user-auth', {
+      method: 'GET',
+      url: '/statistics/registrations-approved',
+      params: req.query,
+      headers: { Authorization: req.headers.authorization || '' },
+    });
+    return res.status(result.status).json(result.data);
+  }
+
   @Get('logins')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
