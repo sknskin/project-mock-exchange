@@ -12,7 +12,30 @@ import Tooltip from '@/components/ui/Tooltip';
 import MessageBubble from './MessageBubble';
 import MessageInput from './MessageInput';
 import InviteModal from './InviteModal';
-import type { ChatRoom } from '@/types';
+import type { ChatRoom, ChatMessage } from '@/types';
+import type { TranslationKey } from '@/lib/i18n';
+
+function formatSystemMessage(content: string, t: (key: TranslationKey) => string): string {
+  try {
+    const data = JSON.parse(content);
+    const action = data.action as string;
+    const name = data.names?.join(', ') || data.name || '';
+    if (action === 'invite') return name + t('chat.system.invited');
+    if (action === 'leave') return name + t('chat.system.left');
+    if (action === 'kick') return name + t('chat.system.kicked');
+  } catch { /* fallback */ }
+  return content;
+}
+
+function SystemMessageRow({ message, t }: { message: ChatMessage; t: (key: TranslationKey) => string }) {
+  return (
+    <div className="flex justify-center my-2">
+      <span className="text-[11px] text-text-quaternary bg-bg-secondary/80 px-3 py-1 rounded-full">
+        {formatSystemMessage(message.content, t)}
+      </span>
+    </div>
+  );
+}
 
 interface MessageAreaProps {
   roomId: string;
@@ -254,8 +277,11 @@ export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeave
           </div>
         ) : (
           messages.map((msg, i) => {
+            if (msg.senderRole === 'SYSTEM') {
+              return <SystemMessageRow key={msg.id} message={msg} t={t} />;
+            }
             const prevMsg = i > 0 ? messages[i - 1] : null;
-            const showSender = !prevMsg || prevMsg.senderId !== msg.senderId;
+            const showSender = !prevMsg || prevMsg.senderId !== msg.senderId || prevMsg.senderRole === 'SYSTEM';
             return (
               <MessageBubble
                 key={msg.id}

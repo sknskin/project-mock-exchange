@@ -77,6 +77,12 @@ function bindListeners(socket: Socket, qc: QueryClient) {
     });
   });
 
+  // 참여자 변경 (Participant update – invite/leave/kick)
+  socket.on('chat:participant-update', () => {
+    qc.invalidateQueries({ queryKey: ['chat-rooms'] });
+    qc.invalidateQueries({ queryKey: ['chat-messages'] });
+  });
+
   // 채팅방 퇴장 (Kicked from chat room)
   socket.on('chat:kicked', () => {
     qc.invalidateQueries({ queryKey: ['chat-rooms'] });

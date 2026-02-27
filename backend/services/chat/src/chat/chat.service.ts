@@ -291,9 +291,18 @@ export class ChatService {
       });
     }
 
-    return {
-      invited: [...leftParticipants.map((p) => p.userId), ...trulyNew],
-    };
+    const invitedAll = [...leftParticipants.map((p) => p.userId), ...trulyNew];
+    const invitedNames = invitedAll.map((uid) => names?.[uid] || usernames[uid] || 'unknown');
+
+    let systemMessage = null;
+    if (invitedNames.length > 0) {
+      systemMessage = await this.createSystemMessage(roomId, JSON.stringify({
+        action: 'invite',
+        names: invitedNames,
+      }));
+    }
+
+    return { invited: invitedAll, systemMessage };
   }
 
   async leaveRoom(roomId: string, userId: string) {
@@ -304,12 +313,19 @@ export class ChatService {
       throw new NotFoundException('Not a participant of this room');
     }
 
+    const displayName = participant.name || participant.username;
+
     await this.prisma.participant.update({
       where: { id: participant.id },
       data: { leftAt: new Date() },
     });
 
-    return { success: true };
+    const systemMessage = await this.createSystemMessage(roomId, JSON.stringify({
+      action: 'leave',
+      name: displayName,
+    }));
+
+    return { success: true, systemMessage };
   }
 
   async kickUser(roomId: string, targetUserId: string) {
@@ -320,12 +336,19 @@ export class ChatService {
       throw new NotFoundException('User is not a participant of this room');
     }
 
+    const displayName = participant.name || participant.username;
+
     await this.prisma.participant.update({
       where: { id: participant.id },
       data: { leftAt: new Date() },
     });
 
-    return { success: true, kickedUserId: targetUserId };
+    const systemMessage = await this.createSystemMessage(roomId, JSON.stringify({
+      action: 'kick',
+      name: displayName,
+    }));
+
+    return { success: true, kickedUserId: targetUserId, systemMessage };
   }
 
   async markAsRead(roomId: string, userId: string) {
@@ -470,6 +493,36 @@ export class ChatService {
         messageCount: Number(r.count),
       })),
     };
+  }
+
+  private async createSystemMessage(roomId: string, content: string) {
+    const message = await this.prisma.message.create({
+      data: {
+        roomId,
+        senderId: '00000000-0000-0000-0000-000000000000',
+        senderUsername: 'system',
+        senderName: '',
+        senderRole: 'SYSTEM',
+        content,
+      },
+      select: {
+        id: true,
+        roomId: true,
+        senderId: true,
+        senderUsername: true,
+        senderName: true,
+        senderRole: true,
+        content: true,
+        createdAt: true,
+      },
+    });
+
+    await this.prisma.room.update({
+      where: { id: roomId },
+      data: { updatedAt: new Date() },
+    });
+
+    return { ...message, unreadCount: 0 };
   }
 
   private async verifyParticipant(roomId: string, userId: string) {

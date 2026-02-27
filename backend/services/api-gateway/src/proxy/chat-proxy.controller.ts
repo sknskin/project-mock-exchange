@@ -198,13 +198,18 @@ export class ChatProxyController {
 
     // 초대된 사용자의 소켓 참가 및 알림 전송 (Join invited users' sockets and notify)
     if (result.status < 400 && result.data) {
-      const data = (result.data as { data?: { invited?: string[] } }).data;
+      const data = (result.data as { data?: { invited?: string[]; systemMessage?: unknown } }).data;
       if (data?.invited) {
         for (const uid of data.invited) {
           this.chatGateway.joinUserToRoom(uid, id);
           this.chatGateway.notifyUser(uid, 'chat:invited', { roomId: id });
         }
       }
+      // 시스템 메시지 브로드캐스트 (Broadcast system message)
+      if (data?.systemMessage) {
+        this.chatGateway.broadcastMessage(id, data.systemMessage);
+      }
+      this.chatGateway.broadcastParticipantUpdate(id);
     }
 
     return res.status(result.status).json(result.data);
@@ -229,9 +234,16 @@ export class ChatProxyController {
       },
     });
 
-    // WebSocket으로 강퇴된 사용자에게 알림 (Notify kicked user via WebSocket)
-    if (result.status < 400 && req.body.targetUserId) {
-      this.chatGateway.notifyUser(req.body.targetUserId, 'chat:kicked', { roomId: id });
+    // WebSocket으로 강퇴된 사용자에게 알림 + 시스템 메시지 (Notify kicked user + broadcast system message)
+    if (result.status < 400) {
+      if (req.body.targetUserId) {
+        this.chatGateway.notifyUser(req.body.targetUserId, 'chat:kicked', { roomId: id });
+      }
+      const data = (result.data as { data?: { systemMessage?: unknown } }).data;
+      if (data?.systemMessage) {
+        this.chatGateway.broadcastMessage(id, data.systemMessage);
+      }
+      this.chatGateway.broadcastParticipantUpdate(id);
     }
 
     return res.status(result.status).json(result.data);
@@ -253,6 +265,16 @@ export class ChatProxyController {
         'x-user-username': user.username,
       },
     });
+
+    // 시스템 메시지 + 참여자 업데이트 브로드캐스트 (Broadcast system message + participant update)
+    if (result.status < 400 && result.data) {
+      const data = (result.data as { data?: { systemMessage?: unknown } }).data;
+      if (data?.systemMessage) {
+        this.chatGateway.broadcastMessage(id, data.systemMessage);
+      }
+      this.chatGateway.broadcastParticipantUpdate(id);
+    }
+
     return res.status(result.status).json(result.data);
   }
 

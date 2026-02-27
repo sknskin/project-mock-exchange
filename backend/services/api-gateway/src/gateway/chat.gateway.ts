@@ -129,6 +129,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.server.to(`room:${roomId}`).emit('chat:read', { roomId, userId });
   }
 
+  broadcastParticipantUpdate(roomId: string) {
+    this.server.to(`room:${roomId}`).emit('chat:participant-update', { roomId });
+  }
+
   notifyUser(userId: string, event: string, data: unknown) {
     const sockets = this.userSockets.get(userId);
     if (sockets) {
