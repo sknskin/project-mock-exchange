@@ -7,13 +7,14 @@
  */
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Trash2, Bell, ArrowUp, ArrowDown } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { usePriceAlerts, useCreatePriceAlert, useDeletePriceAlert } from '@/hooks/usePriceAlert';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
+import { useToastStore } from '@/stores/toast';
 import { cn, isKRW, formatPriceDisplay } from '@/lib/format';
 
 interface PriceAlertModalProps {
@@ -34,6 +35,7 @@ export default function PriceAlertModal({ isOpen, onClose, symbol, currentPrice 
 
   const [condition, setCondition] = useState<'ABOVE' | 'BELOW'>('ABOVE');
   const [targetPrice, setTargetPrice] = useState('');
+  const userTouched = useRef(false);
 
   // 표시 통화에 맞게 가격 변환 (Convert price to display currency)
   const toDisplayPrice = useCallback((basePrice: number): number => {
@@ -60,8 +62,16 @@ export default function PriceAlertModal({ isOpen, onClose, symbol, currentPrice 
     return wantKRW ? '₩' : '$';
   })();
 
+  // 모달이 열릴 때 입력 상태 초기화 (Reset touch state when modal opens)
   useEffect(() => {
-    if (isOpen && currentPrice > 0) {
+    if (isOpen) {
+      userTouched.current = false;
+    }
+  }, [isOpen]);
+
+  // 사용자가 입력하지 않은 경우에만 틱마다 가격 업데이트 (Update price on tick only if user hasn't started editing)
+  useEffect(() => {
+    if (isOpen && currentPrice > 0 && !userTouched.current) {
       const displayed = toDisplayPrice(currentPrice);
       setTargetPrice(currencyPrefix === '₩' ? Math.round(displayed).toString() : displayed.toFixed(2));
     }
@@ -72,10 +82,22 @@ export default function PriceAlertModal({ isOpen, onClose, symbol, currentPrice 
   const handleCreate = () => {
     const displayedPrice = parseFloat(targetPrice);
     if (!displayedPrice || displayedPrice <= 0) return;
+
+    const currentDisplayed = toDisplayPrice(currentPrice);
+    if (condition === 'ABOVE' && displayedPrice <= currentDisplayed) {
+      useToastStore.getState().addToast(t('alert.invalidAbove'), 'error');
+      return;
+    }
+    if (condition === 'BELOW' && displayedPrice >= currentDisplayed) {
+      useToastStore.getState().addToast(t('alert.invalidBelow'), 'error');
+      return;
+    }
+
     const basePrice = toBasePrice(displayedPrice);
     const currency = currencyPrefix === '₩' ? 'KRW' : 'USD';
     createAlert.mutate({ symbol, targetPrice: basePrice, condition, currency, displayTargetPrice: displayedPrice }, {
       onSuccess: () => {
+        userTouched.current = false;
         const displayed = toDisplayPrice(currentPrice);
         setTargetPrice(currencyPrefix === '₩' ? Math.round(displayed).toString() : displayed.toFixed(2));
       },
@@ -142,7 +164,7 @@ export default function PriceAlertModal({ isOpen, onClose, symbol, currentPrice 
                 type="number"
                 step="any"
                 value={targetPrice}
-                onChange={(e) => setTargetPrice(e.target.value)}
+                onChange={(e) => { userTouched.current = true; setTargetPrice(e.target.value); }}
                 className="w-full h-10 pl-7 pr-3 bg-bg-secondary border border-border rounded-lg text-[14px] text-text-primary tabular-nums focus:outline-none focus:border-accent"
               />
             </div>
