@@ -23,6 +23,7 @@ import { SmsVerificationService } from '../../application/services/sms-verificat
 import { RegisterRequestDto } from '../dto/register.dto';
 import { LoginRequestDto } from '../dto/login.dto';
 import { VerifyLoginSmsDto } from '../dto/verify-login-sms.dto';
+import { ForgotPasswordDto, ForgotPasswordVerifySmsDto, ResetPasswordDto } from '../dto/forgot-password.dto';
 import { SendCodeRequestDto, VerifyCodeRequestDto } from '../dto/sms-verification.dto';
 import { JwtAuthGuard } from '../../infrastructure/config/jwt-auth.guard';
 import { CurrentUser } from '../../infrastructure/config/current-user.decorator';
@@ -167,6 +168,30 @@ export class AuthController {
   async verifySmsCode(@Body() dto: VerifyCodeRequestDto) {
     await this.smsVerificationService.verifyCode(dto.phone, dto.code);
     return { success: true, message: 'Phone verified' };
+  }
+
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+    const result = await this.authService.requestPasswordReset(dto.identifier);
+    return { success: true, data: result };
+  }
+
+  @Post('forgot-password/verify-sms')
+  @HttpCode(HttpStatus.OK)
+  async forgotPasswordVerifySms(@Body() dto: ForgotPasswordVerifySmsDto) {
+    const result = await this.authService.verifyPasswordResetSms(dto.sessionId, dto.code);
+    if (!result.success) {
+      return { success: false, attemptsLeft: result.attemptsLeft, message: result.message };
+    }
+    return { success: true };
+  }
+
+  @Post('forgot-password/reset')
+  @HttpCode(HttpStatus.OK)
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    await this.authService.resetPassword(dto.sessionId, dto.newPassword, dto.confirmPassword);
+    return { success: true, message: 'Password has been reset' };
   }
 
   @Get('check-duplicate')

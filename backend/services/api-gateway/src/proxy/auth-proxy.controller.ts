@@ -171,6 +171,48 @@ export class AuthProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  @Post('forgot-password')
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '비밀번호 찾기', description: '이메일/아이디로 비밀번호 재설정 SMS를 발송합니다' })
+  @ApiResponse({ status: 200, description: 'SMS 발송 성공 (sessionId + maskedPhone)' })
+  async forgotPassword(@Body() body: unknown, @Res() res: Response) {
+    const result = await this.proxyService.forward('user-auth', {
+      method: 'POST',
+      url: '/auth/forgot-password',
+      data: body,
+    });
+    return res.status(result.status).json(result.data);
+  }
+
+  @Post('forgot-password/verify-sms')
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '비밀번호 찾기 SMS 인증', description: '비밀번호 재설정 SMS 인증번호를 검증합니다' })
+  @ApiResponse({ status: 200, description: '인증 성공' })
+  async forgotPasswordVerifySms(@Body() body: unknown, @Res() res: Response) {
+    const result = await this.proxyService.forward('user-auth', {
+      method: 'POST',
+      url: '/auth/forgot-password/verify-sms',
+      data: body,
+    });
+    return res.status(result.status).json(result.data);
+  }
+
+  @Post('forgot-password/reset')
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '비밀번호 재설정', description: 'SMS 인증 후 새 비밀번호를 설정합니다' })
+  @ApiResponse({ status: 200, description: '비밀번호 재설정 성공' })
+  async resetPassword(@Body() body: unknown, @Res() res: Response) {
+    const result = await this.proxyService.forward('user-auth', {
+      method: 'POST',
+      url: '/auth/forgot-password/reset',
+      data: body,
+    });
+    return res.status(result.status).json(result.data);
+  }
+
   @Get('check-duplicate')
   @ApiOperation({ summary: '중복 확인', description: '이메일 또는 아이디의 중복 여부를 확인합니다' })
   @ApiQuery({ name: 'field', description: '확인할 필드 (email | username)' })

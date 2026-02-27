@@ -386,6 +386,120 @@ export class AuthService {
     }
   }
 
+  // ── 비밀번호 재설정 (Password Reset) ──
+
+  async requestPasswordReset(identifier: string): Promise<{ sessionId: string; maskedPhone: string }> {
+    let user = await this.userRepository.findByEmail(identifier);
+    if (!user) {
+      user = await this.userRepository.findByUsername(identifier);
+    }
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    // 잠긴 계정도 비밀번호 재설정은 허용하지 않음 / Locked accounts cannot reset password
+    const dbUser = await this.prisma.user.findUnique({
+      where: { id: user.id },
+      select: { lockedAt: true },
+    });
+    if (dbUser?.lockedAt) {
+      throw new UnauthorizedException('Account is locked');
+    }
+
+    const sessionId = randomBytes(20).toString('hex');
+    const sessionKey = `reset:session:${sessionId}`;
+    await this.redis.set(
+      sessionKey,
+      JSON.stringify({ userId: user.id, phone: user.phone, attemptsLeft: this.LOGIN_MAX_ATTEMPTS, verified: false }),
+      'EX',
+      this.LOGIN_SESSION_TTL,
+    );
+
+    await this.smsVerificationService.sendVerificationCode(user.phone);
+
+    const maskedPhone = this.maskPhone(user.phone);
+    this.logger.log(`Password reset SMS sent for: ${user.email}`);
+
+    return { sessionId, maskedPhone };
+  }
+
+  async verifyPasswordResetSms(
+    sessionId: string,
+    code: string,
+  ): Promise<{ success: true } | { success: false; attemptsLeft: number; message: string }> {
+    const sessionKey = `reset:session:${sessionId}`;
+    const raw = await this.redis.get(sessionKey);
+    if (!raw) {
+      throw new UnauthorizedException('Session expired');
+    }
+
+    const session = JSON.parse(raw) as { userId: string; phone: string; attemptsLeft: number; verified: boolean };
+
+    if (session.attemptsLeft <= 0) {
+      await this.redis.del(sessionKey);
+      throw new UnauthorizedException('Too many attempts');
+    }
+
+    const smsKey = `sms:verify:${session.phone}`;
+    const storedCode = await this.redis.get(smsKey);
+
+    if (!storedCode || storedCode !== code) {
+      const newAttemptsLeft = session.attemptsLeft - 1;
+      if (newAttemptsLeft <= 0) {
+        await this.redis.del(sessionKey);
+        await this.redis.del(smsKey);
+        return { success: false, attemptsLeft: 0, message: '인증 실패 횟수를 초과했습니다.' };
+      }
+      await this.redis.set(
+        sessionKey,
+        JSON.stringify({ ...session, attemptsLeft: newAttemptsLeft }),
+        'EX',
+        await this.redis.ttl(sessionKey),
+      );
+      return { success: false, attemptsLeft: newAttemptsLeft, message: '인증번호가 일치하지 않습니다.' };
+    }
+
+    // SMS 인증 성공 → 세션에 verified 마킹 + TTL 연장 (5분) / Mark verified + extend TTL
+    await this.redis.del(smsKey);
+    await this.redis.set(
+      sessionKey,
+      JSON.stringify({ ...session, verified: true }),
+      'EX',
+      300,
+    );
+
+    return { success: true };
+  }
+
+  async resetPassword(sessionId: string, newPassword: string, confirmPassword: string): Promise<void> {
+    if (newPassword !== confirmPassword) {
+      throw new BadRequestException('Passwords do not match');
+    }
+    if (newPassword.length < 8) {
+      throw new BadRequestException('Password must be at least 8 characters');
+    }
+
+    const sessionKey = `reset:session:${sessionId}`;
+    const raw = await this.redis.get(sessionKey);
+    if (!raw) {
+      throw new UnauthorizedException('Session expired');
+    }
+
+    const session = JSON.parse(raw) as { userId: string; phone: string; verified: boolean };
+    if (!session.verified) {
+      throw new UnauthorizedException('SMS verification required');
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, this.SALT_ROUNDS);
+    await this.prisma.user.update({
+      where: { id: session.userId },
+      data: { passwordHash },
+    });
+
+    await this.redis.del(sessionKey);
+    this.logger.log(`Password reset completed for user: ${session.userId}`);
+  }
+
   async checkDuplicate(field: string, value: string): Promise<boolean> {
     if (!value) return false;
     switch (field) {
