@@ -171,6 +171,8 @@ const translations = {
     'alert.triggered': '발동됨',
     'alert.noAlerts': '설정된 알림이 없습니다',
     'alert.maxReached': '최대 20개까지 설정할 수 있습니다',
+    'alert.invalidAbove': '현재 가격보다 높은 금액을 입력해주세요',
+    'alert.invalidBelow': '현재 가격보다 낮은 금액을 입력해주세요',
 
     // Spotlight
     'spotlight.navigate': '이동',
@@ -968,6 +970,9 @@ const translations = {
     'chat.renamePlaceholder': '새 이름 입력',
     'chat.deleteMessage': '삭제',
     'chat.deleteConfirm': '이 메시지를 삭제하시겠습니까?',
+    'chat.system.invited': '님이 초대되었습니다',
+    'chat.system.left': '님이 퇴장했습니다',
+    'chat.system.kicked': '님이 강퇴되었습니다',
 
     // Common
     'common.confirm': '확인',
@@ -1390,6 +1395,8 @@ const translations = {
     'alert.triggered': 'Triggered',
     'alert.noAlerts': 'No alerts set',
     'alert.maxReached': 'Maximum 20 alerts allowed',
+    'alert.invalidAbove': 'Target price must be above the current price',
+    'alert.invalidBelow': 'Target price must be below the current price',
 
     // Spotlight
     'spotlight.navigate': 'Navigate',
@@ -2187,6 +2194,9 @@ const translations = {
     'chat.renamePlaceholder': 'Enter new name',
     'chat.deleteMessage': 'Delete',
     'chat.deleteConfirm': 'Are you sure you want to delete this message?',
+    'chat.system.invited': ' joined the room',
+    'chat.system.left': ' left the room',
+    'chat.system.kicked': ' was removed',
 
     // Common
     'common.confirm': 'Confirm',

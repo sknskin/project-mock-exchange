@@ -117,6 +117,8 @@ export default function OrdersPage() {
   const [editPrice, setEditPrice] = useState('');
   const [editQuantity, setEditQuantity] = useState('');
   const [cancelTargetId, setCancelTargetId] = useState<string | null>(null);
+  const [tradeSideFilter, setTradeSideFilter] = useState<'all' | 'BUY' | 'SELL'>('all');
+  const [tradeSearch, setTradeSearch] = useState('');
 
   const startEditing = (order: Order) => {
     setEditingOrderId(order.id);
@@ -151,6 +153,23 @@ export default function OrdersPage() {
     const q = symbolSearch.toLowerCase();
     return orders.filter((o) => o.symbol.toLowerCase().includes(q));
   }, [orders, symbolSearch]);
+
+  // Trade history client-side filter (side + symbol)
+  const filteredTrades = useMemo(() => {
+    if (!trades) return [];
+    return trades.filter((trade) => {
+      if (tradeSideFilter !== 'all') {
+        const isBuyer = trade.buyerId === user?.id;
+        if (tradeSideFilter === 'BUY' && !isBuyer) return false;
+        if (tradeSideFilter === 'SELL' && isBuyer) return false;
+      }
+      if (tradeSearch.trim()) {
+        const q = tradeSearch.toLowerCase();
+        if (!trade.symbol.toLowerCase().includes(q)) return false;
+      }
+      return true;
+    });
+  }, [trades, tradeSideFilter, tradeSearch, user?.id]);
 
   return (
     <AuthGuard>
@@ -350,15 +369,45 @@ export default function OrdersPage() {
 
         {tab === 'trades' && (
           <div>
+            {/* Trade history filter bar */}
+            <div className="flex gap-2 sm:gap-3 mb-5">
+              <div className="relative flex-1 min-w-0">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-quaternary pointer-events-none" />
+                <input
+                  type="text"
+                  value={tradeSearch}
+                  onChange={(e) => setTradeSearch(e.target.value)}
+                  placeholder={t('orders.searchSymbol')}
+                  className="w-full bg-bg-secondary border border-border rounded-xl pl-9 pr-4 py-2.5 text-[14px] text-text-primary placeholder:text-text-quaternary focus:outline-none focus:border-accent/60 transition-colors"
+                />
+              </div>
+              <div className="flex shrink-0 bg-bg-secondary border border-border rounded-xl overflow-hidden">
+                {(['all', 'BUY', 'SELL'] as const).map((side) => (
+                  <button
+                    key={side}
+                    onClick={() => setTradeSideFilter(side)}
+                    className={cn(
+                      'px-3 py-2.5 text-[13px] font-medium transition-colors',
+                      tradeSideFilter === side
+                        ? side === 'BUY' ? 'bg-rise/15 text-rise' : side === 'SELL' ? 'bg-fall/15 text-fall' : 'bg-accent/15 text-accent'
+                        : 'text-text-tertiary hover:text-text-primary',
+                    )}
+                  >
+                    {side === 'all' ? t('orders.all') : side === 'BUY' ? t('orders.buy') : t('orders.sell')}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {tradesLoading ? (
               <div className="space-y-2 pt-2">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <Skeleton key={i} className="w-full h-16 rounded-xl" />
                 ))}
               </div>
-            ) : trades && trades.length > 0 ? (
+            ) : filteredTrades.length > 0 ? (
               <div className="divide-y divide-border/40">
-                {trades.map((trade) => {
+                {filteredTrades.map((trade) => {
                   const isBuyer = trade.buyerId === user?.id;
                   return (
                     <div key={trade.tradeId} className="py-3 flex items-center gap-3">

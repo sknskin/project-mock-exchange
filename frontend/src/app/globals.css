@@ -48,7 +48,7 @@ nextjs-portal,
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     letter-spacing: -0.02em;
-    transition: background-color 0.2s, color 0.2s;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s;
   }
 
   /* 라이트 테마 오버라이드 / Light theme overrides */
@@ -62,6 +62,34 @@ nextjs-portal,
     --color-text-tertiary: #8B95A1;
     --color-text-quaternary: #B0B8C1;
     --color-border: rgba(0, 0, 0, 0.08);
+  }
+
+  /* 테마 전환 시 주요 요소 색상 부드럽게 전환 / Smooth color transitions for theme switching */
+  *,
+  *::before,
+  *::after {
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s, fill 0.2s, stroke 0.2s;
+  }
+
+  /* 애니메이션/트랜지션 충돌 방지 (마키, 토스트 등) / Prevent conflict with existing animations */
+  .animate-marquee,
+  .animate-marquee-index,
+  .animate-toast-fade,
+  .animate-live-toast-in,
+  .animate-chat-panel-in,
+  .animate-dropdown-in,
+  .animate-shake,
+  .tick-flash-rise,
+  .tick-flash-fall {
+    transition: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      transition: none !important;
+    }
   }
 
   /* 얇은 스크롤바 / Thin scrollbar */
