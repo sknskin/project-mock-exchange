@@ -98,25 +98,33 @@ export default function ErrorPage({
       </p>
 
       {/* 연락처 */}
-      <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 mb-8 px-4 py-3 rounded-xl bg-bg-secondary/60 border border-border">
-        <button
-          onClick={(e) => copyToClipboard('sknskin@naver.com', e)}
-          className="flex items-center gap-1.5 text-[12px] text-text-quaternary hover:text-text-secondary transition-colors cursor-pointer"
-          title="sknskin@naver.com"
-        >
-          <MailIcon />
-          <span>sknskin@naver.com</span>
-        </button>
-        <span className="hidden sm:block w-px h-3 bg-border" />
-        <button
-          onClick={(e) => copyToClipboard('010-7455-4829', e)}
-          className="flex items-center gap-1.5 text-[12px] text-text-quaternary hover:text-text-secondary transition-colors cursor-pointer"
-          title="010-7455-4829"
-        >
-          <PhoneIcon />
-          <span>010-7455-4829</span>
-        </button>
-      </div>
+      {(process.env.NEXT_PUBLIC_CONTACT_EMAIL || process.env.NEXT_PUBLIC_CONTACT_PHONE) && (
+        <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 mb-8 px-4 py-3 rounded-xl bg-bg-secondary/60 border border-border">
+          {process.env.NEXT_PUBLIC_CONTACT_EMAIL && (
+            <button
+              onClick={(e) => copyToClipboard(process.env.NEXT_PUBLIC_CONTACT_EMAIL!, e)}
+              className="flex items-center gap-1.5 text-[12px] text-text-quaternary hover:text-text-secondary transition-colors cursor-pointer"
+              title={process.env.NEXT_PUBLIC_CONTACT_EMAIL}
+            >
+              <MailIcon />
+              <span>{process.env.NEXT_PUBLIC_CONTACT_EMAIL}</span>
+            </button>
+          )}
+          {process.env.NEXT_PUBLIC_CONTACT_EMAIL && process.env.NEXT_PUBLIC_CONTACT_PHONE && (
+            <span className="hidden sm:block w-px h-3 bg-border" />
+          )}
+          {process.env.NEXT_PUBLIC_CONTACT_PHONE && (
+            <button
+              onClick={(e) => copyToClipboard(process.env.NEXT_PUBLIC_CONTACT_PHONE!, e)}
+              className="flex items-center gap-1.5 text-[12px] text-text-quaternary hover:text-text-secondary transition-colors cursor-pointer"
+              title={process.env.NEXT_PUBLIC_CONTACT_PHONE}
+            >
+              <PhoneIcon />
+              <span>{process.env.NEXT_PUBLIC_CONTACT_PHONE}</span>
+            </button>
+          )}
+        </div>
+      )}
 
       {/* 버튼 */}
       <div className="flex items-center gap-3">

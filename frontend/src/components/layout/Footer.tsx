@@ -107,14 +107,16 @@ export default function Footer() {
           {/* 연락처 링크 + 저작권 / Contact Links + Copyright */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-2 border-t border-border/40">
             <div className="flex items-center gap-4">
-              <button
-                onClick={(e) => copyToClipboard('sknskin@naver.com', e)}
-                className="flex items-center gap-1.5 text-[12px] text-text-quaternary hover:text-text-secondary transition-colors cursor-pointer"
-                title="sknskin@naver.com"
-              >
-                <MailIcon />
-                <span className="hidden sm:inline">sknskin@naver.com</span>
-              </button>
+              {process.env.NEXT_PUBLIC_CONTACT_EMAIL && (
+                <button
+                  onClick={(e) => copyToClipboard(process.env.NEXT_PUBLIC_CONTACT_EMAIL!, e)}
+                  className="flex items-center gap-1.5 text-[12px] text-text-quaternary hover:text-text-secondary transition-colors cursor-pointer"
+                  title={process.env.NEXT_PUBLIC_CONTACT_EMAIL}
+                >
+                  <MailIcon />
+                  <span className="hidden sm:inline">{process.env.NEXT_PUBLIC_CONTACT_EMAIL}</span>
+                </button>
+              )}
               <a
                 href="https://github.com/sknskin/project-virtuex"
                 target="_blank"
@@ -125,14 +127,16 @@ export default function Footer() {
                 <GitHubIcon />
                 <span className="hidden sm:inline">GitHub</span>
               </a>
-              <button
-                onClick={(e) => copyToClipboard('010-7455-4829', e)}
-                className="flex items-center gap-1.5 text-[12px] text-text-quaternary hover:text-text-secondary transition-colors cursor-pointer"
-                title="010-7455-4829"
-              >
-                <PhoneIcon />
-                <span className="hidden sm:inline">010-7455-4829</span>
-              </button>
+              {process.env.NEXT_PUBLIC_CONTACT_PHONE && (
+                <button
+                  onClick={(e) => copyToClipboard(process.env.NEXT_PUBLIC_CONTACT_PHONE!, e)}
+                  className="flex items-center gap-1.5 text-[12px] text-text-quaternary hover:text-text-secondary transition-colors cursor-pointer"
+                  title={process.env.NEXT_PUBLIC_CONTACT_PHONE}
+                >
+                  <PhoneIcon />
+                  <span className="hidden sm:inline">{process.env.NEXT_PUBLIC_CONTACT_PHONE}</span>
+                </button>
+              )}
             </div>
             <div className="flex items-center gap-2 text-[11px] text-text-quaternary">
               <span>{t('footer.rights')}</span>
