@@ -41,37 +41,63 @@ export class ChatService {
       orderBy: { updatedAt: 'desc' },
     });
 
-    const roomsWithUnread = await Promise.all(
-      rooms.map(async (room) => {
-        const lastMessage = room.messages[0] || null;
+    // N+1 쿼리 방지: 배치로 집계 (Prevent N+1: batch aggregate counts)
+    const roomIds = rooms.map((r) => r.id);
 
-        const totalMessages = await this.prisma.message.count({
-          where: { roomId: room.id },
-        });
-        const readCount = await this.prisma.readReceipt.count({
-          where: {
-            userId,
-            message: { roomId: room.id },
-          },
-        });
-        // 내가 보낸 메시지는 자동으로 읽음 처리 (Messages I sent are implicitly read)
-        const mySentCount = await this.prisma.message.count({
-          where: { roomId: room.id, senderId: userId },
-        });
-        const unreadCount = Math.max(0, totalMessages - readCount - mySentCount);
-
-        return {
-          id: room.id,
-          name: room.name,
-          type: room.type,
-          participants: room.participants,
-          lastMessage,
-          unreadCount,
-          createdAt: room.createdAt,
-          updatedAt: room.updatedAt,
-        };
+    const [totalCounts, readCounts, sentCounts] = await Promise.all([
+      this.prisma.message.groupBy({
+        by: ['roomId'],
+        where: { roomId: { in: roomIds } },
+        _count: true,
       }),
-    );
+      this.prisma.readReceipt.groupBy({
+        by: ['messageId'],
+        where: { userId, message: { roomId: { in: roomIds } } },
+        _count: true,
+      }).then(async (receipts) => {
+        // messageId → roomId 매핑을 위해 메시지 조회 (Map messageId → roomId)
+        if (receipts.length === 0) return new Map<string, number>();
+        const msgIds = receipts.map((r) => r.messageId);
+        const msgs = await this.prisma.message.findMany({
+          where: { id: { in: msgIds } },
+          select: { id: true, roomId: true },
+        });
+        const msgToRoom = new Map(msgs.map((m) => [m.id, m.roomId]));
+        const roomReadMap = new Map<string, number>();
+        for (const r of receipts) {
+          const rid = msgToRoom.get(r.messageId);
+          if (rid) roomReadMap.set(rid, (roomReadMap.get(rid) || 0) + r._count);
+        }
+        return roomReadMap;
+      }),
+      this.prisma.message.groupBy({
+        by: ['roomId'],
+        where: { roomId: { in: roomIds }, senderId: userId },
+        _count: true,
+      }),
+    ]);
+
+    const totalMap = new Map(totalCounts.map((c) => [c.roomId, c._count]));
+    const sentMap = new Map(sentCounts.map((c) => [c.roomId, c._count]));
+
+    const roomsWithUnread = rooms.map((room) => {
+      const lastMessage = room.messages[0] || null;
+      const total = totalMap.get(room.id) || 0;
+      const read = readCounts.get(room.id) || 0;
+      const sent = sentMap.get(room.id) || 0;
+      const unreadCount = Math.max(0, total - read - sent);
+
+      return {
+        id: room.id,
+        name: room.name,
+        type: room.type,
+        participants: room.participants,
+        lastMessage,
+        unreadCount,
+        createdAt: room.createdAt,
+        updatedAt: room.updatedAt,
+      };
+    });
 
     return roomsWithUnread;
   }
@@ -354,7 +380,7 @@ export class ChatService {
   async markAsRead(roomId: string, userId: string) {
     await this.verifyParticipant(roomId, userId);
 
-    // 모든 안 읽은 메시지 조회 (내가 보내지 않았고, 아직 읽지 않은 메시지) (Get all unread messages (not sent by me, not already read))
+    // 최근 안 읽은 메시지 조회 (최대 500건) / Get recent unread messages (max 500)
     const unreadMessages = await this.prisma.message.findMany({
       where: {
         roomId,
@@ -364,6 +390,8 @@ export class ChatService {
         },
       },
       select: { id: true },
+      orderBy: { createdAt: 'desc' },
+      take: 500,
     });
 
     if (unreadMessages.length > 0) {
