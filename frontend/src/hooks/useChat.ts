@@ -3,6 +3,7 @@
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { useAuthStore } from '@/stores/auth';
+import { useToastStore } from '@/stores/toast';
 import type { ChatRoom, ChatMessage, ChatUserSearchResult } from '@/types';
 
 export function useChatRooms() {
@@ -30,6 +31,7 @@ export function useChatMessages(roomId: string | null) {
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
     enabled: !!roomId,
+    retry: 2,
   });
 }
 
@@ -62,13 +64,17 @@ export function useSendMessage() {
     onSuccess: (newMessage, variables) => {
       // 전체 리페치 대신 캐시에 직접 추가하여 스크롤 위치 유지
       // (Append to cache instead of full refetch to preserve scroll position)
-      qc.setQueryData(['chat-messages', variables.roomId], (old: any) => {
+      type MessagesCache = { pages: { items: ChatMessage[]; nextCursor: string | null }[]; pageParams: unknown[] };
+      qc.setQueryData<MessagesCache>(['chat-messages', variables.roomId], (old) => {
         if (!old?.pages?.length) return old;
         const pages = [...old.pages];
         pages[0] = { ...pages[0], items: [...pages[0].items, newMessage] };
         return { ...old, pages };
       });
       qc.invalidateQueries({ queryKey: ['chat-rooms'] });
+    },
+    onError: () => {
+      useToastStore.getState().addToast('메시지 전송에 실패했습니다', 'error');
     },
   });
 }
@@ -170,11 +176,12 @@ export function useDeleteMessage() {
     },
     onSuccess: (result, variables) => {
       // 캐시에서 삭제된 메시지 제거 (Remove deleted message from cache)
-      qc.setQueryData(['chat-messages', variables.roomId], (old: any) => {
+      type MessagesCache = { pages: { items: ChatMessage[]; nextCursor: string | null }[]; pageParams: unknown[] };
+      qc.setQueryData<MessagesCache>(['chat-messages', variables.roomId], (old) => {
         if (!old?.pages?.length) return old;
-        const pages = old.pages.map((page: any) => ({
+        const pages = old.pages.map((page) => ({
           ...page,
-          items: page.items.filter((msg: ChatMessage) => msg.id !== result.deletedMessageId),
+          items: page.items.filter((msg) => msg.id !== result.deletedMessageId),
         }));
         return { ...old, pages };
       });

@@ -55,7 +55,7 @@ export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeave
   const closeChat = useChatStore((s) => s.closeChat);
   const user = useAuthStore((s) => s.user);
   const { data: rooms } = useChatRooms();
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading: messagesLoading } = useChatMessages(roomId);
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading: messagesLoading, isError: messagesError } = useChatMessages(roomId);
   const sendMessage = useSendMessage();
   const markRead = useMarkRoomRead();
   const kickFromRoom = useKickFromRoom();
@@ -327,7 +327,11 @@ export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeave
             <span className="text-[11px] text-text-quaternary">{t('common.loading')}</span>
           </div>
         )}
-        {messagesLoading ? (
+        {messagesError ? (
+          <div className="flex items-center justify-center h-full">
+            <p className="text-[13px] text-red-400">{t('chat.loadError')}</p>
+          </div>
+        ) : messagesLoading ? (
           <div className="flex flex-col gap-3 py-2">
             {Array.from({ length: 6 }).map((_, i) => {
               const isRight = i % 3 === 0;

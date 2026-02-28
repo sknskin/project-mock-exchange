@@ -101,6 +101,10 @@ export default function MessageInput({ onSend, disabled, focusRef, participants,
   }, [text, disabled, onSend]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    // IME 입력 중 키 이벤트 무시 (한글 조합 중 Enter 오동작 방지)
+    // Ignore key events during IME composition (prevents Korean input issues)
+    if (e.nativeEvent.isComposing || e.key === 'Process') return;
+
     // 멘션 목록이 표시 중일 때 키 처리 (Handle keys when mention list is visible)
     if (mentionQuery !== null && mentionCandidates.length > 0) {
       if (e.key === 'ArrowDown') {
@@ -123,6 +127,13 @@ export default function MessageInput({ onSend, disabled, focusRef, participants,
         setMentionQuery(null);
         return;
       }
+    }
+
+    // 멘션 쿼리 입력 중 Enter 시 전송하지 않고 멘션 해제 (Don't send while mention query active)
+    if (mentionQuery !== null && e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      setMentionQuery(null);
+      return;
     }
 
     if (e.key === 'Enter' && !e.shiftKey) {

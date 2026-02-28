@@ -248,8 +248,8 @@ function bindListeners(socket: Socket, qc: QueryClient) {
 }
 
 function connectIfNeeded(token: string, qc: QueryClient) {
-  // 토큰이 같고 소켓이 이미 존재하면 재사용 / Reuse if token matches
-  if (sharedSocket && activeToken === token) return;
+  // 토큰이 같고 소켓이 이미 연결되어 있으면 재사용 / Reuse if token matches and socket is connected
+  if (sharedSocket && activeToken === token && sharedSocket.connected) return;
 
   // 기존 소켓 정리 / Clean up existing socket
   if (sharedSocket) {

@@ -70,7 +70,7 @@ export default function ChatPanel() {
 
       if (d.mode === 'move') {
         const newX = Math.max(0, Math.min(window.innerWidth - size.width, d.origX + dx));
-        const newY = Math.max(0, Math.min(window.innerHeight - 100, d.origY + dy));
+        const newY = Math.max(0, Math.min(window.innerHeight - 100, d.origY + dy)); // 100px = minimum visible panel area
         setPosition({ x: newX, y: newY });
       } else {
         let newW = d.origW;
@@ -117,8 +117,12 @@ export default function ChatPanel() {
 
   const handleLeaveRoom = async () => {
     if (!activeRoomId) return;
-    await leaveRoom.mutateAsync(activeRoomId);
-    backToList();
+    try {
+      await leaveRoom.mutateAsync(activeRoomId);
+      backToList();
+    } catch {
+      // 실패해도 UI 상태 유지 (Keep UI state on failure)
+    }
   };
 
   // 고정 모드: 레이아웃에서 렌더링, 여기서는 렌더링하지 않음 (Pinned mode: rendered by layout, not here)
@@ -127,7 +131,7 @@ export default function ChatPanel() {
   // 뷰포트 내로 위치 제한 (Clamp position within viewport)
   const pos = position || { x: window.innerWidth - size.width - 16, y: 76 };
   const clampedX = Math.max(0, Math.min(pos.x, window.innerWidth - size.width));
-  const clampedY = Math.max(0, Math.min(pos.y, window.innerHeight - 100));
+  const clampedY = Math.max(0, Math.min(pos.y, window.innerHeight - 100)); // 100px = minimum visible panel area
 
   const content = (
     <>

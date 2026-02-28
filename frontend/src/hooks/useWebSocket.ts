@@ -24,7 +24,11 @@ export function useWebSocket(
   const accessToken = useAuthStore((s) => s.accessToken);
 
   const connect = useCallback(() => {
-    if (socketRef.current?.connected) return;
+    // 토큰 변경 시 기존 소켓 정리 후 재연결 (Cleanup and reconnect on token change)
+    if (socketRef.current) {
+      socketRef.current.disconnect();
+      socketRef.current = null;
+    }
 
     const socket = io(`${WS_URL}/prices`, {
       transports: ['websocket'],
@@ -45,7 +49,7 @@ export function useWebSocket(
     });
 
     socketRef.current = socket;
-  }, [symbols]);
+  }, [symbols, accessToken]);
 
   useEffect(() => {
     connect();
