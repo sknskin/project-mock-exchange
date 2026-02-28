@@ -63,12 +63,15 @@ export class MatchingEngineService {
   removeFromOrderBook(orderId: string, symbol: string, side: 'BUY' | 'SELL'): void {
     const book = side === 'BUY' ? this.bids : this.asks;
     const entries = book.get(symbol);
-    if (entries) {
-      book.set(
-        symbol,
-        entries.filter((e) => e.orderId !== orderId),
-      );
+    if (!entries) {
+      this.logger.warn(`removeFromOrderBook: no ${side} book for ${symbol} (orderId=${orderId})`);
+      return;
     }
+    const filtered = entries.filter((e) => e.orderId !== orderId);
+    if (filtered.length === entries.length) {
+      this.logger.warn(`removeFromOrderBook: orderId=${orderId} not found in ${side} book for ${symbol}`);
+    }
+    book.set(symbol, filtered);
   }
 
   /**

@@ -357,9 +357,11 @@ export class MarketDataService implements OnModuleInit {
   /**
    * Decimal(20,8) 최대값 범위 내로 클램핑 / Clamp to Decimal(20,8) range
    */
+  /** Decimal(20,8) column max integer part: 12 digits */
+  private static readonly MAX_DECIMAL_20_8 = 999_999_999_999;
+
   private clampDecimal(value: number): number {
-    const MAX = 999_999_999_999;
-    return Math.min(Math.max(value, -MAX), MAX);
+    return Math.min(Math.max(value, -MarketDataService.MAX_DECIMAL_20_8), MarketDataService.MAX_DECIMAL_20_8);
   }
 
   private async updateCandlesticks(ticks: PriceTick[]) {
