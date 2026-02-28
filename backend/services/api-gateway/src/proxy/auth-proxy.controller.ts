@@ -230,4 +230,78 @@ export class AuthProxyController {
     });
     return res.status(result.status).json(result.data);
   }
+
+  // ── TOTP 2FA ──
+
+  @Post('totp/setup')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'TOTP 설정', description: 'TOTP 2FA 시크릿 키를 생성합니다' })
+  async totpSetup(@Req() req: Request, @Res() res: Response) {
+    const result = await this.proxyService.forward('user-auth', {
+      method: 'POST',
+      url: '/auth/totp/setup',
+      headers: { Authorization: req.headers.authorization || '' },
+    });
+    return res.status(result.status).json(result.data);
+  }
+
+  @Post('totp/enable')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'TOTP 활성화', description: 'TOTP 코드 검증 후 2FA를 활성화합니다' })
+  async totpEnable(@Body() body: unknown, @Req() req: Request, @Res() res: Response) {
+    const result = await this.proxyService.forward('user-auth', {
+      method: 'POST',
+      url: '/auth/totp/enable',
+      data: body,
+      headers: { Authorization: req.headers.authorization || '' },
+    });
+    return res.status(result.status).json(result.data);
+  }
+
+  @Post('totp/disable')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'TOTP 비활성화', description: 'TOTP 코드 검증 후 2FA를 비활성화합니다' })
+  async totpDisable(@Body() body: unknown, @Req() req: Request, @Res() res: Response) {
+    const result = await this.proxyService.forward('user-auth', {
+      method: 'POST',
+      url: '/auth/totp/disable',
+      data: body,
+      headers: { Authorization: req.headers.authorization || '' },
+    });
+    return res.status(result.status).json(result.data);
+  }
+
+  @Post('totp/verify')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'TOTP 검증', description: 'TOTP 코드를 검증합니다' })
+  async totpVerify(@Body() body: unknown, @Req() req: Request, @Res() res: Response) {
+    const result = await this.proxyService.forward('user-auth', {
+      method: 'POST',
+      url: '/auth/totp/verify',
+      data: body,
+      headers: { Authorization: req.headers.authorization || '' },
+    });
+    return res.status(result.status).json(result.data);
+  }
+
+  @Get('totp/status')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'TOTP 상태 조회', description: 'TOTP 2FA 활성화 여부를 확인합니다' })
+  async totpStatus(@Req() req: Request, @Res() res: Response) {
+    const result = await this.proxyService.forward('user-auth', {
+      method: 'GET',
+      url: '/auth/totp/status',
+      headers: { Authorization: req.headers.authorization || '' },
+    });
+    return res.status(result.status).json(result.data);
+  }
 }

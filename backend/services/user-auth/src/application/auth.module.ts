@@ -13,6 +13,7 @@ import { AuthService } from './services/auth.service';
 import { AdminService } from './services/admin.service';
 import { AnnouncementService } from './services/announcement.service';
 import { SmsVerificationService } from './services/sms-verification.service';
+import { TotpService } from './services/totp.service';
 import { AuthController } from '../presentation/controllers/auth.controller';
 import { AdminController } from '../presentation/controllers/admin.controller';
 import { AnnouncementController } from '../presentation/controllers/announcement.controller';
@@ -53,12 +54,13 @@ import { USER_REPOSITORY } from '../domain/repositories/user.repository.interfac
     AdminService,
     AnnouncementService,
     SmsVerificationService,
+    TotpService,
     JwtStrategy,
     {
       provide: USER_REPOSITORY,
       useClass: UserRepository,
     },
   ],
-  exports: [AuthService, AdminService, AnnouncementService, SmsVerificationService],
+  exports: [AuthService, AdminService, AnnouncementService, SmsVerificationService, TotpService],
 })
 export class AuthModule {}

@@ -20,6 +20,7 @@ import {
 import { Response, Request } from 'express';
 import { AuthService } from '../../application/services/auth.service';
 import { SmsVerificationService } from '../../application/services/sms-verification.service';
+import { TotpService } from '../../application/services/totp.service';
 import { RegisterRequestDto } from '../dto/register.dto';
 import { LoginRequestDto } from '../dto/login.dto';
 import { VerifyLoginSmsDto } from '../dto/verify-login-sms.dto';
@@ -45,6 +46,7 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly smsVerificationService: SmsVerificationService,
+    private readonly totpService: TotpService,
   ) {}
 
   @Post('register')
@@ -201,5 +203,55 @@ export class AuthController {
   ) {
     const exists = await this.authService.checkDuplicate(field, value);
     return { success: true, data: { exists } };
+  }
+
+  // ── TOTP 2FA ──
+
+  @Post('totp/setup')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async totpSetup(@CurrentUser() user: UserDto) {
+    const result = await this.totpService.setup(user.id);
+    return { success: true, data: result };
+  }
+
+  @Post('totp/enable')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async totpEnable(
+    @CurrentUser() user: UserDto,
+    @Body('code') code: string,
+  ) {
+    await this.totpService.enable(user.id, code);
+    return { success: true, message: 'TOTP enabled' };
+  }
+
+  @Post('totp/disable')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async totpDisable(
+    @CurrentUser() user: UserDto,
+    @Body('code') code: string,
+  ) {
+    await this.totpService.disable(user.id, code);
+    return { success: true, message: 'TOTP disabled' };
+  }
+
+  @Post('totp/verify')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async totpVerify(
+    @CurrentUser() user: UserDto,
+    @Body('code') code: string,
+  ) {
+    const valid = await this.totpService.verify(user.id, code);
+    return { success: true, data: { valid } };
+  }
+
+  @Get('totp/status')
+  @UseGuards(JwtAuthGuard)
+  async totpStatus(@CurrentUser() user: UserDto) {
+    const enabled = await this.totpService.isEnabled(user.id);
+    return { success: true, data: { enabled } };
   }
 }

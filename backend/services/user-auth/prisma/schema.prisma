@@ -40,6 +40,8 @@ model User {
   address       String   @db.VarChar(500)
   addressDetail String?  @map("address_detail") @db.VarChar(200)
   zipCode       String   @map("zip_code") @db.VarChar(10)
+  totpSecret    String?    @map("totp_secret") @db.VarChar(512)
+  totpEnabled   Boolean    @default(false) @map("totp_enabled")
   lockedAt      DateTime?  @map("locked_at") @db.Timestamptz()
   lockedReason  String?    @map("locked_reason") @db.VarChar(500)
   createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz()
