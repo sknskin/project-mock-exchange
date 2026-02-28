@@ -352,7 +352,6 @@ const translations = {
     'validation.username.length': '3~50자로 입력해주세요',
     'validation.email.format': '올바른 이메일 형식이 아닙니다',
     'validation.password.minLength': '8자 이상이어야 합니다',
-    'validation.password.uppercase': '대문자를 포함해야 합니다',
     'validation.password.lowercase': '소문자를 포함해야 합니다',
     'validation.password.number': '숫자를 포함해야 합니다',
     'validation.password.special': '특수문자를 포함해야 합니다',
@@ -1503,6 +1502,9 @@ const translations = {
     'community.totalAssets': '총 자산',
     'community.hoursAgo': '시간 전',
     'community.mockNotice': '커뮤니티 기능은 현재 개발 중입니다. 표시된 데이터는 샘플입니다.',
+    'community.discussions': '자유게시판',
+    'community.writePost': '글쓰기',
+    'community.discussionNotice': '자유게시판은 준비 중입니다. 곧 실제 게시글 작성이 가능합니다.',
 
     // AI
     'ai.title': 'AI 시장 분석',
@@ -1865,7 +1867,6 @@ const translations = {
     'validation.username.length': 'Must be 3-50 characters',
     'validation.email.format': 'Invalid email format',
     'validation.password.minLength': 'Must be at least 8 characters',
-    'validation.password.uppercase': 'Must contain an uppercase letter',
     'validation.password.lowercase': 'Must contain a lowercase letter',
     'validation.password.number': 'Must contain a number',
     'validation.password.special': 'Must contain a special character',
@@ -3016,6 +3017,9 @@ const translations = {
     'community.totalAssets': 'Total Assets',
     'community.hoursAgo': 'h ago',
     'community.mockNotice': 'Community features are in development. Displayed data is sample data.',
+    'community.discussions': 'Discussions',
+    'community.writePost': 'Write',
+    'community.discussionNotice': 'Discussion board is coming soon. Stay tuned!',
 
     // AI
     'ai.title': 'AI Market Analysis',

@@ -147,7 +147,7 @@ export default function RegisterPage() {
   const getDuplicateColor = (status: string): string => {
     switch (status) {
       case 'taken': return 'text-danger';
-      case 'available': return 'text-rise';
+      case 'available': return 'text-accent';
       default: return 'text-text-quaternary';
     }
   };
@@ -243,7 +243,7 @@ export default function RegisterPage() {
               required
             />
             {passwordConfirm.length > 0 && passwordMatch && (
-              <p className="mt-1 text-[12px] font-medium text-rise">{t('validation.passwordConfirm.ok')}</p>
+              <p className="mt-1 text-[12px] font-medium text-accent">{t('validation.passwordConfirm.ok')}</p>
             )}
           </div>
 

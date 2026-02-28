@@ -13,7 +13,6 @@ export interface ValidationRule {
 export function validatePassword(password: string): ValidationRule[] {
   return [
     { key: 'validation.password.minLength', passed: password.length >= 8 },
-    { key: 'validation.password.uppercase', passed: /[A-Z]/.test(password) },
     { key: 'validation.password.lowercase', passed: /[a-z]/.test(password) },
     { key: 'validation.password.number', passed: /\d/.test(password) },
     { key: 'validation.password.special', passed: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password) },

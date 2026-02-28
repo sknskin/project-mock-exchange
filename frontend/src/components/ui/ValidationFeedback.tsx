@@ -27,7 +27,7 @@ export default function ValidationFeedback({ rules, show }: ValidationFeedbackPr
         <li
           key={rule.key}
           className={`flex items-center gap-1.5 text-[12px] font-medium ${
-            rule.passed ? 'text-rise' : 'text-text-quaternary'
+            rule.passed ? 'text-accent' : 'text-text-quaternary'
           }`}
         >
           <span className="text-[11px]">{rule.passed ? '✓' : '✗'}</span>
