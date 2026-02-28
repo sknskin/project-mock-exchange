@@ -56,19 +56,20 @@ export default function Header() {
           { href: '/portfolio', label: t('nav.portfolio'), icon: Briefcase },
           { href: '/orders', label: t('nav.orders'), icon: ClipboardList },
           { href: '/leaderboard', label: t('nav.leaderboard'), icon: Trophy },
+          { href: '/announcements', label: t('nav.announcements'), icon: Megaphone },
           { href: '/community', label: t('nav.community'), icon: Users },
         ]
       : []),
-    ...(isAuthenticated ? [{ href: '/announcements', label: t('nav.announcements'), icon: Megaphone }] : []),
-    ...(isAdmin
-      ? [
-          { href: '/admin/users', label: t('nav.userManagement'), icon: Users },
-          { href: '/admin/stats', label: t('nav.statistics'), icon: BarChart3 },
-          { href: '/admin/settings', label: t('nav.settings'), icon: Settings },
-          { href: '/admin/health', label: t('nav.health'), icon: Activity },
-        ]
-      : []),
   ];
+
+  const mobileAdminItems = isAdmin
+    ? [
+        { href: '/admin/users', label: t('nav.userManagement'), icon: Users },
+        { href: '/admin/stats', label: t('nav.statistics'), icon: BarChart3 },
+        { href: '/admin/settings', label: t('nav.settings'), icon: Settings },
+        { href: '/admin/health', label: t('nav.health'), icon: Activity },
+      ]
+    : [];
 
   useEffect(() => { setMobileMenuOpen(false); setUserMenuOpen(false); }, [pathname]);
 
@@ -185,19 +186,6 @@ export default function Header() {
                   {t('nav.leaderboard')}
                 </Link>
                 <Link
-                  href="/community"
-                  className={cn(
-                    'text-[13px] xl:text-[14px] font-medium transition-colors py-1 whitespace-nowrap',
-                    pathname === '/community' || pathname.startsWith('/community/')
-                      ? 'text-text-primary' : 'text-text-tertiary hover:text-text-primary',
-                  )}
-                >
-                  {t('nav.community')}
-                </Link>
-              </div>
-
-              <div className="contents auth-show">
-                <Link
                   href="/announcements"
                   className={cn(
                     'text-[13px] xl:text-[14px] font-medium transition-colors py-1 whitespace-nowrap',
@@ -206,6 +194,16 @@ export default function Header() {
                   )}
                 >
                   {t('nav.announcements')}
+                </Link>
+                <Link
+                  href="/community"
+                  className={cn(
+                    'text-[13px] xl:text-[14px] font-medium transition-colors py-1 whitespace-nowrap',
+                    pathname === '/community' || pathname.startsWith('/community/')
+                      ? 'text-text-primary' : 'text-text-tertiary hover:text-text-primary',
+                  )}
+                >
+                  {t('nav.community')}
                 </Link>
               </div>
             </nav>
@@ -365,83 +363,107 @@ export default function Header() {
       </header>
 
       {/* 모바일 사이드 메뉴 (열릴 때만 렌더, hydration 이후이므로 조건부 OK) */}
+      {/* Mobile side menu: flex column layout to prevent scrolling */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-black/60" onClick={() => setMobileMenuOpen(false)} />
-          <div className="absolute top-0 right-0 w-[280px] md:w-[340px] h-full max-h-[100dvh] bg-bg-primary border-l border-border animate-slide-in-right overflow-y-auto">
-            <div className="flex items-center justify-between px-6 h-[60px] border-b border-border">
-              <span className="text-[16px] font-bold text-text-primary">{t('nav.menu')}</span>
-              <button onClick={() => setMobileMenuOpen(false)} className="p-2 text-text-tertiary">
+          <div className="absolute top-0 right-0 w-[280px] md:w-[340px] h-full max-h-[100dvh] bg-bg-primary border-l border-border animate-slide-in-right flex flex-col">
+            {/* 헤더 / Header */}
+            <div className="flex items-center justify-between px-5 h-[52px] border-b border-border shrink-0">
+              <span className="text-[15px] font-bold text-text-primary">{t('nav.menu')}</span>
+              <button onClick={() => setMobileMenuOpen(false)} className="p-2 text-text-tertiary hover:text-text-primary transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <nav className="px-4 py-5 space-y-1 overflow-y-auto" role="navigation" aria-label="Mobile navigation">
-              {mobileNavItems.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    'flex items-center gap-3 px-4 py-3.5 text-[15px] font-medium rounded-xl transition-colors',
-                    pathname === item.href || pathname.startsWith(item.href + '/')
-                      ? 'text-text-primary bg-bg-secondary'
-                      : 'text-text-tertiary hover:text-text-primary',
-                  )}
-                >
-                  <item.icon className="w-4 h-4" />
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
-            <div className="px-6 pt-4 mt-2 border-t border-border">
-              {isAuthenticated ? (
-                <div className="space-y-1">
-                  <div className="px-4 py-2 text-[14px] font-bold text-text-primary">
-                    {user?.name || user?.username}
-                  </div>
+
+            {/* 네비게이션 / Navigation */}
+            <nav className="flex-1 px-3 py-3" role="navigation" aria-label="Mobile navigation">
+              <div className="space-y-0.5">
+                {mobileNavItems.map((item) => (
                   <Link
-                    href="/mypage"
-                    className="flex items-center gap-3 px-4 py-3 text-[13px] font-medium text-text-primary hover:bg-bg-secondary rounded-xl transition-colors"
-                  >
-                    <User className="w-4 h-4 text-text-tertiary" />
-                    {t('nav.mypage')}
-                  </Link>
-                  <Link
-                    href="/help"
-                    className="flex items-center gap-3 px-4 py-3 text-[13px] font-medium text-text-primary hover:bg-bg-secondary rounded-xl transition-colors"
-                  >
-                    <HelpCircle className="w-4 h-4 text-text-tertiary" />
-                    {t('nav.help')}
-                  </Link>
-                  <button
-                    onClick={() => { toggleTheme(); }}
-                    className="flex items-center gap-3 w-full px-4 py-3 text-[13px] font-medium text-text-primary hover:bg-bg-secondary rounded-xl transition-colors"
-                  >
-                    {theme === 'dark' ? (
-                      <Sun className="w-4 h-4 text-warning" />
-                    ) : (
-                      <Moon className="w-4 h-4 text-accent" />
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                      'flex items-center gap-3 px-3 py-2.5 text-[14px] font-medium rounded-lg transition-colors',
+                      pathname === item.href || pathname.startsWith(item.href + '/')
+                        ? 'text-text-primary bg-bg-secondary'
+                        : 'text-text-tertiary hover:text-text-primary hover:bg-bg-secondary/50',
                     )}
-                    {theme === 'dark' ? t('settings.lightMode') : t('settings.darkMode')}
-                  </button>
-                  <button
-                    onClick={() => { toggleLocale(); }}
-                    className="flex items-center gap-3 w-full px-4 py-3 text-[13px] font-medium text-text-primary hover:bg-bg-secondary rounded-xl transition-colors"
                   >
-                    <Globe className="w-4 h-4 text-accent" />
-                    {locale === 'ko' ? 'English' : '한국어'}
-                  </button>
-                  <div className="border-t border-border mt-2 pt-2">
+                    <item.icon className="w-4 h-4" />
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+
+              {/* 관리자 메뉴 - 2열 그리드 / Admin menu - 2-column grid */}
+              {mobileAdminItems.length > 0 && (
+                <div className="mt-3 pt-3 border-t border-border">
+                  <div className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-accent">Admin</div>
+                  <div className="grid grid-cols-2 gap-0.5">
+                    {mobileAdminItems.map((item) => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className={cn(
+                          'flex items-center gap-2 px-3 py-2 text-[13px] font-medium rounded-lg transition-colors',
+                          pathname === item.href || pathname.startsWith(item.href + '/')
+                            ? 'text-accent bg-accent/10'
+                            : 'text-text-tertiary hover:text-accent hover:bg-accent/5',
+                        )}
+                      >
+                        <item.icon className="w-3.5 h-3.5" />
+                        {item.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </nav>
+
+            {/* 하단 영역 / Bottom section */}
+            <div className="shrink-0 px-3 pb-4 pt-2 border-t border-border">
+              {isAuthenticated ? (
+                <div className="space-y-2">
+                  {/* 유저 정보 + 마이페이지/도움말 / User info + mypage/help */}
+                  <div className="flex items-center gap-2 px-3 py-1.5">
+                    <User className="w-4 h-4 text-text-tertiary shrink-0" />
+                    <span className="text-[13px] font-semibold text-text-primary truncate flex-1">{user?.name || user?.username}</span>
+                    <Link href="/mypage" className="p-1.5 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-secondary transition-colors" aria-label={t('nav.mypage')}>
+                      <User className="w-3.5 h-3.5" />
+                    </Link>
+                    <Link href="/help" className="p-1.5 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-secondary transition-colors" aria-label={t('nav.help')}>
+                      <HelpCircle className="w-3.5 h-3.5" />
+                    </Link>
+                  </div>
+                  {/* 액션 바: 테마/언어 (아이콘) + 로그아웃 / Action bar: theme/locale (icon) + logout */}
+                  <div className="flex items-center gap-1 px-1">
+                    <button
+                      onClick={() => { toggleTheme(); }}
+                      className="p-2 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-secondary transition-colors"
+                      aria-label={theme === 'dark' ? t('settings.lightMode') : t('settings.darkMode')}
+                    >
+                      {theme === 'dark' ? <Sun className="w-4 h-4 text-warning" /> : <Moon className="w-4 h-4" />}
+                    </button>
+                    <button
+                      onClick={() => { toggleLocale(); }}
+                      className="p-2 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-secondary transition-colors"
+                      aria-label={locale === 'ko' ? 'English' : '한국어'}
+                    >
+                      <Globe className="w-4 h-4" />
+                    </button>
+                    <div className="flex-1" />
                     <button
                       onClick={() => { setLogoutModalOpen(true); setMobileMenuOpen(false); }}
-                      className="flex items-center gap-3 w-full px-4 py-3 text-[13px] font-medium text-danger hover:bg-bg-secondary rounded-xl transition-colors"
+                      className="flex items-center gap-1.5 px-3 py-2 text-[12px] font-medium text-danger hover:bg-danger/10 rounded-lg transition-colors"
                     >
-                      <LogOut className="w-4 h-4" />
+                      <LogOut className="w-3.5 h-3.5" />
                       {t('nav.logout')}
                     </button>
                   </div>
                 </div>
               ) : (
-                <Link href="/login" className="flex items-center justify-center w-full h-12 text-[14px] font-bold text-white bg-accent rounded-xl">
+                <Link href="/login" className="flex items-center justify-center w-full h-11 text-[14px] font-bold text-white bg-accent rounded-xl">
                   {t('nav.login')}
                 </Link>
               )}
