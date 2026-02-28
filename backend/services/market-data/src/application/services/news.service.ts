@@ -104,6 +104,20 @@ const RELEVANCE_KEYWORDS: Record<NewsCategory, RegExp> = {
     /stock|market|share|invest|fund|etf|earn|revenue|profit|dividend|nyse|nasdaq|s&p|dow|trading|bond|treasury|fed|interest rate|wall street|bull|bear|ipo|merger|acquisition|sector|index|portfolio|forex|commodity|oil|gold|equity|rally|crash|surge|plunge|quarter|fiscal|yield|inflation|gdp/i,
 };
 
+/** HTML 태그 제거 + 엔티티 디코드 (Strip HTML tags and decode entities) */
+function stripHtml(html: string): string {
+  return html
+    .replace(/<[^>]*>/g, '')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#039;/g, "'")
+    .replace(/&nbsp;/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 /** 전용 금융 소스 — 필터링 생략 (Dedicated finance sources — skip filtering) */
 const SKIP_FILTER_SOURCES = new Set([
   'CoinDesk',
@@ -166,11 +180,16 @@ export class NewsService implements OnModuleInit {
           }
 
           try {
+            const safeTitle = stripHtml(item.title);
+            const safeSummary = item.contentSnippet
+              ? stripHtml(item.contentSnippet).slice(0, 500)
+              : null;
+
             await this.prisma.news.upsert({
               where: { sourceUrl: item.link },
               update: {
-                title: item.title.trim(),
-                summary: item.contentSnippet?.trim().slice(0, 500) || null,
+                title: safeTitle,
+                summary: safeSummary,
                 publishedAt: item.pubDate
                   ? new Date(item.pubDate)
                   : null,
@@ -178,8 +197,8 @@ export class NewsService implements OnModuleInit {
               },
               create: {
                 category,
-                title: item.title.trim(),
-                summary: item.contentSnippet?.trim().slice(0, 500) || null,
+                title: safeTitle,
+                summary: safeSummary,
                 sourceUrl: item.link,
                 source: feed.source,
                 imageUrl: item.enclosure?.url || null,
