@@ -6,6 +6,7 @@
  * @description Global layout including Header, Footer, BottomNav, and theme
  */
 import type { Metadata } from 'next';
+import Script from 'next/script';
 import './globals.css';
 import QueryProvider from '@/components/layout/QueryProvider';
 import Header from '@/components/layout/Header';
@@ -33,12 +34,31 @@ export default function RootLayout({
     <html lang="ko" suppressHydrationWarning>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-        {/* React보다 먼저 실행: localStorage에서 인증 상태를 읽어 CSS 속성으로 설정 */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `try{var d=JSON.parse(localStorage.getItem('virtuex-auth')||'{}');if(d.state&&d.state.isAuthenticated){var h=document.documentElement.dataset;h.authed='1';if(d.state.user){if(d.state.user.role)h.role=d.state.user.role;if(d.state.user.username)h.username=d.state.user.username}}}catch(e){}`,
-          }}
-        />
+        {/*
+          SSR Hydration Flicker 방지: React 렌더링 전에 localStorage에서 인증 상태를 읽어
+          CSS data 속성을 설정합니다. auth-show/auth-hide CSS 클래스가 즉시 동작합니다.
+          보안: 이 스크립트는 빌드 타임 고정 문자열이며, localStorage 읽기 + dataset 설정만 수행합니다.
+
+          Prevents SSR hydration flicker: reads auth state from localStorage before React renders
+          and sets CSS data attributes. auth-show/auth-hide CSS classes work immediately.
+          Security: this is a build-time fixed string that only reads localStorage + sets dataset.
+        */}
+        <Script
+          id="auth-prehydrate"
+          strategy="beforeInteractive"
+        >{`
+          try {
+            var d = JSON.parse(localStorage.getItem('virtuex-auth') || '{}');
+            if (d.state && d.state.isAuthenticated) {
+              var h = document.documentElement.dataset;
+              h.authed = '1';
+              if (d.state.user) {
+                if (d.state.user.role) h.role = d.state.user.role;
+                if (d.state.user.username) h.username = d.state.user.username;
+              }
+            }
+          } catch (e) {}
+        `}</Script>
       </head>
       <body className="bg-bg-primary text-text-primary min-h-screen">
         {/* Skip to content link for keyboard/screen reader users */}

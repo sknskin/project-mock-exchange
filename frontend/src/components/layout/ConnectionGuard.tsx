@@ -10,7 +10,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-const HEALTH_ENDPOINT = `${API_URL}/health`;
+const HEALTH_ENDPOINT = `${API_URL}/api/health`;
 const CHECK_INTERVAL = 30_000;
 
 function getStoredLocale(): 'ko' | 'en' {

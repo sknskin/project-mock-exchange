@@ -75,7 +75,12 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);
-        useAuthStore.getState().logout();
+        // 토큰 + 인증 상태를 즉시 초기화하여 후속 요청에 stale 토큰이 전달되지 않게 함
+        // Immediately clear token + auth state so subsequent requests don't use stale token
+        const authStore = useAuthStore.getState();
+        if (authStore.isAuthenticated) {
+          authStore.logout();
+        }
         if (typeof window !== 'undefined') {
           window.location.href = '/login';
         }
