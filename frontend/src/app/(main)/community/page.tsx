@@ -12,6 +12,7 @@
 import { useState, useMemo } from 'react';
 import AuthGuard from '@/components/layout/AuthGuard';
 import { useLeaderboard } from '@/hooks/useLeaderboard';
+import { useAuthStore } from '@/stores/auth';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn, formatPercent, formatCurrencyDisplay } from '@/lib/format';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
@@ -25,6 +26,10 @@ import {
   UserCheck,
   Trophy,
   AlertTriangle,
+  MessageSquare,
+  PenSquare,
+  Clock,
+  ThumbsUp,
 } from 'lucide-react';
 import type { TranslationKey } from '@/lib/i18n';
 import type { LeaderboardEntry } from '@/types';
@@ -332,9 +337,59 @@ function TraderCard({
 
 /* ───────── 메인 페이지 / Main Page ───────── */
 
+/* ───────── 모의 게시판 데이터 / Mock Discussion Data ───────── */
+
+interface MockPost {
+  id: string;
+  author: string;
+  title: string;
+  preview: string;
+  likes: number;
+  comments: number;
+  hoursAgo: number;
+  category: string;
+}
+
+function generateMockPosts(locale: 'ko' | 'en'): MockPost[] {
+  const postsKo = [
+    { title: 'BTC 10만 돌파 가능할까요?', preview: '최근 추세를 보면 올해 안에 가능할 것 같은데 여러분의 의견은?', category: '자유토론' },
+    { title: 'ETH 스테이킹 수익률 공유', preview: '현재 연 4.2% 정도 나오고 있습니다. 다른 분들은 어떤가요?', category: '정보공유' },
+    { title: '초보자 질문 - 지정가 주문이 뭔가요?', preview: '시장가랑 지정가 차이가 뭔지 잘 모르겠어요', category: '질문' },
+    { title: 'NVDA 실적 발표 전 매매 전략', preview: 'AI 수요 증가로 실적 좋을 것 같아서 미리 매수했습니다', category: '전략' },
+    { title: '오늘의 시장 분석 (03/01)', preview: 'BTC 강보합, ETH 소폭 상승. 주요 지지/저항 분석', category: '분석' },
+    { title: '모의투자 포트폴리오 인증합니다', preview: '시작한 지 2주 만에 12% 수익! 비결은 분산투자입니다', category: '인증' },
+  ];
+  const postsEn = [
+    { title: 'Can BTC break $100K?', preview: 'Looking at recent trends, seems possible this year. What do you think?', category: 'Discussion' },
+    { title: 'ETH staking yield sharing', preview: 'Currently getting about 4.2% APY. What about you all?', category: 'Info' },
+    { title: 'Beginner Q - What is a limit order?', preview: "I don't understand the difference between market and limit orders", category: 'Question' },
+    { title: 'NVDA pre-earnings strategy', preview: 'Bought early expecting strong earnings from AI demand', category: 'Strategy' },
+    { title: "Today's market analysis (03/01)", preview: 'BTC consolidating, ETH slightly up. Key support/resistance levels', category: 'Analysis' },
+    { title: 'Mock portfolio proof - 12% gain', preview: 'After 2 weeks, up 12%! Secret is diversification', category: 'Proof' },
+  ];
+
+  const posts = locale === 'ko' ? postsKo : postsEn;
+  const authors = ['TraderKim', 'CryptoLee', 'StockPark', 'InvestChoi', 'BullJang', 'BearYoon'];
+
+  return posts.map((p, i) => {
+    const seed = hashString(p.title);
+    return {
+      id: `post-${i}`,
+      author: authors[i % authors.length],
+      title: p.title,
+      preview: p.preview,
+      likes: Math.floor(seededRandom(seed + 10) * 50) + 3,
+      comments: Math.floor(seededRandom(seed + 11) * 20) + 1,
+      hoursAgo: Math.floor(seededRandom(seed + 12) * 24) + 1,
+      category: p.category,
+    };
+  });
+}
+
 export default function CommunityPage() {
   const { t, locale } = useTranslation();
-  const [tab, setTab] = useState<'strategies' | 'traders'>('strategies');
+  const [tab, setTab] = useState<'discussions' | 'strategies' | 'traders'>('discussions');
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const { data: leaderboardData, isLoading } = useLeaderboard();
   const [followedUsers, setFollowedUsers] = useState<Set<string>>(new Set());
   const { data: rateData } = useExchangeRate();
@@ -368,6 +423,8 @@ export default function CommunityPage() {
     });
   };
 
+  const mockPosts = useMemo(() => generateMockPosts(locale), [locale]);
+
   return (
     <AuthGuard>
       <div>
@@ -389,6 +446,17 @@ export default function CommunityPage() {
 
         {/* 탭 네비게이션 / Tab navigation */}
         <div className="flex items-center gap-1 bg-bg-secondary border border-border rounded-xl p-1 mb-6">
+          <button
+            onClick={() => setTab('discussions')}
+            className={cn(
+              'flex-1 px-4 py-2 rounded-lg text-[13px] font-semibold transition-colors',
+              tab === 'discussions'
+                ? 'bg-accent text-white'
+                : 'text-text-quaternary hover:text-text-secondary',
+            )}
+          >
+            {t('community.discussions')}
+          </button>
           <button
             onClick={() => setTab('strategies')}
             className={cn(
@@ -412,6 +480,71 @@ export default function CommunityPage() {
             {t('community.traders')}
           </button>
         </div>
+
+        {/* 자유게시판 탭 / Discussions Tab */}
+        {tab === 'discussions' && (
+          <div>
+            {/* 글쓰기 버튼 / Write button */}
+            {isAuthenticated && (
+              <div className="flex justify-end mb-4">
+                <button className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-accent text-white text-[13px] font-semibold hover:bg-accent/90 transition-colors">
+                  <PenSquare className="w-3.5 h-3.5" />
+                  {t('community.writePost')}
+                </button>
+              </div>
+            )}
+
+            <div className="space-y-3">
+              {mockPosts.map((post) => (
+                <div
+                  key={post.id}
+                  className="bg-bg-secondary/60 border border-border/60 rounded-xl p-4 hover:border-accent/30 transition-all cursor-pointer"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <span className="px-2 py-0.5 text-[10px] font-semibold rounded-md bg-accent/10 text-accent shrink-0">
+                          {post.category}
+                        </span>
+                        <span className="text-[12px] text-text-quaternary truncate">
+                          {post.author}
+                        </span>
+                      </div>
+                      <h3 className="text-[14px] font-bold text-text-primary mb-1 line-clamp-1">
+                        {post.title}
+                      </h3>
+                      <p className="text-[12px] text-text-tertiary line-clamp-1 leading-relaxed">
+                        {post.preview}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border/40">
+                    <span className="flex items-center gap-1 text-[12px] text-text-quaternary">
+                      <ThumbsUp className="w-3.5 h-3.5" />
+                      <span className="tabular-nums">{post.likes}</span>
+                    </span>
+                    <span className="flex items-center gap-1 text-[12px] text-text-quaternary">
+                      <MessageSquare className="w-3.5 h-3.5" />
+                      <span className="tabular-nums">{post.comments}</span>
+                    </span>
+                    <span className="flex items-center gap-1 text-[12px] text-text-quaternary ml-auto">
+                      <Clock className="w-3 h-3" />
+                      {post.hoursAgo}{locale === 'ko' ? '시간 전' : 'h ago'}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* 개발 중 안내 / Coming soon notice */}
+            <div className="flex items-center gap-2 px-3 py-2 mt-4 rounded-lg bg-warning/10">
+              <AlertTriangle className="w-3.5 h-3.5 text-warning shrink-0" />
+              <span className="text-[12px] text-warning">
+                {t('community.discussionNotice')}
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* 전략 공유 탭 / Strategies Tab */}
         {tab === 'strategies' && (
