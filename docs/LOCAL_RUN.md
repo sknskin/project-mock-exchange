@@ -27,7 +27,7 @@ bash scripts/start-all.sh
 
 이 스크립트는 다음을 순서대로 자동 처리합니다:
 
-0. **기존 서비스 자동 종료** (포트 3000~3003, 3007, 4000에 실행 중인 프로세스 감지 시 자동 kill)
+0. **기존 서비스 자동 종료** (포트 3000~3003, 3005~3007, 4000에 실행 중인 프로세스 감지 시 자동 kill)
 1. 사전 체크 (Node.js, pnpm, Docker 설치 확인)
 2. 로컬 PostgreSQL 충돌 감지 시 자동 중지
 3. `.env` 로드 (없으면 `.env.example`에서 자동 복사)
@@ -35,7 +35,7 @@ bash scripts/start-all.sh
 5. Kafka 토픽 자동 생성
 6. 빌드 (`pnpm install` + `turbo build`, 이미 빌드된 경우 스킵)
 7. DB 마이그레이션 (Prisma db push)
-8. 백엔드 5개 서비스 + 프론트엔드 동시 실행
+8. 백엔드 7개 서비스 + 프론트엔드 동시 실행
 
 > 이미 서비스가 실행 중이더라도 스크립트가 자동으로 종료 후 재시작하므로 별도 정리 없이 바로 실행 가능합니다.
 
@@ -123,6 +123,7 @@ cd backend/services/user-auth && npx prisma db push && cd ../../..
 cd backend/services/market-data && npx prisma db push && cd ../../..
 cd backend/services/order-engine && npx prisma db push && cd ../../..
 cd backend/services/portfolio && npx prisma db push && cd ../../..
+cd backend/services/chat && npx prisma db push && cd ../../..
 ```
 
 > `prisma db push`는 Prisma 스키마를 기반으로 데이터베이스 테이블을 생성/동기화합니다.
@@ -198,7 +199,19 @@ node backend/services/portfolio/dist/main.js
 ```
 사용자 잔고 관리, 보유 자산 추적, 손익(P&L) 계산을 담당합니다.
 
-#### 터미널 5 - API Gateway (3000)
+#### 터미널 5 - Chat (3005)
+```bash
+node backend/services/chat/dist/main.js
+```
+실시간 1:1/그룹 채팅, 초대, 퇴장, 읽음 확인을 처리합니다.
+
+#### 터미널 6 - AI Service (3006)
+```bash
+node backend/services/ai-service/dist/main.js
+```
+AI 시장 분석 시그널, 포트폴리오 분석을 제공합니다.
+
+#### 터미널 7 - API Gateway (3000)
 ```bash
 node backend/services/api-gateway/dist/main.js
 ```
@@ -210,7 +223,7 @@ node backend/services/api-gateway/dist/main.js
 
 ### 7. 프론트엔드 실행
 
-#### 터미널 6
+#### 터미널 8
 ```bash
 cd frontend
 pnpm dev
@@ -228,18 +241,20 @@ Next.js 15 App Router 기반의 프론트엔드가 포트 4000에서 시작됩�
 | http://localhost:4000/dashboard | 마켓 대시보드 (실시간 가격, 관심종목 탭) |
 | http://localhost:4000/login | 로그인 |
 | http://localhost:4000/register | 회원가입 |
-| http://localhost:4000/portfolio | 포트폴리오 (보유자산/잔고) |
-| http://localhost:4000/orders | 주문 내역 |
-| http://localhost:4000/leaderboard | 리더보드 (수익률 랭킹) |
-| http://localhost:4000/asset/BTC-USD | 종목 상세 (차트, 주문, 호가) |
+| http://localhost:4000/portfolio | 포트폴리오 (보유자산/잔고/분석) |
+| http://localhost:4000/orders | 주문 내역 (분석/CSV 내보내기) |
+| http://localhost:4000/leaderboard | 리더보드 (기간/정렬 필터, 메달 뱃지) |
+| http://localhost:4000/asset/BTC-USD | 종목 상세 (차트, 주문, 호가, 깊이 차트) |
 | http://localhost:4000/news | 뉴스 목록 |
 | http://localhost:4000/announcements | 공지사항 목록 |
 | http://localhost:4000/announcements/:id | 공지사항 상세 (조회수, 좋아요) |
-| http://localhost:4000/mypage | 마이페이지 (프로필, 설정) |
+| http://localhost:4000/community | 커뮤니티 (전략 공유, 트레이더) |
+| http://localhost:4000/mypage | 마이페이지 (프로필, 거래 통계, 설정) |
 | http://localhost:4000/admin/users | 관리자 - 사용자 관리 (ADMIN 전용) |
 | http://localhost:4000/admin/users/:id | 관리자 - 사용자 상세 (ADMIN 전용) |
 | http://localhost:4000/admin/stats | 관리자 - 통계 (ADMIN 전용) |
 | http://localhost:4000/admin/announcements | 관리자 - 공지사항 관리 (ADMIN 전용) |
+| http://localhost:4000/admin/settings | 관리자 - 시스템 설정 (ADMIN 전용) |
 | http://localhost:3000/api-docs | Swagger API 문서 |
 
 ---

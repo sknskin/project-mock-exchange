@@ -134,8 +134,8 @@ virtuex/
 │       │       ├── infrastructure/    # Prisma
 │       │       └── presentation/      # PortfolioController, InternalController
 │       ├── notification/              # 알림 서비스 (포트 3004)
-│       ├── chat/                      # 채팅 서비스 (포트 3005)
-│       └── ai-service/               # AI 서비스 (포트 3006)
+│       ├── chat/                      # 채팅 서비스 (포트 3005) - 1:1/그룹 채팅, 초대, 퇴장, 읽음 확인
+│       └── ai-service/               # AI 서비스 (포트 3006) - 시장 분석 시그널, 포트폴리오 분석
 │
 ├── frontend/                          # Next.js 15 프론트엔드 (포트 4000)
 │   └── src/
@@ -268,6 +268,13 @@ API Gateway는 모든 클라이언트 요청의 진입점이며, 다음 역할�
 | `/api/market/*` | market-data (3001) → `/market/*` | 불필요 |
 | `/api/orders/*` | order-engine (3002) → `/orders/*` | 필요 |
 | `/api/portfolio/*` | portfolio (3003) → `/portfolio/*` | 일부 (leaderboard 제외) |
+| `/api/chat/*` | chat (3005) → `/chat/*` | 필요 |
+| `/api/ai/*` | ai-service (3006) → `/analysis/*` | 필요 |
+| `/api/admin/*` | user-auth (3007) → `/admin/*` | 필요 (ADMIN) |
+| `/api/announcements/*` | user-auth (3007) → `/announcements/*` | 일부 |
+| `/api/notifications/*` | user-auth (3007) → `/notifications/*` | 필요 |
+| `/api/price-alerts/*` | user-auth (3007) → `/price-alerts/*` | 필요 |
+| `/api/statistics/*` | user-auth (3007) → `/statistics/*` | 필요 (ADMIN) |
 
 #### JWT 인증 구조
 
@@ -950,6 +957,8 @@ useWebSocket(symbols: string[], onPriceUpdate: callback)
 | DELETE | `/api/orders/:orderId` | **필요** | 주문 취소 |
 | GET | `/api/orders/trades/history` | **필요** | 체결 내역 |
 | GET | `/api/orders/book/:symbol` | 불필요 | 호가창 |
+| POST | `/api/orders/check-triggers` | 불필요 | 조건부 주문 트리거 체크 |
+| GET | `/api/orders/stats/trading` | **필요** | 거래 통계 |
 
 ### 포트폴리오 (Portfolio)
 
@@ -962,6 +971,50 @@ useWebSocket(symbols: string[], onPriceUpdate: callback)
 | GET | `/api/portfolio/valuation` | **필요** | 상세 평가 |
 | GET | `/api/portfolio/leaderboard` | 불필요 | 리더보드 |
 | GET | `/api/portfolio/transactions` | **필요** | 거래 내역 |
+| GET | `/api/portfolio/watchlist` | **필요** | 관심종목 목록 |
+| POST | `/api/portfolio/watchlist/:symbol` | **필요** | 관심종목 추가 |
+| DELETE | `/api/portfolio/watchlist/:symbol` | **필요** | 관심종목 삭제 |
+
+### 채팅 (Chat)
+
+| 메서드 | 경로 | 인증 | 설명 |
+|--------|------|------|------|
+| GET | `/api/chat/rooms` | **필요** | 내 채팅방 목록 |
+| POST | `/api/chat/rooms` | **필요** | 채팅방 생성 (DM/GROUP) |
+| GET | `/api/chat/rooms/:id/messages` | **필요** | 메시지 목록 |
+| POST | `/api/chat/rooms/:id/messages` | **필요** | 메시지 전송 |
+| POST | `/api/chat/rooms/:id/read` | **필요** | 읽음 확인 |
+| POST | `/api/chat/rooms/:id/invite` | **필요** | 채팅방 초대 |
+| POST | `/api/chat/rooms/:id/leave` | **필요** | 채팅방 나가기 |
+| POST | `/api/chat/rooms/:id/kick` | **필요** (ADMIN) | 사용자 강제 퇴장 |
+| GET | `/api/chat/users/search` | **필요** | 사용자 검색 (초대용) |
+
+### AI 분석 (AI)
+
+| 메서드 | 경로 | 인증 | 설명 |
+|--------|------|------|------|
+| GET | `/api/ai/signals` | **필요** | AI 시장 분석 시그널 |
+| POST | `/api/ai/portfolio-analysis` | **필요** | 포트폴리오 AI 분석 |
+
+### 관리자 (Admin)
+
+| 메서드 | 경로 | 인증 | 설명 |
+|--------|------|------|------|
+| GET | `/api/admin/users` | **필요** (ADMIN) | 전체 사용자 목록 |
+| PATCH | `/api/admin/users/:id/approve` | **필요** (ADMIN) | 사용자 승인 |
+| PATCH | `/api/admin/users/:id/reject` | **필요** (ADMIN) | 사용자 거부 |
+| PATCH | `/api/admin/users/:id/role` | **필요** (ADMIN) | 역할 변경 |
+| PATCH | `/api/admin/users/:id/toggle-active` | **필요** (ADMIN) | 활성/비활성 전환 |
+| GET | `/api/admin/stats` | **필요** (ADMIN) | 관리자 통계 |
+
+### 알림 (Notifications)
+
+| 메서드 | 경로 | 인증 | 설명 |
+|--------|------|------|------|
+| GET | `/api/notifications` | **필요** | 알림 목록 |
+| GET | `/api/notifications/unread-count` | **필요** | 읽지 않은 알림 수 |
+| POST | `/api/notifications/:id/read` | **필요** | 알림 읽음 처리 |
+| POST | `/api/notifications/read-all` | **필요** | 전체 읽음 처리 |
 
 ### WebSocket
 
@@ -989,6 +1042,7 @@ useWebSocket(symbols: string[], onPriceUpdate: callback)
 | portfolio | `mex_portfolio` | `PORTFOLIO_DATABASE_URL` |
 | notification | `mex_notification` | `NOTIFICATION_DATABASE_URL` |
 | chat | `mex_chat` | `CHAT_DATABASE_URL` |
+| ai-service | — (stateless) | — |
 
 각 서비스의 Prisma 스키마는 `backend/services/{서비스명}/prisma/schema.prisma`에 있습니다.
 
@@ -1012,7 +1066,7 @@ pnpm install && npx turbo build
 
 # 4. DB 마이그레이션 (최초 1회)
 export $(grep -v '^#' .env | grep -v '^$' | xargs)
-for svc in user-auth market-data order-engine portfolio; do
+for svc in user-auth market-data order-engine portfolio chat; do
   cd backend/services/$svc && npx prisma db push && cd ../../..
 done
 
@@ -1022,10 +1076,12 @@ node backend/services/user-auth/dist/main.js     # 터미널 1
 node backend/services/market-data/dist/main.js    # 터미널 2
 node backend/services/order-engine/dist/main.js   # 터미널 3
 node backend/services/portfolio/dist/main.js      # 터미널 4
-node backend/services/api-gateway/dist/main.js    # 터미널 5
+node backend/services/chat/dist/main.js           # 터미널 5
+node backend/services/ai-service/dist/main.js     # 터미널 6
+node backend/services/api-gateway/dist/main.js    # 터미널 7
 
 # 6. 프론트엔드
-cd frontend && pnpm dev                           # 터미널 6
+cd frontend && pnpm dev                           # 터미널 8
 
 # 7. 접속: http://localhost:4000
 ```

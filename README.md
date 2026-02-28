@@ -37,19 +37,19 @@
 | - 회원가입      |  | - Binance/Yahoo |  | - 이벤트 소싱    |
 | - 로그인/JWT    |  | - 가격 캐시     |  | - 매칭 엔진      |
 | - 관리자 기능   |  | - 캔들스틱      |  | - CQRS 읽기 모델 |
-| - 공지사항/좋아요|  | - 뉴스         |  +---------+--------+
-| - 알림          |  +-----------------+            |
-| - 통계          |                        +--------v--------+
-| - 가격 알림     |                        | Portfolio        |
-+---------+-------+                        | :3003            |
-          |                                | - 잔고 관리      |
-  +-------v-------+                        | - 보유 자산      |
-  | Chat          |                        | - 관심종목       |
-  | :3005         |                        +-----------------+
-  | - 1:1/그룹 채팅|
-  | - 초대/퇴장   |
-  | - 읽음 확인   |
-  +---------------+
+| - 공지사항/좋아요|  | - 뉴스         |  | - 고급 주문      |
+| - 알림          |  +-----------------+  +---------+--------+
+| - 통계          |                                |
+| - 가격 알림     |                        +--------v--------+
++---------+-------+                        | Portfolio        |
+          |                                | :3003            |
+  +-------v-------+   +---------------+   | - 잔고 관리      |
+  | Chat          |   | AI Service    |   | - 보유 자산      |
+  | :3005         |   | :3006         |   | - 관심종목       |
+  | - 1:1/그룹 채팅|   | - 시장 시그널  |   +-----------------+
+  | - 초대/퇴장   |   | - 포트폴리오   |
+  | - 읽음 확인   |   |   분석        |
+  +---------------+   +---------------+
 ```
 
 ## 프로젝트 구조
@@ -67,7 +67,7 @@ virtuex/
 │       ├── order-engine/         # 주문 매칭 (이벤트 소싱 + CQRS)
 │       ├── portfolio/            # 잔고, 보유 자산, 관심종목, 거래 정산
 │       ├── chat/                 # 1:1/그룹 채팅, 초대, 퇴장, 읽음 확인
-│       └── ai-service/           # AI 서비스 (예정)
+│       └── ai-service/           # AI 시장 분석 시그널, 포트폴리오 분석
 ├── frontend/                     # Next.js 15 프론트엔드 (App Router)
 │   ├── src/app/                  # 페이지 라우트
 │   ├── src/components/           # UI 컴포넌트
@@ -105,17 +105,19 @@ cd services/user-auth && npx prisma generate && cd ../..
 cd services/market-data && npx prisma generate && cd ../..
 cd services/order-engine && npx prisma generate && cd ../..
 cd services/portfolio && npx prisma generate && cd ../..
+cd services/chat && npx prisma generate && cd ../..
 
 # 5. 데이터베이스 마이그레이션
 cd services/user-auth && npx prisma db push && cd ../..
 cd services/market-data && npx prisma db push && cd ../..
 cd services/order-engine && npx prisma db push && cd ../..
 cd services/portfolio && npx prisma db push && cd ../..
+cd services/chat && npx prisma db push && cd ../..
 
 # 6. 전체 빌드
 pnpm turbo build
 
-# 7. 전체 서비스 실행 (백엔드 5개 + 프론트엔드)
+# 7. 전체 서비스 실행 (백엔드 7개 + 프론트엔드)
 bash scripts/start-all.sh
 ```
 
@@ -184,13 +186,15 @@ curl http://localhost:3000/api/portfolio/valuation \
 ### 주문 (`/api/orders`)
 | 메서드 | 엔드포인트 | 인증 | 설명 |
 |--------|-----------|------|------|
-| POST | `/api/orders` | JWT | 신규 주문 (시장가/지정가) |
+| POST | `/api/orders` | JWT | 신규 주문 (시장가/지정가/STOP-LOSS/TAKE-PROFIT) |
 | GET | `/api/orders` | JWT | 내 주문 목록 |
 | GET | `/api/orders/:orderId` | JWT | 주문 상세 조회 |
 | PATCH | `/api/orders/:orderId` | JWT | 주문 수정 (지정가만) |
 | DELETE | `/api/orders/:orderId` | JWT | 주문 취소 |
 | GET | `/api/orders/trades/history` | JWT | 체결 내역 |
 | GET | `/api/orders/book/:symbol` | 불필요 | 호가창 (오더북) |
+| POST | `/api/orders/check-triggers` | 불필요 | 조건부 주문 트리거 체크 |
+| GET | `/api/orders/stats/trading` | JWT | 거래 통계 (승률, 총 수익 등) |
 
 ### 포트폴리오 (`/api/portfolio`)
 | 메서드 | 엔드포인트 | 인증 | 설명 |
@@ -289,6 +293,12 @@ curl http://localhost:3000/api/portfolio/valuation \
 | `/chat` | `notification:trade` | 체결 알림 |
 | `/chat` | `notification:price-alert` | 가격 알림 트리거 |
 
+### AI 분석 (`/api/ai`)
+| 메서드 | 엔드포인트 | 인증 | 설명 |
+|--------|-----------|------|------|
+| GET | `/api/ai/signals` | JWT | AI 시장 분석 시그널 (매매 추천) |
+| POST | `/api/ai/portfolio-analysis` | JWT | 포트폴리오 AI 분석 (분산 점수, 리스크, 제안) |
+
 ## 서비스 포트
 
 | 서비스 | 포트 | 설명 |
@@ -299,7 +309,7 @@ curl http://localhost:3000/api/portfolio/valuation \
 | Order Engine | 3002 | 주문 처리, 매칭 엔진 |
 | Portfolio | 3003 | 잔고, 보유 자산, 관심종목, 정산 |
 | Chat | 3005 | 1:1/그룹 채팅, 초대, 퇴장, 읽음 확인 |
-| AI Service | 3006 | AI 분석 (예정) |
+| AI Service | 3006 | AI 시장 분석 시그널, 포트폴리오 분석 |
 | User/Auth | 3007 | 회원가입, 로그인, JWT, 관리자, 공지사항, 알림, 통계, 가격 알림 |
 
 ## 지원 자산 (20개)
@@ -346,6 +356,9 @@ curl http://localhost:3000/api/portfolio/valuation \
 - **WebSocket 프레즌스**: Socket.IO 기반 온라인/오프라인 상태 추적
 - **실시간 채팅**: Socket.IO 네임스페이스 분리 (`/prices`, `/chat`)
 - **캔들스틱 집계**: 1m/5m/15m/1h/4h/1d 타임프레임 자동 생성
+- **기술적 지표**: SMA, RSI, 볼린저 밴드 차트 오버레이
+- **조건부 주문**: STOP-LOSS/TAKE-PROFIT 트리거 기반 자동 체결
+- **AI 규칙 기반 분석**: 시장 시그널 및 포트폴리오 분석 (HHI 지수 기반 분산도)
 
 ## 개발 단계
 
@@ -353,8 +366,8 @@ curl http://localhost:3000/api/portfolio/valuation \
 - [x] **Phase 1**: 핵심 거래 MVP (시장 데이터, 주문 엔진, 포트폴리오, Gateway 연동)
 - [x] **Phase 2**: 고급 거래 + 프론트엔드 (지정가, P&L, WebSocket, Next.js 15 UI)
 - [x] **Phase 2.5**: 관리자/UX (사용자 관리, 공지사항, 관심종목, 뉴스, 다국어, 반응형)
-- [x] **Phase 3**: 소셜 기능 + 고급 알림
-  - 실시간 1:1/그룹 채팅 (Socket.IO)
+- [x] **Phase 3**: 소셜 기능 + 고급 알림 + 고급 거래
+  - 실시간 1:1/그룹 채팅 (Socket.IO) + 메시지 검색
   - 채팅방 생성/초대/퇴장/읽음 확인
   - 관리자 강제 퇴장(kick) 기능
   - 온라인/오프라인 상태 표시 (프레즌스)
@@ -362,8 +375,17 @@ curl http://localhost:3000/api/portfolio/valuation \
   - 가격 알림 시스템 (목표가 도달 시 자동 알림)
   - 통계 대시보드 (가입자/로그인/페이지뷰/거래/공지/좋아요 추이)
   - 우측 고정 사이드바 채팅 (토스증권 스타일)
-  - 반응형 레이아웃 (모바일 자동 언핀)
-- [ ] **Phase 4**: AI 통합 (매매 추천, 포트폴리오 분석)
+  - 반응형 레이아웃 (모바일/태블릿 반응형, 자동 언핀)
+  - 고급 주문 (STOP-LOSS, TAKE-PROFIT, 조건부 주문)
+  - 차트 기술적 지표 (SMA, RSI, 볼린저 밴드)
+  - Order Book 깊이 차트 시각화
+  - 포트폴리오 분석 (자산배분 파이차트, P&L 분석, CSV 내보내기)
+  - 리더보드 고도화 (기간/정렬 필터, 메달 뱃지, 내 순위)
+  - 커뮤니티 페이지 (전략 공유, 트레이더 프로필)
+  - Admin 패널 확장 (시스템 설정, 서비스 헬스, 감사 로그)
+  - 접근성 개선 (포커스 트랩, ARIA, 키보드 내비게이션)
+  - 마이페이지 거래 통계
+- [x] **Phase 4**: AI 통합 (시장 분석 시그널, 포트폴리오 AI 분석)
 - [ ] **Phase 5**: 프로덕션 강화 (K8s, 관측성, 부하 테스트)
 
 ## 라이센스
