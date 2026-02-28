@@ -5,7 +5,7 @@
  * @file JWT Strategy
  * @description Passport JWT strategy that validates Bearer tokens and extracts payload
  */
-import { Injectable, UnauthorizedException, Inject } from '@nestjs/common';
+import { Injectable, UnauthorizedException, Inject, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
@@ -16,6 +16,7 @@ import { REDIS_CLIENT } from '../redis/redis.module';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
+  private readonly logger = new Logger(JwtStrategy.name);
   private readonly userAuthUrl: string;
   private readonly internalToken: string;
 
@@ -52,9 +53,19 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         );
         statusStr = JSON.stringify(res.data);
         await this.redis.set(cacheKey, statusStr, 'EX', 60);
-      } catch {
-        // user-auth 서비스 장애 시 요청 거부 (안전 우선)
-        throw new UnauthorizedException('Unable to verify user status');
+      } catch (error) {
+        // user-auth 서비스 장애 시 JWT 페이로드 기반 fallback (서명 검증은 통과한 상태)
+        this.logger.warn(`User status check failed for ${payload.sub?.substring(0, 8)}..., using JWT payload fallback`);
+        return {
+          id: payload.sub,
+          email: payload.email,
+          username: payload.username,
+          name: payload.name || '',
+          role: payload.role,
+          isActive: true,
+          approvalStatus: 'APPROVED',
+          createdAt: '',
+        };
       }
     }
 
