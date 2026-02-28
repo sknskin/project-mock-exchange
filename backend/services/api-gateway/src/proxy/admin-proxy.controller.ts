@@ -83,7 +83,7 @@ export class AdminProxyController {
   @ApiResponse({ status: 404, description: '사용자를 찾을 수 없음' })
   async approveUser(
     @Param('id') id: string,
-    @Body() body: unknown,
+    @Body() body: { note?: string },
     @Req() req: Request,
     @Res() res: Response,
   ) {
@@ -112,7 +112,7 @@ export class AdminProxyController {
   @ApiResponse({ status: 404, description: '사용자를 찾을 수 없음' })
   async rejectUser(
     @Param('id') id: string,
-    @Body() body: unknown,
+    @Body() body: { reason?: string },
     @Req() req: Request,
     @Res() res: Response,
   ) {
@@ -125,7 +125,7 @@ export class AdminProxyController {
     if (result.status < 400) {
       this.chatGateway.notifyUser(id, 'notification:registration-rejected', {
         type: 'registration-rejected',
-        reason: (body as { reason?: string })?.reason || '',
+        reason: body.reason || '',
         timestamp: new Date().toISOString(),
       });
     }
@@ -224,7 +224,7 @@ export class AdminProxyController {
   @ApiResponse({ status: 404, description: '사용자를 찾을 수 없음' })
   async updateRole(
     @Param('id') id: string,
-    @Body() body: unknown,
+    @Body() body: { role: string },
     @Req() req: Request,
     @Res() res: Response,
   ) {

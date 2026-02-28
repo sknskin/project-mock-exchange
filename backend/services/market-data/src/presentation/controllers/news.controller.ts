@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Query, UseGuards, ParseIntPipe, DefaultValuePipe } from '@nestjs/common';
 import { NewsService } from '../../application/services/news.service';
 import { NewsCategory } from '../../../generated/prisma';
 import { InternalAuthGuard } from '../../common/guards/internal-auth.guard';
@@ -11,14 +11,12 @@ export class NewsController {
   @Get()
   async list(
     @Query('category') category: NewsCategory = 'CRYPTO',
-    @Query('page') page = '1',
-    @Query('limit') limit = '10',
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
   ) {
-    const result = await this.newsService.list(
-      category,
-      parseInt(page, 10),
-      parseInt(limit, 10),
-    );
+    const safePage = Math.max(1, page);
+    const safeLimit = Math.min(Math.max(1, limit), 100);
+    const result = await this.newsService.list(category, safePage, safeLimit);
     return { success: true, data: result };
   }
 

@@ -46,10 +46,8 @@ export class MarketController {
     @Param('symbol') symbol: string,
     @Query('limit') limit?: string,
   ) {
-    const history = await this.marketDataService.getPriceHistory(
-      symbol,
-      limit ? parseInt(limit, 10) : 100,
-    );
+    const safeLimit = Math.min(Math.max(1, limit ? parseInt(limit, 10) || 100 : 100), 2000);
+    const history = await this.marketDataService.getPriceHistory(symbol, safeLimit);
     return { success: true, data: history };
   }
 
@@ -59,11 +57,8 @@ export class MarketController {
     @Query('interval') interval = '1m',
     @Query('limit') limit?: string,
   ) {
-    const candles = await this.marketDataService.getCandlesticks(
-      symbol,
-      interval,
-      limit ? parseInt(limit, 10) : 100,
-    );
+    const safeLimit = Math.min(Math.max(1, limit ? parseInt(limit, 10) || 100 : 100), 2000);
+    const candles = await this.marketDataService.getCandlesticks(symbol, interval, safeLimit);
     return { success: true, data: candles };
   }
 }
