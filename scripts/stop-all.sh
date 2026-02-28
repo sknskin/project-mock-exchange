@@ -46,7 +46,9 @@ echo ""
 # ─── 1. 서비스 프로세스 종료 / Stop service processes ───
 echo -e "${YELLOW}[1/3] 서비스 프로세스 종료 중... / Stopping service processes...${NC}"
 
-SERVICE_PORTS="3000 3001 3002 3003 3005 3007 4000"
+# 모든 마이크로서비스 + API Gateway + 프론트엔드 포트 목록
+# All microservice + API Gateway + Frontend ports
+SERVICE_PORTS="3000 3001 3002 3003 3004 3005 3006 3007 4000"
 EXISTING_PIDS=$(lsof -ti :$(echo $SERVICE_PORTS | tr ' ' ',') 2>/dev/null | sort -u || true)
 
 if [ -n "$EXISTING_PIDS" ]; then

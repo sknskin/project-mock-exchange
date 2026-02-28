@@ -45,7 +45,9 @@
 #   - 3001: Market Data 서비스 / Market Data service
 #   - 3002: Order Engine 서비스 / Order Engine service
 #   - 3003: Portfolio 서비스 / Portfolio service
+#   - 3004: Notification 서비스 / Notification service
 #   - 3005: Chat 서비스 / Chat service
+#   - 3006: AI Service / AI Service
 #   - 3007: User Auth 서비스 / User Auth service
 #   - 5432: PostgreSQL (Docker) / PostgreSQL
 #   - 6379: Redis (Docker) / Redis
@@ -61,7 +63,9 @@
 #   tail -f logs/user-auth.log     # User Auth
 #   tail -f logs/order-engine.log  # Order Engine
 #   tail -f logs/portfolio.log     # Portfolio
+#   tail -f logs/notification.log  # Notification
 #   tail -f logs/chat.log          # Chat
+#   tail -f logs/ai-service.log    # AI Service
 #
 # ============================================================================
 
@@ -190,7 +194,9 @@ echo ""
 # ─── 0. 기존 서비스 프로세스 종료 / Kill existing service processes ───
 # 이전 실행에서 남아있는 프로세스가 포트를 점유하고 있을 수 있으므로 정리
 # Clean up leftover processes from previous runs that may occupy ports
-SERVICE_PORTS="3000 3001 3002 3003 3005 3007 4000"
+# 모든 마이크로서비스 + API Gateway + 프론트엔드 포트 목록
+# All microservice + API Gateway + Frontend ports
+SERVICE_PORTS="3000 3001 3002 3003 3004 3005 3006 3007 4000"
 EXISTING_PIDS=$(lsof -ti :$(echo $SERVICE_PORTS | tr ' ' ',') 2>/dev/null || true)
 if [ -n "$EXISTING_PIDS" ]; then
   echo -e "${YELLOW}[0] 기존 서비스 프로세스 종료 중... / Killing existing service processes...${NC}"
@@ -351,13 +357,15 @@ set -e
 echo ""
 echo -e "${YELLOW}[7/7] 서비스 시작... / Starting services...${NC}"
 
-# 백엔드 마이크로서비스 4개를 동시에 백그라운드 실행
-# Start 4 backend microservices simultaneously in background
+# 백엔드 마이크로서비스 7개를 동시에 백그라운드 실행
+# Start 7 backend microservices simultaneously in background
 start_service "user-auth"    "node backend/services/user-auth/dist/main.js"
 start_service "market-data"  "node backend/services/market-data/dist/main.js"
 start_service "order-engine" "node backend/services/order-engine/dist/main.js"
 start_service "portfolio"    "node backend/services/portfolio/dist/main.js"
+start_service "notification" "node backend/services/notification/dist/main.js"
 start_service "chat"         "node backend/services/chat/dist/main.js"
+start_service "ai-service"   "node backend/services/ai-service/dist/main.js"
 
 echo ""
 echo "  백엔드 서비스 준비 대기 중... / Waiting for backend services..."
@@ -368,7 +376,9 @@ wait_for_port 3007 "user-auth"    15
 wait_for_port 3001 "market-data"  15
 wait_for_port 3002 "order-engine" 15
 wait_for_port 3003 "portfolio"    15
+wait_for_port 3004 "notification" 15
 wait_for_port 3005 "chat"         15
+wait_for_port 3006 "ai-service"   15
 
 # API Gateway는 백엔드 서비스가 모두 준비된 후 시작 (의존성 존재)
 # Start API Gateway after all backend services are ready (has dependencies)
