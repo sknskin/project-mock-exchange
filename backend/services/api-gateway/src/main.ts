@@ -68,6 +68,9 @@ async function bootstrap() {
   app.enableCors({
     origin: process.env.CORS_ORIGIN || 'http://localhost:4000',
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-internal-token', 'x-user-id'],
+    maxAge: 86400,
   });
 
   const port = process.env.API_GATEWAY_PORT || 3000;
