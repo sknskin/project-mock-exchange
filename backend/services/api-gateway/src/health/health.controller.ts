@@ -5,9 +5,11 @@
  * @file API Gateway Health Controller
  * @description Provides liveness, readiness, startup probe endpoints and internal service health proxy
  */
-import { Controller, Get, Param, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Param, Req, NotFoundException } from '@nestjs/common';
+import { Request } from 'express';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { HealthCheck, HealthCheckService } from '@nestjs/terminus';
+import { ConfigService } from '@nestjs/config';
 import { ProxyService } from '../proxy/proxy.service';
 
 @ApiTags('Health')
@@ -16,7 +18,26 @@ export class HealthController {
   constructor(
     private health: HealthCheckService,
     private proxyService: ProxyService,
+    private configService: ConfigService,
   ) {}
+
+  @Get('services')
+  @ApiOperation({ summary: '서비스 목록', description: '모든 마이크로서비스의 키, 포트 정보를 반환합니다' })
+  @ApiResponse({ status: 200, description: '서비스 목록 반환' })
+  getServiceList() {
+    return {
+      services: [
+        { key: 'api-gateway', port: Number(this.configService.get('API_GATEWAY_PORT', 3000)) },
+        { key: 'user-auth', port: Number(this.configService.get('USER_AUTH_PORT', 3007)) },
+        { key: 'market-data', port: Number(this.configService.get('MARKET_DATA_PORT', 3001)) },
+        { key: 'order-engine', port: Number(this.configService.get('ORDER_ENGINE_PORT', 3002)) },
+        { key: 'portfolio', port: Number(this.configService.get('PORTFOLIO_PORT', 3003)) },
+        { key: 'chat', port: Number(this.configService.get('CHAT_PORT', 3005)) },
+        { key: 'ai-service', port: Number(this.configService.get('AI_SERVICE_PORT', 3006)) },
+        { key: 'notification', port: Number(this.configService.get('NOTIFICATION_PORT', 3004)) },
+      ],
+    };
+  }
 
   @Get()
   @HealthCheck()
@@ -54,20 +75,7 @@ export class HealthController {
   @ApiOperation({ summary: '내부 서비스 헬스 프록시', description: '지정된 마이크로서비스의 헬스 상태를 프록시합니다' })
   @ApiResponse({ status: 200, description: '서비스 상태 반환' })
   async checkService(@Param('service') service: string) {
-    const serviceMap: Record<string, string> = {
-      'user-auth': 'user-auth',
-      'market-data': 'market-data',
-      'order-engine': 'order-engine',
-      'portfolio': 'portfolio',
-      'chat': 'chat',
-      'ai-service': 'ai-service',
-      'notification': 'notification',
-    };
-
-    const serviceName = serviceMap[service];
-    if (!serviceName) {
-      throw new NotFoundException(`Unknown service: ${service}`);
-    }
+    const serviceName = this.resolveService(service);
 
     try {
       const res = await this.proxyService.forward(serviceName, {
@@ -79,5 +87,80 @@ export class HealthController {
     } catch {
       return { status: 'down' };
     }
+  }
+
+  @Get(':service/detail')
+  @ApiOperation({ summary: '서비스 상세 상태', description: '지정된 마이크로서비스의 live/ready/startup 프로브 및 서비스별 통계를 반환합니다' })
+  @ApiResponse({ status: 200, description: '상세 상태 반환' })
+  async getServiceDetail(@Param('service') service: string, @Req() req: Request) {
+    const serviceName = this.resolveService(service);
+
+    const probeCheck = async (probe: string) => {
+      const start = Date.now();
+      try {
+        const res = await this.proxyService.forward(serviceName, {
+          method: 'GET',
+          url: `/health/${probe}`,
+          timeout: 3000,
+        });
+        return {
+          status: 'up' as const,
+          responseTime: Date.now() - start,
+          data: typeof res.data === 'object' ? res.data : {},
+        };
+      } catch {
+        return { status: 'down' as const, responseTime: Date.now() - start, data: {} };
+      }
+    };
+
+    const [live, ready, startup] = await Promise.all([
+      probeCheck('live'),
+      probeCheck('ready'),
+      probeCheck('startup'),
+    ]);
+
+    // 서비스별 추가 통계 (Service-specific stats)
+    let stats: unknown = null;
+    const statsEndpoints: Record<string, { service: string; url: string }> = {
+      'user-auth': { service: 'user-auth', url: '/statistics/overview' },
+      'chat': { service: 'chat', url: '/statistics' },
+      'market-data': { service: 'market-data', url: '/market/assets' },
+    };
+    const ep = statsEndpoints[service];
+    if (ep) {
+      try {
+        const res = await this.proxyService.forward(ep.service, {
+          method: 'GET',
+          url: ep.url,
+          timeout: 5000,
+          headers: req.headers.authorization ? { Authorization: req.headers.authorization } : {},
+        });
+        if (res.status >= 200 && res.status < 300) {
+          stats = res.data;
+        }
+      } catch { /* stats are optional */ }
+    }
+
+    return {
+      service,
+      probes: { live, ready, startup },
+      stats,
+      checkedAt: new Date().toISOString(),
+    };
+  }
+
+  private resolveService(service: string): string {
+    const serviceMap: Record<string, string> = {
+      'user-auth': 'user-auth',
+      'market-data': 'market-data',
+      'order-engine': 'order-engine',
+      'portfolio': 'portfolio',
+      'chat': 'chat',
+      'ai-service': 'ai-service',
+      'notification': 'notification',
+    };
+    const name = serviceMap[service];
+    if (!name) throw new NotFoundException(`Unknown service: ${service}`);
+    return name;
   }
 }
