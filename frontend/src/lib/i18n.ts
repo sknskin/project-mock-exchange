@@ -541,6 +541,8 @@ const translations = {
     'admin.health.service.orderEngine': '주문 엔진',
     'admin.health.service.portfolio': '포트폴리오',
     'admin.health.service.chat': '채팅',
+    'admin.health.service.aiService': 'AI 서비스',
+    'admin.health.service.notification': '알림',
 
     // Admin - Order Audit
     'admin.stats.orderAudit': '주문 감사 로그',
@@ -2015,6 +2017,8 @@ const translations = {
     'admin.health.service.orderEngine': 'Order Engine',
     'admin.health.service.portfolio': 'Portfolio',
     'admin.health.service.chat': 'Chat',
+    'admin.health.service.aiService': 'AI Service',
+    'admin.health.service.notification': 'Notification',
 
     // Admin - Order Audit
     'admin.stats.orderAudit': 'Order Audit Log',

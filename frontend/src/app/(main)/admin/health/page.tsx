@@ -29,6 +29,8 @@ const SERVICES: ServiceDef[] = [
   { key: 'order-engine', nameKey: 'admin.health.service.orderEngine', port: 3002, healthPath: '/api/health' },
   { key: 'portfolio', nameKey: 'admin.health.service.portfolio', port: 3003, healthPath: '/api/health' },
   { key: 'chat', nameKey: 'admin.health.service.chat', port: 3005, healthPath: '/api/health' },
+  { key: 'ai-service', nameKey: 'admin.health.service.aiService', port: 3006, healthPath: '/api/health' },
+  { key: 'notification', nameKey: 'admin.health.service.notification', port: 3004, healthPath: '/api/health' },
 ];
 
 type HealthStatus = 'healthy' | 'unhealthy' | 'checking';
