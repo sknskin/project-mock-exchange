@@ -20,7 +20,11 @@ import { RedisModule } from './redis/redis.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: ['../../.env', '.env'],
+      envFilePath: [
+        `../../.env.${process.env.NODE_ENV || 'development'}`,
+        '../../.env',
+        '.env',
+      ],
     }),
     ThrottlerModule.forRootAsync({
       inject: [ConfigService],

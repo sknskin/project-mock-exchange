@@ -25,7 +25,11 @@ import { HealthController } from './health/health.controller';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: ['../../.env', '.env'],
+      envFilePath: [
+        `../../.env.${process.env.NODE_ENV || 'development'}`,
+        '../../.env',
+        '.env',
+      ],
     }),
     CqrsModule.forRoot(),
     ScheduleModule.forRoot(),

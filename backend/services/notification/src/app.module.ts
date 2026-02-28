@@ -10,15 +10,21 @@ import { ConfigModule } from '@nestjs/config';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TerminusModule } from '@nestjs/terminus';
 import { HealthController } from './health/health.controller';
+import { EmailModule } from './email/email.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: ['../../.env', '.env'],
+      envFilePath: [
+        `../../.env.${process.env.NODE_ENV || 'development'}`,
+        '../../.env',
+        '.env',
+      ],
     }),
     CqrsModule.forRoot(),
     TerminusModule,
+    EmailModule,
   ],
   controllers: [HealthController],
 })

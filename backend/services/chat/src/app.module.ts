@@ -17,7 +17,11 @@ import { ChatModule } from './chat/chat.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: ['../../.env', '.env'],
+      envFilePath: [
+        `../../.env.${process.env.NODE_ENV || 'development'}`,
+        '../../.env',
+        '.env',
+      ],
     }),
     CqrsModule.forRoot(),
     TerminusModule,
