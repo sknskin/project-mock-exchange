@@ -122,7 +122,7 @@ export class BalanceService {
     });
 
     this.logger.log(
-      `Deposited ${depositAmount.toFixed(8)} for user ${userId}`,
+      `Deposited ${depositAmount.toFixed(8)} for user ${userId.substring(0, 8)}...`,
     );
 
     return this.toBalanceInfo(updated);
@@ -169,7 +169,7 @@ export class BalanceService {
     });
 
     this.logger.log(
-      `Withdrew ${withdrawAmount.toFixed(8)} for user ${userId}`,
+      `Withdrew ${withdrawAmount.toFixed(8)} for user ${userId.substring(0, 8)}...`,
     );
 
     return this.toBalanceInfo(updated);
@@ -191,23 +191,23 @@ export class BalanceService {
       throw new BadRequestException('Reserve amount must be positive');
     }
 
-    const account = await this.prisma.account.findUnique({
-      where: { userId },
-    });
-
-    if (!account) {
-      throw new NotFoundException(`Account not found for user ${userId}`);
-    }
-
-    const available = new Decimal(account.availableCash.toString());
-
-    if (available.lt(reserveAmount)) {
-      throw new BadRequestException(
-        `Insufficient funds: available ${available.toFixed(8)}, required ${reserveAmount.toFixed(8)}`,
-      );
-    }
-
     const result = await this.prisma.$transaction(async (tx) => {
+      const [account] = await tx.$queryRaw<Array<{
+        userId: string; availableCash: any; reservedCash: any;
+      }>>`SELECT * FROM "Account" WHERE "userId" = ${userId} FOR UPDATE`;
+
+      if (!account) {
+        throw new NotFoundException(`Account not found for user ${userId}`);
+      }
+
+      const available = new Decimal(account.availableCash.toString());
+
+      if (available.lt(reserveAmount)) {
+        throw new BadRequestException(
+          `Insufficient funds: available ${available.toFixed(8)}, required ${reserveAmount.toFixed(8)}`,
+        );
+      }
+
       const updatedAccount = await tx.account.update({
         where: { userId },
         data: {
@@ -231,7 +231,7 @@ export class BalanceService {
     });
 
     this.logger.log(
-      `Reserved ${reserveAmount.toFixed(8)} for user ${userId}, order ${orderId}`,
+      `Reserved ${reserveAmount.toFixed(8)} for user ${userId.substring(0, 8)}..., order ${orderId}`,
     );
 
     return {
@@ -257,23 +257,23 @@ export class BalanceService {
       throw new BadRequestException('Release amount must be positive');
     }
 
-    const account = await this.prisma.account.findUnique({
-      where: { userId },
-    });
-
-    if (!account) {
-      throw new NotFoundException(`Account not found for user ${userId}`);
-    }
-
-    const reserved = new Decimal(account.reservedCash.toString());
-
-    if (reserved.lt(releaseAmount)) {
-      throw new BadRequestException(
-        `Insufficient reserved funds: reserved ${reserved.toFixed(8)}, requested release ${releaseAmount.toFixed(8)}`,
-      );
-    }
-
     const updated = await this.prisma.$transaction(async (tx) => {
+      const [account] = await tx.$queryRaw<Array<{
+        userId: string; availableCash: any; reservedCash: any;
+      }>>`SELECT * FROM "Account" WHERE "userId" = ${userId} FOR UPDATE`;
+
+      if (!account) {
+        throw new NotFoundException(`Account not found for user ${userId}`);
+      }
+
+      const reserved = new Decimal(account.reservedCash.toString());
+
+      if (reserved.lt(releaseAmount)) {
+        throw new BadRequestException(
+          `Insufficient reserved funds: reserved ${reserved.toFixed(8)}, requested release ${releaseAmount.toFixed(8)}`,
+        );
+      }
+
       const updatedAccount = await tx.account.update({
         where: { userId },
         data: {
@@ -297,7 +297,7 @@ export class BalanceService {
     });
 
     this.logger.log(
-      `Released ${releaseAmount.toFixed(8)} for user ${userId}, order ${orderId}`,
+      `Released ${releaseAmount.toFixed(8)} for user ${userId.substring(0, 8)}..., order ${orderId}`,
     );
 
     return this.toBalanceInfo(updated);
@@ -319,23 +319,23 @@ export class BalanceService {
     const prc = new Decimal(price);
     const totalCost = qty.mul(prc);
 
-    const account = await this.prisma.account.findUnique({
-      where: { userId },
-    });
-
-    if (!account) {
-      throw new NotFoundException(`Account not found for user ${userId}`);
-    }
-
-    const reserved = new Decimal(account.reservedCash.toString());
-
-    if (reserved.lt(totalCost)) {
-      throw new BadRequestException(
-        `Insufficient reserved funds for buy settlement: reserved ${reserved.toFixed(8)}, required ${totalCost.toFixed(8)}`,
-      );
-    }
-
     const result = await this.prisma.$transaction(async (tx) => {
+      const [account] = await tx.$queryRaw<Array<{
+        userId: string; availableCash: any; reservedCash: any;
+      }>>`SELECT * FROM "Account" WHERE "userId" = ${userId} FOR UPDATE`;
+
+      if (!account) {
+        throw new NotFoundException(`Account not found for user ${userId}`);
+      }
+
+      const reserved = new Decimal(account.reservedCash.toString());
+
+      if (reserved.lt(totalCost)) {
+        throw new BadRequestException(
+          `Insufficient reserved funds for buy settlement: reserved ${reserved.toFixed(8)}, required ${totalCost.toFixed(8)}`,
+        );
+      }
+
       // 예약 현금 차감 / Deduct reserved cash
       const updatedAccount = await tx.account.update({
         where: { userId },
@@ -402,7 +402,7 @@ export class BalanceService {
     });
 
     this.logger.log(
-      `Settled BUY for user ${userId}: ${qty.toFixed(8)} ${symbol} @ ${prc.toFixed(8)}, trade ${tradeId}`,
+      `Settled BUY for user ${userId.substring(0, 8)}...: ${qty.toFixed(8)} ${symbol} @ ${prc.toFixed(8)}, trade ${tradeId}`,
     );
 
     return {
@@ -427,33 +427,33 @@ export class BalanceService {
     const prc = new Decimal(price);
     const totalProceeds = qty.mul(prc);
 
-    const account = await this.prisma.account.findUnique({
-      where: { userId },
-    });
-
-    if (!account) {
-      throw new NotFoundException(`Account not found for user ${userId}`);
-    }
-
-    const existingHolding = await this.prisma.holding.findUnique({
-      where: { userId_symbol: { userId, symbol } },
-    });
-
-    if (!existingHolding) {
-      throw new BadRequestException(
-        `No holding found for user ${userId}, symbol ${symbol}`,
-      );
-    }
-
-    const existingQty = new Decimal(existingHolding.quantity.toString());
-
-    if (existingQty.lt(qty)) {
-      throw new BadRequestException(
-        `Insufficient holdings: available ${existingQty.toFixed(8)} ${symbol}, requested ${qty.toFixed(8)}`,
-      );
-    }
-
     const result = await this.prisma.$transaction(async (tx) => {
+      const [account] = await tx.$queryRaw<Array<{
+        userId: string; availableCash: any; reservedCash: any;
+      }>>`SELECT * FROM "Account" WHERE "userId" = ${userId} FOR UPDATE`;
+
+      if (!account) {
+        throw new NotFoundException(`Account not found for user ${userId}`);
+      }
+
+      const existingHolding = await tx.holding.findUnique({
+        where: { userId_symbol: { userId, symbol } },
+      });
+
+      if (!existingHolding) {
+        throw new BadRequestException(
+          `No holding found for user ${userId.substring(0, 8)}..., symbol ${symbol}`,
+        );
+      }
+
+      const existingQty = new Decimal(existingHolding.quantity.toString());
+
+      if (existingQty.lt(qty)) {
+        throw new BadRequestException(
+          `Insufficient holdings: available ${existingQty.toFixed(8)} ${symbol}, requested ${qty.toFixed(8)}`,
+        );
+      }
+
       // 매도 대금을 가용 현금에 추가 / Add proceeds to available cash
       const updatedAccount = await tx.account.update({
         where: { userId },
@@ -506,7 +506,7 @@ export class BalanceService {
     });
 
     this.logger.log(
-      `Settled SELL for user ${userId}: ${qty.toFixed(8)} ${symbol} @ ${prc.toFixed(8)}, trade ${tradeId}`,
+      `Settled SELL for user ${userId.substring(0, 8)}...: ${qty.toFixed(8)} ${symbol} @ ${prc.toFixed(8)}, trade ${tradeId}`,
     );
 
     return {
