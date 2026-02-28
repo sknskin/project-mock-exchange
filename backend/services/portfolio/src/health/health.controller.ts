@@ -10,11 +10,17 @@ import {
   HealthCheck,
   HealthCheckService,
   HealthCheckResult,
+  PrismaHealthIndicator,
 } from '@nestjs/terminus';
+import { PrismaService } from '../infrastructure/persistence/prisma/prisma.service';
 
 @Controller('health')
 export class HealthController {
-  constructor(private readonly health: HealthCheckService) {}
+  constructor(
+    private readonly health: HealthCheckService,
+    private readonly prismaHealth: PrismaHealthIndicator,
+    private readonly prisma: PrismaService,
+  ) {}
 
   @Get('live')
   @HealthCheck()
@@ -25,12 +31,16 @@ export class HealthController {
   @Get('ready')
   @HealthCheck()
   ready(): Promise<HealthCheckResult> {
-    return this.health.check([]);
+    return this.health.check([
+      () => this.prismaHealth.pingCheck('database', this.prisma),
+    ]);
   }
 
   @Get('startup')
   @HealthCheck()
   startup(): Promise<HealthCheckResult> {
-    return this.health.check([]);
+    return this.health.check([
+      () => this.prismaHealth.pingCheck('database', this.prisma),
+    ]);
   }
 }
