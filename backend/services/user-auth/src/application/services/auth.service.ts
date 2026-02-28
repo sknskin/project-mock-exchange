@@ -127,7 +127,9 @@ export class AuthService {
           message: `${created.username} (${created.email})님이 회원가입을 요청했습니다.`,
           link: `/admin/users/${created.id}`,
         })),
-      }).catch(() => {});
+      }).catch((err) => {
+        this.logger.error(`Failed to send admin notifications for new registration: ${err.message}`);
+      });
     }
 
     return this.toUserDto(created);

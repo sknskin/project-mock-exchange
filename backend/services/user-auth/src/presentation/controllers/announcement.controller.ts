@@ -18,6 +18,7 @@ import {
   UseGuards,
   ParseIntPipe,
   DefaultValuePipe,
+  BadRequestException,
 } from '@nestjs/common';
 import { Response } from 'express';
 import * as fs from 'fs';
@@ -51,7 +52,12 @@ export class AnnouncementController {
   @Get('uploads/:fileName')
   @Public()
   async serveFile(@Param('fileName') fileName: string, @Res() res: Response) {
-    const filePath = path.join(process.cwd(), 'uploads', fileName);
+    // Path traversal 방지: basename으로 경로 요소 제거 (Prevent path traversal: strip directory components)
+    const safeName = path.basename(fileName);
+    if (safeName !== fileName || fileName.includes('\0')) {
+      return res.status(400).json({ success: false, message: 'Invalid file name' });
+    }
+    const filePath = path.join(process.cwd(), 'uploads', safeName);
     if (!fs.existsSync(filePath)) {
       return res.status(404).json({ success: false, message: 'File not found' });
     }
@@ -145,11 +151,19 @@ export class AnnouncementController {
     @Param('id') id: string,
     @Body() body: { originalName: string; mimeType: string; size: number; data: string },
   ) {
-    const ext = path.extname(body.originalName);
+    // 파일 사이즈 검증 (10MB 제한) / Validate file size (10MB limit)
+    const MAX_FILE_SIZE = 10 * 1024 * 1024;
+    const bufferData = Buffer.from(body.data, 'base64');
+    if (bufferData.length > MAX_FILE_SIZE) {
+      throw new BadRequestException('File size exceeds 10MB limit');
+    }
+    // 파일명에서 안전한 확장자만 추출 (Extract safe extension from filename)
+    const safeName = path.basename(body.originalName);
+    const ext = path.extname(safeName);
     const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`;
     const uploadsDir = path.join(process.cwd(), 'uploads');
     if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
-    fs.writeFileSync(path.join(uploadsDir, fileName), Buffer.from(body.data, 'base64'));
+    fs.writeFileSync(path.join(uploadsDir, fileName), bufferData);
 
     const result = await this.announcementService.addAttachment(id, {
       fileName,

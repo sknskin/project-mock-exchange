@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Param, Query, Body, NotFoundException, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Param, Query, Body, NotFoundException, BadRequestException, UseGuards } from '@nestjs/common';
 import { Public } from '../../infrastructure/config/jwt-auth.guard';
 import { PrismaService } from '../../infrastructure/persistence/prisma/prisma.service';
 import { InternalAuthGuard } from '../../common/guards/internal-auth.guard';
@@ -26,6 +26,10 @@ export class UserController {
   async getByIds(@Body() body: { ids: string[] }) {
     const ids = body.ids || [];
     if (ids.length === 0) return { success: true, data: [] };
+    // 배열 크기 제한으로 대량 조회 방지 (Limit array size to prevent bulk enumeration)
+    if (ids.length > 100) {
+      throw new BadRequestException('Maximum 100 IDs allowed');
+    }
 
     const users = await this.prisma.user.findMany({
       where: { id: { in: ids } },
@@ -69,6 +73,7 @@ export class UserController {
         name: true,
       },
       orderBy: { username: 'asc' },
+      take: 20,
     });
 
     return { success: true, data: users };
