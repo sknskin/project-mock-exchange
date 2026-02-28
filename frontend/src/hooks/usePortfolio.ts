@@ -11,12 +11,20 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import type { Portfolio } from '@/types';
 
+// API 응답에서 실제 데이터 추출 (Unwrap { success, data } wrapper with null guard)
+function unwrapResponse<T>(data: unknown): T {
+  if (data && typeof data === 'object' && 'data' in data) {
+    return (data as Record<string, unknown>).data as T;
+  }
+  return data as T;
+}
+
 export function usePortfolio() {
   return useQuery<Portfolio>({
     queryKey: ['portfolio'],
     queryFn: async () => {
       const { data } = await api.get('/api/portfolio/summary');
-      return data.data ?? data;
+      return unwrapResponse<Portfolio>(data);
     },
     refetchInterval: 10000,
   });
@@ -27,7 +35,7 @@ export function usePortfolioValuation() {
     queryKey: ['portfolio', 'valuation'],
     queryFn: async () => {
       const { data } = await api.get('/api/portfolio/valuation');
-      return data.data ?? data;
+      return unwrapResponse<Portfolio>(data);
     },
     refetchInterval: 10000,
   });
@@ -39,7 +47,7 @@ export function useDeposit() {
   return useMutation({
     mutationFn: async (amount: number) => {
       const { data } = await api.post('/api/portfolio/deposit', { amount });
-      return data.data ?? data;
+      return unwrapResponse(data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['portfolio'] });
@@ -53,7 +61,7 @@ export function useWithdraw() {
   return useMutation({
     mutationFn: async (amount: number) => {
       const { data } = await api.post('/api/portfolio/withdraw', { amount });
-      return data.data ?? data;
+      return unwrapResponse(data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['portfolio'] });

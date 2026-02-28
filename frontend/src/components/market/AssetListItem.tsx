@@ -83,7 +83,7 @@ export default function AssetListItem({ asset, rank, isWatchlisted, onToggleWatc
             onToggleWatchlist(asset.symbol);
           }}
           className="shrink-0 mr-1 sm:mr-2 p-2 -m-1.5 rounded transition-colors hover:bg-bg-secondary/80"
-          aria-label={isWatchlisted ? t('market.watchlist') : t('market.watchlist')}
+          aria-label={isWatchlisted ? t('market.removeFromWatchlist') : t('market.addToWatchlist')}
         >
           <Star
             className={cn(

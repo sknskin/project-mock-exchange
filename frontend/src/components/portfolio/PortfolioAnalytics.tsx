@@ -74,7 +74,8 @@ export default function PortfolioAnalytics({ portfolio }: PortfolioAnalyticsProp
 
   // --- Unrealized P&L (from current holdings) ---
   const unrealizedPnl = useMemo(() => {
-    return portfolio.holdings.reduce((sum, h) => sum + h.pnl, 0);
+    if (!portfolio.holdings?.length) return 0;
+    return portfolio.holdings.reduce((sum, h) => sum + (h.pnl ?? 0), 0);
   }, [portfolio.holdings]);
 
   // --- Realized P&L (from filled sell orders) ---
