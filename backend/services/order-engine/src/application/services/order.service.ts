@@ -456,7 +456,8 @@ export class OrderService {
 
           triggeredCount++;
         } catch (error: unknown) {
-          this.logger.error(`Failed to execute triggered order ${order.orderId}: ${error}`);
+          const message = error instanceof Error ? error.message : String(error);
+          this.logger.error(`Failed to execute triggered order ${order.orderId}: ${message}`);
         }
       }
     }
@@ -465,6 +466,23 @@ export class OrderService {
   }
 
   // ---- 비공개 헬퍼 메서드 / Private helpers ----
+
+  private async withRetry<T>(
+    fn: () => Promise<T>,
+    label: string,
+    maxRetries = 3,
+  ): Promise<T> {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        return await fn();
+      } catch (error) {
+        this.logger.warn(`${label} attempt ${attempt}/${maxRetries} failed`);
+        if (attempt === maxRetries) throw error;
+        await new Promise(r => setTimeout(r, 1000 * Math.pow(2, attempt - 1)));
+      }
+    }
+    throw new Error(`${label} failed after ${maxRetries} retries`);
+  }
 
   private async processLimitCrossingFills(
     orderId: string,
@@ -613,10 +631,13 @@ export class OrderService {
     _orderId: string,
   ): Promise<void> {
     try {
-      await axios.post(
-        `${this.portfolioUrl}/portfolio/internal/reserve`,
-        { amount },
-        { headers: { 'x-user-id': userId, 'x-internal-token': this.internalToken }, timeout: 5000 },
+      await this.withRetry(
+        () => axios.post(
+          `${this.portfolioUrl}/portfolio/internal/reserve`,
+          { amount },
+          { headers: { 'x-user-id': userId, 'x-internal-token': this.internalToken }, timeout: 5000 },
+        ),
+        `reserveFunds(user=${userId.substring(0, 8)}...)`,
       );
     } catch (error: any) {
       // axios 에러의 경우 portfolio 서비스의 실제 에러 메시지를 추출
@@ -639,13 +660,19 @@ export class OrderService {
     orderId: string,
   ): Promise<void> {
     try {
-      await axios.post(
-        `${this.portfolioUrl}/portfolio/internal/release`,
-        { amount, orderId },
-        { headers: { 'x-user-id': userId, 'x-internal-token': this.internalToken }, timeout: 5000 },
+      await this.withRetry(
+        () => axios.post(
+          `${this.portfolioUrl}/portfolio/internal/release`,
+          { amount, orderId },
+          { headers: { 'x-user-id': userId, 'x-internal-token': this.internalToken }, timeout: 5000 },
+        ),
+        `releaseFunds(order=${orderId})`,
       );
     } catch (error: unknown) {
-      this.logger.error(`Failed to release funds for order ${orderId}: ${error}`);
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.error(
+        `[FUNDS_FROZEN] Failed to release funds for order ${orderId}, user=${userId.substring(0, 8)}..., amount=${amount}: ${message}`,
+      );
     }
   }
 
@@ -690,36 +717,52 @@ export class OrderService {
   }
 
   private async settleTrade(fill: MatchResult): Promise<void> {
-    try {
-      // 매수자 정산 / Settle buyer side
-      if (fill.buyerId !== 'MARKET_MAKER') {
-        await axios.post(
-          `${this.portfolioUrl}/portfolio/internal/settle-buy`,
-          {
-            symbol: fill.symbol,
-            quantity: fill.matchedQuantity,
-            price: fill.matchedPrice,
-            tradeId: fill.tradeId,
-          },
-          { headers: { 'x-user-id': fill.buyerId, 'x-internal-token': this.internalToken }, timeout: 5000 },
+    // 매수자 정산 / Settle buyer side
+    if (fill.buyerId !== 'MARKET_MAKER') {
+      try {
+        await this.withRetry(
+          () => axios.post(
+            `${this.portfolioUrl}/portfolio/internal/settle-buy`,
+            {
+              symbol: fill.symbol,
+              quantity: fill.matchedQuantity,
+              price: fill.matchedPrice,
+              tradeId: fill.tradeId,
+            },
+            { headers: { 'x-user-id': fill.buyerId, 'x-internal-token': this.internalToken }, timeout: 5000 },
+          ),
+          `settleBuy(trade=${fill.tradeId})`,
+        );
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : String(error);
+        this.logger.error(
+          `[SETTLE_FAILED] Buy settlement failed for trade ${fill.tradeId}, buyer=${fill.buyerId.substring(0, 8)}...: ${message}`,
         );
       }
+    }
 
-      // 매도자 정산 / Settle seller side
-      if (fill.sellerId !== 'MARKET_MAKER') {
-        await axios.post(
-          `${this.portfolioUrl}/portfolio/internal/settle-sell`,
-          {
-            symbol: fill.symbol,
-            quantity: fill.matchedQuantity,
-            price: fill.matchedPrice,
-            tradeId: fill.tradeId,
-          },
-          { headers: { 'x-user-id': fill.sellerId, 'x-internal-token': this.internalToken }, timeout: 5000 },
+    // 매도자 정산 / Settle seller side
+    if (fill.sellerId !== 'MARKET_MAKER') {
+      try {
+        await this.withRetry(
+          () => axios.post(
+            `${this.portfolioUrl}/portfolio/internal/settle-sell`,
+            {
+              symbol: fill.symbol,
+              quantity: fill.matchedQuantity,
+              price: fill.matchedPrice,
+              tradeId: fill.tradeId,
+            },
+            { headers: { 'x-user-id': fill.sellerId, 'x-internal-token': this.internalToken }, timeout: 5000 },
+          ),
+          `settleSell(trade=${fill.tradeId})`,
+        );
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : String(error);
+        this.logger.error(
+          `[SETTLE_FAILED] Sell settlement failed for trade ${fill.tradeId}, seller=${fill.sellerId.substring(0, 8)}...: ${message}`,
         );
       }
-    } catch (error: unknown) {
-      this.logger.error(`Failed to settle trade ${fill.tradeId}: ${error}`);
     }
   }
 
