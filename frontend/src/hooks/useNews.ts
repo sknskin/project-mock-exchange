@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { useAuthStore } from '@/stores/auth';
 import type { NewsItem, PaginatedResponse, ScrapeStatus } from '@/types';
 
 export function useNews(params: {
@@ -19,6 +20,7 @@ export function useNews(params: {
 }
 
 export function useScrapeStatus() {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   return useQuery({
     queryKey: ['news-scrape-status'],
     queryFn: async () => {
@@ -26,6 +28,7 @@ export function useScrapeStatus() {
       return data.data as ScrapeStatus[];
     },
     refetchInterval: 5 * 60 * 1000,
+    enabled: isAuthenticated,
   });
 }
 
