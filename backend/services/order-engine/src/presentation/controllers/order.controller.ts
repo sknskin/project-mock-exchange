@@ -124,8 +124,8 @@ export class OrderController {
     @Query('status') status?: string,
   ) {
     this.validateUserId(userId);
-    const parsedLimit = limit ? parseInt(limit, 10) : 50;
-    const parsedOffset = offset ? parseInt(offset, 10) : 0;
+    const parsedLimit = Math.min(Math.max(parseInt(limit || '50', 10) || 50, 1), 500);
+    const parsedOffset = Math.max(parseInt(offset || '0', 10) || 0, 0);
     const orders = await this.orderService.getUserOrders(
       userId,
       parsedLimit,
@@ -144,8 +144,8 @@ export class OrderController {
     this.validateUserId(userId);
     const trades = await this.orderService.getUserTrades(
       userId,
-      limit ? parseInt(limit, 10) : 50,
-      offset ? parseInt(offset, 10) : 0,
+      Math.min(Math.max(parseInt(limit || '50', 10) || 50, 1), 500),
+      Math.max(parseInt(offset || '0', 10) || 0, 0),
     );
     return { success: true, data: trades };
   }

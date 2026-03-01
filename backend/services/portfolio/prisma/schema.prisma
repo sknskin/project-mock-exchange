@@ -31,7 +31,7 @@ model Holding {
   totalCost    Decimal  @default(0) @map("total_cost") @db.Decimal(20, 8)
   updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz()
 
-  account Account @relation(fields: [userId], references: [userId])
+  account Account @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
   @@unique([userId, symbol])
   @@index([userId])
@@ -50,7 +50,7 @@ model Transaction {
   referenceId String?  @map("reference_id") @db.Uuid
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz()
 
-  account Account @relation(fields: [userId], references: [userId])
+  account Account @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
   @@index([userId, createdAt(sort: Desc)])
   @@map("transactions")
