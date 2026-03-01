@@ -13,6 +13,15 @@ import { AppModule } from './app.module';
 
 async function bootstrap() {
   const logger = new Logger('UserAuthService');
+
+  // 필수 환경변수 검증 / Validate required environment variables
+  const required = ['JWT_SECRET', 'INTERNAL_SERVICE_SECRET', 'USER_AUTH_DATABASE_URL'];
+  const missing = required.filter((key) => !process.env[key]);
+  if (missing.length > 0) {
+    logger.error(`Missing required environment variables: ${missing.join(', ')}`);
+    process.exit(1);
+  }
+
   const app = await NestFactory.create<NestExpressApplication>(AppModule, { bodyParser: false });
 
   // Increase body size limit for base64 file uploads (default ~100KB)
