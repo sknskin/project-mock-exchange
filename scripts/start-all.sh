@@ -398,10 +398,12 @@ echo -e "  로그 확인 / Logs: tail -f logs/{서비스명}.log"
 echo -e "  종료 / Stop: ${RED}Ctrl+C${NC}"
 echo ""
 
-# 프론트엔드(Next.js dev server)를 백그라운드로 실행
-# Start frontend (Next.js dev server) in background
+# 프론트엔드(Next.js dev server)를 백그라운드로 실행 (타임스탬프 추가)
+# Start frontend (Next.js dev server) in background (with timestamps)
 cd "$ROOT_DIR/frontend"
-npx next dev --port 4000 >> "$ROOT_DIR/logs/frontend.log" 2>&1 &
+npx next dev --port 4000 2>&1 \
+  | perl -MPOSIX -pe 'BEGIN{$|=1} $_ = strftime("[%Y. %m. %d. %H:%M:%S] ", localtime) . $_' \
+  >> "$ROOT_DIR/logs/frontend.log" &
 FRONTEND_PID=$!
 PIDS+=($FRONTEND_PID)
 NAMES+=("frontend")

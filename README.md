@@ -344,6 +344,29 @@ curl http://localhost:3000/api/portfolio/valuation \
 
 > 암호화폐 시세는 Binance WebSocket에서 실시간 제공, 주식 시세는 Yahoo Finance API 기반 시뮬레이션 데이터입니다.
 
+## 운영 스크립트
+
+| 스크립트 | 설명 |
+|---------|------|
+| `scripts/start-all.sh` | 전체 서비스 일괄 실행 (Docker 인프라 + 빌드 + 8개 서비스 + 프론트엔드) |
+| `scripts/rotate-logs.sh` | 로그 로테이션 (어제까지의 로그 삭제, 오늘분 보존). cron으로 매일 00:30 자동 실행 |
+
+### 로그 로테이션 관리
+
+```bash
+# 수동 실행
+bash scripts/rotate-logs.sh
+
+# cron 비활성화 (로그 자동 정리 중지)
+crontab -l | grep -v 'rotate-logs' | crontab -
+
+# cron 재활성화
+(crontab -l 2>/dev/null; echo "30 0 * * * $(pwd)/scripts/rotate-logs.sh > /dev/null 2>&1") | crontab -
+
+# 로테이션 이력 확인
+cat logs/rotate.log
+```
+
 ## 핵심 설계 패턴
 
 - **이벤트 소싱**: Order Engine은 모든 상태 변경을 불변 이벤트로 저장

@@ -275,6 +275,64 @@ brew services start postgresql@16
 
 ---
 
+## 로그 관리
+
+### 로그 파일 위치
+
+모든 서비스 로그는 `logs/` 디렉토리에 저장됩니다.
+
+```bash
+tail -f logs/api-gateway.log   # API Gateway
+tail -f logs/user-auth.log     # User Auth
+tail -f logs/market-data.log   # Market Data
+tail -f logs/order-engine.log  # Order Engine
+tail -f logs/portfolio.log     # Portfolio
+tail -f logs/notification.log  # Notification
+tail -f logs/chat.log          # Chat
+tail -f logs/ai-service.log    # AI Service
+tail -f logs/frontend.log      # Frontend
+```
+
+### 로그 로테이션 (자동 정리)
+
+`scripts/rotate-logs.sh` 배치가 **매일 자정 00:30**에 cron으로 실행되어 어제까지의 로그를 자동 삭제합니다.
+
+**동작 방식:**
+1. 모든 로그 파일(백엔드 + 프론트엔드)에서 오늘 날짜의 로그만 추출
+2. 서비스 잠시 중지 (~2초)
+3. 로그 파일을 오늘분으로 교체
+4. 서비스 자동 재시작 + 헬스 체크
+5. 로테이션 이력은 `logs/rotate.log`에 기록
+
+> 프론트엔드 로그에도 `[YYYY. MM. DD. HH:MM:SS]` 형식의 타임스탬프가 자동 부여되므로
+> 백엔드와 동일하게 날짜별 필터링이 적용됩니다.
+
+**수동 실행:**
+
+```bash
+bash scripts/rotate-logs.sh
+```
+
+**cron 비활성화 (로그 로테이션 중지):**
+
+```bash
+crontab -l | grep -v 'rotate-logs' | crontab -
+```
+
+**cron 재활성화:**
+
+```bash
+(crontab -l 2>/dev/null; echo "30 0 * * * $(pwd)/scripts/rotate-logs.sh > /dev/null 2>&1") | crontab -
+```
+
+**cron 등록 확인:**
+
+```bash
+crontab -l
+```
+
+---
+
 ## 서비스 아키텍처
 
 ```
