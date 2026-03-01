@@ -13,9 +13,19 @@ import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './config/all-exceptions.filter';
+import { LoggingInterceptor } from './config/logging.interceptor';
 
 async function bootstrap() {
   const logger = new Logger('ApiGateway');
+
+  // 필수 환경변수 검증 / Validate required environment variables
+  const required = ['JWT_SECRET', 'INTERNAL_SERVICE_SECRET'];
+  const missing = required.filter((key) => !process.env[key]);
+  if (missing.length > 0) {
+    logger.error(`Missing required environment variables: ${missing.join(', ')}`);
+    process.exit(1);
+  }
+
   const app = await NestFactory.create<NestExpressApplication>(AppModule, { bodyParser: false });
 
   app.useBodyParser('json', { limit: '10mb' });
@@ -25,9 +35,11 @@ async function bootstrap() {
       contentSecurityPolicy: {
         directives: {
           defaultSrc: ["'self'"],
-          scriptSrc: ["'self'", "'unsafe-inline'"],
+          scriptSrc: ["'self'"],
           styleSrc: ["'self'", "'unsafe-inline'"],
           imgSrc: ["'self'", 'data:', 'https://cdn.simpleicons.org'],
+          objectSrc: ["'none'"],
+          frameAncestors: ["'none'"],
         },
       },
     }),
@@ -57,6 +69,7 @@ async function bootstrap() {
   SwaggerModule.setup('api-docs', app, document);
 
   app.useGlobalFilters(new AllExceptionsFilter());
+  app.useGlobalInterceptors(new LoggingInterceptor());
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

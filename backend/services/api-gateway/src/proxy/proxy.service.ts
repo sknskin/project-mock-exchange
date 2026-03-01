@@ -5,7 +5,7 @@
  * @file Proxy Service
  * @description Forwards HTTP requests to internal microservices using Axios
  */
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, BadGatewayException, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 
@@ -62,15 +62,21 @@ export class ProxyService {
         headers: response.headers as Record<string, string>,
       };
     } catch (error) {
-      if (axios.isAxiosError(error) && error.response) {
-        return {
-          status: error.response.status,
-          data: error.response.data,
-          headers: error.response.headers as Record<string, string>,
-        };
+      if (axios.isAxiosError(error)) {
+        if (error.response) {
+          return {
+            status: error.response.status,
+            data: error.response.data,
+            headers: error.response.headers as Record<string, string>,
+          };
+        }
+        if (error.code === 'ECONNREFUSED' || error.code === 'ECONNRESET' || error.code === 'ETIMEDOUT') {
+          this.logger.error(`Service unavailable: ${service} (${error.code})`);
+          throw new ServiceUnavailableException(`${service} service is unavailable`);
+        }
       }
-      this.logger.error(`Proxy error to ${service}: ${error}`);
-      throw error;
+      this.logger.error(`Proxy error to ${service}: ${error instanceof Error ? error.message : 'unknown'}`);
+      throw new BadGatewayException('Internal service error');
     }
   }
 }

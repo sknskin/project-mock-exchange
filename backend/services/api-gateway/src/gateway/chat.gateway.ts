@@ -61,7 +61,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }
 
       this.logger.log(`Chat client connected: ${client.id} (user: ${userId})`);
-    } catch {
+    } catch (error) {
+      this.logger.warn(`Chat auth failed for ${client.id}: ${error instanceof Error ? error.message : 'unknown'}`);
       client.disconnect();
     }
   }
