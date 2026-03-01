@@ -21,6 +21,8 @@ export function useWebSocket(
   const socketRef = useRef<Socket | null>(null);
   const callbackRef = useRef(onPriceUpdate);
   callbackRef.current = onPriceUpdate;
+  const symbolsRef = useRef(symbols);
+  symbolsRef.current = symbols;
   const accessToken = useAuthStore((s) => s.accessToken);
 
   const connect = useCallback(() => {
@@ -39,8 +41,8 @@ export function useWebSocket(
     });
 
     socket.on('connect', () => {
-      if (symbols.length > 0) {
-        socket.emit('subscribe', { symbols });
+      if (symbolsRef.current.length > 0) {
+        socket.emit('subscribe', { symbols: symbolsRef.current });
       }
     });
 
@@ -49,7 +51,7 @@ export function useWebSocket(
     });
 
     socketRef.current = socket;
-  }, [symbols, accessToken]);
+  }, [accessToken]);
 
   useEffect(() => {
     connect();
