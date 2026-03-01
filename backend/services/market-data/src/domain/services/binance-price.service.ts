@@ -100,12 +100,13 @@ export class BinancePriceService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  private handleTickerMessage(data: any) {
+  private handleTickerMessage(data: Record<string, unknown>) {
     // Binance 24시간 티커 데이터 (Binance 24hr ticker payload):
     // s: 심볼(symbol), c: 최종가(last price), b: 최우선 매수호가(best bid), a: 최우선 매도호가(best ask)
     // v: 24시간 거래량(24h volume), p: 가격 변동(price change), P: 가격 변동률(price change %)
     // h: 24시간 고가(24h high), l: 24시간 저가(24h low)
-    const binanceSymbol = (data.s as string)?.toLowerCase();
+    if (typeof data.s !== 'string' || typeof data.c !== 'string') return;
+    const binanceSymbol = data.s.toLowerCase();
     if (!binanceSymbol) return;
 
     const internalSymbol = BINANCE_REVERSE_MAP.get(binanceSymbol);
@@ -113,14 +114,14 @@ export class BinancePriceService implements OnModuleInit, OnModuleDestroy {
 
     const tick: PriceTick = {
       symbol: internalSymbol,
-      price: parseFloat(data.c),
-      bid: parseFloat(data.b),
-      ask: parseFloat(data.a),
-      volume: parseFloat(data.v),
-      change24h: parseFloat(data.p),
-      changePercent24h: parseFloat(data.P),
-      high24h: parseFloat(data.h),
-      low24h: parseFloat(data.l),
+      price: parseFloat(data.c as string),
+      bid: parseFloat((data.b as string) || '0'),
+      ask: parseFloat((data.a as string) || '0'),
+      volume: parseFloat((data.v as string) || '0'),
+      change24h: parseFloat((data.p as string) || '0'),
+      changePercent24h: parseFloat((data.P as string) || '0'),
+      high24h: parseFloat((data.h as string) || '0'),
+      low24h: parseFloat((data.l as string) || '0'),
       timestamp: new Date(),
     };
 

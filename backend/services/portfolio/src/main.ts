@@ -10,8 +10,10 @@ import { ValidationPipe, Logger } from '@nestjs/common';
 import { AppModule } from './app.module';
 
 // BigInt → JSON 직렬화 지원 / Enable BigInt JSON serialization
+// 안전 정수 범위 초과 시 문자열 반환 / Return string if outside safe integer range
 (BigInt.prototype as any).toJSON = function () {
-  return Number(this);
+  const n = Number(this);
+  return Number.isSafeInteger(n) ? n : this.toString();
 };
 
 async function bootstrap() {

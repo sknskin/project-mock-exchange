@@ -23,7 +23,7 @@ export class AiProxyController {
   @ApiResponse({ status: 200, description: '시그널 목록 반환' })
   @ApiResponse({ status: 401, description: '인증 필요' })
   async getSignals(@Req() req: Request, @Res() res: Response) {
-    const userId = (req as any).user?.id;
+    const userId = (req as Record<string, any>).user?.id;
     const result = await this.proxyService.forward('ai-service', {
       method: 'GET',
       url: '/analysis/signals',
@@ -38,8 +38,8 @@ export class AiProxyController {
   @ApiOperation({ summary: '포트폴리오 AI 분석', description: '포트폴리오 보유 현황을 AI로 분석합니다' })
   @ApiResponse({ status: 200, description: '분석 결과 반환' })
   @ApiResponse({ status: 401, description: '인증 필요' })
-  async analyzePortfolio(@Req() req: Request, @Body() body: any, @Res() res: Response) {
-    const userId = (req as any).user?.id;
+  async analyzePortfolio(@Req() req: Request, @Body() body: unknown, @Res() res: Response) {
+    const userId = (req as Record<string, any>).user?.id;
     const result = await this.proxyService.forward('ai-service', {
       method: 'POST',
       url: '/analysis/portfolio',

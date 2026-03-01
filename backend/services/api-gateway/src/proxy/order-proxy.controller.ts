@@ -40,7 +40,7 @@ export class OrderProxyController {
   @ApiResponse({ status: 400, description: '유효성 검사 실패' })
   @ApiResponse({ status: 401, description: '인증 필요' })
   async placeOrder(@Body() body: unknown, @Req() req: Request, @Res() res: Response) {
-    const userId = (req as any).user?.id;
+    const userId = (req as Record<string, any>).user?.id;
     const result = await this.proxyService.forward('order-engine', {
       method: 'POST',
       url: '/orders',
@@ -146,7 +146,7 @@ export class OrderProxyController {
     @Req() req: Request,
     @Res() res: Response,
   ) {
-    const userId = (req as any).user?.id;
+    const userId = (req as Record<string, any>).user?.id;
     const result = await this.proxyService.forward('order-engine', {
       method: 'GET',
       url: '/orders/trades/history',
@@ -171,7 +171,7 @@ export class OrderProxyController {
     @Req() req: Request,
     @Res() res: Response,
   ) {
-    const userId = (req as any).user?.id;
+    const userId = (req as Record<string, any>).user?.id;
     const result = await this.proxyService.forward('order-engine', {
       method: 'GET',
       url: '/orders',
@@ -189,7 +189,7 @@ export class OrderProxyController {
   @ApiResponse({ status: 200, description: '주문 상세 반환' })
   @ApiResponse({ status: 404, description: '주문 없음' })
   async getOrder(@Param('orderId') orderId: string, @Req() req: Request, @Res() res: Response) {
-    const userId = (req as any).user?.id;
+    const userId = (req as Record<string, any>).user?.id;
     const result = await this.proxyService.forward('order-engine', {
       method: 'GET',
       url: `/orders/${orderId}`,
@@ -211,7 +211,7 @@ export class OrderProxyController {
     @Req() req: Request,
     @Res() res: Response,
   ) {
-    const userId = (req as any).user?.id;
+    const userId = (req as Record<string, any>).user?.id;
     const result = await this.proxyService.forward('order-engine', {
       method: 'PATCH',
       url: `/orders/${orderId}`,
@@ -229,7 +229,7 @@ export class OrderProxyController {
   @ApiResponse({ status: 200, description: '주문 취소 성공' })
   @ApiResponse({ status: 404, description: '주문 없음' })
   async cancelOrder(@Param('orderId') orderId: string, @Req() req: Request, @Res() res: Response) {
-    const userId = (req as any).user?.id;
+    const userId = (req as Record<string, any>).user?.id;
     const result = await this.proxyService.forward('order-engine', {
       method: 'DELETE',
       url: `/orders/${orderId}`,

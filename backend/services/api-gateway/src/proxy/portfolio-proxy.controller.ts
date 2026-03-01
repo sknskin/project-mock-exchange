@@ -34,7 +34,7 @@ export class PortfolioProxyController {
   @ApiResponse({ status: 201, description: '입금 성공' })
   @ApiResponse({ status: 400, description: '유효성 검사 실패' })
   async deposit(@Body() body: unknown, @Req() req: Request, @Res() res: Response) {
-    const userId = (req as any).user?.id;
+    const userId = (req as Record<string, any>).user?.id;
     const result = await this.proxyService.forward('portfolio', {
       method: 'POST',
       url: '/portfolio/deposit',
@@ -49,7 +49,7 @@ export class PortfolioProxyController {
   @ApiResponse({ status: 201, description: '출금 성공' })
   @ApiResponse({ status: 400, description: '잔고 부족 또는 유효성 검사 실패' })
   async withdraw(@Body() body: unknown, @Req() req: Request, @Res() res: Response) {
-    const userId = (req as any).user?.id;
+    const userId = (req as Record<string, any>).user?.id;
     const result = await this.proxyService.forward('portfolio', {
       method: 'POST',
       url: '/portfolio/withdraw',
@@ -63,7 +63,7 @@ export class PortfolioProxyController {
   @ApiOperation({ summary: '잔고 조회', description: '현재 사용자의 잔고를 반환합니다' })
   @ApiResponse({ status: 200, description: '잔고 정보 반환' })
   async getBalance(@Req() req: Request, @Res() res: Response) {
-    const userId = (req as any).user?.id;
+    const userId = (req as Record<string, any>).user?.id;
     const result = await this.proxyService.forward('portfolio', {
       method: 'GET',
       url: '/portfolio/balance',
@@ -76,7 +76,7 @@ export class PortfolioProxyController {
   @ApiOperation({ summary: '보유 자산 조회', description: '현재 사용자의 보유 자산 목록을 반환합니다' })
   @ApiResponse({ status: 200, description: '보유 자산 목록 반환' })
   async getHoldings(@Req() req: Request, @Res() res: Response) {
-    const userId = (req as any).user?.id;
+    const userId = (req as Record<string, any>).user?.id;
     const result = await this.proxyService.forward('portfolio', {
       method: 'GET',
       url: '/portfolio/holdings',
@@ -89,7 +89,7 @@ export class PortfolioProxyController {
   @ApiOperation({ summary: '포트폴리오 요약', description: '총 자산, 수익률 등 포트폴리오 요약 정보를 반환합니다' })
   @ApiResponse({ status: 200, description: '포트폴리오 요약 반환' })
   async getSummary(@Req() req: Request, @Res() res: Response) {
-    const userId = (req as any).user?.id;
+    const userId = (req as Record<string, any>).user?.id;
     const result = await this.proxyService.forward('portfolio', {
       method: 'GET',
       url: '/portfolio/summary',
@@ -102,7 +102,7 @@ export class PortfolioProxyController {
   @ApiOperation({ summary: '자산 평가 조회', description: '보유 자산의 현재 평가액을 반환합니다' })
   @ApiResponse({ status: 200, description: '자산 평가 반환' })
   async getValuation(@Req() req: Request, @Res() res: Response) {
-    const userId = (req as any).user?.id;
+    const userId = (req as Record<string, any>).user?.id;
     const result = await this.proxyService.forward('portfolio', {
       method: 'GET',
       url: '/portfolio/valuation',
@@ -126,9 +126,10 @@ export class PortfolioProxyController {
     });
 
     // Enrich leaderboard entries with username/name from user-auth
-    const data = result.data as any;
+    const data = result.data as Record<string, unknown>;
     if (data?.success && Array.isArray(data?.data)) {
-      const userIds = data.data.map((e: any) => e.userId).filter(Boolean);
+      const entries = data.data as Record<string, unknown>[];
+      const userIds = entries.map((e) => e.userId).filter(Boolean) as string[];
       if (userIds.length > 0) {
         try {
           const usersResult = await this.proxyService.forward('user-auth', {
@@ -136,14 +137,14 @@ export class PortfolioProxyController {
             url: '/users/by-ids',
             data: { ids: userIds },
           });
-          const usersData = usersResult.data as any;
+          const usersData = usersResult.data as Record<string, unknown>;
           if (usersData?.success && Array.isArray(usersData?.data)) {
             const userMap = new Map<string, { username: string; name: string }>();
-            for (const u of usersData.data) {
+            for (const u of usersData.data as Record<string, string>[]) {
               userMap.set(u.id, { username: u.username, name: u.name });
             }
-            data.data = data.data.map((entry: any) => {
-              const userInfo = userMap.get(entry.userId);
+            data.data = entries.map((entry) => {
+              const userInfo = userMap.get(entry.userId as string);
               return {
                 ...entry,
                 username: userInfo?.username || '',
@@ -171,7 +172,7 @@ export class PortfolioProxyController {
     @Req() req: Request,
     @Res() res: Response,
   ) {
-    const userId = (req as any).user?.id;
+    const userId = (req as Record<string, any>).user?.id;
     const result = await this.proxyService.forward('portfolio', {
       method: 'GET',
       url: '/portfolio/transactions',
@@ -185,7 +186,7 @@ export class PortfolioProxyController {
   @ApiOperation({ summary: '관심종목 조회', description: '관심종목 심볼 목록을 반환합니다' })
   @ApiResponse({ status: 200, description: '관심종목 목록 반환' })
   async getWatchlist(@Req() req: Request, @Res() res: Response) {
-    const userId = (req as any).user?.id;
+    const userId = (req as Record<string, any>).user?.id;
     const result = await this.proxyService.forward('portfolio', {
       method: 'GET',
       url: '/portfolio/watchlist',
@@ -202,7 +203,7 @@ export class PortfolioProxyController {
     @Req() req: Request,
     @Res() res: Response,
   ) {
-    const userId = (req as any).user?.id;
+    const userId = (req as Record<string, any>).user?.id;
     const result = await this.proxyService.forward('portfolio', {
       method: 'POST',
       url: `/portfolio/watchlist/${symbol}`,
@@ -219,7 +220,7 @@ export class PortfolioProxyController {
     @Req() req: Request,
     @Res() res: Response,
   ) {
-    const userId = (req as any).user?.id;
+    const userId = (req as Record<string, any>).user?.id;
     const result = await this.proxyService.forward('portfolio', {
       method: 'DELETE',
       url: `/portfolio/watchlist/${symbol}`,
