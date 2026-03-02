@@ -330,11 +330,24 @@ export class MarketDataService implements OnModuleInit {
   }
 
   async getCandlesticks(symbol: string, interval: string, limit = 100) {
-    return this.prisma.candlestick.findMany({
+    const candles = await this.prisma.candlestick.findMany({
       where: { symbol, interval },
       orderBy: { openTime: 'desc' },
       take: limit,
     });
+    // Prisma Decimal/BigInt/Date → 프론트엔드 호환 타입으로 변환
+    return candles.map((c) => ({
+      id: Number(c.id),
+      symbol: c.symbol,
+      interval: c.interval,
+      openPrice: Number(c.openPrice),
+      highPrice: Number(c.highPrice),
+      lowPrice: Number(c.lowPrice),
+      closePrice: Number(c.closePrice),
+      volume: Number(c.volume),
+      openTime: c.openTime instanceof Date ? c.openTime.toISOString() : c.openTime,
+      closeTime: c.closeTime instanceof Date ? c.closeTime.toISOString() : c.closeTime,
+    }));
   }
 
   private async persistPrices(ticks: PriceTick[]) {

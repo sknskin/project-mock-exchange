@@ -6,6 +6,7 @@
  * @description Simulates asset prices using Geometric Brownian Motion (GBM)
  */
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { AssetConfig, PriceTick } from '../entities/asset.entity';
 
 /**
@@ -35,11 +36,19 @@ export class PriceEngineService {
   // 변동성 이벤트: 극적인 가격 움직임을 위해 일시적으로 변동성 급등 / Volatility events: temporarily spike volatility for dramatic price action
   private volatilityMultipliers: Map<string, { multiplier: number; expiresAt: number }> = new Map();
 
-  private readonly TICK_INTERVAL_MS = 1000; // 1초 간격 틱 / 1 second ticks
+  // 환경 변수로 설정 가능한 엔진 파라미터 / Engine parameters configurable via environment variables
+  private readonly TICK_INTERVAL_MS: number;
   private readonly SECONDS_PER_YEAR = 365.25 * 24 * 3600;
-  private readonly DRIFT = 0.0; // 모의 거래용 중립 드리프트 / neutral drift for mock trading
-  private readonly VOLATILITY_EVENT_PROBABILITY = 0.002; // 자산당 틱당 ~0.2% 확률 / ~0.2% chance per tick per asset
-  private readonly VOLATILITY_EVENT_DURATION_MS = 30000; // 30초 / 30 seconds
+  private readonly DRIFT: number;
+  private readonly VOLATILITY_EVENT_PROBABILITY: number;
+  private readonly VOLATILITY_EVENT_DURATION_MS: number;
+
+  constructor(private readonly config: ConfigService) {
+    this.TICK_INTERVAL_MS = this.config.get<number>('PRICE_ENGINE_TICK_INTERVAL_MS', 1000);
+    this.DRIFT = this.config.get<number>('PRICE_ENGINE_DRIFT', 0.0);
+    this.VOLATILITY_EVENT_PROBABILITY = this.config.get<number>('PRICE_ENGINE_VOLATILITY_EVENT_PROBABILITY', 0.002);
+    this.VOLATILITY_EVENT_DURATION_MS = this.config.get<number>('PRICE_ENGINE_VOLATILITY_EVENT_DURATION_MS', 30000);
+  }
 
   initializeAsset(config: AssetConfig): void {
     this.prices.set(config.symbol, config.basePrice);
