@@ -9,6 +9,7 @@
 
 import { useState, useCallback } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useTranslation } from '@/hooks/useTranslation';
 import { techItems } from '@/lib/constants';
 import ContentModal from '@/components/ui/ContentModal';
@@ -124,11 +125,14 @@ export default function LandingPage() {
                 className="flex flex-col items-center gap-2 px-5 shrink-0"
               >
                 <div className="w-10 h-10 rounded-xl bg-bg-secondary/80 flex items-center justify-center p-2">
-                  <img
+                  <Image
                     src={tech.icon}
-                    alt={tech.name}
+                    alt={`${tech.name} logo`}
+                    width={20}
+                    height={20}
                     className={cn('w-5 h-5 object-contain', tech.invertInLight && 'icon-invert-light')}
-                    loading="eager"
+                    priority
+                    unoptimized
                   />
                 </div>
                 <span className="text-[10px] font-medium text-text-quaternary whitespace-nowrap">

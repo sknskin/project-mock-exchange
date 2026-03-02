@@ -480,6 +480,9 @@ export default function Header() {
           <style jsx>{`
             @keyframes slide-in-right { from { transform: translateX(100%); } to { transform: translateX(0); } }
             .animate-slide-in-right { animation: slide-in-right 0.2s ease-out; }
+            @media (prefers-reduced-motion: reduce) {
+              .animate-slide-in-right { animation: none; }
+            }
           `}</style>
         </div>
       )}
@@ -488,7 +491,7 @@ export default function Header() {
       {logoutModalOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center">
           <div className="absolute inset-0 bg-black/60" onClick={() => setLogoutModalOpen(false)} />
-          <div className="relative bg-bg-primary border border-border rounded-2xl p-6 w-[320px] max-w-[calc(100vw-2rem)] shadow-2xl">
+          <div className="relative bg-bg-primary border border-border rounded-2xl p-6 w-[320px] max-w-full max-w-[calc(100vw-2rem)] shadow-2xl">
             <h3 className="text-[16px] font-bold text-text-primary text-center">
               {t('modal.logoutTitle')}
             </h3>
