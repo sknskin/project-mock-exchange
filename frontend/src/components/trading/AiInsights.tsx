@@ -62,8 +62,27 @@ const RISK_CONFIG = {
 
 export default function AiInsights() {
   const { t } = useTranslation();
-  const { data: signals, isLoading } = useAiSignals();
+  const { data: signals, isLoading, isError } = useAiSignals();
   const [expanded, setExpanded] = useState<string | null>(null);
+
+  if (isError) {
+    return (
+      <div className="space-y-3">
+        <div className="flex items-center gap-2 mb-3">
+          <Brain className="w-4 h-4 text-accent" />
+          <h3 className="text-[14px] font-bold text-text-secondary">
+            {t('ai.title')}
+          </h3>
+        </div>
+        <div className="bg-bg-secondary rounded-2xl p-6 text-center">
+          <AlertTriangle className="w-6 h-6 text-text-quaternary mx-auto mb-2" />
+          <p className="text-[13px] text-text-quaternary">
+            데이터를 불러올 수 없습니다
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -136,7 +155,7 @@ export default function AiInsights() {
                       )}
                     >
                       {t(
-                        `ai.signal.${signal.signal.toLowerCase()}` as any,
+                        `ai.signal.${signal.signal.toLowerCase()}` as keyof typeof import('@/lib/i18n').translations.ko,
                       ) || signal.signal.replace('_', ' ')}
                     </span>
                   </div>

@@ -861,6 +861,8 @@ const translations = {
     'orders.analysisVolume': '거래대금',
     'orders.analysisEmptyState': '분석할 거래 내역이 없습니다.\n거래를 시작하면 여기에 분석 결과가 표시됩니다.',
     'orders.analysisTrades': '건',
+    'orders.side': '매매',
+    'orders.executedAt': '체결일시',
 
     // Export
     'export.csv': 'CSV 내보내기',
@@ -1550,6 +1552,12 @@ const translations = {
     'ai.diversification': '분산 점수',
     'ai.riskScore': '위험 점수',
     'ai.suggestions': '제안',
+
+    // Connection Guard
+    'connection.title': '서버에 연결할 수 없습니다',
+    'connection.description': '서버와의 연결이 끊어졌습니다. 잠시 후 다시 시도해주세요.',
+    'connection.retry': '다시 시도',
+    'connection.retrying': '연결 중...',
   },
   en: {
     // Header
@@ -2404,6 +2412,8 @@ const translations = {
     'orders.analysisVolume': 'Volume',
     'orders.analysisEmptyState': 'No trades to analyze yet.\nStart trading and your analysis will appear here.',
     'orders.analysisTrades': '',
+    'orders.side': 'Side',
+    'orders.executedAt': 'Executed At',
 
     // Export
     'export.csv': 'Export CSV',
@@ -3093,6 +3103,12 @@ const translations = {
     'ai.diversification': 'Diversification',
     'ai.riskScore': 'Risk Score',
     'ai.suggestions': 'Suggestions',
+
+    // Connection Guard
+    'connection.title': 'Unable to connect to server',
+    'connection.description': 'The connection to the server has been lost. Please try again in a moment.',
+    'connection.retry': 'Retry',
+    'connection.retrying': 'Connecting...',
   },
 } as const;
 

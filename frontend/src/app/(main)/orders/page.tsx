@@ -316,6 +316,7 @@ export default function OrdersPage() {
   };
 
   const handleModify = async (orderId: string) => {
+    if (modifyOrder.isPending) return;
     const price = editPrice ? parseFloat(editPrice) : undefined;
     const quantity = editQuantity ? parseFloat(editQuantity) : undefined;
     if (!price && !quantity) return;
@@ -637,11 +638,11 @@ export default function OrdersPage() {
                     `trades-${new Date().toISOString().slice(0, 10)}`,
                     [
                       { key: 'symbol', label: t('orders.analysisSymbol') },
-                      { key: 'side', label: t('orders.side' as any) || 'Side' },
+                      { key: 'side', label: t('orders.side') },
                       { key: 'price', label: t('orders.price') },
                       { key: 'quantity', label: t('orders.quantity') },
                       { key: 'total', label: t('orders.totalAmount') },
-                      { key: 'executedAt', label: t('orders.executedAt' as any) || 'Date' },
+                      { key: 'executedAt', label: t('orders.executedAt') },
                     ],
                   );
                 }}

@@ -12,7 +12,7 @@ interface LoginSmsModalProps {
   isOpen: boolean;
   sessionId: string;
   maskedPhone: string;
-  onSuccess: (data: { user: any; accessToken: string }) => void;
+  onSuccess: (data: { user: { id: string; email: string; name: string; role: string }; accessToken: string }) => void;
   onClose: () => void;
 }
 
@@ -31,6 +31,7 @@ export default function LoginSmsModal({
   const [locked, setLocked] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
+  const isSubmittingRef = useRef(false);
   useFocusTrap(modalRef, isOpen);
 
   // 상태 초기화 / Reset state
@@ -103,6 +104,8 @@ export default function LoginSmsModal({
 
   const handleVerify = async () => {
     if (!code || code.length !== 6 || expired || locked) return;
+    if (isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
     setError('');
     setLoading(true);
 
@@ -137,6 +140,7 @@ export default function LoginSmsModal({
       }
       setCode('');
     } finally {
+      isSubmittingRef.current = false;
       setLoading(false);
     }
   };

@@ -101,18 +101,18 @@ export function useTradeHistory() {
     queryKey: ['trades', 'history'],
     queryFn: async () => {
       const { data } = await api.get('/api/orders/trades/history');
-      const raw: any[] = data.data ?? data;
-      return raw.map((t: any) => ({
-        tradeId: t.tradeId,
-        buyOrderId: t.buyOrderId,
-        sellOrderId: t.sellOrderId,
-        buyerId: t.buyerId,
-        sellerId: t.sellerId,
-        symbol: t.symbol,
+      const raw: Record<string, unknown>[] = data.data ?? data;
+      return raw.map((t) => ({
+        tradeId: t.tradeId as string,
+        buyOrderId: t.buyOrderId as string,
+        sellOrderId: t.sellOrderId as string,
+        buyerId: t.buyerId as string,
+        sellerId: t.sellerId as string,
+        symbol: t.symbol as string,
         price: Number(t.price),
         quantity: Number(t.quantity),
         total: Number(t.total),
-        executedAt: t.executedAt,
+        executedAt: t.executedAt as string,
       }));
     },
     refetchInterval: 10000,

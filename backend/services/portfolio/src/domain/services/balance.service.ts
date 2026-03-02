@@ -193,7 +193,7 @@ export class BalanceService {
 
     const result = await this.prisma.$transaction(async (tx) => {
       const [account] = await tx.$queryRaw<Array<{
-        userId: string; availableCash: any; reservedCash: any;
+        userId: string; availableCash: string; reservedCash: string;
       }>>`SELECT "user_id" AS "userId", "available_cash" AS "availableCash", "reserved_cash" AS "reservedCash" FROM "accounts" WHERE "user_id" = ${userId}::uuid FOR UPDATE`;
 
       if (!account) {
@@ -261,7 +261,7 @@ export class BalanceService {
 
     const updated = await this.prisma.$transaction(async (tx) => {
       const [account] = await tx.$queryRaw<Array<{
-        userId: string; availableCash: any; reservedCash: any;
+        userId: string; availableCash: string; reservedCash: string;
       }>>`SELECT "user_id" AS "userId", "available_cash" AS "availableCash", "reserved_cash" AS "reservedCash" FROM "accounts" WHERE "user_id" = ${userId}::uuid FOR UPDATE`;
 
       if (!account) {
@@ -323,7 +323,7 @@ export class BalanceService {
 
     const result = await this.prisma.$transaction(async (tx) => {
       const [account] = await tx.$queryRaw<Array<{
-        userId: string; availableCash: any; reservedCash: any;
+        userId: string; availableCash: string; reservedCash: string;
       }>>`SELECT "user_id" AS "userId", "available_cash" AS "availableCash", "reserved_cash" AS "reservedCash" FROM "accounts" WHERE "user_id" = ${userId}::uuid FOR UPDATE`;
 
       if (!account) {
@@ -431,7 +431,7 @@ export class BalanceService {
 
     const result = await this.prisma.$transaction(async (tx) => {
       const [account] = await tx.$queryRaw<Array<{
-        userId: string; availableCash: any; reservedCash: any;
+        userId: string; availableCash: string; reservedCash: string;
       }>>`SELECT "user_id" AS "userId", "available_cash" AS "availableCash", "reserved_cash" AS "reservedCash" FROM "accounts" WHERE "user_id" = ${userId}::uuid FOR UPDATE`;
 
       if (!account) {

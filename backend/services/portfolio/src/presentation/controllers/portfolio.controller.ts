@@ -117,7 +117,7 @@ export class PortfolioController {
    */
   @Get('leaderboard')
   async getLeaderboard(@Query('limit') limit?: string) {
-    const parsedLimit = limit ? parseInt(limit, 10) : 20;
+    const parsedLimit = Math.min(100, Math.max(1, limit ? parseInt(limit, 10) : 20));
     const leaderboard = await this.balanceService.getLeaderboard(parsedLimit);
     return { success: true, data: leaderboard };
   }
