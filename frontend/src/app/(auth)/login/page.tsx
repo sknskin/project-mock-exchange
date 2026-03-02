@@ -13,6 +13,7 @@ import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import LoginSmsModal from '@/components/auth/LoginSmsModal';
+import type { User } from '@/types';
 import { useAuthStore } from '@/stores/auth';
 import { useTranslation } from '@/hooks/useTranslation';
 import VirtuExLogo from '@/components/ui/VirtuExLogo';
@@ -76,9 +77,9 @@ export default function LoginPage() {
     }
   };
 
-  const handleSmsSuccess = (data: { user: any; accessToken: string }) => {
+  const handleSmsSuccess = (data: { user: { id: string; email: string; name: string; role: string }; accessToken: string }) => {
     setSmsModalOpen(false);
-    login(data.user, data.accessToken);
+    login(data.user as User, data.accessToken);
     router.push('/dashboard');
   };
 

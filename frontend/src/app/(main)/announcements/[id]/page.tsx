@@ -63,7 +63,7 @@ export default function AnnouncementDetailPage({
       sessionStorage.setItem(storageKey, String(Date.now()));
     } catch { /* sessionStorage unavailable */ }
     incrementViewCount.mutate(id);
-  }, [id, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [id, user?.id, incrementViewCount]);
 
   // Delete announcement modal
   const [showDeleteModal, setShowDeleteModal] = useState(false);

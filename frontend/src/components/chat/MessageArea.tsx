@@ -113,7 +113,7 @@ export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeave
       lastMarkedLengthRef.current = messages.length;
       markRead.mutate(roomId);
     }
-  }, [roomId, messages.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [roomId, messages.length, markRead]);
 
   // 새 메시지 시 자동 스크롤 (Auto-scroll on new message)
   useEffect(() => {
@@ -218,13 +218,13 @@ export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeave
                       </div>
                       <span className="flex-1 text-[12px] text-text-primary truncate">
                         {p.name || p.username}
-                        {p.userId === user?.id && <span className="text-text-quaternary ml-1">(me)</span>}
+                        {p.userId === user?.id && <span className="text-text-quaternary ml-1">{t('chat.me')}</span>}
                       </span>
                       {p.userId !== user?.id && (
                         <button
                           onClick={() => handleKick(p.userId, p.name || p.username)}
                           className="p-1 rounded text-text-quaternary hover:text-danger transition-colors"
-                          title="Kick"
+                          title={t('chat.kick')}
                         >
                           <Ban className="w-3 h-3" />
                         </button>

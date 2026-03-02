@@ -1378,7 +1378,7 @@ export default function AdminStatsPage() {
                       outerRadius={80}
                       paddingAngle={4}
                       dataKey="value"
-                      label={({ name, percent }: any) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
+                      label={({ name, percent }: { name?: string; percent?: number }) => `${name ?? ''} ${((percent ?? 0) * 100).toFixed(0)}%`}
                     >
                       <Cell fill={CHART_COLORS.blue} />
                       <Cell fill={CHART_COLORS.green} />

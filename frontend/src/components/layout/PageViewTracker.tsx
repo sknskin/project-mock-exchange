@@ -7,19 +7,20 @@
  */
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import { useTrackPageView } from '@/hooks/useAdmin';
 
 export default function PageViewTracker() {
   const pathname = usePathname();
   const track = useTrackPageView();
+  const trackRef = useRef(track);
+  trackRef.current = track;
 
   useEffect(() => {
     if (pathname) {
-      track.mutate(pathname);
+      trackRef.current.mutate(pathname);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
   return null;

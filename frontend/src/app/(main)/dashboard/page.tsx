@@ -103,7 +103,7 @@ export default function DashboardPage() {
 
   const assets = useMemo(() => {
     if (!rawPrices) return [];
-    return (rawPrices as any[]).map((p): Asset => {
+    return (rawPrices as Omit<Asset, 'name' | 'type' | 'currentPrice' | 'changePercent' | 'changeAmount'>[]).map((p): Asset => {
       const info = assetMap[p.symbol];
       return { ...p, name: info?.name ?? p.symbol, type: info?.assetType ?? 'CRYPTO', currentPrice: p.price, changePercent: p.changePercent24h ?? 0, changeAmount: p.change24h ?? 0 };
     });

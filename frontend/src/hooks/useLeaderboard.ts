@@ -29,8 +29,8 @@ export function useLeaderboard(options?: UseLeaderboardOptions) {
       // period와 sortBy는 향후 백엔드 지원 시 쿼리 파라미터로 전달 예정
       // period and sortBy will be passed as query params when backend supports them
       const { data } = await api.get('/api/portfolio/leaderboard');
-      const raw: any[] = data.data ?? data;
-      return raw.map((e: any) => ({
+      const raw: { rank: number; userId: string; username?: string; name?: string; totalPortfolioValue?: number; totalValue?: number; pnlPercent?: number }[] = data.data ?? data;
+      return raw.map((e) => ({
         rank: e.rank,
         userId: e.userId,
         username: e.username || '',
