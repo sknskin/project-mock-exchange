@@ -36,8 +36,11 @@ export class ResidentNumber {
     return { valid: true };
   }
 
-  encrypt(secret: string, salt: string = 'virtuex-salt'): string {
-    const key = scryptSync(secret, salt, KEY_LENGTH);
+  encrypt(secret: string, salt?: string): string {
+    // 레코드별 랜덤 솔트 생성 — 하드코딩 솔트 취약점 해소
+    // Per-record random salt — eliminates hardcoded salt vulnerability
+    const recordSalt = salt || randomBytes(16).toString('hex');
+    const key = scryptSync(secret, recordSalt, KEY_LENGTH);
     const iv = randomBytes(IV_LENGTH);
     const cipher = createCipheriv(ALGORITHM, key, iv);
 
@@ -45,13 +48,25 @@ export class ResidentNumber {
     encrypted += cipher.final('hex');
     const authTag = cipher.getAuthTag();
 
-    // 형식: iv:authTag:암호화된값 / Format: iv:authTag:encrypted
-    return `${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted}`;
+    // 형식: salt:iv:authTag:암호화된값 / Format: salt:iv:authTag:encrypted
+    return `${recordSalt}:${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted}`;
   }
 
-  static decrypt(encrypted: string, secret: string, salt: string = 'virtuex-salt'): string {
-    const [ivHex, authTagHex, data] = encrypted.split(':');
-    const key = scryptSync(secret, salt, KEY_LENGTH);
+  static decrypt(encrypted: string, secret: string): string {
+    const parts = encrypted.split(':');
+    let recordSalt: string, ivHex: string, authTagHex: string, data: string;
+
+    if (parts.length === 4) {
+      // 새 형식: salt:iv:authTag:data / New format: salt:iv:authTag:data
+      [recordSalt, ivHex, authTagHex, data] = parts;
+    } else {
+      // 레거시 형식 호환: iv:authTag:data (기존 'virtuex-salt' 사용)
+      // Legacy format compatibility: iv:authTag:data (uses old 'virtuex-salt')
+      [ivHex, authTagHex, data] = parts;
+      recordSalt = 'virtuex-salt';
+    }
+
+    const key = scryptSync(secret, recordSalt, KEY_LENGTH);
     const iv = Buffer.from(ivHex, 'hex');
     const authTag = Buffer.from(authTagHex, 'hex');
 

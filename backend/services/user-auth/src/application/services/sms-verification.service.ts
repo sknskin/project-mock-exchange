@@ -6,22 +6,27 @@
  * @description Handles SMS verification code sending and validation using Redis
  */
 import { Injectable, Logger, Inject, BadRequestException, HttpException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { randomInt } from 'crypto';
 import Redis from 'ioredis';
 import { REDIS_CLIENT } from '../../infrastructure/redis/redis.module';
 
 @Injectable()
 export class SmsVerificationService {
   private readonly logger = new Logger(SmsVerificationService.name);
-  private readonly CODE_TTL = 180; // 3분 / 3 minutes
+  private readonly CODE_TTL: number;
   private readonly VERIFIED_TTL = 600; // 10분 / 10 minutes
   private readonly MAX_ATTEMPTS = 5;
 
   constructor(
     @Inject(REDIS_CLIENT) private readonly redis: Redis,
-  ) {}
+    private readonly configService: ConfigService,
+  ) {
+    this.CODE_TTL = this.configService.get<number>('SMS_CODE_TTL', 180);
+  }
 
   async sendVerificationCode(phone: string): Promise<void> {
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const code = randomInt(100000, 999999).toString();
     const key = `sms:verify:${phone}`;
 
     await this.redis.set(key, code, 'EX', this.CODE_TTL);

@@ -52,20 +52,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
           },
         );
         statusStr = JSON.stringify(res.data);
-        await this.redis.set(cacheKey, statusStr, 'EX', 60);
+        await this.redis.set(cacheKey, statusStr, 'EX', 20);
       } catch (error) {
-        // user-auth 서비스 장애 시 JWT 페이로드 기반 fallback (서명 검증은 통과한 상태)
-        this.logger.warn(`User status check failed for ${payload.sub?.substring(0, 8)}..., using JWT payload fallback`);
-        return {
-          id: payload.sub,
-          email: payload.email,
-          username: payload.username,
-          name: payload.name || '',
-          role: payload.role,
-          isActive: true,
-          approvalStatus: 'APPROVED',
-          createdAt: '',
-        };
+        // user-auth 서비스 장애 시 인증 거부 — 비활성화/잠긴 계정 우회 방지
+        // Reject auth when user-auth service is unavailable — prevents bypassing account status checks
+        this.logger.error(`User status check failed for ${payload.sub?.substring(0, 8)}..., rejecting request`);
+        throw new UnauthorizedException('User verification service unavailable. Please try again later.');
       }
     }
 
