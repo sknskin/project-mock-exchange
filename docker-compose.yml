@@ -12,8 +12,8 @@ services:
     ports:
       - '5432:5432'
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: mockexchange
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -23,10 +23,16 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     deploy:
       resources:
         limits:
           memory: 512M
+          cpus: '1.0'
     networks:
       - mex-network
 
@@ -44,10 +50,16 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     deploy:
       resources:
         limits:
           memory: 256M
+          cpus: '0.5'
     networks:
       - mex-network
 
@@ -78,12 +90,18 @@ services:
       resources:
         limits:
           memory: 1G
+          cpus: '1.5'
     healthcheck:
       test: ['CMD-SHELL', '/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 > /dev/null 2>&1']
       interval: 10s
       timeout: 10s
       retries: 10
       start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     networks:
       - mex-network
 
@@ -92,7 +110,7 @@ services:
   # ===========================================
 
   kafka-ui:
-    image: provectuslabs/kafka-ui:latest
+    image: provectuslabs/kafka-ui:v0.7.2
     container_name: mex-kafka-ui
     restart: unless-stopped
     ports:
@@ -103,13 +121,18 @@ services:
     depends_on:
       kafka:
         condition: service_healthy
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     profiles:
       - tools
     networks:
       - mex-network
 
   pgadmin:
-    image: dpage/pgadmin4:latest
+    image: dpage/pgadmin4:8.14
     container_name: mex-pgadmin
     restart: unless-stopped
     ports:
@@ -121,13 +144,23 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'wget --spider -q http://localhost:80/misc/ping || exit 1']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     profiles:
       - tools
     networks:
       - mex-network
 
   redis-commander:
-    image: rediscommander/redis-commander:latest
+    image: rediscommander/redis-commander:0.8.1
     container_name: mex-redis-commander
     restart: unless-stopped
     ports:
@@ -137,6 +170,16 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'wget --spider -q http://localhost:8081 || exit 1']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     profiles:
       - tools
     networks:
@@ -147,20 +190,25 @@ services:
   # ===========================================
 
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v2.54.0
     container_name: mex-prometheus
     restart: unless-stopped
     ports:
       - '9090:9090'
     volumes:
       - ./infrastructure/docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     profiles:
       - monitoring
     networks:
       - mex-network
 
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:11.4.0
     container_name: mex-grafana
     restart: unless-stopped
     ports:
@@ -170,13 +218,18 @@ services:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
     volumes:
       - grafana_data:/var/lib/grafana
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     profiles:
       - monitoring
     networks:
       - mex-network
 
   jaeger:
-    image: jaegertracing/all-in-one:latest
+    image: jaegertracing/all-in-one:1.62
     container_name: mex-jaeger
     restart: unless-stopped
     ports:
@@ -184,6 +237,11 @@ services:
       - '4318:4318'
     environment:
       COLLECTOR_OTLP_ENABLED: 'true'
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     profiles:
       - monitoring
     networks:

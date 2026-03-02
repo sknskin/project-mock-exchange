@@ -22,7 +22,7 @@ mkdir -p "$BACKUP_DIR"
 echo "[$(date)] Starting database backup..."
 
 # pg_dump + gzip
-PGPASSWORD="${POSTGRES_PASSWORD:-postgres}" pg_dump \
+PGPASSWORD="${POSTGRES_PASSWORD:?POSTGRES_PASSWORD env required}" pg_dump \
   -h "$POSTGRES_HOST" \
   -p "$POSTGRES_PORT" \
   -U "$POSTGRES_USER" \
