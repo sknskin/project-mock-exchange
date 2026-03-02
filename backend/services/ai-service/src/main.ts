@@ -11,6 +11,12 @@ import { AppModule } from './app.module';
 
 async function bootstrap() {
   const logger = new Logger('AiService');
+
+  if (!process.env.OPENAI_API_KEY && !process.env.ANTHROPIC_API_KEY) {
+    logger.error('Missing required environment variable: OPENAI_API_KEY or ANTHROPIC_API_KEY');
+    process.exit(1);
+  }
+
   const app = await NestFactory.create(AppModule);
 
   app.useGlobalPipes(

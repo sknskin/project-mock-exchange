@@ -18,6 +18,15 @@ import { AppModule } from './app.module';
 
 async function bootstrap() {
   const logger = new Logger('MarketDataService');
+
+  const requiredEnvVars = ['MARKET_DATA_DATABASE_URL'];
+  for (const envVar of requiredEnvVars) {
+    if (!process.env[envVar]) {
+      logger.error(`Missing required environment variable: ${envVar}`);
+      process.exit(1);
+    }
+  }
+
   const app = await NestFactory.create(AppModule);
 
   app.useGlobalPipes(
