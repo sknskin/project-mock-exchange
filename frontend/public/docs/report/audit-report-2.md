@@ -27,15 +27,15 @@
 
 ### 2.1 발견된 보안 이슈
 
-| # | 항목 | 위험도 | 파일 | 상태 |
-|---|------|--------|------|------|
-| 1 | Docker Compose DB 비밀번호 하드코딩 | 상 | docker-compose.yml:14-17 | ✅ 수정 완료 |
-| 2 | WebSocket CORS 검증 미적용 | 중 | price.gateway.ts, chat.gateway.ts | ✅ 수정 완료 |
-| 3 | 내부 서비스 엔드포인트 Rate Limiting 부재 | 중 | internal.controller.ts | ⏭️ 스킵 — InternalAuthGuard로 충분, 과도한 제한은 서비스 간 통신에 부작용 |
-| 4 | 이메일 서비스 민감 데이터 로그 노출 | 중 | email.service.ts:66 | ✅ 수정 완료 |
-| 5 | 채팅 참여자 권한 검증 부족 | 중 | chat.service.ts:357 | ✅ 수정 완료 |
-| 6 | Next.js 보안 헤더 미적용 | 중 | next.config.ts | ✅ 수정 완료 |
-| 7 | Docker 이미지 버전 미고정 (`:latest`) | 중 | docker-compose.yml | ✅ 수정 완료 |
+| # | 항목 | 위험도 | 상태 |
+|---|------|--------|------|
+| 1 | Docker Compose DB 비밀번호 하드코딩 | 상 | ✅ 수정 완료 |
+| 2 | WebSocket CORS 검증 미적용 | 중 | ✅ 수정 완료 |
+| 3 | 내부 서비스 Rate Limiting 부재 | 중 | ⏭️ 스킵 |
+| 4 | 이메일 민감 데이터 로그 노출 | 중 | ✅ 수정 완료 |
+| 5 | 채팅 참여자 권한 검증 부족 | 중 | ✅ 수정 완료 |
+| 6 | Next.js 보안 헤더 미적용 | 중 | ✅ 수정 완료 |
+| 7 | Docker 이미지 버전 미고정 | 중 | ✅ 수정 완료 |
 
 ### 2.2 1차 대비 개선 현황
 
@@ -50,12 +50,12 @@
 
 ### 3.1 빈 catch 블록 (Silent Failures)
 
-| # | 항목 | 위험도 | 파일 | 상태 |
-|---|------|--------|------|------|
-| 8 | 가격 알림 에러 무시 | 중 | price-subscriber.service.ts:76,148 | ✅ 수정 완료 — logger.warn 추가 |
-| 9 | 주문 프록시 알림 실패 무시 | 중 | order-proxy.controller.ts:53,96 | ✅ 수정 완료 — logger.warn 추가 |
-| 10 | 로그인 로그 생성 실패 무시 | 하 | auth.service.ts:256 | ✅ 수정 완료 — logger.warn 추가 |
-| 11 | 시세 데이터 발행 실패 무시 | 중 | market-data.service.ts:128 | ✅ 수정 완료 — logger.warn 추가 |
+| # | 항목 | 위험도 | 상태 |
+|---|------|--------|------|
+| 8 | 가격 알림 에러 무시 | 중 | ✅ logger.warn 추가 |
+| 9 | 주문 프록시 알림 실패 무시 | 중 | ✅ logger.warn 추가 |
+| 10 | 로그인 로그 생성 실패 무시 | 하 | ✅ logger.warn 추가 |
+| 11 | 시세 데이터 발행 실패 무시 | 중 | ✅ logger.warn 추가 |
 
 ---
 
