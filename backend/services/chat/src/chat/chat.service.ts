@@ -354,7 +354,16 @@ export class ChatService {
     return { success: true, systemMessage };
   }
 
-  async kickUser(roomId: string, targetUserId: string) {
+  async kickUser(roomId: string, targetUserId: string, requesterId?: string) {
+    // 방 생성자만 강퇴 가능 (Only room creator can kick users)
+    if (requesterId) {
+      const room = await this.prisma.room.findUnique({ where: { id: roomId } });
+      if (!room) throw new NotFoundException('Room not found');
+      if (room.createdBy !== requesterId) {
+        throw new ForbiddenException('Only the room creator can kick users');
+      }
+    }
+
     const participant = await this.prisma.participant.findFirst({
       where: { roomId, userId: targetUserId, leftAt: null },
     });

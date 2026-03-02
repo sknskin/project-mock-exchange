@@ -25,7 +25,7 @@ const MAX_ANON_SUBSCRIPTIONS = 5;
 @WebSocketGateway({
   namespace: '/prices',
   cors: {
-    origin: process.env.CORS_ORIGIN || 'http://localhost:4000',
+    origin: (process.env.CORS_ORIGIN || 'http://localhost:4000').split(','),
     credentials: true,
   },
 })

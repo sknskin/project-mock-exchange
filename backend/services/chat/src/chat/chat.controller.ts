@@ -44,7 +44,8 @@ export class ChatController {
     @Headers('x-participant-usernames') participantUsernamesHeader?: string,
     @Headers('x-participant-names') participantNamesHeader?: string,
   ) {
-    const decodedName = name ? decodeURIComponent(name) : '';
+    let decodedName = '';
+    try { decodedName = name ? decodeURIComponent(name).slice(0, 100) : ''; } catch { decodedName = ''; }
     let participantUsernames: Record<string, string> = {};
     let participantNames: Record<string, string> = {};
     if (participantUsernamesHeader) {
@@ -84,7 +85,8 @@ export class ChatController {
     @Headers('x-user-role') role: string,
     @Body() dto: SendMessageDto,
   ) {
-    const decodedName = name ? decodeURIComponent(name) : '';
+    let decodedName = '';
+    try { decodedName = name ? decodeURIComponent(name).slice(0, 100) : ''; } catch { decodedName = ''; }
     const message = await this.chatService.sendMessage(roomId, userId, username, dto, decodedName, role);
     return { success: true, data: message };
   }
@@ -121,9 +123,10 @@ export class ChatController {
   @Post('rooms/:id/kick')
   async kickUser(
     @Param('id') roomId: string,
+    @Headers('x-user-id') userId: string,
     @Body() body: { targetUserId: string },
   ) {
-    const result = await this.chatService.kickUser(roomId, body.targetUserId);
+    const result = await this.chatService.kickUser(roomId, body.targetUserId, userId);
     return { success: true, data: result };
   }
 

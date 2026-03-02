@@ -61,11 +61,14 @@ export class EmailService {
         html: options.html,
       });
 
+      const maskedTo = options.to.replace(/^(.)(.*)(@.*)$/, (_, first, middle, domain) =>
+        `${first}${'*'.repeat(Math.min(middle.length, 3))}${domain}`,
+      );
       if (info.message) {
-        // Mock transport returns JSON
-        this.logger.debug(`[MOCK EMAIL] ${JSON.stringify(JSON.parse(info.message), null, 2)}`);
+        // Mock transport returns JSON — mask recipient in log
+        this.logger.debug(`[MOCK EMAIL] sent to ${maskedTo}`);
       } else {
-        this.logger.log(`Email sent to ${options.to}: ${info.messageId}`);
+        this.logger.log(`Email sent to ${maskedTo}: ${info.messageId}`);
       }
 
       return true;
