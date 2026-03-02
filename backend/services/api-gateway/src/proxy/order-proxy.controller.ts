@@ -20,6 +20,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { Request, Response } from 'express';
 import { ProxyService } from './proxy.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -35,6 +36,7 @@ export class OrderProxyController {
 
   @Post()
   @UseGuards(JwtAuthGuard)
+  @Throttle({ default: { ttl: 60000, limit: 60 } })
   @ApiBearerAuth()
   @ApiOperation({ summary: '주문 생성', description: '시장가/지정가/손절/익절 주문을 생성합니다' })
   @ApiResponse({ status: 201, description: '주문 접수 성공' })

@@ -35,7 +35,7 @@ export class ProxyService {
         name,
         axios.create({
           baseURL,
-          timeout: 10000,
+          timeout: 5000,
           headers: {
             'Content-Type': 'application/json',
             'x-internal-token': internalToken,

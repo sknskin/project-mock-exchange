@@ -21,6 +21,8 @@ import { Server, Socket } from 'socket.io';
 
 /** 인증되지 않은 클라이언트당 최대 구독 채널 수 (Max subscriptions per unauthenticated client) */
 const MAX_ANON_SUBSCRIPTIONS = 5;
+/** IP당 최대 익명 연결 수 (Max anonymous connections per IP) */
+const MAX_ANON_CONNECTIONS_PER_IP = 10;
 
 @WebSocketGateway({
   namespace: '/prices',
@@ -36,6 +38,8 @@ export class PriceGateway implements OnGatewayConnection, OnGatewayDisconnect, O
   private readonly logger = new Logger(PriceGateway.name);
   /** 클라이언트별 구독 채널 수 추적 (Track subscription count per client) */
   private clientSubscriptions = new Map<string, number>();
+  /** IP별 익명 연결 수 추적 (Track anonymous connection count per IP) */
+  private anonConnectionsByIp = new Map<string, number>();
 
   constructor(private readonly jwtService: JwtService) {}
 
@@ -47,6 +51,8 @@ export class PriceGateway implements OnGatewayConnection, OnGatewayDisconnect, O
   }
 
   async handleConnection(client: Socket) {
+    const clientIp = client.handshake.address || 'unknown';
+
     try {
       const token =
         (client.handshake.auth?.token as string) ||
@@ -58,12 +64,27 @@ export class PriceGateway implements OnGatewayConnection, OnGatewayDisconnect, O
         client.data.authenticated = true;
         this.logger.log(`Authenticated client connected: ${client.id} (user: ${payload.sub})`);
       } else {
+        // IP별 익명 연결 수 제한 — 리소스 소진 방지 / Limit anonymous connections per IP
+        const anonCount = this.anonConnectionsByIp.get(clientIp) || 0;
+        if (anonCount >= MAX_ANON_CONNECTIONS_PER_IP) {
+          this.logger.warn(`Anonymous connection limit exceeded for IP ${clientIp}, disconnecting ${client.id}`);
+          client.disconnect(true);
+          return;
+        }
+        this.anonConnectionsByIp.set(clientIp, anonCount + 1);
         client.data.authenticated = false;
+        client.data.clientIp = clientIp;
         this.logger.log(`Anonymous client connected: ${client.id}`);
       }
     } catch {
-      // 토큰이 유효하지 않으면 익명 클라이언트로 처리 (Invalid token → treat as anonymous)
+      const anonCount = this.anonConnectionsByIp.get(clientIp) || 0;
+      if (anonCount >= MAX_ANON_CONNECTIONS_PER_IP) {
+        client.disconnect(true);
+        return;
+      }
+      this.anonConnectionsByIp.set(clientIp, anonCount + 1);
       client.data.authenticated = false;
+      client.data.clientIp = clientIp;
       this.logger.warn(`Client ${client.id} provided invalid token, treating as anonymous`);
     }
 
@@ -72,6 +93,16 @@ export class PriceGateway implements OnGatewayConnection, OnGatewayDisconnect, O
 
   handleDisconnect(client: Socket) {
     this.clientSubscriptions.delete(client.id);
+    // 익명 연결 카운트 감소 / Decrement anonymous connection count
+    if (!client.data.authenticated && client.data.clientIp) {
+      const ip = client.data.clientIp as string;
+      const count = this.anonConnectionsByIp.get(ip) || 1;
+      if (count <= 1) {
+        this.anonConnectionsByIp.delete(ip);
+      } else {
+        this.anonConnectionsByIp.set(ip, count - 1);
+      }
+    }
     this.logger.log(`Client disconnected: ${client.id}`);
   }
 

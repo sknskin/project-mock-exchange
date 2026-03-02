@@ -121,4 +121,4 @@ jobs:
 
       - name: Audit dependencies
         run: pnpm audit --prod
-        continue-on-error: true
+        continue-on-error: false

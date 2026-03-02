@@ -22,7 +22,7 @@ export class AuthProxyController {
   ) {}
 
   @Post('register')
-  @Throttle({ default: { ttl: 60000, limit: 5 } })
+  @Throttle({ default: { ttl: 86400000, limit: 3 } })
   @ApiOperation({ summary: '회원가입', description: '새 사용자 계정을 생성합니다' })
   @ApiResponse({ status: 201, description: '회원가입 성공' })
   @ApiResponse({ status: 400, description: '유효성 검사 실패' })
@@ -46,7 +46,7 @@ export class AuthProxyController {
   }
 
   @Post('login')
-  @Throttle({ default: { ttl: 60000, limit: 10 } })
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '로그인', description: '이메일/아이디와 비밀번호로 로그인합니다 (SMS 인증 필요)' })
   @ApiResponse({ status: 200, description: 'SMS 인증 요청 (sessionId + maskedPhone)' })

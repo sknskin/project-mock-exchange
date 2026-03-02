@@ -38,9 +38,15 @@ async function bootstrap() {
           scriptSrc: ["'self'"],
           styleSrc: ["'self'", "'unsafe-inline'"],
           imgSrc: ["'self'", 'data:', 'https://cdn.simpleicons.org'],
+          connectSrc: ["'self'", 'ws:', 'wss:', 'https://api.frankfurter.app'],
           objectSrc: ["'none'"],
           frameAncestors: ["'none'"],
         },
+      },
+      hsts: {
+        maxAge: 31536000,
+        includeSubDomains: true,
+        preload: true,
       },
     }),
   );

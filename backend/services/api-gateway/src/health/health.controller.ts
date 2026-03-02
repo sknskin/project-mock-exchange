@@ -8,7 +8,7 @@
 import { Controller, Get, Param, Req, NotFoundException } from '@nestjs/common';
 import { Request } from 'express';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { HealthCheck, HealthCheckService } from '@nestjs/terminus';
+import { HealthCheck, HealthCheckService, HealthIndicatorResult } from '@nestjs/terminus';
 import { ConfigService } from '@nestjs/config';
 import { ProxyService } from '../proxy/proxy.service';
 
@@ -57,10 +57,15 @@ export class HealthController {
 
   @Get('ready')
   @HealthCheck()
-  @ApiOperation({ summary: 'Readiness 체크', description: '트래픽을 받을 준비가 됐는지 확인합니다' })
+  @ApiOperation({ summary: 'Readiness 체크', description: '트래픽을 받을 준비가 됐는지 확인합니다 (핵심 서비스 상태 포함)' })
   @ApiResponse({ status: 200, description: '서비스 준비 완료' })
   ready() {
-    return this.health.check([]);
+    return this.health.check([
+      // 핵심 다운스트림 서비스 헬스 프로브 / Probe critical downstream services
+      () => this.probeDownstreamService('user-auth'),
+      () => this.probeDownstreamService('market-data'),
+      () => this.probeDownstreamService('order-engine'),
+    ]);
   }
 
   @Get('startup')
@@ -148,6 +153,24 @@ export class HealthController {
       stats,
       checkedAt: new Date().toISOString(),
     };
+  }
+
+  /**
+   * 다운스트림 서비스에 /health/live 프로브를 보내 상태를 확인합니다.
+   *
+   * Probe a downstream service via /health/live and return a health indicator result.
+   */
+  private async probeDownstreamService(service: string): Promise<HealthIndicatorResult> {
+    try {
+      await this.proxyService.forward(service, {
+        method: 'GET',
+        url: '/health/live',
+        timeout: 3000,
+      });
+      return { [service]: { status: 'up' } };
+    } catch {
+      return { [service]: { status: 'down' } };
+    }
   }
 
   private resolveService(service: string): string {
