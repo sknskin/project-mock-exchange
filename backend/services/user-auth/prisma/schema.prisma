@@ -193,6 +193,7 @@ model PriceAlert {
 
   @@index([userId])
   @@index([isActive, symbol])
+  @@index([userId, symbol, isActive])
   @@map("price_alerts")
 }
 
