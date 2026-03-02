@@ -5,13 +5,14 @@
  * @file Withdraw DTO
  * @description Data Transfer Object for validating withdraw requests
  */
-import { IsNotEmpty, IsNumber, IsPositive } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsPositive, Max } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class WithdrawDto {
   @IsNotEmpty()
   @IsNumber()
   @IsPositive()
+  @Max(1000000000, { message: 'Maximum withdrawal amount is 1,000,000,000' })
   @Type(() => Number)
   amount: number;
 }

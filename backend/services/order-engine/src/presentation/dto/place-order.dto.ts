@@ -5,7 +5,7 @@
  * @file Place Order DTO
  * @description Data Transfer Object for validating order placement requests
  */
-import { IsString, IsEnum, IsOptional, IsNotEmpty, Matches } from 'class-validator';
+import { IsString, IsEnum, IsOptional, IsNotEmpty, Matches, MaxLength } from 'class-validator';
 
 export enum TriggerType {
   STOP_LOSS = 'STOP_LOSS',
@@ -15,6 +15,8 @@ export enum TriggerType {
 export class PlaceOrderRequestDto {
   @IsString()
   @IsNotEmpty()
+  @MaxLength(20)
+  @Matches(/^[A-Z0-9-]{1,20}$/, { message: 'symbol must be uppercase alphanumeric with hyphens, max 20 chars' })
   symbol: string;
 
   @IsEnum(['BUY', 'SELL'])
@@ -25,19 +27,23 @@ export class PlaceOrderRequestDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(50)
   @Matches(/^\d+(\.\d+)?$/, { message: 'price must be a valid decimal string' })
   price?: string;
 
   @IsString()
+  @MaxLength(50)
   @Matches(/^\d+(\.\d+)?$/, { message: 'quantity must be a valid decimal string' })
   quantity: string;
 
   @IsString()
   @IsNotEmpty()
+  @MaxLength(100)
   idempotencyKey: string;
 
   @IsOptional()
   @IsString()
+  @MaxLength(50)
   @Matches(/^\d+(\.\d+)?$/, { message: 'triggerPrice must be a valid decimal string' })
   triggerPrice?: string;
 
