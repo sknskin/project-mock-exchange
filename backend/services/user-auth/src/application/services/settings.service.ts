@@ -19,13 +19,15 @@ export class SettingsService {
   async bulkUpdate(data: Record<string, string>): Promise<Record<string, string>> {
     const entries = Object.entries(data);
 
-    for (const [key, value] of entries) {
-      await this.prisma.systemSetting.upsert({
-        where: { key },
-        update: { value },
-        create: { key, value },
-      });
-    }
+    await this.prisma.$transaction(
+      entries.map(([key, value]) =>
+        this.prisma.systemSetting.upsert({
+          where: { key },
+          update: { value },
+          create: { key, value },
+        }),
+      ),
+    );
 
     this.logger.log(`System settings updated: ${entries.map(([k]) => k).join(', ')}`);
     return this.getAll();

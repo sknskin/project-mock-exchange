@@ -144,7 +144,7 @@ export class AnnouncementService {
       createdAt: announcement.createdAt,
       updatedAt: announcement.updatedAt,
       editedAt: announcement.editedAt,
-      comments: announcement.comments.map((c: any) => ({
+      comments: announcement.comments.map((c: { id: string; content: string; author: { id: string; username: string; name: string | null }; _count: { likes: number }; likes?: { id: string }[]; createdAt: Date; updatedAt: Date; replies: { id: string; content: string; author: { id: string; username: string; name: string | null }; _count: { likes: number }; likes?: { id: string }[]; createdAt: Date; updatedAt: Date }[] }) => ({
         id: c.id,
         content: c.content,
         author: c.author,
@@ -152,7 +152,7 @@ export class AnnouncementService {
         isLiked: c.likes ? c.likes.length > 0 : false,
         createdAt: c.createdAt,
         updatedAt: c.updatedAt,
-        replies: c.replies.map((r: any) => ({
+        replies: c.replies.map((r) => ({
           id: r.id,
           content: r.content,
           author: r.author,
@@ -224,20 +224,24 @@ export class AnnouncementService {
     });
 
     // 모든 활성 사용자에게 새 공지사항 알림 (Notify all active users about new announcement)
-    const users = await this.prisma.user.findMany({
-      where: { isActive: true, id: { not: user.id } },
-      select: { id: true },
-    });
-    if (users.length > 0) {
-      await this.prisma.notification.createMany({
-        data: users.map((u) => ({
-          userId: u.id,
-          type: 'ANNOUNCEMENT_NEW' as const,
-          title: '새 공지사항',
-          message: title,
-          link: `/announcements/${announcement.id}`,
-        })),
+    try {
+      const users = await this.prisma.user.findMany({
+        where: { isActive: true, id: { not: user.id } },
+        select: { id: true },
       });
+      if (users.length > 0) {
+        await this.prisma.notification.createMany({
+          data: users.map((u) => ({
+            userId: u.id,
+            type: 'ANNOUNCEMENT_NEW' as const,
+            title: '새 공지사항',
+            message: title,
+            link: `/announcements/${announcement.id}`,
+          })),
+        });
+      }
+    } catch (e) {
+      this.logger.warn(`Notification creation failed: ${e instanceof Error ? e.message : e}`);
     }
 
     this.logger.log(`Announcement created: ${title} by ${user.username}`);

@@ -15,6 +15,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
+import { ConfigService } from '@nestjs/config';
 import { Request, Response } from 'express';
 import { ProxyService } from './proxy.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -22,10 +24,15 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 @ApiTags('Statistics')
 @Controller('api/statistics')
 export class StatisticsProxyController {
-  constructor(private readonly proxyService: ProxyService) {}
+  constructor(
+    private readonly proxyService: ProxyService,
+    private readonly configService: ConfigService,
+  ) {}
 
   // Public endpoint for page view tracking
   @Post('page-view')
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { ttl: 60000, limit: 30 } })
   @ApiOperation({ summary: '페이지 뷰 기록', description: '페이지 방문을 기록합니다. 인증 불필요.' })
   @ApiResponse({ status: 201, description: '페이지 뷰 기록 성공' })
   async trackPageView(@Body() body: unknown, @Res() res: Response) {
@@ -33,6 +40,9 @@ export class StatisticsProxyController {
       method: 'POST',
       url: '/statistics/page-view',
       data: body,
+      headers: {
+        'x-internal-token': this.configService.get('INTERNAL_SERVICE_SECRET'),
+      },
     });
     return res.status(result.status).json(result.data);
   }

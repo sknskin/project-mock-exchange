@@ -73,8 +73,11 @@ export class EmailService {
 
       return true;
     } catch (error) {
+      const maskedTo = options.to.replace(/^(.)(.*)(@.*)$/, (_, first, middle, domain) =>
+        `${first}${'*'.repeat(Math.min(middle.length, 3))}${domain}`,
+      );
       this.logger.error(
-        `Failed to send email to ${options.to}: ${(error as Error).message}`,
+        `Failed to send email to ${maskedTo}: ${(error as Error).message}`,
       );
       return false;
     }

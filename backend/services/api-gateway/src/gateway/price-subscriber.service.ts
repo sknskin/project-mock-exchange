@@ -111,8 +111,8 @@ export class PriceSubscriberService implements OnModuleInit, OnModuleDestroy {
         bySymbol.get(alert.symbol)!.push(alert);
       }
       this.alertsBySymbol = bySymbol;
-    } catch {
-      // 최선의 노력: 기존 캐시 유지 (Best-effort: keep existing cache)
+    } catch (e) {
+      this.logger.warn('refreshAlerts failed', e instanceof Error ? e.message : e);
     }
   }
 

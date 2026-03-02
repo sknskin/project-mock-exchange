@@ -7,13 +7,20 @@
  */
 import {
   Injectable,
+  Inject,
   BadRequestException,
+  ForbiddenException,
   Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as OTPAuth from 'otpauth';
 import { createCipheriv, createDecipheriv, randomBytes, createHash } from 'crypto';
+import Redis from 'ioredis';
 import { PrismaService } from '../../infrastructure/persistence/prisma/prisma.service';
+import { REDIS_CLIENT } from '../../infrastructure/redis/redis.module';
+
+const TOTP_MAX_ATTEMPTS = 5;
+const TOTP_LOCKOUT_SECONDS = 300; // 5 minutes
 
 @Injectable()
 export class TotpService {
@@ -23,6 +30,7 @@ export class TotpService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
+    @Inject(REDIS_CLIENT) private readonly redis: Redis,
   ) {
     const secret = this.configService.getOrThrow<string>('JWT_SECRET');
     this.encryptionKey = createHash('sha256').update(secret).digest();
@@ -60,6 +68,13 @@ export class TotpService {
   }
 
   async verify(userId: string, code: string): Promise<boolean> {
+    // Brute force protection
+    const attemptsKey = `totp:attempts:${userId}`;
+    const attempts = await this.redis.get(attemptsKey);
+    if (attempts && parseInt(attempts) >= TOTP_MAX_ATTEMPTS) {
+      throw new ForbiddenException('Too many TOTP attempts. Try again in 5 minutes.');
+    }
+
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: { totpSecret: true, totpEnabled: true },
@@ -77,7 +92,19 @@ export class TotpService {
     });
 
     const delta = totp.validate({ token: code, window: 1 });
-    return delta !== null;
+    if (delta !== null) {
+      // Success: reset counter
+      await this.redis.del(attemptsKey);
+      return true;
+    }
+
+    // Failure: increment counter
+    const newCount = await this.redis.incr(attemptsKey);
+    if (newCount === 1) {
+      await this.redis.expire(attemptsKey, TOTP_LOCKOUT_SECONDS);
+    }
+    this.logger.warn(`TOTP verification failed for user ${userId.substring(0, 8)}... (attempt ${newCount}/${TOTP_MAX_ATTEMPTS})`);
+    return false;
   }
 
   async enable(userId: string, code: string): Promise<void> {

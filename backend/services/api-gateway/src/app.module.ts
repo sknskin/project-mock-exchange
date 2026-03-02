@@ -28,11 +28,11 @@ import { RedisModule } from './redis/redis.module';
     }),
     ThrottlerModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: () => ({
+      useFactory: (config: ConfigService) => ({
         throttlers: [
           {
-            ttl: 60000, // 1 minute window
-            limit: 100, // 100 requests per minute
+            ttl: config.get<number>('THROTTLE_TTL', 60000),
+            limit: config.get<number>('THROTTLE_LIMIT', 100),
           },
         ],
       }),

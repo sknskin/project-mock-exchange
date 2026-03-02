@@ -13,7 +13,7 @@ export class SettingsProxyController {
     const result = await this.proxyService.forward('user-auth', {
       method: 'GET',
       url: '/settings',
-      headers: req.headers,
+      headers: { authorization: req.headers.authorization },
     });
     res.status(result.status).json(result.data);
   }
@@ -23,7 +23,7 @@ export class SettingsProxyController {
     const result = await this.proxyService.forward('user-auth', {
       method: 'PUT',
       url: '/settings',
-      headers: req.headers,
+      headers: { authorization: req.headers.authorization },
       data: body,
     });
     res.status(result.status).json(result.data);

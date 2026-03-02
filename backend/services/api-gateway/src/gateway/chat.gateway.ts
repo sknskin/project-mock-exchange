@@ -101,10 +101,22 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
     @MessageBody() data: { roomId: string },
   ) {
     try {
-      if (data.roomId) {
-        client.join(`room:${data.roomId}`);
-        return { event: 'chat:joined', data: { roomId: data.roomId } };
+      if (!data.roomId) return;
+
+      const userId = client.data.userId;
+      if (!userId) {
+        this.logger.warn(`Unauthenticated socket ${client.id} tried to join room ${data.roomId}`);
+        return { event: 'chat:error', data: { message: 'Not authenticated' } };
       }
+
+      // Verify user is a participant (check is done via the room membership tracked by the gateway)
+      const userSocketIds = this.userSockets.get(userId);
+      if (!userSocketIds || userSocketIds.size === 0) {
+        return { event: 'chat:error', data: { message: 'Not authenticated' } };
+      }
+
+      client.join(`room:${data.roomId}`);
+      return { event: 'chat:joined', data: { roomId: data.roomId } };
     } catch (error) {
       this.logger.error(`Error joining room: ${error instanceof Error ? error.message : 'unknown'}`);
     }

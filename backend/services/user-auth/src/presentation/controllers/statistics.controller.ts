@@ -14,11 +14,37 @@ import {
   UseGuards,
   ForbiddenException,
 } from '@nestjs/common';
+import { IsString, IsOptional, MaxLength, Matches, IsInt, Min, Max } from 'class-validator';
+import { Type } from 'class-transformer';
 import { JwtAuthGuard } from '../../infrastructure/config/jwt-auth.guard';
 import { CurrentUser } from '../../infrastructure/config/current-user.decorator';
 import { UserDto, USER_ROLE } from '@virtuex/common';
 import { PrismaService } from '../../infrastructure/persistence/prisma/prisma.service';
 import { InternalAuthGuard } from '../../common/guards/internal-auth.guard';
+
+class TrackPageViewDto {
+  @IsString()
+  @MaxLength(500)
+  @Matches(/^\/[a-zA-Z0-9\-_\/\.\?\&\=\%\#]*$/, { message: 'Invalid path format' })
+  path: string;
+
+  @IsOptional()
+  @IsString()
+  userId?: string;
+}
+
+class PeriodQueryDto {
+  @IsOptional()
+  @IsString()
+  period?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(365)
+  days?: number;
+}
 
 @UseGuards(InternalAuthGuard)
 @Controller('statistics')
@@ -27,7 +53,7 @@ export class StatisticsController {
 
   // Public endpoint: track page view
   @Post('page-view')
-  async trackPageView(@Body() body: { path: string; userId?: string }) {
+  async trackPageView(@Body() body: TrackPageViewDto) {
     await this.prisma.pageView.create({
       data: { path: body.path, userId: body.userId || null },
     });
@@ -68,11 +94,11 @@ export class StatisticsController {
   @UseGuards(JwtAuthGuard)
   async registrationStats(
     @CurrentUser() user: UserDto,
-    @Query('period') period: string = 'daily',
-    @Query('days') days: string = '30',
+    @Query() query: PeriodQueryDto,
   ) {
     this.assertAdmin(user);
-    const daysNum = parseInt(days) || 30;
+    const period = query.period || 'daily';
+    const daysNum = Math.min(query.days || 30, 365);
     const since = new Date(Date.now() - daysNum * 86400000);
 
     const users = await this.prisma.user.findMany({
@@ -93,11 +119,11 @@ export class StatisticsController {
   @UseGuards(JwtAuthGuard)
   async approvedRegistrationStats(
     @CurrentUser() user: UserDto,
-    @Query('period') period: string = 'daily',
-    @Query('days') days: string = '30',
+    @Query() query: PeriodQueryDto,
   ) {
     this.assertAdmin(user);
-    const daysNum = parseInt(days) || 30;
+    const period = query.period || 'daily';
+    const daysNum = Math.min(query.days || 30, 365);
     const since = new Date(Date.now() - daysNum * 86400000);
 
     const users = await this.prisma.user.findMany({
@@ -123,11 +149,11 @@ export class StatisticsController {
   @UseGuards(JwtAuthGuard)
   async loginStats(
     @CurrentUser() user: UserDto,
-    @Query('period') period: string = 'daily',
-    @Query('days') days: string = '30',
+    @Query() query: PeriodQueryDto,
   ) {
     this.assertAdmin(user);
-    const daysNum = parseInt(days) || 30;
+    const period = query.period || 'daily';
+    const daysNum = Math.min(query.days || 30, 365);
     const since = new Date(Date.now() - daysNum * 86400000);
 
     const logs = await this.prisma.loginLog.findMany({
@@ -148,11 +174,11 @@ export class StatisticsController {
   @UseGuards(JwtAuthGuard)
   async pageViewStats(
     @CurrentUser() user: UserDto,
-    @Query('period') period: string = 'daily',
-    @Query('days') days: string = '30',
+    @Query() query: PeriodQueryDto,
   ) {
     this.assertAdmin(user);
-    const daysNum = parseInt(days) || 30;
+    const period = query.period || 'daily';
+    const daysNum = Math.min(query.days || 30, 365);
     const since = new Date(Date.now() - daysNum * 86400000);
 
     const views = await this.prisma.pageView.findMany({
@@ -183,10 +209,10 @@ export class StatisticsController {
   @UseGuards(JwtAuthGuard)
   async announcementStats(
     @CurrentUser() user: UserDto,
-    @Query('days') days: string = '30',
+    @Query() query: PeriodQueryDto,
   ) {
     this.assertAdmin(user);
-    const daysNum = parseInt(days) || 30;
+    const daysNum = Math.min(query.days || 30, 365);
     const since = new Date(Date.now() - daysNum * 86400000);
 
     const [announcements, comments] = await Promise.all([
@@ -290,10 +316,10 @@ export class StatisticsController {
   @UseGuards(JwtAuthGuard)
   async likeStats(
     @CurrentUser() user: UserDto,
-    @Query('days') days: string = '30',
+    @Query() query: PeriodQueryDto,
   ) {
     this.assertAdmin(user);
-    const daysNum = parseInt(days) || 30;
+    const daysNum = Math.min(query.days || 30, 365);
     const since = new Date(Date.now() - daysNum * 86400000);
 
     const [announcementLikes, commentLikes] = await Promise.all([

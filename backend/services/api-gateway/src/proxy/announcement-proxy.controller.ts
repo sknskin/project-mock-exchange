@@ -18,6 +18,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
+import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
 import { Request, Response } from 'express';
 import { ProxyService } from './proxy.service';
 import { JwtAuthGuard, Public, OptionalAuth } from '../auth/jwt-auth.guard';
@@ -228,6 +229,8 @@ export class AnnouncementProxyController {
   // 조회수 (View count)
   @Post(':id/view')
   @Public()
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
   @ApiOperation({ summary: '조회수 증가', description: '공지사항의 조회수를 1 증가시킵니다. 인증 불필요' })
   @ApiParam({ name: 'id', description: '공지사항 ID' })
   @ApiResponse({ status: 200, description: '조회수 증가 성공' })
