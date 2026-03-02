@@ -81,6 +81,22 @@ export default function OrderForm({
     }
   }, [currentPrice, symbol, currencyMode, rate]);
 
+  // 통화 모드 변경 시 트리거 가격도 동기화 (Sync triggerPrice when currency mode changes)
+  const [prevCurrencyMode, setPrevCurrencyMode] = useState(currencyMode);
+  const [prevRate, setPrevRate] = useState(rate);
+  useEffect(() => {
+    if (triggerPrice && (prevCurrencyMode !== currencyMode || prevRate !== rate)) {
+      const parsedTrigger = parseFloat(triggerPrice);
+      if (parsedTrigger > 0 && Number.isFinite(parsedTrigger)) {
+        const usdValue = toUsdPrice(parsedTrigger, symbol, prevCurrencyMode, prevRate);
+        const newDisplay = toDisplayPrice(usdValue, symbol, currencyMode, rate);
+        setTriggerPrice(newDisplay.toString());
+      }
+    }
+    setPrevCurrencyMode(currencyMode);
+    setPrevRate(rate);
+  }, [currencyMode, rate, symbol, triggerPrice, prevCurrencyMode, prevRate]);
+
   const typeTabs = useMemo(
     () => typeTabKeys.map((i) => ({ key: i.key, label: t(i.i18nKey) })),
     [t],
@@ -101,13 +117,13 @@ export default function OrderForm({
   const insufficientHoldings = !isBuy && parsedQty > 0 && parsedQty > holdingQty;
   const noHoldings = !isBuy && holdingQty <= 0;
 
-  // 예상 금액 계산 — 표시 통화 기준 (Estimated total in display currency)
+  // 예상 금액 — USD 기준으로 계산, fp()가 통화 변환 담당 (Calculate in USD, let fp() handle display conversion)
   const displayCurrentPrice = toDisplayPrice(safeCurrentPrice, symbol, currencyMode, rate);
-  const estimatedTotal = isConditional
-    ? parsedQty * parseFloat(triggerPrice || '0')
+  const estimatedTotalUsd = isConditional
+    ? parsedQty * toUsdPrice(parseFloat(triggerPrice || '0'), symbol, currencyMode, rate)
     : orderType === 'MARKET'
-      ? parsedQty * displayCurrentPrice
-      : parsedQty * parseFloat(price || '0');
+      ? parsedQty * safeCurrentPrice
+      : parsedQty * toUsdPrice(parseFloat(price || '0'), symbol, currencyMode, rate);
 
   const fp = (p: number) => formatPriceDisplay(p, symbol, currencyMode, rate);
   const currencyLabel = isKRW(symbol) ? 'KRW' : currencyMode === 'krw' ? 'KRW' : 'USD';
@@ -222,7 +238,7 @@ export default function OrderForm({
         <div className="flex justify-between text-[14px]">
           <span className="text-text-tertiary">{t('order.estimatedTotal')}</span>
           <span className="text-text-primary font-bold tabular-nums">
-            {Number.isFinite(estimatedTotal) && estimatedTotal > 0 ? fp(estimatedTotal) : fp(0)}
+            {Number.isFinite(estimatedTotalUsd) && estimatedTotalUsd > 0 ? fp(estimatedTotalUsd) : fp(0)}
           </span>
         </div>
         {portfolio && (

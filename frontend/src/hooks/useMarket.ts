@@ -83,6 +83,7 @@ export function useCandlesticks(
   interval: string = '1m',
   limit: number = 2000,
 ) {
+  // 1m 데이터를 충분히 가져와 클라이언트에서 집계 (Fetch enough 1m data for client-side aggregation)
   const fetchLimit = interval === '1m' ? limit
     : interval === '5m' ? limit * 5
     : interval === '15m' ? limit * 15
@@ -93,11 +94,24 @@ export function useCandlesticks(
   return useQuery<Candlestick[]>({
     queryKey: ['market', 'candlesticks', symbol, interval],
     queryFn: async () => {
+      // 먼저 요청한 interval로 시도, 실패 시 1m 데이터로 집계 (Try requested interval first, fallback to 1m aggregation)
       const { data } = await api.get(
         `/api/market/prices/${symbol}/candlesticks`,
-        { params: { interval: '1m', limit: fetchLimit } },
+        { params: { interval, limit: interval === '1m' ? fetchLimit : limit } },
       );
-      const raw = data.data ?? data;
+      let raw = data.data ?? data;
+
+      // 요청한 interval에 데이터가 없으면 1m 데이터로 재요청하여 집계 (Fallback to 1m data if requested interval is empty)
+      if ((!raw || raw.length === 0) && interval !== '1m') {
+        const fallback = await api.get(
+          `/api/market/prices/${symbol}/candlesticks`,
+          { params: { interval: '1m', limit: fetchLimit } },
+        );
+        raw = fallback.data.data ?? fallback.data;
+      }
+
+      if (!raw || raw.length === 0) return [];
+
       const seen = new Set<number>();
       const candles1m: Candlestick[] = [];
 
@@ -112,12 +126,15 @@ export function useCandlesticks(
         const close = Number(d.closePrice);
         const volume = Number(d.volume);
 
-        // 유효하지 않은 캔들 필터링 / Filter invalid candles
         if (!open || !high || !low || !close || !isFinite(open) || !isFinite(high) || !isFinite(low) || !isFinite(close)) continue;
 
         candles1m.push({ time, open, high, low, close, volume: isFinite(volume) ? volume : 0 });
       }
 
+      // 이미 올바른 interval로 받았으면 집계 불필요 (Skip aggregation if data already in correct interval)
+      if (candles1m.length > 0 && candles1m.length <= limit * 2) {
+        return aggregateCandles(candles1m, interval);
+      }
       return aggregateCandles(candles1m, interval);
     },
     enabled: !!symbol,
