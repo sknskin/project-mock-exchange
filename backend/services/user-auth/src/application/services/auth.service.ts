@@ -32,10 +32,9 @@ import { REDIS_CLIENT } from '../../infrastructure/redis/redis.module';
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
-  private readonly SALT_ROUNDS = 12;
-
-  private readonly LOGIN_SESSION_TTL = 180; // 3분 / 3 minutes
-  private readonly LOGIN_MAX_ATTEMPTS = 5;
+  private readonly SALT_ROUNDS: number;
+  private readonly LOGIN_SESSION_TTL: number;
+  private readonly LOGIN_MAX_ATTEMPTS: number;
 
   constructor(
     @Inject(USER_REPOSITORY)
@@ -45,7 +44,11 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly smsVerificationService: SmsVerificationService,
     @Inject(REDIS_CLIENT) private readonly redis: Redis,
-  ) {}
+  ) {
+    this.SALT_ROUNDS = this.configService.get<number>('SALT_ROUNDS', 12);
+    this.LOGIN_SESSION_TTL = this.configService.get<number>('LOGIN_SESSION_TTL', 180);
+    this.LOGIN_MAX_ATTEMPTS = this.configService.get<number>('LOGIN_MAX_ATTEMPTS', 5);
+  }
 
   async register(params: {
     email: string;

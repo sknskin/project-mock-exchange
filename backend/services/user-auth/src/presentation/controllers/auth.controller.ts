@@ -92,7 +92,7 @@ export class AuthController {
     if (!result.success) {
       return {
         success: false,
-        attemptsLeft: result.attemptsLeft,
+        data: { attemptsLeft: result.attemptsLeft },
         message: result.message,
       };
     }
@@ -184,7 +184,7 @@ export class AuthController {
   async forgotPasswordVerifySms(@Body() dto: ForgotPasswordVerifySmsDto) {
     const result = await this.authService.verifyPasswordResetSms(dto.sessionId, dto.code);
     if (!result.success) {
-      return { success: false, attemptsLeft: result.attemptsLeft, message: result.message };
+      return { success: false, data: { attemptsLeft: result.attemptsLeft }, message: result.message };
     }
     return { success: true };
   }

@@ -28,7 +28,11 @@ export class SmsVerificationService {
     await this.redis.del(`sms:attempts:${phone}`);
 
     // 모의: 실제 SMS 대신 콘솔에 인증코드 출력 / Mock: log code to console instead of sending real SMS
-    this.logger.log(`[MOCK SMS] Verification code for ${phone}: ${code}`);
+    if (process.env.NODE_ENV === 'production') {
+      this.logger.log(`[MOCK SMS] Verification code sent to ${phone}: ****${code.slice(-2)}`);
+    } else {
+      this.logger.log(`[MOCK SMS] Verification code for ${phone}: ${code}`);
+    }
   }
 
   async verifyCode(phone: string, code: string): Promise<boolean> {
