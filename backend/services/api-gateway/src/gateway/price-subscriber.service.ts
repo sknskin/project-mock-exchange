@@ -73,9 +73,9 @@ export class PriceSubscriberService implements OnModuleInit, OnModuleDestroy {
     this.logger.log(`Subscribed to ${this.symbols.length} price channels via Redis PubSub`);
 
     // 시작 시 알림 로드 후 30초마다 갱신 (Load alerts on startup and refresh every 30 seconds)
-    this.refreshAlerts().catch(() => {});
+    this.refreshAlerts().catch((e) => this.logger.warn('Initial refreshAlerts failed', e.message));
     this.alertRefreshInterval = setInterval(() => {
-      this.refreshAlerts().catch(() => {});
+      this.refreshAlerts().catch((e) => this.logger.warn('refreshAlerts failed', e.message));
     }, 30_000);
   }
 
@@ -143,9 +143,15 @@ export class PriceSubscriberService implements OnModuleInit, OnModuleDestroy {
       this.alertsBySymbol.delete(symbol);
     }
 
-    // 트리거된 알림을 비동기로 처리 (Process triggered alerts asynchronously)
+    // 트리거된 알림을 비동기로 처리 — DB 성공 후에만 확정 (Process triggered alerts — only finalize after DB success)
     for (const alert of triggered) {
-      this.handleTriggeredAlert(alert, price).catch(() => {});
+      this.handleTriggeredAlert(alert, price).catch((e) => {
+        this.logger.warn(`handleTriggeredAlert failed for ${alert.id}, re-adding to cache`, e.message);
+        // DB 실패 시 캐시에 복원하여 재시도 가능하게 (Restore to cache on failure for retry)
+        const existing = this.alertsBySymbol.get(symbol) || [];
+        existing.push(alert);
+        this.alertsBySymbol.set(symbol, existing);
+      });
     }
   }
 
@@ -199,7 +205,7 @@ export class PriceSubscriberService implements OnModuleInit, OnModuleDestroy {
           timeout: 5000,
           headers: { 'x-internal-token': this.internalToken },
         },
-      ).catch(() => {});
+      ).catch((e) => this.logger.warn(`Failed to persist notification for alert ${alert.id}`, e.message));
 
       this.logger.log(`Price alert triggered: ${alert.symbol} ${alert.condition} ${alert.targetPrice} for user ${alert.userId}`);
     } catch (error) {

@@ -17,6 +17,7 @@ import {
   Req,
   Res,
   UseGuards,
+  Logger,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { Request, Response } from 'express';
@@ -50,7 +51,7 @@ export class OrderProxyController {
 
     // WebSocket으로 거래 체결 알림 전송 (Send trade execution notification via WebSocket)
     if (result.status < 400 && userId) {
-      this.sendTradeNotification(userId, result.data, req).catch(() => {});
+      this.sendTradeNotification(userId, result.data, req).catch((e) => new Logger('OrderProxy').warn('sendTradeNotification failed', e.message));
     }
 
     return res.status(result.status).json(result.data);
@@ -93,7 +94,7 @@ export class OrderProxyController {
             link: `/orders`,
           },
           headers: { Authorization: req.headers.authorization || '' },
-        }).catch(() => {});
+        }).catch((e) => new Logger('OrderProxy').warn('Notification persist failed', e.message));
       }
     } catch {
       // 최선의 노력 알림 (Best-effort notification)

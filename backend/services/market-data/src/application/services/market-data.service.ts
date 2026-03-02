@@ -125,7 +125,7 @@ export class MarketDataService implements OnModuleInit {
 
     // Kafka에 백그라운드 발행 (논블로킹) / Publish to Kafka in background (non-blocking)
     for (const tick of ticks) {
-      this.priceProducer.publishPriceUpdate(tick).catch(() => {});
+      this.priceProducer.publishPriceUpdate(tick).catch((e) => this.logger.warn('publishPriceUpdate failed', e.message));
     }
 
     // 10틱(10초)마다 DB 저장으로 쓰기 부하 감소 / Persist to DB every 10 ticks (10 seconds) to reduce write pressure

@@ -130,6 +130,7 @@ const SKIP_FILTER_SOURCES = new Set([
 @Injectable()
 export class NewsService implements OnModuleInit {
   private readonly logger = new Logger(NewsService.name);
+  private isScraping = false;
   private readonly parser = new Parser({
     timeout: 10000,
     headers: {
@@ -146,8 +147,17 @@ export class NewsService implements OnModuleInit {
 
   @Interval(30 * 60 * 1000)
   async scheduledScrape() {
+    if (this.isScraping) {
+      this.logger.warn('Previous scrape still in progress, skipping');
+      return;
+    }
     this.logger.log('Running scheduled news scrape...');
-    await this.scrapeAll();
+    this.isScraping = true;
+    try {
+      await this.scrapeAll();
+    } finally {
+      this.isScraping = false;
+    }
   }
 
   async scrapeAll() {

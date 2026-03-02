@@ -253,7 +253,7 @@ export class AuthService {
     const refreshToken = await this.createRefreshToken(user.id);
 
     // 통계를 위한 로그인 기록 (Log login for statistics)
-    await this.prisma.loginLog.create({ data: { userId: user.id } }).catch(() => {});
+    await this.prisma.loginLog.create({ data: { userId: user.id } }).catch((e) => this.logger.warn('LoginLog creation failed', e.message));
 
     this.logger.log(`User logged in (2FA verified): ${user.email}`);
 
