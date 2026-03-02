@@ -19,12 +19,39 @@ function unwrapResponse<T>(data: unknown): T {
   return data as T;
 }
 
+// 백엔드 summary 응답을 프론트엔드 Portfolio 타입으로 변환
+function mapSummaryToPortfolio(raw: Record<string, unknown>): Portfolio {
+  const balance = raw.balance as Record<string, string> | undefined;
+  const holdings = (raw.holdings as Record<string, unknown>[]) ?? [];
+  const cashBalance = parseFloat(balance?.availableCash ?? balance?.totalCash ?? '0') || 0;
+  const totalValue = parseFloat(raw.totalPortfolioValue as string ?? '0') || cashBalance;
+
+  const mappedHoldings = holdings.map((h: Record<string, unknown>) => ({
+    symbol: String(h.symbol ?? ''),
+    name: String(h.name ?? h.symbol ?? ''),
+    quantity: parseFloat(String(h.quantity ?? '0')) || 0,
+    averagePrice: parseFloat(String(h.avgCostBasis ?? '0')) || 0,
+    currentPrice: parseFloat(String(h.currentPrice ?? h.avgCostBasis ?? '0')) || 0,
+    value: parseFloat(String(h.marketValue ?? h.totalCost ?? '0')) || 0,
+    pnl: parseFloat(String(h.unrealizedPnL ?? '0')) || 0,
+    pnlPercent: parseFloat(String(h.unrealizedPnLPercent ?? '0')) || 0,
+  }));
+
+  const investedValue = mappedHoldings.reduce((sum, h) => sum + h.value, 0);
+  const totalPnl = mappedHoldings.reduce((sum, h) => sum + h.pnl, 0);
+  const totalCost = mappedHoldings.reduce((sum, h) => sum + (h.averagePrice * h.quantity), 0);
+  const totalPnlPercent = totalCost > 0 ? (totalPnl / totalCost) * 100 : 0;
+
+  return { totalValue, cashBalance, investedValue, totalPnl, totalPnlPercent, holdings: mappedHoldings };
+}
+
 export function usePortfolio() {
   return useQuery<Portfolio>({
     queryKey: ['portfolio'],
     queryFn: async () => {
       const { data } = await api.get('/api/portfolio/summary');
-      return unwrapResponse<Portfolio>(data);
+      const raw = unwrapResponse<Record<string, unknown>>(data);
+      return mapSummaryToPortfolio(raw);
     },
     refetchInterval: 10000,
   });
@@ -35,7 +62,8 @@ export function usePortfolioValuation() {
     queryKey: ['portfolio', 'valuation'],
     queryFn: async () => {
       const { data } = await api.get('/api/portfolio/valuation');
-      return unwrapResponse<Portfolio>(data);
+      const raw = unwrapResponse<Record<string, unknown>>(data);
+      return mapSummaryToPortfolio(raw);
     },
     refetchInterval: 10000,
   });

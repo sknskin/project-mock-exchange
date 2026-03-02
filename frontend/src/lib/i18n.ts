@@ -896,7 +896,7 @@ const translations = {
     'order.error': '주문 처리 중 오류가 발생했습니다.',
 
     // Portfolio
-    'portfolio.deposit': '입금하기',
+    'portfolio.deposit': '입금',
     'portfolio.holdings': '보유 자산',
     'portfolio.noHoldings': '보유한 자산이 없습니다',
     'portfolio.depositTitle': '입금',
@@ -1307,7 +1307,7 @@ const translations = {
     'help.portfolio.title': '내 투자 사용법',
     'help.portfolio.desc': '잔고, 보유 자산, 수익률을 한눈에 확인하세요.',
     'help.portfolio.balance': '총 자산과 예수금(현금)을 상단에서 확인할 수 있습니다.',
-    'help.portfolio.deposit': '입금하기 버튼으로 가상 자금을 충전하세요.',
+    'help.portfolio.deposit': '입금 버튼으로 가상 자금을 충전하세요.',
     'help.portfolio.holdings': '보유 자산 목록에서 각 종목의 수량, 평균단가, 현재가, 수익률을 확인하세요.',
     'help.portfolio.pnl': '수익률은 (현재가 - 평균단가) / 평균단가로 계산됩니다.',
     'help.orders.title': '주문 사용법',
