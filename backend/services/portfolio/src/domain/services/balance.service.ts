@@ -194,10 +194,12 @@ export class BalanceService {
     const result = await this.prisma.$transaction(async (tx) => {
       const [account] = await tx.$queryRaw<Array<{
         userId: string; availableCash: any; reservedCash: any;
-      }>>`SELECT * FROM "Account" WHERE "userId" = ${userId} FOR UPDATE`;
+      }>>`SELECT "user_id" AS "userId", "available_cash" AS "availableCash", "reserved_cash" AS "reservedCash" FROM "accounts" WHERE "user_id" = ${userId}::uuid FOR UPDATE`;
 
       if (!account) {
-        throw new NotFoundException(`Account not found for user ${userId}`);
+        throw new BadRequestException(
+          `Insufficient funds: available 0.00000000, required ${reserveAmount.toFixed(8)}`,
+        );
       }
 
       const available = new Decimal(account.availableCash.toString());
@@ -260,7 +262,7 @@ export class BalanceService {
     const updated = await this.prisma.$transaction(async (tx) => {
       const [account] = await tx.$queryRaw<Array<{
         userId: string; availableCash: any; reservedCash: any;
-      }>>`SELECT * FROM "Account" WHERE "userId" = ${userId} FOR UPDATE`;
+      }>>`SELECT "user_id" AS "userId", "available_cash" AS "availableCash", "reserved_cash" AS "reservedCash" FROM "accounts" WHERE "user_id" = ${userId}::uuid FOR UPDATE`;
 
       if (!account) {
         throw new NotFoundException(`Account not found for user ${userId}`);
@@ -322,7 +324,7 @@ export class BalanceService {
     const result = await this.prisma.$transaction(async (tx) => {
       const [account] = await tx.$queryRaw<Array<{
         userId: string; availableCash: any; reservedCash: any;
-      }>>`SELECT * FROM "Account" WHERE "userId" = ${userId} FOR UPDATE`;
+      }>>`SELECT "user_id" AS "userId", "available_cash" AS "availableCash", "reserved_cash" AS "reservedCash" FROM "accounts" WHERE "user_id" = ${userId}::uuid FOR UPDATE`;
 
       if (!account) {
         throw new NotFoundException(`Account not found for user ${userId}`);
@@ -430,7 +432,7 @@ export class BalanceService {
     const result = await this.prisma.$transaction(async (tx) => {
       const [account] = await tx.$queryRaw<Array<{
         userId: string; availableCash: any; reservedCash: any;
-      }>>`SELECT * FROM "Account" WHERE "userId" = ${userId} FOR UPDATE`;
+      }>>`SELECT "user_id" AS "userId", "available_cash" AS "availableCash", "reserved_cash" AS "reservedCash" FROM "accounts" WHERE "user_id" = ${userId}::uuid FOR UPDATE`;
 
       if (!account) {
         throw new NotFoundException(`Account not found for user ${userId}`);

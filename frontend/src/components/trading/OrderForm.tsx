@@ -16,6 +16,7 @@ import { usePortfolio } from '@/hooks/usePortfolio';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useToastStore } from '@/stores/toast';
 import { formatPriceDisplay, isKRW } from '@/lib/format';
 import type { TranslationKey } from '@/lib/i18n';
 
@@ -49,6 +50,8 @@ export default function OrderForm({
   const [quantity, setQuantity] = useState('');
   const [price, setPrice] = useState(currentPrice.toString());
   const [triggerPrice, setTriggerPrice] = useState('');
+  const [quantityError, setQuantityError] = useState('');
+  const [priceError, setPriceError] = useState('');
   const placeOrder = usePlaceOrder();
   const { data: portfolio } = usePortfolio();
 
@@ -60,13 +63,30 @@ export default function OrderForm({
   const isBuy = side === 'BUY';
   const isConditional = orderType === 'STOP_LOSS' || orderType === 'TAKE_PROFIT';
 
+  const safeCurrentPrice = Number.isFinite(currentPrice) ? currentPrice : 0;
   const estimatedTotal = isConditional
     ? parseFloat(quantity || '0') * parseFloat(triggerPrice || '0')
     : orderType === 'MARKET'
-      ? parseFloat(quantity || '0') * currentPrice
+      ? parseFloat(quantity || '0') * safeCurrentPrice
       : parseFloat(quantity || '0') * parseFloat(price || '0');
 
   const fp = (p: number) => formatPriceDisplay(p, symbol, currencyMode, rate);
+
+  const validateQuantity = () => {
+    if (quantity && parseFloat(quantity) <= 0) {
+      setQuantityError(t('order.quantityPlaceholder'));
+    } else {
+      setQuantityError('');
+    }
+  };
+
+  const validatePrice = () => {
+    if (price && parseFloat(price) <= 0) {
+      setPriceError(t('order.pricePlaceholder'));
+    } else {
+      setPriceError('');
+    }
+  };
 
   const handleSubmit = async () => {
     if (!quantity || parseFloat(quantity) <= 0) return;
@@ -90,8 +110,16 @@ export default function OrderForm({
       setQuantity('');
       setTriggerPrice('');
       onSuccess?.();
-    } catch {
-      // 에러는 쿼리 클라이언트에서 처리 / Error handled by query client
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { data?: { message?: string } } };
+      let message = axiosError?.response?.data?.message || (error instanceof Error ? error.message : '');
+      // 백엔드 에러 메시지를 사용자 친화적 한국어로 변환
+      if (message.includes('Insufficient funds')) {
+        message = t('order.insufficientFunds');
+      } else if (!message) {
+        message = t('order.error');
+      }
+      useToastStore.getState().addToast(message, 'error');
     }
   };
 
@@ -114,13 +142,18 @@ export default function OrderForm({
       )}
 
       {orderType === 'LIMIT' && (
-        <Input
-          label={`${t('order.price')} (${currencyMode === 'krw' ? 'KRW' : 'USD'})`}
-          type="number"
-          value={price}
-          onChange={(e) => setPrice(e.target.value)}
-          placeholder={t('order.pricePlaceholder')}
-        />
+        <div>
+          <Input
+            label={`${t('order.price')} (${currencyMode === 'krw' ? 'KRW' : 'USD'})`}
+            type="number"
+            value={price}
+            onChange={(e) => { setPrice(e.target.value); setPriceError(''); }}
+            onBlur={validatePrice}
+            placeholder={t('order.pricePlaceholder')}
+            aria-describedby={priceError ? 'price-error' : undefined}
+          />
+          {priceError && <p id="price-error" className="text-[11px] text-danger mt-1">{priceError}</p>}
+        </div>
       )}
 
       {isConditional && (
@@ -133,19 +166,24 @@ export default function OrderForm({
         />
       )}
 
-      <Input
-        label={t('order.quantity')}
-        type="number"
-        value={quantity}
-        onChange={(e) => setQuantity(e.target.value)}
-        placeholder={t('order.quantityPlaceholder')}
-      />
+      <div>
+        <Input
+          label={t('order.quantity')}
+          type="number"
+          value={quantity}
+          onChange={(e) => { setQuantity(e.target.value); setQuantityError(''); }}
+          onBlur={validateQuantity}
+          placeholder={t('order.quantityPlaceholder')}
+          aria-describedby={quantityError ? 'quantity-error' : undefined}
+        />
+        {quantityError && <p id="quantity-error" className="text-[11px] text-danger mt-1">{quantityError}</p>}
+      </div>
 
       <div className="space-y-1.5 py-3">
         <div className="flex justify-between text-[14px]">
           <span className="text-text-tertiary">{t('order.estimatedTotal')}</span>
           <span className="text-text-primary font-bold tabular-nums">
-            {fp(estimatedTotal)}
+            {Number.isFinite(estimatedTotal) ? fp(estimatedTotal) : fp(0)}
           </span>
         </div>
         {portfolio && (
@@ -166,6 +204,7 @@ export default function OrderForm({
         size="lg"
         fullWidth
         onClick={handleSubmit}
+        aria-label={isBuy ? t('detail.buy') : t('detail.sell')}
         disabled={
           placeOrder.isPending ||
           !quantity ||
@@ -176,8 +215,8 @@ export default function OrderForm({
         {placeOrder.isPending
           ? t('order.submitting')
           : isBuy
-            ? `${fp(currentPrice)} ${t('detail.buy')}`
-            : `${fp(currentPrice)} ${t('detail.sell')}`}
+            ? `${fp(safeCurrentPrice)} ${t('detail.buy')}`
+            : `${fp(safeCurrentPrice)} ${t('detail.sell')}`}
       </Button>
     </div>
   );
