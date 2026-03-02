@@ -160,7 +160,7 @@ export class BalanceService {
       await tx.transaction.create({
         data: {
           userId,
-          type: 'WITHDRAW',
+          type: 'WITHDRAWAL',
           cashDelta: withdrawAmount.negated().toFixed(8),
         },
       });
@@ -717,7 +717,7 @@ export class BalanceService {
       }),
       this.prisma.transaction.groupBy({
         by: ['userId'],
-        where: { userId: { in: userIds }, type: 'WITHDRAW' },
+        where: { userId: { in: userIds }, type: 'WITHDRAWAL' },
         _sum: { cashDelta: true },
       }),
     ]);
@@ -736,7 +736,7 @@ export class BalanceService {
 
     // 유저별 입출금 맵 구성 / Build deposit/withdraw maps per user
     const depositMap = new Map(depositAggs.map((d) => [d.userId, d._sum.cashDelta]));
-    const withdrawMap = new Map(withdrawAggs.map((w) => [w.userId, w._sum.cashDelta]));
+    const withdrawMap = new Map(withdrawAggs.map((w) => [w.userId, w._sum?.cashDelta]));
 
     const results: { userId: string; totalValue: Decimal; netDeposit: Decimal }[] = [];
 
