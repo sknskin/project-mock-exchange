@@ -473,13 +473,13 @@ export class ChatService {
       throw new ForbiddenException('Only admins can delete rooms');
     }
 
-    // 관련 데이터 삭제 순서: ReadReceipt → Message → Participant → Room
-    await this.prisma.readReceipt.deleteMany({
-      where: { message: { roomId } },
-    });
-    await this.prisma.message.deleteMany({ where: { roomId } });
-    await this.prisma.participant.deleteMany({ where: { roomId } });
-    await this.prisma.room.delete({ where: { id: roomId } });
+    // 관련 데이터 삭제 순서: ReadReceipt → Message → Participant → Room (atomic transaction)
+    await this.prisma.$transaction([
+      this.prisma.readReceipt.deleteMany({ where: { message: { roomId } } }),
+      this.prisma.message.deleteMany({ where: { roomId } }),
+      this.prisma.participant.deleteMany({ where: { roomId } }),
+      this.prisma.room.delete({ where: { id: roomId } }),
+    ]);
 
     return { success: true, deletedRoomId: roomId };
   }

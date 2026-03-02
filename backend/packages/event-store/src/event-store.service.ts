@@ -231,6 +231,18 @@ export class EventStoreService implements OnModuleInit, OnModuleDestroy {
     );
   }
 
+  async purgePublished(days: number = 30): Promise<number> {
+    const result = await this.pool.query(
+      `DELETE FROM event_outbox WHERE published = TRUE AND published_at < NOW() - INTERVAL '1 day' * $1`,
+      [days],
+    );
+    const count = result.rowCount || 0;
+    if (count > 0) {
+      this.logger.log(`Purged ${count} published outbox entries older than ${days} days`);
+    }
+    return count;
+  }
+
   async getSnapshot(streamId: string): Promise<{ data: Record<string, unknown>; position: number } | null> {
     const result = await this.pool.query(
       `SELECT snapshot_data as "data", stream_position as "position"

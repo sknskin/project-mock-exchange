@@ -399,13 +399,7 @@ export class MarketDataService implements OnModuleInit {
           },
         });
         // 원자적 max/min을 위해 Raw SQL로 고가/저가 갱신 (Update high/low with raw SQL for atomic max/min)
-        await this.prisma.$executeRawUnsafe(
-          `UPDATE "Candlestick" SET "highPrice" = GREATEST("highPrice", $1), "lowPrice" = LEAST("lowPrice", $2) WHERE "symbol" = $3 AND "interval" = '1m' AND "openTime" = $4`,
-          tick.price,
-          tick.price,
-          tick.symbol,
-          minuteStart,
-        );
+        await this.prisma.$executeRaw`UPDATE "Candlestick" SET "highPrice" = GREATEST("highPrice", ${tick.price}), "lowPrice" = LEAST("lowPrice", ${tick.price}) WHERE "symbol" = ${tick.symbol} AND "interval" = '1m' AND "openTime" = ${minuteStart}`;
       } catch (error) {
         this.logger.error(`Failed to update candlestick for ${tick.symbol}`, error);
       }
@@ -445,22 +439,34 @@ export class MarketDataService implements OnModuleInit {
           _count: true,
         });
 
+        const symbols = aggregated.filter((a) => a._count > 0).map((a) => a.symbol);
+        if (symbols.length === 0) continue;
+
+        // Batch query: fetch first and last candles for all symbols at once
+        const [firstCandles, lastCandles] = await Promise.all([
+          this.prisma.candlestick.findMany({
+            where: { symbol: { in: symbols }, interval: '1m', openTime: { gte: periodStart, lt: periodEnd } },
+            orderBy: { openTime: 'asc' },
+            distinct: ['symbol'],
+            select: { symbol: true, openPrice: true },
+          }),
+          this.prisma.candlestick.findMany({
+            where: { symbol: { in: symbols }, interval: '1m', openTime: { gte: periodStart, lt: periodEnd } },
+            orderBy: { openTime: 'desc' },
+            distinct: ['symbol'],
+            select: { symbol: true, closePrice: true },
+          }),
+        ]);
+
+        const firstMap = new Map(firstCandles.map((c) => [c.symbol, c.openPrice]));
+        const lastMap = new Map(lastCandles.map((c) => [c.symbol, c.closePrice]));
+
         for (const agg of aggregated) {
           if (agg._count === 0) continue;
 
-          // 첫 번째 1분 캔들의 시가와 마지막 캔들의 종가 조회 (Get open price from the first 1m candle and close from the last)
-          const firstCandle = await this.prisma.candlestick.findFirst({
-            where: { symbol: agg.symbol, interval: '1m', openTime: { gte: periodStart, lt: periodEnd } },
-            orderBy: { openTime: 'asc' },
-            select: { openPrice: true },
-          });
-          const lastCandle = await this.prisma.candlestick.findFirst({
-            where: { symbol: agg.symbol, interval: '1m', openTime: { gte: periodStart, lt: periodEnd } },
-            orderBy: { openTime: 'desc' },
-            select: { closePrice: true },
-          });
-
-          if (!firstCandle || !lastCandle) continue;
+          const firstOpenPrice = firstMap.get(agg.symbol);
+          const lastClosePrice = lastMap.get(agg.symbol);
+          if (!firstOpenPrice || !lastClosePrice) continue;
 
           await this.prisma.candlestick.upsert({
             where: {
@@ -473,10 +479,10 @@ export class MarketDataService implements OnModuleInit {
             create: {
               symbol: agg.symbol,
               interval: name,
-              openPrice: firstCandle.openPrice,
+              openPrice: firstOpenPrice,
               highPrice: agg._max.highPrice!,
               lowPrice: agg._min.lowPrice!,
-              closePrice: lastCandle.closePrice,
+              closePrice: lastClosePrice,
               volume: agg._sum.volume ?? 0,
               openTime: periodStart,
               closeTime: periodEnd,
@@ -484,7 +490,7 @@ export class MarketDataService implements OnModuleInit {
             update: {
               highPrice: agg._max.highPrice!,
               lowPrice: agg._min.lowPrice!,
-              closePrice: lastCandle.closePrice,
+              closePrice: lastClosePrice,
               volume: agg._sum.volume ?? 0,
             },
           });

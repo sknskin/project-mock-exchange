@@ -38,17 +38,26 @@ model Holding {
   @@map("holdings")
 }
 
+enum TransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  BUY
+  SELL
+  RESERVE
+  RELEASE
+}
+
 model Transaction {
-  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId      String   @map("user_id") @db.Uuid
-  type        String   @db.VarChar(20)
-  symbol      String?  @db.VarChar(20)
-  quantity    Decimal? @db.Decimal(20, 8)
-  price       Decimal? @db.Decimal(20, 8)
-  cashDelta   Decimal  @map("cash_delta") @db.Decimal(20, 8)
-  realizedPnl Decimal? @map("realized_pnl") @db.Decimal(20, 8)
-  referenceId String?  @map("reference_id") @db.Uuid
-  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  id          String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String          @map("user_id") @db.Uuid
+  type        TransactionType
+  symbol      String?         @db.VarChar(20)
+  quantity    Decimal?        @db.Decimal(20, 8)
+  price       Decimal?        @db.Decimal(20, 8)
+  cashDelta   Decimal         @map("cash_delta") @db.Decimal(20, 8)
+  realizedPnl Decimal?        @map("realized_pnl") @db.Decimal(20, 8)
+  referenceId String?         @map("reference_id") @db.Uuid
+  createdAt   DateTime        @default(now()) @map("created_at") @db.Timestamptz()
 
   account Account @relation(fields: [userId], references: [userId], onDelete: Cascade)
 

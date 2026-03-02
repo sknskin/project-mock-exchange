@@ -8,13 +8,7 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { AppModule } from './app.module';
-
-// BigInt → JSON 직렬화 지원 / Enable BigInt JSON serialization
-// 안전 정수 범위 초과 시 문자열 반환 / Return string if outside safe integer range
-(BigInt.prototype as any).toJSON = function () {
-  const n = Number(this);
-  return Number.isSafeInteger(n) ? n : this.toString();
-};
+import { BigIntSerializerInterceptor } from './common/interceptors/bigint-serializer.interceptor';
 
 async function bootstrap() {
   const logger = new Logger('OrderEngineService');
@@ -28,6 +22,8 @@ async function bootstrap() {
   }
 
   const app = await NestFactory.create(AppModule);
+
+  app.useGlobalInterceptors(new BigIntSerializerInterceptor());
 
   app.useGlobalPipes(
     new ValidationPipe({

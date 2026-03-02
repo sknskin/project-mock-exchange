@@ -142,7 +142,12 @@ export class NewsService implements OnModuleInit {
 
   async onModuleInit() {
     this.logger.log('Starting initial news scrape...');
-    await this.scrapeAll();
+    this.isScraping = true;
+    try {
+      await this.scrapeAll();
+    } finally {
+      this.isScraping = false;
+    }
   }
 
   @Interval(30 * 60 * 1000)
@@ -218,8 +223,8 @@ export class NewsService implements OnModuleInit {
               },
             });
             totalInserted++;
-          } catch {
-            // 개별 아이템 실패 시 건너뛰기 (Skip on individual item failure)
+          } catch (e) {
+            this.logger.warn(`News item processing failed: ${e instanceof Error ? e.message : e}`);
           }
         }
       } catch (error) {

@@ -5,9 +5,10 @@
  * @file Order Matching Engine
  * @description Core matching algorithm for market and limit orders
  */
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import Decimal from 'decimal.js';
 import { generateTradeId } from '@virtuex/common';
+import { PrismaService } from '../../infrastructure/persistence/prisma/prisma.service';
 
 export interface OrderBookEntry {
   orderId: string;
@@ -31,12 +32,58 @@ export interface MatchResult {
 }
 
 @Injectable()
-export class MatchingEngineService {
+export class MatchingEngineService implements OnModuleInit {
   private readonly logger = new Logger(MatchingEngineService.name);
 
   // 인메모리 오더북: 종목 -> { 매수호가 (내림차순), 매도호가 (오름차순) } / In-memory order books: symbol -> { bids (sorted desc), asks (sorted asc) }
   private readonly bids = new Map<string, OrderBookEntry[]>();
   private readonly asks = new Map<string, OrderBookEntry[]>();
+
+  constructor(private readonly prisma: PrismaService) {}
+
+  async onModuleInit() {
+    try {
+      const pendingOrders = await this.prisma.orderRead.findMany({
+        where: {
+          status: { in: ['PENDING', 'PARTIAL'] },
+          orderType: 'LIMIT',
+        },
+        select: {
+          orderId: true,
+          userId: true,
+          symbol: true,
+          side: true,
+          price: true,
+          remainingQuantity: true,
+          createdAt: true,
+        },
+      });
+
+      let restored = 0;
+      for (const order of pendingOrders) {
+        if (!order.price || !order.remainingQuantity) continue;
+        const remaining = new Decimal(order.remainingQuantity.toString());
+        if (remaining.lte(0)) continue;
+
+        this.addToOrderBook({
+          orderId: order.orderId,
+          userId: order.userId,
+          symbol: order.symbol,
+          side: order.side as 'BUY' | 'SELL',
+          price: new Decimal(order.price.toString()),
+          remainingQuantity: remaining,
+          timestamp: order.createdAt.getTime(),
+        });
+        restored++;
+      }
+
+      if (restored > 0) {
+        this.logger.log(`Restored ${restored} pending/partial orders to in-memory order book`);
+      }
+    } catch (e) {
+      this.logger.error('Failed to restore order book from DB', e instanceof Error ? e.message : e);
+    }
+  }
 
   addToOrderBook(entry: OrderBookEntry): void {
     if (entry.side === 'BUY') {

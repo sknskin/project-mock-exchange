@@ -67,7 +67,7 @@ export class BalanceService {
   ) {
     this.marketDataUrl = this.config.get<string>(
       'MARKET_DATA_URL',
-      'http://localhost:3003',
+      'http://localhost:3001',
     );
   }
 
@@ -699,7 +699,7 @@ export class BalanceService {
   > {
     const accounts = await this.prisma.account.findMany({
       orderBy: { availableCash: 'desc' },
-      take: limit * 2, // fetch more to account for holdings
+      take: limit,
     });
 
     const userIds = accounts.map((a) => a.userId);
@@ -790,6 +790,7 @@ export class BalanceService {
     try {
       const response = await axios.get(`${this.marketDataUrl}/market/prices`, {
         timeout: 5000,
+        headers: { 'x-internal-token': this.config.get('INTERNAL_SERVICE_SECRET') },
       });
       if (response.data?.success && Array.isArray(response.data?.data)) {
         for (const tick of response.data.data) {
@@ -807,8 +808,8 @@ export class BalanceService {
 
   private toBalanceInfo(account: {
     userId: string;
-    availableCash: any;
-    reservedCash: any;
+    availableCash: Decimal;
+    reservedCash: Decimal;
   }): BalanceInfo {
     const available = new Decimal(account.availableCash.toString());
     const reserved = new Decimal(account.reservedCash.toString());
@@ -824,9 +825,9 @@ export class BalanceService {
   private toHoldingInfo(holding: {
     id: string;
     symbol: string;
-    quantity: any;
-    avgCostBasis: any;
-    totalCost: any;
+    quantity: Decimal;
+    avgCostBasis: Decimal;
+    totalCost: Decimal;
     updatedAt: Date;
   }): HoldingInfo {
     return {

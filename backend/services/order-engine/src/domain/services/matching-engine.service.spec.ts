@@ -5,7 +5,7 @@ describe('MatchingEngineService', () => {
   let engine: MatchingEngineService;
 
   beforeEach(() => {
-    engine = new MatchingEngineService();
+    engine = new MatchingEngineService(null as any);
   });
 
   // ─── 오더북 관리 ─────────────────────────────────
