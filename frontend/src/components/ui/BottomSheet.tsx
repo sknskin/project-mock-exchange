@@ -8,6 +8,7 @@
 'use client';
 
 import { useEffect, useCallback, useRef } from 'react';
+import { X } from 'lucide-react';
 import { cn } from '@/lib/format';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 
@@ -74,8 +75,15 @@ export default function BottomSheet({
           <div className="w-9 h-[4px] bg-bg-tertiary rounded-full" />
         </div>
         {title && (
-          <div className="px-6 py-3 sm:pt-5">
+          <div className="px-6 py-3 sm:pt-5 flex items-center justify-between">
             <h3 id="bottomsheet-title" className="text-[18px] font-bold text-text-primary">{title}</h3>
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-lg text-text-quaternary hover:text-text-primary hover:bg-bg-tertiary transition-colors"
+              aria-label="Close"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
         )}
         <div className="px-6 pb-8 pt-2">{children}</div>

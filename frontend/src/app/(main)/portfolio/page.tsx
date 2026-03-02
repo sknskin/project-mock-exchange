@@ -325,21 +325,31 @@ export default function PortfolioPage() {
         >
           <div className="space-y-5">
             <Input
-              label={t('portfolio.depositAmount')}
+              label={`${t('portfolio.depositAmount')} (${currencyMode === 'krw' ? 'KRW' : 'USD'})`}
               type="number"
               value={depositAmount}
               onChange={(e) => setDepositAmount(e.target.value)}
               placeholder={t('portfolio.depositPlaceholder')}
             />
+            {depositAmount && parseFloat(depositAmount) > 0 && (
+              <p className="text-[12px] text-text-quaternary -mt-3">
+                {formatCurrencyDisplay(parseFloat(depositAmount), currencyMode, rate)}
+              </p>
+            )}
 
-            <div className="grid grid-cols-2 gap-2">
-              {[100000, 500000, 1000000, 5000000].map((amount) => (
+            <div className="grid grid-cols-4 gap-2">
+              {[1000000, 5000000, 10000000, 100000000].map((amount) => (
                 <button
                   key={amount}
-                  onClick={() => setDepositAmount(amount.toString())}
+                  onClick={() => setDepositAmount((prev) => {
+                    const current = parseFloat(prev || '0');
+                    return (current + amount).toString();
+                  })}
                   className="h-11 text-[13px] font-medium bg-bg-secondary text-text-secondary rounded-lg hover:bg-bg-tertiary transition-colors"
                 >
-                  {(amount / 10000).toFixed(0)}{t('portfolio.tenThousand')}
+                  {amount >= 100000000
+                    ? `${(amount / 100000000).toFixed(0)}${t('portfolio.hundredMillion')}`
+                    : `${(amount / 10000).toFixed(0)}${t('portfolio.tenThousand')}`}
                 </button>
               ))}
             </div>
@@ -367,7 +377,7 @@ export default function PortfolioPage() {
           <div className="space-y-5">
             <div>
               <Input
-                label={t('portfolio.withdrawAmount')}
+                label={`${t('portfolio.withdrawAmount')} (${currencyMode === 'krw' ? 'KRW' : 'USD'})`}
                 type="number"
                 value={withdrawAmount}
                 onChange={(e) => setWithdrawAmount(e.target.value)}
@@ -378,6 +388,28 @@ export default function PortfolioPage() {
                   {t('portfolio.availableBalance')}: {formatCurrencyDisplay(portfolio.cashBalance, currencyMode, rate)}
                 </p>
               )}
+              {withdrawAmount && parseFloat(withdrawAmount) > 0 && (
+                <p className="mt-1 text-[12px] text-text-quaternary">
+                  {formatCurrencyDisplay(parseFloat(withdrawAmount), currencyMode, rate)}
+                </p>
+              )}
+            </div>
+
+            <div className="grid grid-cols-4 gap-2">
+              {[1000000, 5000000, 10000000, 100000000].map((amount) => (
+                <button
+                  key={amount}
+                  onClick={() => setWithdrawAmount((prev) => {
+                    const current = parseFloat(prev || '0');
+                    return (current + amount).toString();
+                  })}
+                  className="h-11 text-[13px] font-medium bg-bg-secondary text-text-secondary rounded-lg hover:bg-bg-tertiary transition-colors"
+                >
+                  {amount >= 100000000
+                    ? `${(amount / 100000000).toFixed(0)}${t('portfolio.hundredMillion')}`
+                    : `${(amount / 10000).toFixed(0)}${t('portfolio.tenThousand')}`}
+                </button>
+              ))}
             </div>
 
             <div className="flex gap-2">
