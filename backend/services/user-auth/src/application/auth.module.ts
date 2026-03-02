@@ -14,6 +14,7 @@ import { AdminService } from './services/admin.service';
 import { AnnouncementService } from './services/announcement.service';
 import { SmsVerificationService } from './services/sms-verification.service';
 import { TotpService } from './services/totp.service';
+import { SettingsService } from './services/settings.service';
 import { AuthController } from '../presentation/controllers/auth.controller';
 import { AdminController } from '../presentation/controllers/admin.controller';
 import { AnnouncementController } from '../presentation/controllers/announcement.controller';
@@ -22,6 +23,7 @@ import { NotificationController } from '../presentation/controllers/notification
 import { StatisticsController } from '../presentation/controllers/statistics.controller';
 import { UserController } from '../presentation/controllers/user.controller';
 import { PriceAlertController } from '../presentation/controllers/price-alert.controller';
+import { SettingsController } from '../presentation/controllers/settings.controller';
 import { JwtStrategy } from '../infrastructure/config/jwt.strategy';
 import { UserRepository } from '../infrastructure/persistence/prisma/user.repository';
 import { USER_REPOSITORY } from '../domain/repositories/user.repository.interface';
@@ -48,6 +50,7 @@ import { USER_REPOSITORY } from '../domain/repositories/user.repository.interfac
     StatisticsController,
     UserController,
     PriceAlertController,
+    SettingsController,
   ],
   providers: [
     AuthService,
@@ -55,12 +58,13 @@ import { USER_REPOSITORY } from '../domain/repositories/user.repository.interfac
     AnnouncementService,
     SmsVerificationService,
     TotpService,
+    SettingsService,
     JwtStrategy,
     {
       provide: USER_REPOSITORY,
       useClass: UserRepository,
     },
   ],
-  exports: [AuthService, AdminService, AnnouncementService, SmsVerificationService, TotpService],
+  exports: [AuthService, AdminService, AnnouncementService, SmsVerificationService, TotpService, SettingsService],
 })
 export class AuthModule {}

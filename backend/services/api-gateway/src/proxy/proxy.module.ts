@@ -20,6 +20,7 @@ import { NewsProxyController } from './news-proxy.controller';
 import { ChatProxyController } from './chat-proxy.controller';
 import { PriceAlertProxyController } from './price-alert-proxy.controller';
 import { AiProxyController } from './ai-proxy.controller';
+import { SettingsProxyController } from './settings-proxy.controller';
 import { ProxyService } from './proxy.service';
 import { GatewayModule } from '../gateway/gateway.module';
 
@@ -39,6 +40,7 @@ import { GatewayModule } from '../gateway/gateway.module';
     ChatProxyController,
     PriceAlertProxyController,
     AiProxyController,
+    SettingsProxyController,
   ],
   providers: [ProxyService, ConfigService],
   exports: [ProxyService],
