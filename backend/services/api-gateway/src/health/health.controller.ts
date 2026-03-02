@@ -84,8 +84,9 @@ export class HealthController {
         timeout: 3000,
       });
       return { status: 'up', ...(typeof res.data === 'object' ? res.data : {}) };
-    } catch {
-      return { status: 'down' };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      return { status: 'down', error: message };
     }
   }
 

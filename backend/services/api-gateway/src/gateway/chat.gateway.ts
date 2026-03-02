@@ -4,6 +4,7 @@ import {
   SubscribeMessage,
   OnGatewayConnection,
   OnGatewayDisconnect,
+  OnGatewayInit,
   ConnectedSocket,
   MessageBody,
 } from '@nestjs/websockets';
@@ -18,7 +19,7 @@ import { Server, Socket } from 'socket.io';
     credentials: true,
   },
 })
-export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit {
   @WebSocketServer()
   server: Server;
 
@@ -30,6 +31,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private socketUser = new Map<string, string>();
 
   constructor(private readonly jwtService: JwtService) {}
+
+  afterInit(server: Server) {
+    server.engine?.on('connection_error', (err: Error) => {
+      this.logger.error(`Chat WebSocket connection error: ${err.message}`);
+    });
+    this.logger.log('Chat WebSocket gateway initialized');
+  }
 
   async handleConnection(client: Socket) {
     try {
@@ -92,9 +100,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { roomId: string },
   ) {
-    if (data.roomId) {
-      client.join(`room:${data.roomId}`);
-      return { event: 'chat:joined', data: { roomId: data.roomId } };
+    try {
+      if (data.roomId) {
+        client.join(`room:${data.roomId}`);
+        return { event: 'chat:joined', data: { roomId: data.roomId } };
+      }
+    } catch (error) {
+      this.logger.error(`Error joining room: ${error instanceof Error ? error.message : 'unknown'}`);
     }
   }
 
@@ -103,8 +115,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { roomId: string },
   ) {
-    if (data.roomId) {
-      client.leave(`room:${data.roomId}`);
+    try {
+      if (data.roomId) {
+        client.leave(`room:${data.roomId}`);
+      }
+    } catch (error) {
+      this.logger.error(`Error leaving room: ${error instanceof Error ? error.message : 'unknown'}`);
     }
   }
 
@@ -113,12 +129,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { roomId: string },
   ) {
-    if (data.roomId) {
-      client.to(`room:${data.roomId}`).emit('chat:typing', {
-        roomId: data.roomId,
-        userId: client.data.userId,
-        username: client.data.username,
-      });
+    try {
+      if (data.roomId) {
+        client.to(`room:${data.roomId}`).emit('chat:typing', {
+          roomId: data.roomId,
+          userId: client.data.userId,
+          username: client.data.username,
+        });
+      }
+    } catch (error) {
+      this.logger.error(`Error handling typing: ${error instanceof Error ? error.message : 'unknown'}`);
     }
   }
 

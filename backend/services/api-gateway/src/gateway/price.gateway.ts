@@ -11,6 +11,7 @@ import {
   SubscribeMessage,
   OnGatewayConnection,
   OnGatewayDisconnect,
+  OnGatewayInit,
   ConnectedSocket,
   MessageBody,
 } from '@nestjs/websockets';
@@ -28,7 +29,7 @@ const MAX_ANON_SUBSCRIPTIONS = 5;
     credentials: true,
   },
 })
-export class PriceGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class PriceGateway implements OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit {
   @WebSocketServer()
   server: Server;
 
@@ -37,6 +38,13 @@ export class PriceGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private clientSubscriptions = new Map<string, number>();
 
   constructor(private readonly jwtService: JwtService) {}
+
+  afterInit(server: Server) {
+    server.engine?.on('connection_error', (err: Error) => {
+      this.logger.error(`Price WebSocket connection error: ${err.message}`);
+    });
+    this.logger.log('Price WebSocket gateway initialized');
+  }
 
   async handleConnection(client: Socket) {
     try {
