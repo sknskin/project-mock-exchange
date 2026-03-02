@@ -54,6 +54,14 @@ const SIGNAL_CONFIG = {
   STRONG_SELL: { color: 'text-fall', bg: 'bg-fall/12', icon: TrendingDown },
 };
 
+const SIGNAL_I18N_KEY = {
+  STRONG_BUY: 'ai.signal.strong_buy',
+  BUY: 'ai.signal.buy',
+  HOLD: 'ai.signal.hold',
+  SELL: 'ai.signal.sell',
+  STRONG_SELL: 'ai.signal.strong_sell',
+} as const;
+
 const RISK_CONFIG = {
   LOW: { color: 'text-success', icon: Shield },
   MEDIUM: { color: 'text-warning', icon: AlertTriangle },
@@ -155,7 +163,7 @@ export default function AiInsights() {
                       )}
                     >
                       {t(
-                        `ai.signal.${signal.signal.toLowerCase()}` as keyof typeof import('@/lib/i18n').translations.ko,
+                        SIGNAL_I18N_KEY[signal.signal],
                       ) || signal.signal.replace('_', ' ')}
                     </span>
                   </div>

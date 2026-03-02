@@ -7,7 +7,7 @@
  */
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Tabs from '@/components/ui/Tabs';
@@ -16,7 +16,6 @@ import { usePortfolio } from '@/hooks/usePortfolio';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useToastStore } from '@/stores/toast';
 import { formatPriceDisplay, isKRW } from '@/lib/format';
 import type { TranslationKey } from '@/lib/i18n';
 
@@ -36,6 +35,24 @@ const typeTabKeys: { key: string; i18nKey: TranslationKey }[] = [
   { key: 'TAKE_PROFIT', i18nKey: 'order.takeProfit' },
 ];
 
+/** 표시 가격을 현재 통화 모드에 맞게 변환 (Display price → current currency mode) */
+function toDisplayPrice(usdPrice: number, symbol: string, currencyMode: 'krw' | 'original', rate?: number): number {
+  if (!Number.isFinite(usdPrice)) return 0;
+  const wantKRW = currencyMode === 'krw';
+  if (isKRW(symbol)) return usdPrice;
+  if (wantKRW && rate) return Math.round(usdPrice * rate);
+  return usdPrice;
+}
+
+/** 입력된 가격을 USD(백엔드 기준)로 변환 (Input price → USD for backend) */
+function toUsdPrice(inputPrice: number, symbol: string, currencyMode: 'krw' | 'original', rate?: number): number {
+  if (!Number.isFinite(inputPrice)) return 0;
+  const wantKRW = currencyMode === 'krw';
+  if (isKRW(symbol)) return inputPrice;
+  if (wantKRW && rate && rate > 0) return inputPrice / rate;
+  return inputPrice;
+}
+
 export default function OrderForm({
   symbol,
   currentPrice,
@@ -48,12 +65,21 @@ export default function OrderForm({
   const rate = rateData?.rate;
   const [orderType, setOrderType] = useState<OrderFormType>('MARKET');
   const [quantity, setQuantity] = useState('');
-  const [price, setPrice] = useState(currentPrice.toString());
+  const [price, setPrice] = useState('');
   const [triggerPrice, setTriggerPrice] = useState('');
   const [quantityError, setQuantityError] = useState('');
   const [priceError, setPriceError] = useState('');
   const placeOrder = usePlaceOrder();
   const { data: portfolio } = usePortfolio();
+
+  // currentPrice 또는 통화 모드 변경 시 지정가 갱신 (Sync limit price with currentPrice/currency)
+  useEffect(() => {
+    const safePrice = Number.isFinite(currentPrice) ? currentPrice : 0;
+    if (safePrice > 0) {
+      const displayPrice = toDisplayPrice(safePrice, symbol, currencyMode, rate);
+      setPrice(displayPrice.toString());
+    }
+  }, [currentPrice, symbol, currencyMode, rate]);
 
   const typeTabs = useMemo(
     () => typeTabKeys.map((i) => ({ key: i.key, label: t(i.i18nKey) })),
@@ -64,17 +90,33 @@ export default function OrderForm({
   const isConditional = orderType === 'STOP_LOSS' || orderType === 'TAKE_PROFIT';
 
   const safeCurrentPrice = Number.isFinite(currentPrice) ? currentPrice : 0;
+
+  // 보유 자산 정보 (Holdings info)
+  const holding = portfolio?.holdings.find((h) => h.symbol === symbol);
+  const holdingQty = holding?.quantity ?? 0;
+  const holdingValue = holding?.value ?? 0;
+
+  // 매도 시 보유 수량 부족 여부 (Insufficient holdings for sell)
+  const parsedQty = parseFloat(quantity || '0');
+  const insufficientHoldings = !isBuy && parsedQty > 0 && parsedQty > holdingQty;
+  const noHoldings = !isBuy && holdingQty <= 0;
+
+  // 예상 금액 계산 — 표시 통화 기준 (Estimated total in display currency)
+  const displayCurrentPrice = toDisplayPrice(safeCurrentPrice, symbol, currencyMode, rate);
   const estimatedTotal = isConditional
-    ? parseFloat(quantity || '0') * parseFloat(triggerPrice || '0')
+    ? parsedQty * parseFloat(triggerPrice || '0')
     : orderType === 'MARKET'
-      ? parseFloat(quantity || '0') * safeCurrentPrice
-      : parseFloat(quantity || '0') * parseFloat(price || '0');
+      ? parsedQty * displayCurrentPrice
+      : parsedQty * parseFloat(price || '0');
 
   const fp = (p: number) => formatPriceDisplay(p, symbol, currencyMode, rate);
+  const currencyLabel = isKRW(symbol) ? 'KRW' : currencyMode === 'krw' ? 'KRW' : 'USD';
 
   const validateQuantity = () => {
-    if (quantity && parseFloat(quantity) <= 0) {
+    if (quantity && parsedQty <= 0) {
       setQuantityError(t('order.quantityPlaceholder'));
+    } else if (insufficientHoldings) {
+      setQuantityError(t('order.insufficientHoldings'));
     } else {
       setQuantityError('');
     }
@@ -89,20 +131,24 @@ export default function OrderForm({
   };
 
   const handleSubmit = async () => {
-    if (!quantity || parseFloat(quantity) <= 0) return;
+    if (!quantity || parsedQty <= 0) return;
     if (isConditional && (!triggerPrice || parseFloat(triggerPrice) <= 0)) return;
+    if (insufficientHoldings || noHoldings) return;
+
+    // 가격을 USD로 변환하여 백엔드에 전송 (Convert price to USD for backend)
+    const usdLimitPrice = toUsdPrice(parseFloat(price), symbol, currencyMode, rate);
+    const usdTriggerPrice = toUsdPrice(parseFloat(triggerPrice || '0'), symbol, currencyMode, rate);
 
     try {
       await placeOrder.mutateAsync({
         symbol,
         side,
-        // 조건부 주문은 MARKET 타입으로 전송 / Conditional orders sent as MARKET type
         type: isConditional ? 'MARKET' : orderType as 'MARKET' | 'LIMIT',
-        quantity: parseFloat(quantity),
-        ...(orderType === 'LIMIT' ? { price: parseFloat(price) } : {}),
+        quantity: parsedQty,
+        ...(orderType === 'LIMIT' ? { price: usdLimitPrice } : {}),
         ...(isConditional
           ? {
-              triggerPrice: parseFloat(triggerPrice),
+              triggerPrice: usdTriggerPrice,
               triggerType: orderType as 'STOP_LOSS' | 'TAKE_PROFIT',
             }
           : {}),
@@ -110,16 +156,9 @@ export default function OrderForm({
       setQuantity('');
       setTriggerPrice('');
       onSuccess?.();
-    } catch (error: unknown) {
-      const axiosError = error as { response?: { data?: { message?: string } } };
-      let message = axiosError?.response?.data?.message || (error instanceof Error ? error.message : '');
-      // 백엔드 에러 메시지를 사용자 친화적 한국어로 변환
-      if (message.includes('Insufficient funds')) {
-        message = t('order.insufficientFunds');
-      } else if (!message) {
-        message = t('order.error');
-      }
-      useToastStore.getState().addToast(message, 'error');
+    } catch {
+      // 에러 토스트는 QueryProvider의 전역 MutationCache.onError에서 처리
+      // Error toast handled by global MutationCache.onError in QueryProvider
     }
   };
 
@@ -144,7 +183,7 @@ export default function OrderForm({
       {orderType === 'LIMIT' && (
         <div>
           <Input
-            label={`${t('order.price')} (${currencyMode === 'krw' ? 'KRW' : 'USD'})`}
+            label={`${t('order.price')} (${currencyLabel})`}
             type="number"
             value={price}
             onChange={(e) => { setPrice(e.target.value); setPriceError(''); }}
@@ -158,7 +197,7 @@ export default function OrderForm({
 
       {isConditional && (
         <Input
-          label={`${t('order.triggerPrice')} (${currencyMode === 'krw' ? 'KRW' : 'USD'})`}
+          label={`${t('order.triggerPrice')} (${currencyLabel})`}
           type="number"
           value={triggerPrice}
           onChange={(e) => setTriggerPrice(e.target.value)}
@@ -183,7 +222,7 @@ export default function OrderForm({
         <div className="flex justify-between text-[14px]">
           <span className="text-text-tertiary">{t('order.estimatedTotal')}</span>
           <span className="text-text-primary font-bold tabular-nums">
-            {Number.isFinite(estimatedTotal) ? fp(estimatedTotal) : fp(0)}
+            {Number.isFinite(estimatedTotal) && estimatedTotal > 0 ? fp(estimatedTotal) : fp(0)}
           </span>
         </div>
         {portfolio && (
@@ -192,10 +231,23 @@ export default function OrderForm({
             <span className="text-text-tertiary tabular-nums">
               {isBuy
                 ? fp(portfolio.cashBalance)
-                : `${(portfolio.holdings.find((h) => h.symbol === symbol)?.quantity ?? 0).toLocaleString(undefined, { maximumFractionDigits: 8 })} ${symbol.replace('USDT', '')}`
+                : `${holdingQty.toLocaleString(undefined, { maximumFractionDigits: 8 })} ${symbol.replace('USDT', '')}`
               }
             </span>
           </div>
+        )}
+        {/* 매도 시 보유 가치 표시 (Show holding value for sell) */}
+        {!isBuy && portfolio && holdingQty > 0 && (
+          <div className="flex justify-between text-[13px]">
+            <span className="text-text-quaternary">{t('order.holdingValue')}</span>
+            <span className="text-text-tertiary tabular-nums">
+              {fp(holdingValue)}
+            </span>
+          </div>
+        )}
+        {/* 매도 시 보유량 부족 경고 (Insufficient holdings warning for sell) */}
+        {insufficientHoldings && (
+          <p className="text-[11px] text-danger mt-1">{t('order.insufficientHoldings')}</p>
         )}
       </div>
 
@@ -208,15 +260,19 @@ export default function OrderForm({
         disabled={
           placeOrder.isPending ||
           !quantity ||
-          parseFloat(quantity) <= 0 ||
-          (isConditional && (!triggerPrice || parseFloat(triggerPrice) <= 0))
+          parsedQty <= 0 ||
+          (isConditional && (!triggerPrice || parseFloat(triggerPrice) <= 0)) ||
+          insufficientHoldings ||
+          noHoldings
         }
       >
         {placeOrder.isPending
           ? t('order.submitting')
-          : isBuy
-            ? `${fp(safeCurrentPrice)} ${t('detail.buy')}`
-            : `${fp(safeCurrentPrice)} ${t('detail.sell')}`}
+          : noHoldings && !isBuy
+            ? t('order.noHoldings')
+            : isBuy
+              ? `${fp(safeCurrentPrice)} ${t('detail.buy')}`
+              : `${fp(safeCurrentPrice)} ${t('detail.sell')}`}
       </Button>
     </div>
   );

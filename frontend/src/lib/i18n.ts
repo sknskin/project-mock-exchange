@@ -887,6 +887,9 @@ const translations = {
     'order.stopLossDesc': '설정가 도달 시 시장가로 자동 매매',
     'order.takeProfitDesc': '목표가 도달 시 시장가로 자동 매매',
     'order.insufficientFunds': '잔고가 부족합니다. 먼저 입금해 주세요.',
+    'order.insufficientHoldings': '보유 수량이 부족합니다',
+    'order.noHoldings': '보유 자산 없음',
+    'order.holdingValue': '보유 가치',
     'order.error': '주문 처리 중 오류가 발생했습니다.',
 
     // Portfolio
@@ -2438,6 +2441,9 @@ const translations = {
     'order.stopLossDesc': 'Auto-execute at market price when trigger is reached',
     'order.takeProfitDesc': 'Auto-execute at market price when target is reached',
     'order.insufficientFunds': 'Insufficient funds. Please deposit first.',
+    'order.insufficientHoldings': 'Insufficient holdings',
+    'order.noHoldings': 'No holdings',
+    'order.holdingValue': 'Holding value',
     'order.error': 'An error occurred while processing the order.',
 
     // Portfolio

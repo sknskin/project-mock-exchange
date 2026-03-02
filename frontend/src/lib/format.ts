@@ -157,6 +157,7 @@ export function isKRW(symbol: string): boolean {
 
 /** KRW 포맷 (정수 + '원') */
 function formatKRWPrice(price: number): string {
+  if (!Number.isFinite(price)) return '0원';
   const locale = getLocale();
   if (locale === 'en') return '₩' + price.toLocaleString('en-US', { maximumFractionDigits: 0 });
   return price.toLocaleString('ko-KR', { maximumFractionDigits: 0 }) + '원';
@@ -164,6 +165,7 @@ function formatKRWPrice(price: number): string {
 
 /** USD 포맷 ($X,XXX.XX) */
 function formatUSDPrice(price: number): string {
+  if (!Number.isFinite(price)) return '$0.00';
   if (price >= 1) {
     return '$' + price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
