@@ -439,6 +439,7 @@ const translations = {
     'nav.admin': '관리',
     'nav.userManagement': '회원관리',
     'nav.statistics': '통계',
+    'nav.audit': '감사 보고서',
     'nav.mypage': '마이페이지',
     'nav.help': '도움말',
 
@@ -519,7 +520,9 @@ const translations = {
     'admin.settings.tradingEnabledDesc': '비활성화 시 모든 신규 주문이 차단됩니다',
     'admin.settings.maintenanceMode': '점검 모드',
     'admin.settings.maintenanceModeDesc': '활성화 시 사용자에게 점검 안내가 표시됩니다',
-    'admin.settings.save': '설정 저장',
+    'admin.settings.edit': '편집',
+    'admin.settings.cancel': '취소',
+    'admin.settings.save': '저장',
     'admin.settings.saved': '설정이 저장되었습니다',
     'admin.settings.localOnly': '현재 설정은 로컬 상태로만 저장됩니다 (백엔드 연동 전)',
 
@@ -578,6 +581,22 @@ const translations = {
     'admin.health.desc.chat': '실시간 채팅, 채팅방 관리',
     'admin.health.desc.aiService': 'AI 시장 분석, 포트폴리오 진단',
     'admin.health.desc.notification': '알림 전송, 이벤트 처리',
+    // 서비스 상세 설명
+    'admin.health.detail.apiGateway': '모든 클라이언트 요청의 단일 진입점입니다. JWT 인증 검증, 요청 라우팅, WebSocket 프록시(가격 스트리밍/채팅), 속도 제한, CORS 처리를 담당합니다. 백엔드 마이크로서비스로의 리버스 프록시 역할을 하며, 로깅 인터셉터를 통해 모든 요청/응답을 기록합니다.',
+    'admin.health.detail.userAuth': '사용자 인증 및 관리의 핵심 서비스입니다. JWT 기반 인증(Access Token 15분 / Refresh Token 7일), SMS 2단계 인증, TOTP 지원, 역할 기반 접근 제어(SYSTEM > ADMIN > USER), 계정 잠금(5회 실패 시), 페이지 뷰 추적, 공지사항 관리, 시스템 설정 관리를 담당합니다.',
+    'admin.health.detail.marketData': 'Binance API와 연동하여 실시간 암호화폐 가격 데이터를 수집합니다. 한국/미국 주식 시세 데이터 관리, Kafka를 통한 가격 업데이트 발행, 뉴스 스크래핑, 자산 메타데이터(종목명, 유형, 기준가) 관리를 처리합니다.',
+    'admin.health.detail.orderEngine': '주문 접수부터 체결까지의 전체 라이프사이클을 관리합니다. 시장가/지정가/스탑 주문 처리, Event Sourcing 기반 주문 이벤트 불변 저장, CQRS 패턴(쓰기: 이벤트스토어 / 읽기: PostgreSQL), Kafka를 통한 비동기 이벤트 발행, Portfolio 서비스와 연동한 잔고 검증을 수행합니다.',
+    'admin.health.detail.portfolio': '사용자별 가상 자산 포트폴리오를 관리합니다. 초기 가상 자금 할당, 주문 체결 시 잔고/보유량 정산, 손익(PnL) 계산, 거래 내역 관리, 포트폴리오 가치 평가를 담당합니다. Order Engine으로부터 정산 요청을 수신합니다.',
+    'admin.health.detail.chat': 'Socket.io 기반 실시간 채팅 서비스입니다. 1:1 DM 및 그룹 채팅방 관리, 메시지 읽음 확인(unread count), 참여자 관리(초대/강퇴), 시스템 메시지 자동 생성, 실시간 메시지 전송/수신을 처리합니다.',
+    'admin.health.detail.aiService': 'Claude AI를 활용한 시장 분석 서비스입니다. 개별 종목 기술적 분석, 포트폴리오 진단 및 리스크 평가, 시장 트렌드 분석, AI 기반 투자 인사이트 제공을 담당합니다. 분석 결과는 캐싱하여 반복 요청 시 빠르게 응답합니다.',
+    'admin.health.detail.notification': '시스템 이벤트에 대한 알림을 처리합니다. 이메일 알림 전송(SMTP), 주문 체결/취소 알림, 가격 알림(사용자 설정 기준), 시스템 공지 알림을 담당합니다. SMTP 미설정 시 모의(mock) 전송으로 동작합니다.',
+    // 서비스 기술 스택
+    'admin.health.techStack': '기술 스택',
+    'admin.health.dependencies': '의존 서비스',
+    'admin.health.keyEndpoints': '주요 엔드포인트',
+    'admin.health.database': '데이터베이스',
+    'admin.health.dbStatus': 'DB 상태',
+    'admin.health.protocol': '통신 프로토콜',
 
     // Admin - Order Audit
     'admin.stats.orderAudit': '주문 감사 로그',
@@ -591,6 +610,13 @@ const translations = {
     'admin.stats.orderAudit.status': '상태',
     'admin.stats.orderAudit.time': '시간',
     'admin.stats.orderAudit.noData': '주문 데이터가 없습니다',
+
+    // Admin - Audit
+    'admin.audit.title': '감사 보고서',
+    'admin.audit.desc': '시스템 감사 보고서를 확인합니다',
+    'admin.audit.viewReport': '보고서 보기',
+    'admin.audit.noReports': '감사 보고서가 없습니다',
+    'admin.audit.download': '다운로드',
 
     // Admin Nav
     'nav.settings': '시스템 설정',
@@ -858,6 +884,8 @@ const translations = {
     'order.triggerPricePlaceholder': '도달 시 주문 실행',
     'order.stopLossDesc': '설정가 도달 시 시장가로 자동 매매',
     'order.takeProfitDesc': '목표가 도달 시 시장가로 자동 매매',
+    'order.insufficientFunds': '잔고가 부족합니다. 먼저 입금해 주세요.',
+    'order.error': '주문 처리 중 오류가 발생했습니다.',
 
     // Portfolio
     'portfolio.deposit': '입금하기',
@@ -1954,6 +1982,7 @@ const translations = {
     'nav.admin': 'Admin',
     'nav.userManagement': 'Users',
     'nav.statistics': 'Statistics',
+    'nav.audit': 'Audit',
     'nav.mypage': 'My Page',
     'nav.help': 'Help',
 
@@ -2034,7 +2063,9 @@ const translations = {
     'admin.settings.tradingEnabledDesc': 'When disabled, all new orders will be blocked',
     'admin.settings.maintenanceMode': 'Maintenance Mode',
     'admin.settings.maintenanceModeDesc': 'When enabled, users will see a maintenance notice',
-    'admin.settings.save': 'Save Settings',
+    'admin.settings.edit': 'Edit',
+    'admin.settings.cancel': 'Cancel',
+    'admin.settings.save': 'Save',
     'admin.settings.saved': 'Settings saved',
     'admin.settings.localOnly': 'Settings are stored locally only (before backend integration)',
 
@@ -2093,6 +2124,22 @@ const translations = {
     'admin.health.desc.chat': 'Real-time chat, room management',
     'admin.health.desc.aiService': 'AI market analysis, portfolio diagnosis',
     'admin.health.desc.notification': 'Notification delivery, event processing',
+    // Service detailed descriptions
+    'admin.health.detail.apiGateway': 'Single entry point for all client requests. Handles JWT auth verification, request routing, WebSocket proxy (price streaming/chat), rate limiting, and CORS. Acts as reverse proxy to backend microservices with request/response logging via LoggingInterceptor.',
+    'admin.health.detail.userAuth': 'Core authentication and user management service. JWT-based auth (Access Token 15m / Refresh Token 7d), SMS 2FA, TOTP support, role-based access control (SYSTEM > ADMIN > USER), account lockout (5 failed attempts), page view tracking, announcements, and system settings management.',
+    'admin.health.detail.marketData': 'Integrates with Binance API for real-time crypto price data. Manages KR/US stock price data, publishes price updates via Kafka, handles news scraping, and maintains asset metadata (symbol, type, base price).',
+    'admin.health.detail.orderEngine': 'Manages the full order lifecycle from placement to execution. Processes market/limit/stop orders, Event Sourcing for immutable order events, CQRS pattern (write: event store / read: PostgreSQL), async event publishing via Kafka, and balance validation with Portfolio service.',
+    'admin.health.detail.portfolio': 'Manages per-user virtual asset portfolios. Handles initial virtual fund allocation, balance/holdings settlement on order execution, PnL calculation, transaction history, and portfolio valuation. Receives settlement requests from Order Engine.',
+    'admin.health.detail.chat': 'Socket.io-based real-time chat service. Manages 1:1 DM and group chat rooms, message read receipts (unread count), participant management (invite/kick), auto-generated system messages, and real-time message send/receive.',
+    'admin.health.detail.aiService': 'AI-powered market analysis using Claude AI. Provides individual asset technical analysis, portfolio diagnosis and risk assessment, market trend analysis, and AI-driven investment insights. Analysis results are cached for fast repeated responses.',
+    'admin.health.detail.notification': 'Handles notifications for system events. Email notifications (SMTP), order execution/cancellation alerts, price alerts (user-configured thresholds), and system announcement notifications. Falls back to mock transport when SMTP is not configured.',
+    // Service tech stack labels
+    'admin.health.techStack': 'Tech Stack',
+    'admin.health.dependencies': 'Dependencies',
+    'admin.health.keyEndpoints': 'Key Endpoints',
+    'admin.health.database': 'Database',
+    'admin.health.dbStatus': 'DB Status',
+    'admin.health.protocol': 'Protocol',
 
     // Admin - Order Audit
     'admin.stats.orderAudit': 'Order Audit Log',
@@ -2106,6 +2153,13 @@ const translations = {
     'admin.stats.orderAudit.status': 'Status',
     'admin.stats.orderAudit.time': 'Time',
     'admin.stats.orderAudit.noData': 'No order data',
+
+    // Admin - Audit
+    'admin.audit.title': 'Audit Report',
+    'admin.audit.desc': 'View system audit reports',
+    'admin.audit.viewReport': 'View Report',
+    'admin.audit.noReports': 'No audit reports available',
+    'admin.audit.download': 'Download',
 
     // Admin Nav
     'nav.settings': 'Settings',
@@ -2373,6 +2427,8 @@ const translations = {
     'order.triggerPricePlaceholder': 'Execute when price reaches',
     'order.stopLossDesc': 'Auto-execute at market price when trigger is reached',
     'order.takeProfitDesc': 'Auto-execute at market price when target is reached',
+    'order.insufficientFunds': 'Insufficient funds. Please deposit first.',
+    'order.error': 'An error occurred while processing the order.',
 
     // Portfolio
     'portfolio.deposit': 'Deposit',

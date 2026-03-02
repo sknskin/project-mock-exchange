@@ -11,7 +11,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Activity, RefreshCw, CheckCircle2, XCircle, Loader2,
-  Server, Database, Cpu, Clock, Globe, Zap,
+  Server, Database, Cpu, Clock, Globe, Zap, Code, Link2, Layers, Info,
 } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { TranslationKey } from '@/lib/i18n';
@@ -30,13 +30,13 @@ interface ServiceDef {
 
 const SERVICE_META: Omit<ServiceDef, 'port'>[] = [
   { key: 'api-gateway', nameKey: 'admin.health.service.apiGateway', descKey: 'admin.health.desc.apiGateway', hasStats: false },
-  { key: 'user-auth', nameKey: 'admin.health.service.userAuth', descKey: 'admin.health.desc.userAuth', hasStats: true },
   { key: 'market-data', nameKey: 'admin.health.service.marketData', descKey: 'admin.health.desc.marketData', hasStats: true },
   { key: 'order-engine', nameKey: 'admin.health.service.orderEngine', descKey: 'admin.health.desc.orderEngine', hasStats: false },
   { key: 'portfolio', nameKey: 'admin.health.service.portfolio', descKey: 'admin.health.desc.portfolio', hasStats: false },
+  { key: 'notification', nameKey: 'admin.health.service.notification', descKey: 'admin.health.desc.notification', hasStats: false },
   { key: 'chat', nameKey: 'admin.health.service.chat', descKey: 'admin.health.desc.chat', hasStats: true },
   { key: 'ai-service', nameKey: 'admin.health.service.aiService', descKey: 'admin.health.desc.aiService', hasStats: false },
-  { key: 'notification', nameKey: 'admin.health.service.notification', descKey: 'admin.health.desc.notification', hasStats: false },
+  { key: 'user-auth', nameKey: 'admin.health.service.userAuth', descKey: 'admin.health.desc.userAuth', hasStats: true },
 ];
 
 // 포트 정보 fallback (API 호출 전 초기값)
@@ -45,6 +45,81 @@ const DEFAULT_PORTS: Record<string, number> = {
   'api-gateway': 3000, 'user-auth': 3007, 'market-data': 3001,
   'order-engine': 3002, 'portfolio': 3003, 'chat': 3005,
   'ai-service': 3006, 'notification': 3004,
+};
+
+// 서비스별 상세 메타 (기술 스택, 의존 서비스, 주요 엔드포인트)
+// Per-service detailed meta (tech stack, dependencies, key endpoints)
+interface ServiceMeta {
+  tech: string[];
+  db?: string;
+  deps: string[];
+  endpoints: string[];
+  protocol: string;
+  detailKey: string;
+}
+
+const SERVICE_DETAIL_META: Record<string, ServiceMeta> = {
+  'api-gateway': {
+    tech: ['NestJS', 'Socket.io', 'Passport JWT', 'HttpProxy'],
+    deps: ['user-auth', 'market-data', 'order-engine', 'portfolio', 'notification', 'chat', 'ai-service'],
+    endpoints: ['/api/health', '/api/auth/*', '/api/orders/*', '/api/portfolio/*', '/api/chat/*'],
+    protocol: 'HTTP + WebSocket',
+    detailKey: 'admin.health.detail.apiGateway',
+  },
+  'user-auth': {
+    tech: ['NestJS', 'Prisma', 'JWT', 'bcrypt', 'TOTP'],
+    db: 'mex_auth',
+    deps: ['PostgreSQL', 'Redis'],
+    endpoints: ['/auth/login', '/auth/register', '/auth/refresh', '/admin/users', '/admin/settings'],
+    protocol: 'HTTP',
+    detailKey: 'admin.health.detail.userAuth',
+  },
+  'market-data': {
+    tech: ['NestJS', 'Prisma', 'Binance WS', 'Kafka Producer'],
+    db: 'mex_market',
+    deps: ['PostgreSQL', 'Kafka', 'Binance API'],
+    endpoints: ['/assets', '/assets/:symbol/candles', '/assets/:symbol/price', '/news'],
+    protocol: 'HTTP + Kafka',
+    detailKey: 'admin.health.detail.marketData',
+  },
+  'order-engine': {
+    tech: ['NestJS', 'Prisma', 'Kafka', 'Event Sourcing', 'CQRS'],
+    db: 'mex_orders',
+    deps: ['PostgreSQL', 'Kafka', 'market-data', 'portfolio'],
+    endpoints: ['/orders', '/orders/:id', '/orders/cancel/:id', '/stats/trading'],
+    protocol: 'HTTP + Kafka',
+    detailKey: 'admin.health.detail.orderEngine',
+  },
+  'portfolio': {
+    tech: ['NestJS', 'Prisma'],
+    db: 'mex_portfolio',
+    deps: ['PostgreSQL'],
+    endpoints: ['/portfolio', '/portfolio/holdings', '/portfolio/transactions', '/portfolio/balance'],
+    protocol: 'HTTP',
+    detailKey: 'admin.health.detail.portfolio',
+  },
+  'notification': {
+    tech: ['NestJS', 'Nodemailer', 'Kafka Consumer'],
+    deps: ['Kafka', 'SMTP'],
+    endpoints: ['/notifications', '/notifications/settings'],
+    protocol: 'HTTP + Kafka',
+    detailKey: 'admin.health.detail.notification',
+  },
+  'chat': {
+    tech: ['NestJS', 'Prisma', 'Socket.io'],
+    db: 'mex_chat',
+    deps: ['PostgreSQL'],
+    endpoints: ['/rooms', '/rooms/:id/messages', '/rooms/:id/participants'],
+    protocol: 'HTTP + WebSocket',
+    detailKey: 'admin.health.detail.chat',
+  },
+  'ai-service': {
+    tech: ['NestJS', 'Anthropic Claude API'],
+    deps: ['Claude API'],
+    endpoints: ['/analysis/:symbol', '/analysis/portfolio', '/analysis/market'],
+    protocol: 'HTTP',
+    detailKey: 'admin.health.detail.aiService',
+  },
 };
 
 type HealthStatus = 'healthy' | 'unhealthy' | 'checking';
@@ -392,6 +467,23 @@ export default function AdminHealthPage() {
             </div>
           </div>
 
+          {/* Detailed description */}
+          {(() => {
+            const meta = SERVICE_DETAIL_META[activeTab];
+            if (!meta) return null;
+            return (
+              <div className="bg-bg-secondary rounded-2xl p-5 border border-border">
+                <div className="flex items-center gap-2 mb-3">
+                  <Info className="w-4 h-4 text-accent" />
+                  <h3 className="text-[14px] font-bold text-text-primary">{t('admin.health.description')}</h3>
+                </div>
+                <p className="text-[13px] text-text-tertiary leading-relaxed">
+                  {t(meta.detailKey as Parameters<typeof t>[0])}
+                </p>
+              </div>
+            );
+          })()}
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Service Info Card */}
             <div className="bg-bg-secondary rounded-2xl p-5 border border-border">
@@ -402,7 +494,10 @@ export default function AdminHealthPage() {
               <div className="space-y-3">
                 <InfoRow label={t('admin.health.port')} value={`${activeService.port}`} mono />
                 <InfoRow label={t('admin.health.endpoint')} value={`http://localhost:${activeService.port}`} mono />
-                <InfoRow label={t('admin.health.description')} value={t(activeService.descKey as Parameters<typeof t>[0])} />
+                <InfoRow label={t('admin.health.protocol')} value={SERVICE_DETAIL_META[activeTab]?.protocol ?? 'HTTP'} />
+                {SERVICE_DETAIL_META[activeTab]?.db && (
+                  <InfoRow label={t('admin.health.database')} value={SERVICE_DETAIL_META[activeTab].db!} mono />
+                )}
                 {activeHealth?.lastChecked && (
                   <InfoRow label={t('admin.health.lastChecked')} value={formatTime(activeHealth.lastChecked)} />
                 )}
@@ -436,7 +531,72 @@ export default function AdminHealthPage() {
                 <p className="text-[13px] text-text-quaternary py-4">{t('admin.health.noMetrics')}</p>
               )}
             </div>
+
+            {/* Tech Stack Card */}
+            {SERVICE_DETAIL_META[activeTab] && (
+              <div className="bg-bg-secondary rounded-2xl p-5 border border-border">
+                <div className="flex items-center gap-2 mb-4">
+                  <Code className="w-4 h-4 text-accent" />
+                  <h3 className="text-[14px] font-bold text-text-primary">{t('admin.health.techStack')}</h3>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {SERVICE_DETAIL_META[activeTab].tech.map((tech) => (
+                    <span key={tech} className="px-2.5 py-1 rounded-lg bg-accent/10 text-accent text-[12px] font-semibold">
+                      {tech}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Dependencies Card */}
+            {SERVICE_DETAIL_META[activeTab] && (
+              <div className="bg-bg-secondary rounded-2xl p-5 border border-border">
+                <div className="flex items-center gap-2 mb-4">
+                  <Link2 className="w-4 h-4 text-accent" />
+                  <h3 className="text-[14px] font-bold text-text-primary">{t('admin.health.dependencies')}</h3>
+                </div>
+                <div className="space-y-2">
+                  {SERVICE_DETAIL_META[activeTab].deps.map((dep) => {
+                    const depHealth = services.find((s) => s.key === dep);
+                    return (
+                      <div key={dep} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-bg-primary/50">
+                        {depHealth ? (
+                          <span className={cn('w-2 h-2 rounded-full shrink-0', depHealth.status === 'healthy' ? 'bg-emerald-400' : depHealth.status === 'unhealthy' ? 'bg-red-400' : 'bg-text-quaternary')} />
+                        ) : (
+                          <Layers className="w-3 h-3 text-text-quaternary shrink-0" />
+                        )}
+                        <span className="text-[13px] text-text-primary">{dep}</span>
+                        {depHealth && (
+                          <span className={cn('text-[11px] ml-auto', depHealth.status === 'healthy' ? 'text-emerald-400' : 'text-red-400')}>
+                            {depHealth.status === 'healthy' ? 'OK' : 'DOWN'}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
+
+          {/* Key Endpoints Card */}
+          {SERVICE_DETAIL_META[activeTab] && (
+            <div className="bg-bg-secondary rounded-2xl p-5 border border-border">
+              <div className="flex items-center gap-2 mb-4">
+                <Globe className="w-4 h-4 text-accent" />
+                <h3 className="text-[14px] font-bold text-text-primary">{t('admin.health.keyEndpoints')}</h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                {SERVICE_DETAIL_META[activeTab].endpoints.map((ep) => (
+                  <div key={ep} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-bg-primary/50">
+                    <span className="text-[10px] font-bold text-emerald-400 bg-emerald-400/10 px-1.5 py-0.5 rounded shrink-0">GET</span>
+                    <span className="text-[12px] font-mono text-text-tertiary truncate">{ep}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Service Metrics Card */}
           <ServiceMetricsCard
