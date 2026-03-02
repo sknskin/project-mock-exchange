@@ -22,6 +22,12 @@ interface ReportItem {
 
 const REPORTS: ReportItem[] = [
   {
+    name: 'audit-report-4.pdf',
+    path: '/docs/report/audit-report-4.pdf',
+    label: 'VirtuEx 시스템 감사 보고서 (4차)',
+    date: '2026-03-02',
+  },
+  {
     name: 'audit-report-3.pdf',
     path: '/docs/report/audit-report-3.pdf',
     label: 'VirtuEx 시스템 감사 보고서 (3차)',
