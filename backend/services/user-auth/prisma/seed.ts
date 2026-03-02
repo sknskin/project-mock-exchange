@@ -34,27 +34,27 @@ async function main() {
   console.log(`Deleted ${deleted.count} existing user(s)`);
 
   // 2. 시스템 계정 생성 / Create system account
-  const passwordHash = await bcrypt.hash('ehgml5516!', SALT_ROUNDS);
+  const passwordHash = await bcrypt.hash('SystemPass123!@#', SALT_ROUNDS);
   const jwtSecret = process.env.JWT_SECRET;
   if (!jwtSecret) {
     throw new Error('JWT_SECRET environment variable is required');
   }
   const encryptionSalt = process.env.ENCRYPTION_SALT || 'virtuex-salt';
-  const encryptedRrn = encryptRrn('9311171052812', jwtSecret, encryptionSalt);
+  const encryptedRrn = encryptRrn('0000001234567', jwtSecret, encryptionSalt);
 
   const systemUser = await prisma.user.create({
     data: {
       email: 'system@naver.com',
       username: 'system',
       passwordHash,
-      name: '한도희',
+      name: '시스템관리자',
       role: 'SYSTEM',
       isActive: true,
       approvalStatus: 'APPROVED',
       approvedAt: new Date(),
-      phone: '01074554829',
+      phone: '01000000000',
       encryptedRrn,
-      address: '경기도 용인시 기흥구 용구대로 2394번길 27 래미안1차115동904호',
+      address: '서울특별시 강남구 테헤란로 123',
       zipCode: '16909',
     },
   });
