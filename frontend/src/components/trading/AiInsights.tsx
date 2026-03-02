@@ -85,7 +85,7 @@ export default function AiInsights() {
         <div className="bg-bg-secondary rounded-2xl p-6 text-center">
           <AlertTriangle className="w-6 h-6 text-text-quaternary mx-auto mb-2" />
           <p className="text-[13px] text-text-quaternary">
-            데이터를 불러올 수 없습니다
+            {t('ai.loadError')}
           </p>
         </div>
       </div>

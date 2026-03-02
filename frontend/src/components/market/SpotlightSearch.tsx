@@ -102,7 +102,7 @@ export default function SpotlightSearch({ isOpen, onClose, assets, onLoginRequir
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
       {/* 모달 / Modal */}
-      <div className="relative w-[90vw] max-w-[560px] bg-bg-primary border border-border rounded-2xl shadow-2xl overflow-hidden">
+      <div className="relative w-[90vw] max-w-[560px] bg-bg-primary border border-border rounded-2xl shadow-2xl overflow-hidden" role="dialog" aria-modal="true">
         {/* 검색 입력란 / Search input */}
         <div className="flex items-center gap-3 px-5 py-4 border-b border-border">
           <Search className="w-5 h-5 text-text-quaternary shrink-0" />

@@ -84,7 +84,7 @@ function DepthChart({ asks, bids }: DepthChartProps) {
   if (!chartData) {
     return (
       <div className="h-[200px] flex items-center justify-center text-text-quaternary text-[13px]">
-        No data
+        {t('common.noData')}
       </div>
     );
   }

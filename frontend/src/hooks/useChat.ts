@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tansta
 import api from '@/lib/api';
 import { useAuthStore } from '@/stores/auth';
 import { useToastStore } from '@/stores/toast';
+import { useTranslation } from '@/hooks/useTranslation';
 import type { ChatRoom, ChatMessage, ChatUserSearchResult } from '@/types';
 
 export function useChatRooms() {
@@ -56,6 +57,7 @@ export function useCreateRoom() {
 
 export function useSendMessage() {
   const qc = useQueryClient();
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: async ({ roomId, content }: { roomId: string; content: string }) => {
       const { data } = await api.post(`/api/chat/rooms/${roomId}/messages`, { content });
@@ -74,7 +76,7 @@ export function useSendMessage() {
       qc.invalidateQueries({ queryKey: ['chat-rooms'] });
     },
     onError: () => {
-      useToastStore.getState().addToast('메시지 전송에 실패했습니다', 'error');
+      useToastStore.getState().addToast(t('chat.sendFailed'), 'error');
     },
   });
 }

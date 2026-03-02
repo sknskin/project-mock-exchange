@@ -7,7 +7,7 @@
  */
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Lock, Edit2, User, Bell, BarChart3, Activity } from 'lucide-react';
@@ -52,6 +52,7 @@ function RoleBadge({ role, t }: { role: string; t: (key: Parameters<ReturnType<t
 }
 
 function NotifToggle({ label, prefKey }: { label: string; prefKey: keyof NotificationPrefs }) {
+  const { t } = useTranslation();
   const value = useSettingsStore((s) => s.notificationPrefs[prefKey]);
   const setPref = useSettingsStore((s) => s.setNotificationPref);
 
@@ -67,7 +68,7 @@ function NotifToggle({ label, prefKey }: { label: string; prefKey: keyof Notific
     } catch {
       // Rollback on failure
       setPref(prefKey, value);
-      useToastStore.getState().addToast('알림 설정 저장 실패', 'error');
+      useToastStore.getState().addToast(t('mypage.notificationSaveFailed'), 'error');
     }
   };
 
@@ -144,6 +145,24 @@ export default function MyPage() {
   const [passwordError, setPasswordError] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState('');
   const [confirmPasswordOpen, setConfirmPasswordOpen] = useState(false);
+
+  const passwordModalRef = useRef<HTMLDivElement>(null);
+  const handlePasswordModalKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key !== 'Tab') return;
+    const modal = passwordModalRef.current;
+    if (!modal) return;
+    const focusable = modal.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    );
+    if (focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (e.shiftKey) {
+      if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+    } else {
+      if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+  }, []);
 
   const handleOpenPasswordModal = () => {
     setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
@@ -399,7 +418,7 @@ export default function MyPage() {
             onClick={handleClosePasswordModal}
           />
           <div className="fixed inset-0 z-[61] flex items-center justify-center pointer-events-none px-4">
-            <div className="relative bg-bg-primary border border-border rounded-2xl p-6 w-full max-w-[360px] max-w-[calc(100vw-2rem)] shadow-2xl pointer-events-auto">
+            <div ref={passwordModalRef} onKeyDown={handlePasswordModalKeyDown} className="relative bg-bg-primary border border-border rounded-2xl p-6 w-full max-w-[360px] max-w-[calc(100vw-2rem)] shadow-2xl pointer-events-auto" role="dialog" aria-modal="true">
               <div className="flex items-center justify-between mb-5">
                 <h3 className="text-[16px] font-bold text-text-primary">
                   {t('mypage.changePassword')}

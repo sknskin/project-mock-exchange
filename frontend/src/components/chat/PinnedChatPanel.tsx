@@ -3,6 +3,7 @@
 import { useChatStore } from '@/stores/chat';
 import { useLeaveRoom } from '@/hooks/useChat';
 import { useChatSocket } from '@/hooks/useChatSocket';
+import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/format';
 import RoomList from './RoomList';
 import MessageArea from './MessageArea';
@@ -12,11 +13,13 @@ export default function PinnedChatPanel() {
   const { isOpen, isPinned, view, activeRoomId, closeChat, backToList } = useChatStore();
   const leaveRoom = useLeaveRoom();
   const { joinRoom, leaveRoom: leaveSocketRoom, emitTyping } = useChatSocket();
+  const { t } = useTranslation();
 
   const visible = isOpen && isPinned;
 
   const handleLeaveRoom = async () => {
     if (!activeRoomId) return;
+    if (!window.confirm(t('chat.confirmLeaveRoom'))) return;
     await leaveRoom.mutateAsync(activeRoomId);
     backToList();
   };

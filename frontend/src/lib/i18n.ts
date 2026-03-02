@@ -316,6 +316,7 @@ const translations = {
     'auth.loginSms.attemptsLeft': '회 남음',
     'auth.loginSms.accountLocked': '인증 실패 횟수 초과로 계정이 잠겼습니다. 관리자에게 문의하세요.',
     'auth.loginSms.sessionExpired': '인증 세션이 만료되었습니다. 다시 로그인해주세요.',
+    'auth.sendCodeFailed': '인증번호 발송 실패',
 
     // Auth - Register
     'auth.register.title': '회원가입',
@@ -525,6 +526,7 @@ const translations = {
     'admin.settings.save': '저장',
     'admin.settings.saved': '설정이 저장되었습니다',
     'admin.settings.localOnly': '현재 설정은 로컬 상태로만 저장됩니다 (백엔드 연동 전)',
+    'admin.settings.saveFailed': '설정 저장 실패',
 
     // Admin - Service Health
     'admin.health.title': '서비스 상태',
@@ -700,6 +702,7 @@ const translations = {
     'mypage.confirmPasswordChange': '정말로 비밀번호를 변경하시겠습니까?',
     'mypage.confirmPasswordChangeDesc': '비밀번호 변경 후에는 새 비밀번호로만 로그인할 수 있습니다. 변경 전 새 비밀번호를 반드시 기억해 주세요.',
     'mypage.confirm': '확인',
+    'mypage.notificationSaveFailed': '알림 설정 저장 실패',
 
     // MyPage - Trading Statistics
     'mypage.tradingStats': '거래 통계',
@@ -1260,6 +1263,9 @@ const translations = {
     'chat.file.image': '이미지',
     'chat.file.file': '파일',
     'chat.tooltip.attach': '파일 첨부',
+    'chat.confirmLeaveRoom': '채팅방을 나가시겠습니까?',
+    'chat.me': '(나)',
+    'chat.sendFailed': '메시지 전송에 실패했습니다',
 
     // Common
     'common.confirm': '확인',
@@ -1275,6 +1281,7 @@ const translations = {
     'common.system': '시스템',
     'common.admin': '관리자',
     'common.user': '사용자',
+    'common.openMenu': '메뉴 열기',
 
     // Help
     'help.title': '도움말',
@@ -1555,6 +1562,7 @@ const translations = {
     'ai.diversification': '분산 점수',
     'ai.riskScore': '위험 점수',
     'ai.suggestions': '제안',
+    'ai.loadError': '데이터를 불러올 수 없습니다',
 
     // Connection Guard
     'connection.title': '서버에 연결할 수 없습니다',
@@ -1870,6 +1878,7 @@ const translations = {
     'auth.loginSms.attemptsLeft': 'attempts left',
     'auth.loginSms.accountLocked': 'Too many failed attempts. Your account has been locked. Please contact the administrator.',
     'auth.loginSms.sessionExpired': 'Session expired. Please log in again.',
+    'auth.sendCodeFailed': 'Failed to send verification code',
 
     // Auth - Register
     'auth.register.title': 'Sign Up',
@@ -2079,6 +2088,7 @@ const translations = {
     'admin.settings.save': 'Save',
     'admin.settings.saved': 'Settings saved',
     'admin.settings.localOnly': 'Settings are stored locally only (before backend integration)',
+    'admin.settings.saveFailed': 'Failed to save settings',
 
     // Admin - Service Health
     'admin.health.title': 'Service Health',
@@ -2254,6 +2264,7 @@ const translations = {
     'mypage.confirmPasswordChange': 'Are you sure you want to change your password?',
     'mypage.confirmPasswordChangeDesc': 'After changing your password, you can only log in with the new password. Please make sure to remember your new password.',
     'mypage.confirm': 'Confirm',
+    'mypage.notificationSaveFailed': 'Failed to save notification settings',
 
     // MyPage - Trading Statistics
     'mypage.tradingStats': 'Trading Statistics',
@@ -2814,6 +2825,9 @@ const translations = {
     'chat.file.image': 'Image',
     'chat.file.file': 'File',
     'chat.tooltip.attach': 'Attach file',
+    'chat.confirmLeaveRoom': 'Are you sure you want to leave this room?',
+    'chat.me': '(me)',
+    'chat.sendFailed': 'Failed to send message',
 
     // Common
     'common.confirm': 'Confirm',
@@ -2829,6 +2843,7 @@ const translations = {
     'common.system': 'System',
     'common.admin': 'Admin',
     'common.user': 'User',
+    'common.openMenu': 'Open menu',
 
     // Help
     'help.title': 'Help',
@@ -3109,6 +3124,7 @@ const translations = {
     'ai.diversification': 'Diversification',
     'ai.riskScore': 'Risk Score',
     'ai.suggestions': 'Suggestions',
+    'ai.loadError': 'Unable to load data',
 
     // Connection Guard
     'connection.title': 'Unable to connect to server',

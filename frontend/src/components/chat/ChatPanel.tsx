@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { useChatStore } from '@/stores/chat';
 import { useLeaveRoom } from '@/hooks/useChat';
 import { useChatSocket } from '@/hooks/useChatSocket';
+import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/format';
 import RoomList from './RoomList';
 import MessageArea from './MessageArea';
@@ -18,6 +19,7 @@ type DragMode = 'move' | 'resize-se' | 'resize-sw' | 'resize-ne' | 'resize-nw' |
 export default function ChatPanel() {
   const { isOpen, isPinned, view, activeRoomId, position, size, closeChat, backToList, setPosition, setSize } = useChatStore();
   const leaveRoom = useLeaveRoom();
+  const { t } = useTranslation();
   const { joinRoom, leaveRoom: leaveSocketRoom, emitTyping } = useChatSocket();
 
   const panelRef = useRef<HTMLDivElement>(null);
@@ -117,7 +119,7 @@ export default function ChatPanel() {
 
   const handleLeaveRoom = async () => {
     if (!activeRoomId) return;
-    if (!window.confirm('채팅방을 나가시겠습니까?')) return;
+    if (!window.confirm(t('chat.confirmLeaveRoom'))) return;
     try {
       await leaveRoom.mutateAsync(activeRoomId);
       backToList();

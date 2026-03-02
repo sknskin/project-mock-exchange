@@ -22,6 +22,12 @@ interface ReportItem {
 
 const REPORTS: ReportItem[] = [
   {
+    name: 'audit-report-5.pdf',
+    path: '/docs/report/audit-report-5.pdf',
+    label: 'VirtuEx 시스템 감사 보고서 (5차)',
+    date: '2026-03-02',
+  },
+  {
     name: 'audit-report-4.pdf',
     path: '/docs/report/audit-report-4.pdf',
     label: 'VirtuEx 시스템 감사 보고서 (4차)',
@@ -98,12 +104,12 @@ export default function AdminAuditPage() {
           REPORTS.map((report) => (
             <div
               key={report.name}
-              className="flex items-center justify-between bg-bg-secondary rounded-2xl px-5 py-4"
+              className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-bg-secondary rounded-2xl px-4 py-3.5 sm:px-5 sm:py-4"
             >
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 min-w-0">
                 <FileText className="w-5 h-5 text-text-tertiary shrink-0" />
-                <div>
-                  <p className="text-[14px] font-medium text-text-primary">
+                <div className="min-w-0">
+                  <p className="text-[14px] font-medium text-text-primary truncate">
                     {report.label}
                   </p>
                   <div className="flex items-center gap-3 mt-0.5">
@@ -111,25 +117,26 @@ export default function AdminAuditPage() {
                       <Calendar className="w-3 h-3" />
                       {report.date}
                     </span>
-                    <span className="text-[11px] text-text-quaternary">
+                    <span className="text-[11px] text-text-quaternary hidden sm:inline">
                       {report.name}
                     </span>
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 sm:shrink-0 pl-8 sm:pl-0">
                 <button
                   onClick={() => handleDownload(report)}
-                  className="flex items-center gap-1.5 h-9 px-3 rounded-xl bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-[13px] font-medium transition-colors"
+                  className="flex items-center justify-center gap-1.5 h-10 sm:h-9 px-3 rounded-xl bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-[13px] font-medium transition-colors"
                   aria-label={t('admin.audit.download')}
                 >
-                  <Download className="w-3.5 h-3.5" />
+                  <Download className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
+                  <span className="sm:hidden">{t('admin.audit.download')}</span>
                 </button>
                 <button
                   onClick={() => handleView(report)}
-                  className="flex items-center gap-1.5 h-9 px-4 rounded-xl bg-accent/10 hover:bg-accent/20 text-accent text-[13px] font-semibold transition-colors"
+                  className="flex items-center justify-center gap-1.5 h-10 sm:h-9 px-4 rounded-xl bg-accent/10 hover:bg-accent/20 text-accent text-[13px] font-semibold transition-colors"
                 >
-                  <Eye className="w-3.5 h-3.5" />
+                  <Eye className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
                   {t('admin.audit.viewReport')}
                 </button>
               </div>

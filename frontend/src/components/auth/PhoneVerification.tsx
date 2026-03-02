@@ -61,7 +61,7 @@ export default function PhoneVerification({
       setMessage(t('sms.sent'));
       setMessageType('success');
     } catch {
-      setMessage('Failed to send code');
+      setMessage(t('auth.sendCodeFailed'));
       setMessageType('error');
     } finally {
       setSending(false);

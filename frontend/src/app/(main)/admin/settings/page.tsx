@@ -171,7 +171,7 @@ export default function AdminSettingsPage() {
       useToastStore.getState().addToast(t('admin.settings.saved'), 'success');
     },
     onError: () => {
-      useToastStore.getState().addToast('설정 저장 실패', 'error');
+      useToastStore.getState().addToast(t('admin.settings.saveFailed'), 'error');
     },
   });
 
