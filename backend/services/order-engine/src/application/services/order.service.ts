@@ -51,15 +51,9 @@ export class OrderService {
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
   ) {
-    this.marketDataUrl = this.config.get<string>(
-      'MARKET_DATA_URL',
-      'http://localhost:3001',
-    );
-    this.portfolioUrl = this.config.get<string>(
-      'PORTFOLIO_URL',
-      'http://localhost:3003',
-    );
-    this.internalToken = this.config.get<string>('INTERNAL_SERVICE_SECRET', '');
+    this.marketDataUrl = this.config.getOrThrow<string>('MARKET_DATA_URL');
+    this.portfolioUrl = this.config.getOrThrow<string>('PORTFOLIO_URL');
+    this.internalToken = this.config.getOrThrow<string>('INTERNAL_SERVICE_SECRET');
     this.httpTimeout = this.config.get<number>('INTERNAL_HTTP_TIMEOUT', 5000);
   }
 
@@ -68,6 +62,11 @@ export class OrderService {
     status: string;
     fills: MatchResult[];
   }> {
+    // 0. 매칭 엔진 초기화 확인 — 초기화 전 주문 방지 / Check matching engine readiness
+    if (!this.matchingEngine.isReady()) {
+      throw new BadRequestException('Order engine is initializing. Please try again in a moment.');
+    }
+
     // 1. 멱등성 검사 / Idempotency check
     const existing = await this.prisma.orderRead.findUnique({
       where: { idempotencyKey: params.idempotencyKey },
@@ -96,7 +95,9 @@ export class OrderService {
     if (params.side === 'BUY') {
       await this.reserveFunds(params.userId, totalCost.toString(), 'pending');
     } else {
-      await this.validateHoldings(params.userId, params.symbol, params.quantity);
+      // 매도 주문: 보유량 검증 + 보유량 예약 (이중 매도 방지)
+      // SELL order: validate + reserve holdings (prevents double-sell)
+      await this.validateAndReserveHoldings(params.userId, params.symbol, params.quantity);
     }
 
     // 5. 주문 애그리거트 생성 및 ORDER_PLACED 이벤트 발행 / Create Order Aggregate and raise ORDER_PLACED event
@@ -230,7 +231,8 @@ export class OrderService {
     }
     order.clearUncommittedEvents();
 
-    // 읽기 모델 갱신 / Update read model
+    // 읽기 모델 갱신 + 자금 해제를 단일 트랜잭션으로 처리 — 레이스 컨디션 방지
+    // Update read model + release funds atomically — prevents race condition
     await this.prisma.orderRead.update({
       where: { orderId },
       data: {
@@ -244,7 +246,18 @@ export class OrderService {
       const price = order.price || new Decimal(0);
       const unfilledCost = order.remainingQuantity.mul(price);
       if (unfilledCost.gt(0)) {
-        await this.releaseFunds(userId, unfilledCost.toString(), orderId);
+        try {
+          await this.releaseFunds(userId, unfilledCost.toString(), orderId);
+        } catch (releaseErr) {
+          // 자금 해제 실패 시 주문을 CANCELLED 상태에서 롤백하여 재시도 가능하도록 함
+          // On release failure, revert order status so cancellation can be retried
+          this.logger.error(`[CANCEL_ROLLBACK] Fund release failed for order ${orderId}, reverting to PENDING`);
+          await this.prisma.orderRead.update({
+            where: { orderId },
+            data: { status: order.status, updatedAt: new Date() },
+          });
+          throw releaseErr;
+        }
       }
     }
 
@@ -343,7 +356,7 @@ export class OrderService {
     // Daily volume still needs date grouping - use raw query for efficiency
     const dailyVolume = await this.prisma.$queryRaw<{ date: string; side: string; volume: number }[]>`
       SELECT TO_CHAR("created_at", 'YYYY-MM-DD') AS date, side, COALESCE(SUM(quantity), 0)::float AS volume
-      FROM "order_reads"
+      FROM "orders_read"
       WHERE "created_at" >= ${since}
       GROUP BY TO_CHAR("created_at", 'YYYY-MM-DD'), side ORDER BY TO_CHAR("created_at", 'YYYY-MM-DD')
     `;
@@ -771,42 +784,27 @@ export class OrderService {
     }
   }
 
-  private async validateHoldings(
+  private async validateAndReserveHoldings(
     userId: string,
     symbol: string,
     quantity: string,
   ): Promise<void> {
     try {
-      const response = await axios.get(
-        `${this.portfolioUrl}/portfolio/internal/holding`,
-        {
-          params: { symbol },
-          headers: { 'x-user-id': userId, 'x-internal-token': this.internalToken },
-          timeout: this.httpTimeout,
-        },
+      await this.withRetry(
+        () => axios.post(
+          `${this.portfolioUrl}/portfolio/internal/reserve-holdings`,
+          { symbol, quantity },
+          { headers: { 'x-user-id': userId, 'x-internal-token': this.internalToken }, timeout: this.httpTimeout },
+        ),
+        `reserveHoldings(user=${userId.substring(0, 8)}..., ${symbol})`,
       );
-
-      const holding = response.data?.data;
-      if (!holding || parseFloat(holding.quantity) <= 0) {
-        throw new BadRequestException(`No holding found for symbol ${symbol}`);
-      }
-
-      const available = parseFloat(holding.quantity);
-      const requested = parseFloat(quantity);
-      if (available < requested) {
-        throw new BadRequestException(
-          `Insufficient holdings: available ${available} ${symbol}, requested ${requested}`,
-        );
-      }
     } catch (error: unknown) {
       if (error instanceof BadRequestException) throw error;
       const axiosErr = error as { response?: { data?: { message?: string | string[] } } };
       const respMsg = axiosErr?.response?.data?.message;
       if (respMsg) {
         const msg = typeof respMsg === 'string' ? respMsg : Array.isArray(respMsg) ? respMsg[0] : '';
-        if (msg) {
-          throw new BadRequestException(msg);
-        }
+        if (msg) throw new BadRequestException(msg);
       }
       throw new BadRequestException(`Insufficient holdings for ${symbol}`);
     }

@@ -13,8 +13,10 @@ import {
   Headers,
   Query,
   BadRequestException,
+  Logger,
   UseGuards,
 } from '@nestjs/common';
+import Decimal from 'decimal.js';
 import { BalanceService } from '../../domain/services/balance.service';
 import { InternalAuthGuard } from '../../common/guards/internal-auth.guard';
 
@@ -24,6 +26,8 @@ const SYMBOL_REGEX = /^[A-Z]{2,10}(-USD)?$/;
 @UseGuards(InternalAuthGuard)
 @Controller('portfolio/internal')
 export class InternalController {
+  private readonly logger = new Logger(InternalController.name);
+
   constructor(private readonly balanceService: BalanceService) {}
 
   @Post('reserve')
@@ -88,6 +92,56 @@ export class InternalController {
       body.tradeId,
     );
     return { success: true, data: result };
+  }
+
+  @Post('reserve-holdings')
+  /** 보유 자산 예약 — 매도 주문을 위해 사용자의 보유 자산을 검증하고 예약합니다 */
+  /** Reserve holdings — validate and reserve user's holdings for a sell order */
+  async reserveHoldings(
+    @Headers('x-user-id') userId: string,
+    @Body() body: { symbol: string; quantity: string },
+  ) {
+    this.validateUserId(userId);
+
+    if (!body.symbol || !SYMBOL_REGEX.test(body.symbol)) {
+      throw new BadRequestException('Invalid or missing symbol');
+    }
+
+    const qty = new Decimal(body.quantity);
+    if (qty.lte(0)) {
+      throw new BadRequestException('Quantity must be positive');
+    }
+
+    const holding = await this.balanceService.getHoldingBySymbol(userId, body.symbol);
+
+    if (!holding) {
+      throw new BadRequestException(
+        `No holding found for symbol ${body.symbol}`,
+      );
+    }
+
+    const availableQty = new Decimal(holding.quantity);
+    if (availableQty.lt(qty)) {
+      throw new BadRequestException(
+        `Insufficient holdings: available ${availableQty.toFixed(8)} ${body.symbol}, requested ${qty.toFixed(8)}`,
+      );
+    }
+
+    // TODO: Implement full holding reservation with a reservedQuantity column
+    // For now, we validate the holdings exist and the quantity is sufficient.
+    this.logger.warn(
+      `reserve-holdings: full holding reservation is a TODO — ` +
+        `validated ${qty.toFixed(8)} ${body.symbol} for user ${userId.substring(0, 8)}...`,
+    );
+
+    return {
+      success: true,
+      data: {
+        symbol: body.symbol,
+        requestedQuantity: qty.toFixed(8),
+        availableQuantity: availableQty.toFixed(8),
+      },
+    };
   }
 
   @Get('holding')

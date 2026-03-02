@@ -39,6 +39,13 @@ export class MatchingEngineService implements OnModuleInit {
   private readonly bids = new Map<string, OrderBookEntry[]>();
   private readonly asks = new Map<string, OrderBookEntry[]>();
 
+  // 초기화 완료 여부 — 초기화 전 주문 유입 방지 / Initialization flag — prevents order intake before ready
+  private initialized = false;
+
+  isReady(): boolean {
+    return this.initialized;
+  }
+
   constructor(private readonly prisma: PrismaService) {}
 
   async onModuleInit() {
@@ -80,8 +87,10 @@ export class MatchingEngineService implements OnModuleInit {
       if (restored > 0) {
         this.logger.log(`Restored ${restored} pending/partial orders to in-memory order book`);
       }
+      this.initialized = true;
     } catch (e) {
       this.logger.error('Failed to restore order book from DB', e instanceof Error ? e.message : e);
+      this.initialized = true; // 실패해도 초기화 완료 처리 — 빈 오더북으로 시작
     }
   }
 
