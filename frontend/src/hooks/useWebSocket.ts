@@ -64,9 +64,22 @@ export function useWebSocket(
     };
   }, [connect]);
 
+  const prevSymbolsRef = useRef<string[]>([]);
+
   useEffect(() => {
-    if (socketRef.current?.connected && symbols.length > 0) {
-      socketRef.current.emit('subscribe', { symbols });
+    if (socketRef.current?.connected) {
+      // 이전 심볼 구독 해제 (Unsubscribe from previous symbols)
+      const removed = prevSymbolsRef.current.filter((s) => !symbols.includes(s));
+      if (removed.length > 0) {
+        for (const symbol of removed) {
+          socketRef.current.emit('unsubscribe', { channel: `prices:${symbol}` });
+        }
+      }
+      // 새 심볼 구독 (Subscribe to new symbols)
+      if (symbols.length > 0) {
+        socketRef.current.emit('subscribe', { symbols });
+      }
     }
+    prevSymbolsRef.current = symbols;
   }, [symbols]);
 }

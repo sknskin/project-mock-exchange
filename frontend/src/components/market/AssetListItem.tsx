@@ -7,7 +7,7 @@
  */
 'use client';
 
-import { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { cn, formatPriceDisplay, formatPercent, formatAmountDisplay, formatVolumeDisplay } from '@/lib/format';
 import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
@@ -36,7 +36,7 @@ function getSymbolColor(symbol: string): string {
   return colors[Math.abs(hash) % colors.length];
 }
 
-export default function AssetListItem({ asset, rank, isWatchlisted, onToggleWatchlist }: AssetListItemProps) {
+function AssetListItem({ asset, rank, isWatchlisted, onToggleWatchlist }: AssetListItemProps) {
   const router = useRouter();
   const { t } = useTranslation();
   const isRise = asset.changePercent > 0;
@@ -96,10 +96,13 @@ export default function AssetListItem({ asset, rank, isWatchlisted, onToggleWatc
 
       {/* 아이콘 + 이름 + 심볼 / Icon + Name + Symbol */}
       <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 w-[120px] sm:w-[160px] md:w-[180px] lg:w-[200px] shrink-0">
-        <div className={cn(
-          'w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0',
-          getSymbolColor(asset.symbol),
-        )}>
+        <div
+          className={cn(
+            'w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0',
+            getSymbolColor(asset.symbol),
+          )}
+          aria-label={asset.symbol}
+        >
           {asset.symbol.slice(0, 2)}
         </div>
         <div className="min-w-0">
@@ -174,3 +177,5 @@ export default function AssetListItem({ asset, rank, isWatchlisted, onToggleWatc
     </a>
   );
 }
+
+export default React.memo(AssetListItem);

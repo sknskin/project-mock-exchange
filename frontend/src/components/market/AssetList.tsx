@@ -180,6 +180,16 @@ export default function AssetList({ assets, period, onPeriodChange, mainTab = 'r
     return map[period] ?? t('table.change');
   }, [period, t]);
 
+  const handleCategoryChange = useCallback((key: string) => {
+    setCategory(key);
+    setPage(1);
+  }, []);
+
+  const handleSortChange = useCallback((key: SortKey) => {
+    setSort(key);
+    setPage(1);
+  }, []);
+
   const pillActive = 'bg-accent/15 text-accent font-bold';
   const pillInactive = 'text-text-quaternary hover:text-text-tertiary';
 
@@ -192,7 +202,7 @@ export default function AssetList({ assets, period, onPeriodChange, mainTab = 'r
           {categoryTabs.map((tab) => (
             <button
               key={tab.key}
-              onClick={() => { setCategory(tab.key); setPage(1); }}
+              onClick={() => handleCategoryChange(tab.key)}
               className={cn(
                 'h-[32px] px-4 text-[13px] font-semibold rounded-lg transition-colors whitespace-nowrap shrink-0',
                 category === tab.key ? pillActive : pillInactive,
@@ -210,7 +220,7 @@ export default function AssetList({ assets, period, onPeriodChange, mainTab = 'r
               {sortOptions.map((opt) => (
                 <button
                   key={opt.key}
-                  onClick={() => { setSort(opt.key); setPage(1); }}
+                  onClick={() => handleSortChange(opt.key)}
                   className={cn(
                     'h-[32px] px-3.5 text-[13px] font-medium transition-colors whitespace-nowrap rounded-lg shrink-0',
                     sort === opt.key ? pillActive : pillInactive,

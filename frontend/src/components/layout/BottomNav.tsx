@@ -25,6 +25,7 @@ export default function BottomNav() {
         {/* 항상 표시 / Always visible */}
         <Link
           href="/dashboard"
+          aria-label={t('nav.dashboard')}
           className={cn(
             'flex flex-col items-center gap-0.5 py-1 px-4 transition-colors active:scale-95',
             pathname.startsWith('/dashboard') ? 'text-text-primary' : 'text-text-quaternary',
@@ -38,6 +39,7 @@ export default function BottomNav() {
         <div className="contents auth-show">
           <Link
             href="/portfolio"
+            aria-label={t('nav.portfolio')}
             className={cn(
               'flex flex-col items-center gap-0.5 py-1 px-4 transition-colors active:scale-95',
               pathname.startsWith('/portfolio') ? 'text-text-primary' : 'text-text-quaternary',
@@ -48,6 +50,7 @@ export default function BottomNav() {
           </Link>
           <Link
             href="/orders"
+            aria-label={t('nav.orders')}
             className={cn(
               'flex flex-col items-center gap-0.5 py-1 px-4 transition-colors active:scale-95',
               pathname.startsWith('/orders') ? 'text-text-primary' : 'text-text-quaternary',
@@ -58,6 +61,7 @@ export default function BottomNav() {
           </Link>
           <Link
             href="/leaderboard"
+            aria-label={t('nav.leaderboard')}
             className={cn(
               'flex flex-col items-center gap-0.5 py-1 px-4 transition-colors active:scale-95',
               pathname.startsWith('/leaderboard') ? 'text-text-primary' : 'text-text-quaternary',
@@ -72,6 +76,7 @@ export default function BottomNav() {
         <div className="contents auth-hide">
           <Link
             href="/news"
+            aria-label={t('nav.news')}
             className={cn(
               'flex flex-col items-center gap-0.5 py-1 px-4 transition-colors active:scale-95',
               pathname.startsWith('/news') ? 'text-text-primary' : 'text-text-quaternary',
@@ -82,6 +87,7 @@ export default function BottomNav() {
           </Link>
           <Link
             href="/help"
+            aria-label={t('help.title')}
             className={cn(
               'flex flex-col items-center gap-0.5 py-1 px-4 transition-colors active:scale-95',
               pathname.startsWith('/help') ? 'text-text-primary' : 'text-text-quaternary',
@@ -92,6 +98,7 @@ export default function BottomNav() {
           </Link>
           <Link
             href="/login"
+            aria-label={t('nav.login')}
             className={cn(
               'flex flex-col items-center gap-0.5 py-1 px-4 transition-colors active:scale-95',
               pathname.startsWith('/login') ? 'text-text-primary' : 'text-text-quaternary',

@@ -71,7 +71,7 @@ export default function OrderSheet({
           </h3>
           <button
             onClick={onClose}
-            className="p-1 text-text-quaternary hover:text-text-tertiary transition-colors rounded-lg"
+            className="p-3 text-text-quaternary hover:text-text-tertiary transition-colors rounded-lg"
           >
             <X className="w-5 h-5" />
           </button>
