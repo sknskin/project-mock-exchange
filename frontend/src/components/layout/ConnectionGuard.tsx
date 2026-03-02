@@ -8,21 +8,11 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 const HEALTH_ENDPOINT = `${API_URL}/api/health`;
 const CHECK_INTERVAL = 30_000;
-
-function getStoredLocale(): 'ko' | 'en' {
-  try {
-    const raw = localStorage.getItem('virtuex-settings');
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (parsed?.state?.locale) return parsed.state.locale;
-    }
-  } catch { /* ignore */ }
-  return 'ko';
-}
 
 function getStoredTheme(): 'dark' | 'light' {
   try {
@@ -35,22 +25,8 @@ function getStoredTheme(): 'dark' | 'light' {
   return 'dark';
 }
 
-const text = {
-  ko: {
-    title: '서버 연결 실패',
-    description: '서버에 연결할 수 없습니다.\n서비스가 점검 중이거나 네트워크 상태를 확인해주세요.',
-    retry: '다시 시도',
-    retrying: '연결 중...',
-  },
-  en: {
-    title: 'Connection Failed',
-    description: 'Unable to connect to the server.\nThe service may be under maintenance or please check your network.',
-    retry: 'Retry',
-    retrying: 'Connecting...',
-  },
-};
-
 export default function ConnectionGuard({ children }: { children: React.ReactNode }) {
+  const { t } = useTranslation();
   const [status, setStatus] = useState<'checking' | 'connected' | 'disconnected'>('checking');
   const [retrying, setRetrying] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -98,9 +74,7 @@ export default function ConnectionGuard({ children }: { children: React.ReactNod
   if (status === 'connected') return <>{children}</>;
 
   // 연결 끊김 — 인라인 스타일 에러 표시 (CSS가 깨졌을 수 있음) (Disconnected — show inline-styled error, CSS may be broken)
-  const locale = getStoredLocale();
   const theme = getStoredTheme();
-  const t = text[locale];
   const isDark = theme === 'dark';
 
   const bg = isDark ? '#0D0D11' : '#F8F9FA';
@@ -162,7 +136,7 @@ export default function ConnectionGuard({ children }: { children: React.ReactNod
           margin: '0 0 12px 0',
         }}
       >
-        {t.title}
+        {t('connection.title')}
       </h1>
 
       {/* 설명 (Description) */}
@@ -176,7 +150,7 @@ export default function ConnectionGuard({ children }: { children: React.ReactNod
           whiteSpace: 'pre-line',
         }}
       >
-        {t.description}
+        {t('connection.description')}
       </p>
 
       {/* 재시도 버튼 (Retry button) */}
@@ -203,7 +177,7 @@ export default function ConnectionGuard({ children }: { children: React.ReactNod
           if (!retrying) (e.currentTarget as HTMLButtonElement).style.backgroundColor = accent;
         }}
       >
-        {retrying ? t.retrying : t.retry}
+        {retrying ? t('connection.retrying') : t('connection.retry')}
       </button>
     </div>
   );

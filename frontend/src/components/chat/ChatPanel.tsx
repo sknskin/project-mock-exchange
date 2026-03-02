@@ -117,6 +117,7 @@ export default function ChatPanel() {
 
   const handleLeaveRoom = async () => {
     if (!activeRoomId) return;
+    if (!window.confirm('채팅방을 나가시겠습니까?')) return;
     try {
       await leaveRoom.mutateAsync(activeRoomId);
       backToList();
