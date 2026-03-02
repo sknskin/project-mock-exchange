@@ -34,6 +34,7 @@ export default function MessageBubble({ message, isMine, showSender, locale, use
   })();
 
   const isSystemUser = message.senderRole === 'SYSTEM';
+  const isAdminUser = message.senderRole === 'ADMIN';
 
   const handleDelete = async () => {
     await deleteMessage.mutateAsync({ roomId: message.roomId, messageId: message.id });
@@ -47,12 +48,21 @@ export default function MessageBubble({ message, isMine, showSender, locale, use
           {showSender && !isMine && (
             <span className="text-[11px] text-text-tertiary mb-0.5 px-1 flex items-center gap-1">
               {isSystemUser && <Shield className="w-3 h-3 text-accent" />}
-              <span className={isSystemUser ? 'font-semibold text-accent' : ''}>
+              {isAdminUser && <Shield className="w-3 h-3 text-blue-400" />}
+              <span className={cn(
+                isSystemUser ? 'font-semibold text-accent' : '',
+                isAdminUser ? 'font-semibold text-blue-400' : '',
+              )}>
                 {message.senderName || message.senderUsername}
               </span>
               {isSystemUser && (
                 <span className="text-[9px] px-1 py-px rounded bg-accent/15 text-accent font-bold uppercase">
                   system
+                </span>
+              )}
+              {isAdminUser && (
+                <span className="text-[9px] px-1 py-px rounded bg-blue-400/15 text-blue-400 font-bold uppercase">
+                  admin
                 </span>
               )}
             </span>
@@ -66,7 +76,9 @@ export default function MessageBubble({ message, isMine, showSender, locale, use
                     ? 'bg-accent text-white rounded-br-md'
                     : isSystemUser
                       ? 'bg-accent/10 text-text-primary border border-accent/20 rounded-bl-md'
-                      : 'bg-bg-secondary text-text-primary rounded-bl-md',
+                      : isAdminUser
+                        ? 'bg-blue-400/8 text-text-primary border border-blue-400/15 rounded-bl-md'
+                        : 'bg-bg-secondary text-text-primary rounded-bl-md',
                 )}
               >
                 {message.content}

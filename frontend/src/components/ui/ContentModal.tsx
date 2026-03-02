@@ -82,7 +82,7 @@ export default function ContentModal({ isOpen, onClose, title, content, type }: 
         </div>
 
         {/* 콘텐츠 / Content */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-3 sm:p-6">
           {type === 'markdown' ? (
             <div className="markdown-content">
               <ReactMarkdown remarkPlugins={[remarkGfm]} components={{ table: TableWrapper }}>{content}</ReactMarkdown>

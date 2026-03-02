@@ -394,7 +394,7 @@ export default function AdminStatsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="grid grid-cols-3 sm:flex sm:flex-wrap gap-1 mb-5 border-b border-border pb-1" ref={tabsRef}>
+      <div className="flex overflow-x-auto scrollbar-hide sm:flex-wrap gap-1 mb-5 border-b border-border pb-1" ref={tabsRef}>
         {STAT_TABS.map((t_) => {
           const Icon = t_.icon;
           const isActive = tab === t_.key;
@@ -403,7 +403,7 @@ export default function AdminStatsPage() {
               key={t_.key}
               onClick={() => setTab(t_.key)}
               className={cn(
-                'flex items-center gap-1.5 px-2.5 sm:px-4 py-2 text-[12px] sm:text-[13px] font-semibold transition-colors rounded-lg',
+                'flex items-center gap-1.5 px-2.5 sm:px-4 py-2 text-[12px] sm:text-[13px] font-semibold transition-colors rounded-lg shrink-0',
                 isActive
                   ? 'bg-accent/15 text-accent'
                   : 'text-text-quaternary hover:text-text-secondary hover:bg-bg-secondary/50',

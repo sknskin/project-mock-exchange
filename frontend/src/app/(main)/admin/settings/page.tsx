@@ -9,12 +9,15 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Settings, AlertTriangle, Info } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Settings, AlertTriangle, Pencil, Save, X } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuthStore } from '@/stores/auth';
 import { useAdminSettingsStore } from '@/stores/adminSettings';
 import { useToastStore } from '@/stores/toast';
 import { cn } from '@/lib/format';
+import api from '@/lib/api';
+import Skeleton from '@/components/ui/Skeleton';
 
 // ===== Toggle switch =====
 function Toggle({
@@ -57,6 +60,7 @@ function NumberField({
   step,
   min,
   suffix,
+  disabled,
 }: {
   label: string;
   value: number;
@@ -64,6 +68,7 @@ function NumberField({
   step?: number;
   min?: number;
   suffix?: string;
+  disabled?: boolean;
 }) {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 py-3">
@@ -75,7 +80,13 @@ function NumberField({
           onChange={(e) => onChange(Number(e.target.value))}
           step={step ?? 1}
           min={min ?? 0}
-          className="w-full max-w-[200px] bg-bg-secondary border border-border rounded-xl px-3 py-2.5 text-[14px] text-text-primary font-mono focus:outline-none focus:border-accent/60 transition-colors"
+          disabled={disabled}
+          className={cn(
+            'w-full max-w-[200px] rounded-xl px-3 py-2.5 text-[14px] text-text-primary font-mono focus:outline-none transition-colors',
+            disabled
+              ? 'bg-transparent border-transparent cursor-default'
+              : 'bg-bg-secondary border border-border focus:border-accent/60',
+          )}
         />
         {suffix && <span className="text-[12px] text-text-quaternary">{suffix}</span>}
       </div>
@@ -87,6 +98,7 @@ export default function AdminSettingsPage() {
   const router = useRouter();
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
+  const queryClient = useQueryClient();
 
   const {
     tradingLimits,
@@ -97,17 +109,71 @@ export default function AdminSettingsPage() {
     setSystemStatus,
   } = useAdminSettingsStore();
 
+  const [editMode, setEditMode] = useState(false);
+
   // Local form state
   const [limits, setLimits] = useState(tradingLimits);
   const [fees, setFees] = useState(tradingFees);
   const [status, setStatus] = useState(systemStatus);
 
-  // Sync from store on mount
+  // Fetch settings from backend
+  const { data: serverSettings, isLoading } = useQuery({
+    queryKey: ['admin', 'settings'],
+    queryFn: async () => {
+      const res = await api.get('/api/admin/settings');
+      return res.data?.data as Record<string, string> | undefined;
+    },
+    staleTime: 30_000,
+  });
+
+  // Apply server settings on load
   useEffect(() => {
-    setLimits(tradingLimits);
-    setFees(tradingFees);
-    setStatus(systemStatus);
-  }, [tradingLimits, tradingFees, systemStatus]);
+    if (serverSettings) {
+      const fromServer = {
+        limits: {
+          minOrderQty: parseFloat(serverSettings['tradingLimits.minOrderQty'] || '') || tradingLimits.minOrderQty,
+          maxOrderQty: parseFloat(serverSettings['tradingLimits.maxOrderQty'] || '') || tradingLimits.maxOrderQty,
+          maxOpenOrdersPerUser: parseInt(serverSettings['tradingLimits.maxOpenOrdersPerUser'] || '') || tradingLimits.maxOpenOrdersPerUser,
+        },
+        fees: {
+          makerFee: parseFloat(serverSettings['tradingFees.makerFee'] || '') || tradingFees.makerFee,
+          takerFee: parseFloat(serverSettings['tradingFees.takerFee'] || '') || tradingFees.takerFee,
+        },
+        status: {
+          tradingEnabled: serverSettings['systemStatus.tradingEnabled'] === 'true' || (serverSettings['systemStatus.tradingEnabled'] === undefined && systemStatus.tradingEnabled),
+          maintenanceMode: serverSettings['systemStatus.maintenanceMode'] === 'true',
+        },
+      };
+      setLimits(fromServer.limits);
+      setFees(fromServer.fees);
+      setStatus(fromServer.status);
+    }
+  }, [serverSettings]);
+
+  // Sync from store when no server settings
+  useEffect(() => {
+    if (!serverSettings) {
+      setLimits(tradingLimits);
+      setFees(tradingFees);
+      setStatus(systemStatus);
+    }
+  }, [tradingLimits, tradingFees, systemStatus, serverSettings]);
+
+  // Save mutation
+  const saveMutation = useMutation({
+    mutationFn: async (data: Record<string, string>) => {
+      const res = await api.put('/api/admin/settings', data);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'settings'] });
+      setEditMode(false);
+      useToastStore.getState().addToast(t('admin.settings.saved'), 'success');
+    },
+    onError: () => {
+      useToastStore.getState().addToast('설정 저장 실패', 'error');
+    },
+  });
 
   // Non-admin redirect
   useEffect(() => {
@@ -121,28 +187,101 @@ export default function AdminSettingsPage() {
   }
 
   const handleSave = () => {
+    // Save to local store
     setTradingLimits(limits);
     setTradingFees(fees);
     setSystemStatus(status);
-    useToastStore.getState().addToast(t('admin.settings.saved'), 'success');
+
+    // Save to backend
+    const payload: Record<string, string> = {
+      'tradingLimits.minOrderQty': limits.minOrderQty.toString(),
+      'tradingLimits.maxOrderQty': limits.maxOrderQty.toString(),
+      'tradingLimits.maxOpenOrdersPerUser': limits.maxOpenOrdersPerUser.toString(),
+      'tradingFees.makerFee': fees.makerFee.toString(),
+      'tradingFees.takerFee': fees.takerFee.toString(),
+      'systemStatus.tradingEnabled': status.tradingEnabled.toString(),
+      'systemStatus.maintenanceMode': status.maintenanceMode.toString(),
+    };
+    saveMutation.mutate(payload);
   };
+
+  const handleCancel = () => {
+    // Revert to store values
+    if (serverSettings) {
+      setLimits({
+        minOrderQty: parseFloat(serverSettings['tradingLimits.minOrderQty'] || '') || tradingLimits.minOrderQty,
+        maxOrderQty: parseFloat(serverSettings['tradingLimits.maxOrderQty'] || '') || tradingLimits.maxOrderQty,
+        maxOpenOrdersPerUser: parseInt(serverSettings['tradingLimits.maxOpenOrdersPerUser'] || '') || tradingLimits.maxOpenOrdersPerUser,
+      });
+      setFees({
+        makerFee: parseFloat(serverSettings['tradingFees.makerFee'] || '') || tradingFees.makerFee,
+        takerFee: parseFloat(serverSettings['tradingFees.takerFee'] || '') || tradingFees.takerFee,
+      });
+      setStatus({
+        tradingEnabled: serverSettings['systemStatus.tradingEnabled'] === 'true' || (serverSettings['systemStatus.tradingEnabled'] === undefined && systemStatus.tradingEnabled),
+        maintenanceMode: serverSettings['systemStatus.maintenanceMode'] === 'true',
+      });
+    } else {
+      setLimits(tradingLimits);
+      setFees(tradingFees);
+      setStatus(systemStatus);
+    }
+    setEditMode(false);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="pb-16">
+        <div className="py-6 flex items-center gap-2.5">
+          <Settings className="w-5 h-5 text-accent" />
+          <h1 className="text-[20px] font-extrabold text-text-primary">{t('admin.settings.title')}</h1>
+        </div>
+        <div className="space-y-4">
+          <Skeleton className="w-full h-48 rounded-2xl" />
+          <Skeleton className="w-full h-48 rounded-2xl" />
+          <Skeleton className="w-full h-32 rounded-2xl" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="pb-16">
       {/* Page header */}
-      <div className="py-6 flex items-center gap-2.5">
-        <Settings className="w-5 h-5 text-accent" />
-        <h1 className="text-[20px] font-extrabold text-text-primary">
-          {t('admin.settings.title')}
-        </h1>
-      </div>
-
-      {/* Local-only notice */}
-      <div className="flex items-start gap-2.5 mb-6 px-4 py-3 rounded-xl bg-accent/5 border border-accent/20">
-        <Info className="w-4 h-4 text-accent mt-0.5 shrink-0" />
-        <span className="text-[13px] text-text-secondary">
-          {t('admin.settings.localOnly')}
-        </span>
+      <div className="py-6 flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <Settings className="w-5 h-5 text-accent" />
+          <h1 className="text-[20px] font-extrabold text-text-primary">
+            {t('admin.settings.title')}
+          </h1>
+        </div>
+        {!editMode ? (
+          <button
+            onClick={() => setEditMode(true)}
+            className="flex items-center gap-1.5 h-9 px-4 rounded-xl bg-accent/10 hover:bg-accent/20 text-accent text-[13px] font-semibold transition-colors"
+          >
+            <Pencil className="w-3.5 h-3.5" />
+            {t('admin.settings.edit')}
+          </button>
+        ) : (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleCancel}
+              className="flex items-center gap-1.5 h-9 px-4 rounded-xl bg-bg-secondary hover:bg-bg-tertiary text-text-secondary text-[13px] font-semibold transition-colors"
+            >
+              <X className="w-3.5 h-3.5" />
+              {t('admin.settings.cancel')}
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saveMutation.isPending}
+              className="flex items-center gap-1.5 h-9 px-4 rounded-xl bg-accent hover:bg-accent/90 text-white text-[13px] font-semibold transition-colors disabled:opacity-50"
+            >
+              <Save className="w-3.5 h-3.5" />
+              {t('admin.settings.save')}
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -158,6 +297,7 @@ export default function AdminSettingsPage() {
               onChange={(v) => setLimits({ ...limits, minOrderQty: v })}
               step={0.001}
               min={0}
+              disabled={!editMode}
             />
             <NumberField
               label={t('admin.settings.maxOrderQty')}
@@ -165,6 +305,7 @@ export default function AdminSettingsPage() {
               onChange={(v) => setLimits({ ...limits, maxOrderQty: v })}
               step={1}
               min={1}
+              disabled={!editMode}
             />
             <NumberField
               label={t('admin.settings.maxOpenOrders')}
@@ -172,6 +313,7 @@ export default function AdminSettingsPage() {
               onChange={(v) => setLimits({ ...limits, maxOpenOrdersPerUser: v })}
               step={1}
               min={1}
+              disabled={!editMode}
             />
           </div>
         </div>
@@ -189,6 +331,7 @@ export default function AdminSettingsPage() {
               step={0.01}
               min={0}
               suffix="%"
+              disabled={!editMode}
             />
             <NumberField
               label={t('admin.settings.takerFee')}
@@ -197,6 +340,7 @@ export default function AdminSettingsPage() {
               step={0.01}
               min={0}
               suffix="%"
+              disabled={!editMode}
             />
           </div>
         </div>
@@ -220,6 +364,7 @@ export default function AdminSettingsPage() {
               <Toggle
                 checked={status.tradingEnabled}
                 onChange={(v) => setStatus({ ...status, tradingEnabled: v })}
+                disabled={!editMode}
               />
             </div>
 
@@ -241,20 +386,11 @@ export default function AdminSettingsPage() {
               <Toggle
                 checked={status.maintenanceMode}
                 onChange={(v) => setStatus({ ...status, maintenanceMode: v })}
+                disabled={!editMode}
               />
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Save button */}
-      <div className="mt-6 flex justify-end">
-        <button
-          onClick={handleSave}
-          className="h-11 px-8 rounded-xl bg-accent hover:bg-accent/90 text-white text-[14px] font-semibold transition-colors"
-        >
-          {t('admin.settings.save')}
-        </button>
       </div>
     </div>
   );

@@ -16,7 +16,9 @@ import { useTradeHistory } from '@/hooks/useOrders';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuthStore } from '@/stores/auth';
 import { useSettingsStore, type NotificationPrefs } from '@/stores/settings';
+import { useToastStore } from '@/stores/toast';
 import { cn } from '@/lib/format';
+import api from '@/lib/api';
 
 function InfoRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -52,11 +54,29 @@ function RoleBadge({ role, t }: { role: string; t: (key: Parameters<ReturnType<t
 function NotifToggle({ label, prefKey }: { label: string; prefKey: keyof NotificationPrefs }) {
   const value = useSettingsStore((s) => s.notificationPrefs[prefKey]);
   const setPref = useSettingsStore((s) => s.setNotificationPref);
+
+  const handleToggle = async () => {
+    const newValue = !value;
+    // Optimistic update
+    setPref(prefKey, newValue);
+
+    try {
+      await api.put('/api/admin/settings', {
+        [`notif.${prefKey}`]: newValue.toString(),
+      });
+    } catch {
+      // Rollback on failure
+      setPref(prefKey, value);
+      useToastStore.getState().addToast('알림 설정 저장 실패', 'error');
+    }
+  };
+
   return (
     <div className="flex items-center justify-between py-2.5">
       <span className="text-[14px] text-text-primary">{label}</span>
       <button
-        onClick={() => setPref(prefKey, !value)}
+        onClick={handleToggle}
+        aria-label={label}
         className={cn(
           'relative w-10 h-[22px] rounded-full transition-colors',
           value ? 'bg-accent' : 'bg-bg-tertiary',

@@ -131,7 +131,7 @@ export default function AssetDetailPage({
   };
 
   return (
-    <div className="pb-32 max-h-[100dvh] overflow-y-auto md:max-h-none md:overflow-y-visible">
+    <div className="pb-32">
       {/* 헤더 / Header */}
       <div className="flex items-center gap-3 py-4">
         <Link href="/dashboard" className="p-1.5 -ml-1.5 text-text-tertiary hover:text-text-primary transition-colors rounded-lg hover:bg-bg-secondary/60">
@@ -175,16 +175,16 @@ export default function AssetDetailPage({
           </div>
           <span className="text-[12px] text-text-quaternary">{symbol}</span>
         </div>
-        <div className="flex gap-1.5">
+        <div className="flex gap-1.5 shrink-0">
           <button
             onClick={() => handleBuySell('BUY')}
-            className="h-11 px-4 text-[13px] font-bold text-rise border border-rise/30 rounded-md hover:bg-rise hover:text-white transition-colors"
+            className="h-9 sm:h-11 px-2.5 sm:px-4 text-[12px] sm:text-[13px] font-bold text-rise border border-rise/30 rounded-md hover:bg-rise hover:text-white transition-colors"
           >
             {t('detail.buy')}
           </button>
           <button
             onClick={() => handleBuySell('SELL')}
-            className="h-11 px-4 text-[13px] font-bold text-fall border border-fall/30 rounded-md hover:bg-fall hover:text-white transition-colors"
+            className="h-9 sm:h-11 px-2.5 sm:px-4 text-[12px] sm:text-[13px] font-bold text-fall border border-fall/30 rounded-md hover:bg-fall hover:text-white transition-colors"
           >
             {t('detail.sell')}
           </button>

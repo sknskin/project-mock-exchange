@@ -39,9 +39,9 @@ interface IndicatorConfig {
 }
 
 const SMA_INDICATORS: IndicatorConfig[] = [
-  { key: 'sma5', labelKey: 'chart.ind.sma5', color: '#F59E0B', defaultOn: false },
+  { key: 'sma5', labelKey: 'chart.ind.sma5', color: '#F59E0B', defaultOn: true },
   { key: 'sma20', labelKey: 'chart.ind.sma20', color: '#3B82F6', defaultOn: true },
-  { key: 'sma60', labelKey: 'chart.ind.sma60', color: '#A855F7', defaultOn: false },
+  { key: 'sma60', labelKey: 'chart.ind.sma60', color: '#A855F7', defaultOn: true },
 ];
 
 const VOLUME_INDICATOR: IndicatorConfig = {
@@ -49,11 +49,11 @@ const VOLUME_INDICATOR: IndicatorConfig = {
 };
 
 const RSI_INDICATOR: IndicatorConfig = {
-  key: 'rsi', labelKey: 'chart.ind.rsi', color: '#F97316', defaultOn: false,
+  key: 'rsi', labelKey: 'chart.ind.rsi', color: '#F97316', defaultOn: true,
 };
 
 const BB_INDICATOR: IndicatorConfig = {
-  key: 'bb', labelKey: 'chart.ind.bb', color: '#14B8A6', defaultOn: false,
+  key: 'bb', labelKey: 'chart.ind.bb', color: '#14B8A6', defaultOn: true,
 };
 
 const ALL_INDICATORS: IndicatorConfig[] = [

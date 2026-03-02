@@ -2736,13 +2736,13 @@ export default function HelpPage() {
         <h1 className="text-[20px] font-extrabold text-text-primary">{t('help.title')}</h1>
       </div>
 
-      <div className="flex flex-wrap items-center gap-1 pb-4">
+      <div className="flex overflow-x-auto scrollbar-hide items-center gap-1 pb-4">
         {normalTabs.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
             className={cn(
-              'flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[12px] sm:text-[13px] font-medium transition-colors',
+              'flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[12px] sm:text-[13px] font-medium transition-colors shrink-0',
               activeTab === tab.key
                 ? 'bg-accent/15 text-accent font-bold'
                 : 'text-text-quaternary hover:text-text-tertiary hover:bg-bg-secondary/50',

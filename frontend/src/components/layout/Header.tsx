@@ -16,7 +16,7 @@ import { useAuthStore } from '@/stores/auth';
 import { useSettingsStore } from '@/stores/settings';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/format';
-import { LogOut, Search, Menu, X, Megaphone, Newspaper, Users, BarChart3, LayoutDashboard, Briefcase, ClipboardList, Trophy, ChevronDown, User, Sun, Moon, Globe, HelpCircle, Settings, Activity } from 'lucide-react';
+import { LogOut, Search, Menu, X, Megaphone, Newspaper, Users, BarChart3, LayoutDashboard, Briefcase, ClipboardList, Trophy, ChevronDown, User, Sun, Moon, Globe, HelpCircle, Settings, Activity, FileText } from 'lucide-react';
 import VirtuExLogo from '@/components/ui/VirtuExLogo';
 import NotificationBell from '@/components/layout/NotificationBell';
 import ChatButton from '@/components/chat/ChatButton';
@@ -66,8 +66,9 @@ export default function Header() {
     ? [
         { href: '/admin/users', label: t('nav.userManagement'), icon: Users },
         { href: '/admin/stats', label: t('nav.statistics'), icon: BarChart3 },
-        { href: '/admin/settings', label: t('nav.settings'), icon: Settings },
+        { href: '/admin/audit', label: t('nav.audit'), icon: FileText },
         { href: '/admin/health', label: t('nav.health'), icon: Activity },
+        { href: '/admin/settings', label: t('nav.settings'), icon: Settings },
       ]
     : [];
 
@@ -271,11 +272,11 @@ export default function Header() {
                               {t('nav.statistics')}
                             </Link>
                             <Link
-                              href="/admin/settings"
+                              href="/admin/audit"
                               className="flex items-center gap-3 w-full px-3 py-2.5 text-[13px] font-medium text-text-primary hover:bg-accent/10 transition-colors"
                             >
-                              <Settings className="w-4 h-4 text-accent" />
-                              {t('nav.settings')}
+                              <FileText className="w-4 h-4 text-accent" />
+                              {t('nav.audit')}
                             </Link>
                             <Link
                               href="/admin/health"
@@ -283,6 +284,13 @@ export default function Header() {
                             >
                               <Activity className="w-4 h-4 text-accent" />
                               {t('nav.health')}
+                            </Link>
+                            <Link
+                              href="/admin/settings"
+                              className="flex items-center gap-3 w-full px-3 py-2.5 text-[13px] font-medium text-text-primary hover:bg-accent/10 transition-colors"
+                            >
+                              <Settings className="w-4 h-4 text-accent" />
+                              {t('nav.settings')}
                             </Link>
                           </div>
                           <div className="border-t border-border my-1" />
@@ -400,7 +408,7 @@ export default function Header() {
               {mobileAdminItems.length > 0 && (
                 <div className="mt-3 pt-3 border-t border-border">
                   <div className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-accent">Admin</div>
-                  <div className="grid grid-cols-2 gap-0.5">
+                  <div className="flex flex-col gap-0.5">
                     {mobileAdminItems.map((item) => (
                       <Link
                         key={item.href}
