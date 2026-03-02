@@ -117,9 +117,16 @@ cleanup() {
   wait 2>/dev/null
 
   echo ""
+  echo -e "${YELLOW}Docker 인프라 종료 중... / Stopping Docker infrastructure...${NC}"
+  docker compose down 2>/dev/null || true
+  echo -e "  ${GREEN}✓${NC} Docker 컨테이너 종료 완료 / Docker containers stopped"
+
+  echo -e "${YELLOW}로컬 PostgreSQL 복구 중... / Restoring local PostgreSQL...${NC}"
+  brew services start postgresql@16 2>/dev/null || true
+  echo -e "  ${GREEN}✓${NC} 로컬 PostgreSQL 복구 완료 / Local PostgreSQL restored"
+
+  echo ""
   echo -e "${YELLOW}서비스가 모두 종료되었습니다. / All services stopped.${NC}"
-  echo -e "${YELLOW}Docker 인프라를 종료하려면 / To stop Docker infra: docker compose down${NC}"
-  echo -e "${YELLOW}로컬 PostgreSQL 복구 / Restore local PostgreSQL: brew services start postgresql@16${NC}"
   exit 0
 }
 
@@ -279,7 +286,7 @@ echo -e "  ${GREEN}✓${NC} Kafka (9092)"
 echo ""
 echo -e "${YELLOW}[4/7] Kafka 토픽 생성... / Creating Kafka topics...${NC}"
 
-for topic in price.updated order.events trade.events portfolio.events; do
+for topic in market.prices.updated orders.events trades.executed portfolio.events; do
   docker exec mex-kafka /opt/kafka/bin/kafka-topics.sh \
     --bootstrap-server localhost:9092 \
     --create --if-not-exists \
@@ -378,7 +385,10 @@ wait_for_port 3002 "order-engine" 15
 wait_for_port 3003 "portfolio"    15
 wait_for_port 3004 "notification" 15
 wait_for_port 3005 "chat"         15
-wait_for_port 3006 "ai-service"   15
+
+# ai-service는 API 키가 없을 수 있으므로 실패해도 계속 진행
+# ai-service may fail if API key is not configured, continue regardless
+wait_for_port 3006 "ai-service"   15 || echo -e "  ${YELLOW}⚠ ai-service 시작 실패 (API 키 설정 필요) / ai-service failed (API key required)${NC}"
 
 # API Gateway는 백엔드 서비스가 모두 준비된 후 시작 (의존성 존재)
 # Start API Gateway after all backend services are ready (has dependencies)
