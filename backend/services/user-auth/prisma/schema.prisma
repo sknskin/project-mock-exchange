@@ -44,6 +44,7 @@ model User {
   totpEnabled   Boolean    @default(false) @map("totp_enabled")
   lockedAt      DateTime?  @map("locked_at") @db.Timestamptz()
   lockedReason  String?    @map("locked_reason") @db.VarChar(500)
+  deactivatedAt DateTime?  @map("deactivated_at") @db.Timestamptz()
   createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz()
 
@@ -140,6 +141,7 @@ model Comment {
   replies      Comment[]     @relation("CommentReplies")
   likes        CommentLike[]
 
+  @@index([authorId])
   @@index([announcementId])
   @@index([parentId])
   @@map("comments")
@@ -232,4 +234,12 @@ model LoginLog {
   @@index([userId])
   @@index([createdAt])
   @@map("login_logs")
+}
+
+model SystemSetting {
+  key       String   @id @db.VarChar(100)
+  value     String   @db.Text
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
+  @@map("system_settings")
 }

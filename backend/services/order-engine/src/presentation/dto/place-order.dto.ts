@@ -5,7 +5,12 @@
  * @file Place Order DTO
  * @description Data Transfer Object for validating order placement requests
  */
-import { IsString, IsEnum, IsOptional, IsNotEmpty, IsIn, Matches } from 'class-validator';
+import { IsString, IsEnum, IsOptional, IsNotEmpty, Matches } from 'class-validator';
+
+export enum TriggerType {
+  STOP_LOSS = 'STOP_LOSS',
+  TAKE_PROFIT = 'TAKE_PROFIT',
+}
 
 export class PlaceOrderRequestDto {
   @IsString()
@@ -37,6 +42,6 @@ export class PlaceOrderRequestDto {
   triggerPrice?: string;
 
   @IsOptional()
-  @IsIn(['STOP_LOSS', 'TAKE_PROFIT'])
-  triggerType?: string;
+  @IsEnum(TriggerType)
+  triggerType?: TriggerType;
 }

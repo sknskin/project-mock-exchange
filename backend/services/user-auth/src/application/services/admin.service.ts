@@ -230,8 +230,8 @@ export class AdminService {
 
     const result = await this.prisma.user.update({
       where: { id },
-      data: { isActive: false },
-      select: { id: true, username: true, isActive: true },
+      data: { isActive: false, deactivatedAt: new Date() },
+      select: { id: true, username: true, isActive: true, deactivatedAt: true },
     });
     await this.redis.del(`user:status:${id}`);
     return result;
@@ -244,8 +244,8 @@ export class AdminService {
 
     const result = await this.prisma.user.update({
       where: { id },
-      data: { isActive: true },
-      select: { id: true, username: true, isActive: true },
+      data: { isActive: true, deactivatedAt: null },
+      select: { id: true, username: true, isActive: true, deactivatedAt: true },
     });
     await this.redis.del(`user:status:${id}`);
     return result;

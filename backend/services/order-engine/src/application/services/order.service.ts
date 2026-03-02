@@ -42,6 +42,7 @@ export class OrderService {
   private readonly marketDataUrl: string;
   private readonly portfolioUrl: string;
   private readonly internalToken: string;
+  private readonly httpTimeout: number;
 
   constructor(
     private readonly eventStore: EventStoreService,
@@ -58,6 +59,7 @@ export class OrderService {
       'http://localhost:3003',
     );
     this.internalToken = this.config.get<string>('INTERNAL_SERVICE_SECRET', '');
+    this.httpTimeout = this.config.get<number>('INTERNAL_HTTP_TIMEOUT', 5000);
   }
 
   async placeOrder(params: PlaceOrderParams): Promise<{
@@ -249,11 +251,32 @@ export class OrderService {
     this.matchingEngine.removeFromOrderBook(orderId, order.symbol, order.side);
   }
 
-  async getOrder(orderId: string, userId: string): Promise<unknown> {
-    return this.prisma.orderRead.findFirst({ where: { orderId, userId } });
+  private readonly orderSelectFields = {
+    orderId: true,
+    userId: true,
+    symbol: true,
+    side: true,
+    orderType: true,
+    price: true,
+    quantity: true,
+    filledQuantity: true,
+    remainingQuantity: true,
+    status: true,
+    triggerPrice: true,
+    triggerType: true,
+    triggered: true,
+    createdAt: true,
+    updatedAt: true,
+  } as const;
+
+  async getOrder(orderId: string, userId: string) {
+    return this.prisma.orderRead.findFirst({
+      where: { orderId, userId },
+      select: this.orderSelectFields,
+    });
   }
 
-  async getUserOrders(userId: string, limit = 50, offset = 0, status?: string): Promise<unknown[]> {
+  async getUserOrders(userId: string, limit = 50, offset = 0, status?: string) {
     const where: any = { userId };
     if (status) {
       where.status = status;
@@ -263,6 +286,7 @@ export class OrderService {
       orderBy: { createdAt: 'desc' },
       take: limit,
       skip: offset,
+      select: this.orderSelectFields,
     });
   }
 
@@ -279,6 +303,61 @@ export class OrderService {
 
   getOrderBook(symbol: string) {
     return this.matchingEngine.getOrderBookDepth(symbol);
+  }
+
+  async getTradingStats(days: number) {
+    const since = new Date(Date.now() - days * 86400000);
+
+    const orders = await this.prisma.orderRead.findMany({
+      where: { createdAt: { gte: since } },
+      select: { symbol: true, side: true, quantity: true, price: true, createdAt: true, status: true },
+    });
+
+    // 일별 거래량 (Daily volume)
+    const dailyMap: Record<string, { buy: number; sell: number }> = {};
+    orders.forEach((o) => {
+      const d = new Date(o.createdAt);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      if (!dailyMap[key]) dailyMap[key] = { buy: 0, sell: 0 };
+      const qty = Number(o.quantity);
+      if (o.side === 'BUY') dailyMap[key].buy += qty;
+      else dailyMap[key].sell += qty;
+    });
+    const dailyVolume = Object.entries(dailyMap)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, v]) => ({ date, buy: v.buy, sell: v.sell, total: v.buy + v.sell }));
+
+    // 인기 자산 (Popular assets)
+    const symbolMap: Record<string, number> = {};
+    orders.forEach((o) => {
+      symbolMap[o.symbol] = (symbolMap[o.symbol] || 0) + Number(o.quantity);
+    });
+    const popularAssets = Object.entries(symbolMap)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([symbol, volume]) => ({ symbol, volume }));
+
+    // 매수/매도 비율 (Buy/sell ratio)
+    let buyCount = 0;
+    let sellCount = 0;
+    orders.forEach((o) => {
+      if (o.side === 'BUY') buyCount++;
+      else sellCount++;
+    });
+
+    // 평균 주문 크기 (Average order size)
+    const totalQty = orders.reduce((sum, o) => sum + Number(o.quantity), 0);
+    const avgOrderSize = orders.length > 0 ? totalQty / orders.length : 0;
+
+    return {
+      totalOrders: orders.length,
+      totalVolume: totalQty,
+      avgOrderSize,
+      buyCount,
+      sellCount,
+      dailyVolume,
+      popularAssets,
+    };
   }
 
   async modifyOrder(
@@ -475,7 +554,12 @@ export class OrderService {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         return await fn();
-      } catch (error) {
+      } catch (error: any) {
+        // 4xx 에러는 재시도 불필요 (클라이언트 에러) / Don't retry 4xx client errors
+        const status = error?.response?.status;
+        if (status && status >= 400 && status < 500) {
+          throw error;
+        }
         this.logger.warn(`${label} attempt ${attempt}/${maxRetries} failed`);
         if (attempt === maxRetries) throw error;
         await new Promise(r => setTimeout(r, 1000 * Math.pow(2, attempt - 1)));
@@ -613,7 +697,7 @@ export class OrderService {
     try {
       const response = await axios.get(
         `${this.marketDataUrl}/market/prices/${symbol}`,
-        { timeout: 5000, headers: { 'x-internal-token': this.internalToken } },
+        { timeout: this.httpTimeout, headers: { 'x-internal-token': this.internalToken } },
       );
       if (response.data?.success && response.data?.data?.price) {
         return new Decimal(response.data.data.price);
@@ -635,7 +719,7 @@ export class OrderService {
         () => axios.post(
           `${this.portfolioUrl}/portfolio/internal/reserve`,
           { amount },
-          { headers: { 'x-user-id': userId, 'x-internal-token': this.internalToken }, timeout: 5000 },
+          { headers: { 'x-user-id': userId, 'x-internal-token': this.internalToken }, timeout: this.httpTimeout },
         ),
         `reserveFunds(user=${userId.substring(0, 8)}...)`,
       );
@@ -664,7 +748,7 @@ export class OrderService {
         () => axios.post(
           `${this.portfolioUrl}/portfolio/internal/release`,
           { amount, orderId },
-          { headers: { 'x-user-id': userId, 'x-internal-token': this.internalToken }, timeout: 5000 },
+          { headers: { 'x-user-id': userId, 'x-internal-token': this.internalToken }, timeout: this.httpTimeout },
         ),
         `releaseFunds(order=${orderId})`,
       );
@@ -687,7 +771,7 @@ export class OrderService {
         {
           params: { symbol },
           headers: { 'x-user-id': userId, 'x-internal-token': this.internalToken },
-          timeout: 5000,
+          timeout: this.httpTimeout,
         },
       );
 
@@ -729,7 +813,7 @@ export class OrderService {
               price: fill.matchedPrice,
               tradeId: fill.tradeId,
             },
-            { headers: { 'x-user-id': fill.buyerId, 'x-internal-token': this.internalToken }, timeout: 5000 },
+            { headers: { 'x-user-id': fill.buyerId, 'x-internal-token': this.internalToken }, timeout: this.httpTimeout },
           ),
           `settleBuy(trade=${fill.tradeId})`,
         );
@@ -753,7 +837,7 @@ export class OrderService {
               price: fill.matchedPrice,
               tradeId: fill.tradeId,
             },
-            { headers: { 'x-user-id': fill.sellerId, 'x-internal-token': this.internalToken }, timeout: 5000 },
+            { headers: { 'x-user-id': fill.sellerId, 'x-internal-token': this.internalToken }, timeout: this.httpTimeout },
           ),
           `settleSell(trade=${fill.tradeId})`,
         );
