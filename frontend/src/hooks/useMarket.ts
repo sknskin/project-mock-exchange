@@ -185,7 +185,15 @@ export function useRecentTrades(symbol: string, enabled: boolean = true) {
       const { data } = await api.get('/api/orders/trades/history', {
         params: { symbol },
       });
-      return data.data ?? data;
+      const raw: Record<string, unknown>[] = data.data ?? data;
+      return raw.map((t) => ({
+        id: String(t.tradeId ?? ''),
+        symbol: String(t.symbol ?? ''),
+        price: Number(t.price) || 0,
+        quantity: Number(t.quantity) || 0,
+        side: (t.buyerId === t.sellerId ? 'BUY' : 'BUY') as Trade['side'],
+        timestamp: String(t.executedAt ?? ''),
+      }));
     },
     refetchInterval: 5000,
     enabled: !!symbol && enabled,

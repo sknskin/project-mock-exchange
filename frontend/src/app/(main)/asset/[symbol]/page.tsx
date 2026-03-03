@@ -384,7 +384,7 @@ export default function AssetDetailPage({
             </div>
           )}
           {activeTab === 'orderbook' && !orderbookLoading && orderBook && (
-            <OrderBookComponent orderBook={orderBook} />
+            <OrderBookComponent orderBook={orderBook} symbol={symbol} />
           )}
 
           {activeTab === 'trades' && tradesLoading && (

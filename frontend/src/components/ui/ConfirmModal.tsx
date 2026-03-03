@@ -79,7 +79,7 @@ export default function ConfirmModal({
             disabled={loading}
             className={`flex-1 h-11 rounded-xl text-white text-[14px] font-semibold transition-colors ${confirmBg} disabled:opacity-50`}
           >
-            {loading ? '...' : (confirmLabel || t('modal.logoutConfirm'))}
+            {loading ? '...' : (confirmLabel || t('modal.confirm'))}
           </button>
           <button
             onClick={onClose}

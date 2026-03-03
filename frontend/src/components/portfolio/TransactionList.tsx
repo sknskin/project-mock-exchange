@@ -7,7 +7,7 @@
  */
 'use client';
 
-import { cn, formatPrice, formatQuantity, formatDate, formatCurrencyDisplay, formatDollar } from '@/lib/format';
+import { cn, formatQuantity, formatDate, formatPriceDisplay } from '@/lib/format';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
@@ -22,8 +22,8 @@ export default function TransactionList({ orders }: TransactionListProps) {
   const { data: rateData } = useExchangeRate();
   const { display: currencyMode } = useCurrencyDisplay();
   const rate = rateData?.rate;
-  const fmtPrice = (v: number) => currencyMode === 'original' && rate ? formatDollar(v / rate) : formatPrice(v);
-  const fmt = (v: number) => formatCurrencyDisplay(v, currencyMode, rate);
+  const fmtPrice = (v: number, symbol: string) => formatPriceDisplay(v, symbol, currencyMode, rate);
+  const fmtTotal = (v: number, symbol: string) => formatPriceDisplay(v, symbol, currencyMode, rate);
 
   if (orders.length === 0) {
     return (
@@ -52,7 +52,7 @@ export default function TransactionList({ orders }: TransactionListProps) {
               {order.triggerType && (
                 <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-warning/12 text-warning shrink-0">
                   {order.triggerType === 'STOP_LOSS' ? t('order.stopLoss') : t('order.takeProfit')}
-                  {' '}@ {formatPrice(order.triggerPrice!)}
+                  {' '}@ {fmtPrice(order.triggerPrice!, order.symbol)}
                 </span>
               )}
               <span className="text-[13px] md:text-[14px] font-semibold text-text-primary truncate">
@@ -80,7 +80,7 @@ export default function TransactionList({ orders }: TransactionListProps) {
           <div className="flex items-center justify-between mt-2 gap-2">
             <span className="text-[11px] md:text-[12px] text-text-quaternary truncate">
               {formatQuantity(order.quantity)}{t('orders.unit')} ·{' '}
-              {order.price ? fmtPrice(order.price) : t('orders.marketPrice')}
+              {order.price ? fmtPrice(order.price, order.symbol) : t('orders.marketPrice')}
             </span>
             <span className="text-[11px] md:text-[12px] text-text-quaternary shrink-0">
               {formatDate(order.createdAt)}
@@ -90,10 +90,10 @@ export default function TransactionList({ orders }: TransactionListProps) {
           {order.filledPrice != null && order.filledQuantity > 0 && (
             <div className="flex items-center justify-between mt-1.5 px-0.5 gap-2 flex-wrap md:flex-nowrap">
               <span className="text-[10px] md:text-[11px] text-text-tertiary truncate">
-                {t('orders.filledPrice')} {fmtPrice(order.filledPrice)} · {t('orders.filledQuantity')} {formatQuantity(order.filledQuantity)}{t('orders.unit')}
+                {t('orders.filledPrice')} {fmtPrice(order.filledPrice, order.symbol)} · {t('orders.filledQuantity')} {formatQuantity(order.filledQuantity)}{t('orders.unit')}
               </span>
               <span className="text-[10px] md:text-[11px] font-medium text-text-secondary shrink-0">
-                {t('orders.totalAmount')} {fmt(order.filledPrice * order.filledQuantity)}
+                {t('orders.totalAmount')} {fmtTotal(order.filledPrice * order.filledQuantity, order.symbol)}
               </span>
             </div>
           )}

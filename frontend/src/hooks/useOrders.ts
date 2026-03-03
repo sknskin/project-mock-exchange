@@ -31,7 +31,24 @@ export function useOrders(status?: string) {
       const params: Record<string, string> = {};
       if (status) params.status = status;
       const { data } = await api.get('/api/orders', { params });
-      return data.data ?? data;
+      const raw: Record<string, unknown>[] = data.data ?? data;
+      return raw.map((o) => ({
+        id: (o.orderId as string) ?? '',
+        userId: (o.userId as string) ?? '',
+        symbol: (o.symbol as string) ?? '',
+        side: (o.side as Order['side']) ?? 'BUY',
+        type: (o.orderType === 'MARKET' ? 'MARKET' : 'LIMIT') as Order['type'],
+        status: (o.status as Order['status']) ?? 'PENDING',
+        quantity: Number(o.quantity) || 0,
+        price: o.price != null ? Number(o.price) : null,
+        filledQuantity: Number(o.filledQuantity) || 0,
+        filledPrice: o.price != null ? Number(o.price) : null,
+        triggerPrice: o.triggerPrice != null ? Number(o.triggerPrice) : null,
+        triggerType: (o.triggerType as Order['triggerType']) ?? null,
+        triggered: Boolean(o.triggered),
+        createdAt: String(o.createdAt ?? ''),
+        updatedAt: String(o.updatedAt ?? ''),
+      }));
     },
     refetchInterval: 5000,
   });
@@ -109,10 +126,10 @@ export function useTradeHistory() {
         buyerId: t.buyerId as string,
         sellerId: t.sellerId as string,
         symbol: t.symbol as string,
-        price: Number(t.price),
-        quantity: Number(t.quantity),
-        total: Number(t.total),
-        executedAt: t.executedAt as string,
+        price: Number(t.price) || 0,
+        quantity: Number(t.quantity) || 0,
+        total: Number(t.total) || 0,
+        executedAt: String(t.executedAt ?? ''),
       }));
     },
     refetchInterval: 10000,

@@ -19,7 +19,7 @@ import { useOrders, useCancelOrder, useModifyOrder, useTradeHistory, type TradeH
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
 import { useTranslation } from '@/hooks/useTranslation';
-import { cn, formatPrice, formatQuantity, formatDate, formatCurrencyDisplay } from '@/lib/format';
+import { cn, formatQuantity, formatDate, formatPriceDisplay, formatCurrencyDisplay } from '@/lib/format';
 import { useAuthStore } from '@/stores/auth';
 import { Search, ChevronDown, ClipboardList, Check, BarChart, LayoutDashboard, TrendingUp, Activity, Download } from 'lucide-react';
 import { exportToCSV } from '@/lib/export';
@@ -106,16 +106,21 @@ interface AnalysisTabProps {
   error: unknown;
   refetch: () => void;
   t: (key: TranslationKey) => string;
-  fmt: (v: number) => string;
+  currencyMode: 'krw' | 'original';
+  rate?: number;
 }
 
-function AnalysisTab({ trades, userId, isLoading, error, refetch, t, fmt }: AnalysisTabProps) {
+function AnalysisTab({ trades, userId, isLoading, error, refetch, t, currencyMode, rate }: AnalysisTabProps) {
+  const fmt = (v: number, symbol: string) => formatPriceDisplay(v, symbol, currencyMode, rate);
   const stats = useMemo(() => {
     if (!trades.length) return null;
 
     const totalTrades = trades.length;
-    const totalVolume = trades.reduce((sum, tr) => sum + tr.total, 0);
-    const avgTradeSize = totalVolume / totalTrades;
+    // 총거래량을 KRW로 환산 (USD 심볼은 환율 곱하기)
+    const totalVolumeKrw = trades.reduce((sum, tr) => {
+      const isUsd = !tr.symbol.endsWith('.KS');
+      return sum + (isUsd && rate ? tr.total * rate : tr.total);
+    }, 0);
 
     // Win rate: per-symbol, compare user's avg sell price vs avg buy price
     const symbolMap: Record<string, { buyTotal: number; buyQty: number; sellTotal: number; sellQty: number }> = {};
@@ -162,8 +167,8 @@ function AnalysisTab({ trades, userId, isLoading, error, refetch, t, fmt }: Anal
       volume: s.buyTotal + s.sellTotal,
     }));
 
-    return { totalTrades, totalVolume, avgTradeSize, winRate, wins, losses, hourCounts, maxHourCount, breakdown };
-  }, [trades, userId]);
+    return { totalTrades, totalVolumeKrw, winRate, wins, losses, hourCounts, maxHourCount, breakdown };
+  }, [trades, userId, rate]);
 
   /* Loading */
   if (isLoading) {
@@ -206,8 +211,8 @@ function AnalysisTab({ trades, userId, isLoading, error, refetch, t, fmt }: Anal
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
         {[
           { label: t('orders.analysisTotalTrades'), value: stats.totalTrades.toLocaleString(), sub: t('orders.analysisTrades') },
-          { label: t('orders.analysisTotalVolume'), value: fmt(stats.totalVolume) },
-          { label: t('orders.analysisAvgTradeSize'), value: fmt(stats.avgTradeSize) },
+          { label: t('orders.analysisTotalVolume'), value: formatCurrencyDisplay(stats.totalVolumeKrw, currencyMode, rate) },
+          { label: t('orders.analysisAvgTradeSize'), value: formatCurrencyDisplay(stats.totalVolumeKrw / stats.totalTrades, currencyMode, rate) },
           {
             label: t('orders.analysisWinRate'),
             value: `${stats.winRate.toFixed(1)}%`,
@@ -272,8 +277,8 @@ function AnalysisTab({ trades, userId, isLoading, error, refetch, t, fmt }: Anal
                     <td className="px-3 md:px-4 py-2.5 text-[12px] md:text-[13px] text-rise tabular-nums text-right">{row.buyCount}</td>
                     <td className="px-3 md:px-4 py-2.5 text-[12px] md:text-[13px] text-fall tabular-nums text-right">{row.sellCount}</td>
                     <td className="px-3 md:px-4 py-2.5 text-[12px] md:text-[13px] text-text-secondary tabular-nums text-right">{row.totalQty.toLocaleString(undefined, { maximumFractionDigits: 8 })}</td>
-                    <td className="px-3 md:px-4 py-2.5 text-[12px] md:text-[13px] text-text-secondary tabular-nums text-right">{fmt(row.avgPrice)}</td>
-                    <td className="px-3 md:px-4 py-2.5 text-[12px] md:text-[13px] text-text-primary font-medium tabular-nums text-right">{fmt(row.volume)}</td>
+                    <td className="px-3 md:px-4 py-2.5 text-[12px] md:text-[13px] text-text-secondary tabular-nums text-right">{fmt(row.avgPrice, row.symbol)}</td>
+                    <td className="px-3 md:px-4 py-2.5 text-[12px] md:text-[13px] text-text-primary font-medium tabular-nums text-right">{fmt(row.volume, row.symbol)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -290,7 +295,6 @@ export default function OrdersPage() {
   const { data: rateData } = useExchangeRate();
   const { display: currencyMode } = useCurrencyDisplay();
   const rate = rateData?.rate;
-  const fmt = (v: number) => formatCurrencyDisplay(v, currencyMode, rate);
   const [tab, setTab] = useState<'orders' | 'trades' | 'analysis'>('orders');
   const [statusFilter, setStatusFilter] = useState('all');
   const [searchInput, setSearchInput] = useState('');
@@ -371,40 +375,28 @@ export default function OrdersPage() {
 
         <ExchangeRateBar />
 
-        <div className="flex gap-1 mb-4">
-          <button
-            onClick={() => setTab('orders')}
-            className={cn(
-              'px-4 py-2 text-[13px] font-semibold rounded-lg transition-colors',
-              tab === 'orders'
-                ? 'bg-accent text-white'
-                : 'bg-bg-secondary text-text-tertiary hover:text-text-primary',
-            )}
-          >
-            {t('orders.title')}
-          </button>
-          <button
-            onClick={() => setTab('trades')}
-            className={cn(
-              'px-4 py-2 text-[13px] font-semibold rounded-lg transition-colors',
-              tab === 'trades'
-                ? 'bg-accent text-white'
-                : 'bg-bg-secondary text-text-tertiary hover:text-text-primary',
-            )}
-          >
-            {t('orders.tradeHistory')}
-          </button>
-          <button
-            onClick={() => setTab('analysis')}
-            className={cn(
-              'px-4 py-2 text-[13px] font-semibold rounded-lg transition-colors',
-              tab === 'analysis'
-                ? 'bg-accent text-white'
-                : 'bg-bg-secondary text-text-tertiary hover:text-text-primary',
-            )}
-          >
-            {t('orders.analysis')}
-          </button>
+        <div className="flex border-b border-border mb-5">
+          {([
+            { key: 'orders' as const, label: t('orders.title') },
+            { key: 'trades' as const, label: t('orders.tradeHistory') },
+            { key: 'analysis' as const, label: t('orders.analysis') },
+          ]).map((item) => (
+            <button
+              key={item.key}
+              onClick={() => setTab(item.key)}
+              className={cn(
+                'relative px-4 py-2.5 text-[13px] sm:text-[14px] font-semibold transition-colors',
+                tab === item.key
+                  ? 'text-accent'
+                  : 'text-text-tertiary hover:text-text-primary',
+              )}
+            >
+              {item.label}
+              {tab === item.key && (
+                <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-accent rounded-t" />
+              )}
+            </button>
+          ))}
         </div>
 
         {tab === 'orders' && (
@@ -517,7 +509,7 @@ export default function OrdersPage() {
                               {order.triggerType && (
                                 <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-warning/12 text-warning shrink-0">
                                   {order.triggerType === 'STOP_LOSS' ? t('order.stopLoss') : t('order.takeProfit')}
-                                  {' '}@ {formatPrice(order.triggerPrice!)}
+                                  {' '}@ {formatPriceDisplay(order.triggerPrice!, order.symbol, currencyMode, rate)}
                                 </span>
                               )}
                               <span className="text-[13px] md:text-[14px] font-semibold text-text-primary truncate">
@@ -543,7 +535,7 @@ export default function OrdersPage() {
                           <div className="flex items-center justify-between mt-2 gap-2">
                             <span className="text-[11px] md:text-[12px] text-text-quaternary truncate">
                               {formatQuantity(order.quantity)}{t('orders.unit')} ·{' '}
-                              {order.price ? formatPrice(order.price) : t('orders.marketPrice')}
+                              {order.price ? formatPriceDisplay(order.price, order.symbol, currencyMode, rate) : t('orders.marketPrice')}
                             </span>
                             <span className="text-[11px] md:text-[12px] text-text-quaternary shrink-0">
                               {formatDate(order.createdAt)}
@@ -682,10 +674,10 @@ export default function OrdersPage() {
                       </div>
                       <div className="text-right shrink-0 min-w-0 max-w-[45%]">
                         <div className="text-[12px] md:text-[13px] font-medium text-text-primary tabular-nums truncate">
-                          {fmt(trade.price)} × {trade.quantity.toLocaleString(undefined, { maximumFractionDigits: 8 })}
+                          {formatPriceDisplay(trade.price, trade.symbol, currencyMode, rate)} × {trade.quantity.toLocaleString(undefined, { maximumFractionDigits: 8 })}
                         </div>
                         <div className="text-[11px] md:text-[12px] text-text-tertiary tabular-nums truncate">
-                          {t('orders.totalAmount')}: {fmt(trade.total)}
+                          {t('orders.totalAmount')}: {formatPriceDisplay(trade.total, trade.symbol, currencyMode, rate)}
                         </div>
                       </div>
                     </div>
@@ -711,7 +703,7 @@ export default function OrdersPage() {
         )}
 
         {tab === 'analysis' && (
-          <AnalysisTab trades={trades ?? []} userId={user?.id ?? ''} isLoading={tradesLoading} error={tradesError} refetch={refetchTrades} t={t} fmt={fmt} />
+          <AnalysisTab trades={trades ?? []} userId={user?.id ?? ''} isLoading={tradesLoading} error={tradesError} refetch={refetchTrades} t={t} currencyMode={currencyMode} rate={rate} />
         )}
       </div>
 

@@ -11,12 +11,15 @@
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
-import { cn, formatPrice, formatQuantity } from '@/lib/format';
+import { cn, formatPriceDisplay, formatQuantity } from '@/lib/format';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useExchangeRate } from '@/hooks/useExchangeRate';
+import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
 import type { OrderBook as OrderBookType, OrderBookEntry } from '@/types';
 
 interface OrderBookProps {
   orderBook: OrderBookType;
+  symbol?: string;
 }
 
 /** 누적 합계를 추가한 엔트리 / Entry with cumulative total */
@@ -54,9 +57,10 @@ function assignDepthPercent(entries: CumulativeEntry[]): CumulativeEntry[] {
 interface DepthChartProps {
   asks: CumulativeEntry[];
   bids: CumulativeEntry[];
+  fp: (price: number) => string;
 }
 
-function DepthChart({ asks, bids }: DepthChartProps) {
+function DepthChart({ asks, bids, fp }: DepthChartProps) {
   const { t } = useTranslation();
 
   const chartData = useMemo(() => {
@@ -227,7 +231,7 @@ function DepthChart({ asks, bids }: DepthChartProps) {
           <span className="text-[11px] text-text-quaternary">
             {t('orderbook.midPrice')}{' '}
             <span className="text-text-secondary font-semibold tabular-nums">
-              {formatPrice(midPrice)}
+              {fp(midPrice)}
             </span>
           </span>
         </div>
@@ -238,8 +242,12 @@ function DepthChart({ asks, bids }: DepthChartProps) {
 
 // ─── 메인 호가창 / Main Order Book ─────────────────────────────────
 
-export default function OrderBook({ orderBook }: OrderBookProps) {
+export default function OrderBook({ orderBook, symbol = '' }: OrderBookProps) {
   const { t } = useTranslation();
+  const { data: rateData } = useExchangeRate();
+  const { display: currencyMode } = useCurrencyDisplay();
+  const rate = rateData?.rate;
+  const fp = (price: number) => formatPriceDisplay(price, symbol, currencyMode, rate);
   const [viewMode, setViewMode] = useState<'list' | 'depth'>('list');
 
   // 누적 데이터 계산 (메모이제이션)
@@ -327,7 +335,7 @@ export default function OrderBook({ orderBook }: OrderBookProps) {
       </div>
 
       {viewMode === 'depth' ? (
-        <DepthChart asks={asksCum} bids={bidsCum} />
+        <DepthChart asks={asksCum} bids={bidsCum} fp={fp} />
       ) : (
         <>
           {/* 헤더 / Header */}
@@ -352,7 +360,7 @@ export default function OrderBook({ orderBook }: OrderBookProps) {
                   style={{ width: `${ask.depthPercent}%` }}
                 />
                 <span className="flex-1 text-[13px] sm:text-[14px] tabular-nums text-fall font-medium relative z-10">
-                  {formatPrice(ask.price)}
+                  {fp(ask.price)}
                 </span>
                 <span className="flex-1 text-[13px] sm:text-[14px] tabular-nums text-text-secondary text-right relative z-10">
                   {formatQuantity(ask.quantity)}
@@ -373,7 +381,7 @@ export default function OrderBook({ orderBook }: OrderBookProps) {
                   {t('orderbook.spread')}
                 </span>
                 <span className="text-[12px] sm:text-[13px] md:text-[14px] text-text-secondary font-semibold tabular-nums truncate">
-                  {formatPrice(spread)}
+                  {fp(spread)}
                 </span>
                 <span className="text-[10px] md:text-[11px] text-text-quaternary tabular-nums shrink-0">
                   ({spreadPercent.toFixed(2)}%)
@@ -387,7 +395,7 @@ export default function OrderBook({ orderBook }: OrderBookProps) {
                     {t('orderbook.midPrice')}
                   </span>
                   <span className="text-[12px] sm:text-[13px] md:text-[14px] text-text-primary font-bold tabular-nums truncate">
-                    {formatPrice(midPrice)}
+                    {fp(midPrice)}
                   </span>
                 </div>
               )}
@@ -409,7 +417,7 @@ export default function OrderBook({ orderBook }: OrderBookProps) {
                   style={{ width: `${bid.depthPercent}%` }}
                 />
                 <span className="flex-1 text-[13px] sm:text-[14px] tabular-nums text-rise font-medium relative z-10">
-                  {formatPrice(bid.price)}
+                  {fp(bid.price)}
                 </span>
                 <span className="flex-1 text-[13px] sm:text-[14px] tabular-nums text-text-secondary text-right relative z-10">
                   {formatQuantity(bid.quantity)}
