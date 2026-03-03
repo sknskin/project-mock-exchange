@@ -236,9 +236,33 @@ export default function LeaderboardPage() {
   return (
     <div>
       {/* 헤더 / Header */}
-      <div className="py-6 flex items-center gap-2.5">
-        <Trophy className="w-5 h-5 text-yellow-400" />
-        <h1 className="text-[20px] font-extrabold text-text-primary">{t('leaderboard.title')}</h1>
+      <div className="py-6 flex items-start justify-between">
+        <div className="flex items-center gap-2.5 h-10">
+          <Trophy className="w-5 h-5 text-yellow-400" />
+          <h1 className="text-[20px] font-extrabold text-text-primary">{t('leaderboard.title')}</h1>
+        </div>
+        <div className="flex flex-col items-end gap-1">
+          <button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className={cn(
+              'flex items-center gap-2 h-10 px-4 rounded-xl text-[13px] font-semibold transition-colors border',
+              isRefreshing
+                ? 'border-border text-text-quaternary cursor-not-allowed'
+                : 'border-accent/30 text-accent hover:bg-accent/10',
+            )}
+          >
+            <RefreshCw className={cn('w-4 h-4', isRefreshing && 'animate-spin')} />
+            {t('leaderboard.refresh')}
+          </button>
+          <span className="text-[11px] text-text-quaternary tabular-nums pr-1">
+            {dataUpdatedAt
+              ? locale === 'ko'
+                ? `${formatTimestamp(dataUpdatedAt, locale)} ${t('leaderboard.asOf')}`
+                : formatTimestamp(dataUpdatedAt, locale)
+              : t('leaderboard.loading')}
+          </span>
+        </div>
       </div>
 
       <ExchangeRateBar />
@@ -287,25 +311,6 @@ export default function LeaderboardPage() {
           </div>
         </div>
       )}
-
-      {/* 기준 시간 + 새로고침 / Timestamp + Refresh */}
-      <div className="flex items-center justify-between pb-4">
-        <span className="text-[12px] text-text-quaternary">
-          {dataUpdatedAt
-            ? locale === 'ko'
-              ? `${formatTimestamp(dataUpdatedAt, locale)} ${t('leaderboard.asOf')}`
-              : formatTimestamp(dataUpdatedAt, locale)
-            : t('leaderboard.loading')}
-        </span>
-        <button
-          onClick={handleRefresh}
-          disabled={isRefreshing}
-          className="flex items-center gap-1.5 text-[12px] text-text-tertiary hover:text-text-primary transition-colors disabled:opacity-50"
-        >
-          <RefreshCw className={cn('w-3.5 h-3.5', isRefreshing && 'animate-spin')} />
-          {t('leaderboard.refresh')}
-        </button>
-      </div>
 
       {/* 내 순위 카드 (로그인 시) / My rank card (when logged in) */}
       {myEntry && !isLoading && (

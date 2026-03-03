@@ -368,9 +368,9 @@ export default function OrdersPage() {
   return (
     <AuthGuard>
       <div>
-        <div className="py-4 md:py-6 flex items-center gap-2.5">
+        <div className="py-6 flex items-center gap-2.5">
           <ClipboardList className="w-5 h-5 text-accent" />
-          <h1 className="text-[18px] md:text-[20px] font-extrabold text-text-primary">{t('orders.title')}</h1>
+          <h1 className="text-[20px] font-extrabold text-text-primary">{t('orders.title')}</h1>
         </div>
 
         <ExchangeRateBar />

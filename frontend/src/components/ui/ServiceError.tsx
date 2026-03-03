@@ -8,17 +8,21 @@
 'use client';
 
 import { useTranslation } from '@/hooks/useTranslation';
+import { useAuthStore } from '@/stores/auth';
 import VirtuExLogo from '@/components/ui/VirtuExLogo';
 
 interface ServiceErrorProps {
   onRetry?: () => void;
 }
 
-const contactEmail = process.env.NEXT_PUBLIC_CONTACT_EMAIL;
-const contactPhone = process.env.NEXT_PUBLIC_CONTACT_PHONE;
+const envEmail = process.env.NEXT_PUBLIC_CONTACT_EMAIL;
+const envPhone = process.env.NEXT_PUBLIC_CONTACT_PHONE;
 
 export default function ServiceError({ onRetry }: ServiceErrorProps) {
   const { t } = useTranslation();
+  const user = useAuthStore((s) => s.user);
+  const contactEmail = user?.email || envEmail;
+  const contactPhone = user?.phone || envPhone;
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] pt-8 px-5 text-center">
