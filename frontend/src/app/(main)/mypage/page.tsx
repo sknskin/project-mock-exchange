@@ -10,7 +10,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Lock, Edit2, User, Bell, BarChart3, Activity } from 'lucide-react';
+import { Lock, Edit2, User, Bell, BarChart3, Activity, Clock, Shield } from 'lucide-react';
 import { useProfile, useChangePassword } from '@/hooks/useAdmin';
 import { useTradeHistory } from '@/hooks/useOrders';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -94,7 +94,7 @@ function NotifToggle({ label, prefKey }: { label: string; prefKey: keyof Notific
 
 export default function MyPage() {
   const router = useRouter();
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const { isAuthenticated } = useAuthStore();
 
   useEffect(() => {
@@ -181,6 +181,10 @@ export default function MyPage() {
     setPasswordError('');
     setPasswordSuccess('');
 
+    if (!passwordForm.currentPassword.trim()) {
+      setPasswordError(t('mypage.currentPasswordRequired'));
+      return;
+    }
     if (passwordForm.newPassword.length < 8) {
       setPasswordError(t('validation.password.minLength'));
       return;
@@ -206,7 +210,7 @@ export default function MyPage() {
 
   const formatJoinDate = (value: string | null | undefined): string => {
     if (!value) return '-';
-    return new Date(value).toLocaleString('ko-KR', {
+    return new Date(value).toLocaleString(locale === 'en' ? 'en-US' : 'ko-KR', {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
@@ -220,9 +224,7 @@ export default function MyPage() {
       {/* Page header */}
       <div className="py-6 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-accent/10 flex items-center justify-center">
-            <User className="w-4 h-4 text-accent" />
-          </div>
+          <User className="w-5 h-5 text-accent" />
           <h1 className="text-[20px] font-extrabold text-text-primary">
             {t('mypage.title')}
           </h1>
@@ -403,6 +405,85 @@ export default function MyPage() {
                     : 'bg-danger/15 text-danger',
                 )}>
                   {profile.isActive ? t('mypage.accountActive') : t('mypage.accountInactive')}
+                </span>
+              </InfoRow>
+            </div>
+          </div>
+
+          {/* Recent Trades */}
+          <div className="bg-bg-secondary rounded-2xl px-5 py-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Clock className="w-3.5 h-3.5 text-text-tertiary" />
+              <h2 className="text-[13px] font-bold text-text-tertiary uppercase tracking-wide">
+                {t('mypage.recentTrades')}
+              </h2>
+            </div>
+            {trades && trades.length > 0 ? (
+              <div className="flex flex-col divide-y divide-border/40">
+                {trades.slice(0, 5).map((trade, i) => {
+                  const isBuy = trade.buyerId === user?.id;
+                  return (
+                    <div key={i} className="flex items-center justify-between py-2.5">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <span className={cn(
+                          'text-[11px] font-bold px-1.5 py-0.5 rounded',
+                          isBuy ? 'bg-rise/10 text-rise' : 'bg-fall/10 text-fall',
+                        )}>
+                          {isBuy ? 'BUY' : 'SELL'}
+                        </span>
+                        <span className="text-[13px] font-semibold text-text-primary truncate">{trade.symbol}</span>
+                      </div>
+                      <div className="text-right shrink-0 ml-3">
+                        <p className="text-[13px] font-mono text-text-primary tabular-nums">
+                          ${trade.price.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                        </p>
+                        <p className="text-[11px] text-text-quaternary tabular-nums">
+                          {trade.quantity.toLocaleString(undefined, { maximumFractionDigits: 4 })}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="py-6 text-center text-text-quaternary text-[13px]">
+                {t('mypage.noTrades')}
+              </div>
+            )}
+          </div>
+
+          {/* Security Info */}
+          <div className="bg-bg-secondary rounded-2xl px-5 py-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Shield className="w-3.5 h-3.5 text-text-tertiary" />
+              <h2 className="text-[13px] font-bold text-text-tertiary uppercase tracking-wide">
+                {t('mypage.securityInfo')}
+              </h2>
+            </div>
+            <div className="flex flex-col divide-y divide-border/40">
+              <InfoRow label={t('mypage.twoFactor')}>
+                <span className={cn(
+                  'text-[13px] font-semibold px-2.5 py-0.5 rounded-full',
+                  profile.totpEnabled
+                    ? 'bg-green-500/15 text-green-400'
+                    : 'bg-bg-tertiary text-text-quaternary',
+                )}>
+                  {profile.totpEnabled ? t('mypage.twoFactorEnabled') : t('mypage.twoFactorDisabled')}
+                </span>
+              </InfoRow>
+              <InfoRow label={t('mypage.smsAuth')}>
+                <span className="text-[13px] font-semibold px-2.5 py-0.5 rounded-full bg-green-500/15 text-green-400">
+                  {t('mypage.smsAuthEnabled')}
+                </span>
+              </InfoRow>
+              <InfoRow label={t('mypage.identityVerification')}>
+                <span className={cn(
+                  'text-[13px] font-semibold px-2.5 py-0.5 rounded-full',
+                  profile.encryptedRrn
+                    ? 'bg-green-500/15 text-green-400'
+                    : 'bg-yellow-500/15 text-yellow-400',
+                )}>
+                  {profile.encryptedRrn ? t('mypage.identityVerified') : t('mypage.identityUnverified')}
                 </span>
               </InfoRow>
             </div>
