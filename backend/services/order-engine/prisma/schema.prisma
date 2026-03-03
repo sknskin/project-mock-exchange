@@ -10,7 +10,7 @@ datasource db {
 
 /// CQRS Read Model - projected from Event Store
 model OrderRead {
-  orderId           String   @id @map("order_id") @db.Uuid
+  orderId           String   @id @map("order_id") @db.VarChar(30)
   userId            String   @map("user_id") @db.Uuid
   symbol            String   @db.VarChar(20)
   side              String   @db.VarChar(4)
@@ -35,16 +35,16 @@ model OrderRead {
 }
 
 model TradeRead {
-  tradeId    String   @id @map("trade_id") @db.Uuid
-  buyOrderId String   @map("buy_order_id") @db.Uuid
-  sellOrderId String  @map("sell_order_id") @db.Uuid
-  buyerId    String   @map("buyer_id") @db.Uuid
-  sellerId   String   @map("seller_id") @db.Uuid
-  symbol     String   @db.VarChar(20)
-  price      Decimal  @db.Decimal(20, 8)
-  quantity   Decimal  @db.Decimal(20, 8)
-  total      Decimal  @db.Decimal(20, 8)
-  executedAt DateTime @map("executed_at") @db.Timestamptz()
+  tradeId     String   @id @map("trade_id") @db.VarChar(30)
+  buyOrderId  String   @map("buy_order_id") @db.VarChar(30)
+  sellOrderId String   @map("sell_order_id") @db.VarChar(30)
+  buyerId     String   @map("buyer_id") @db.Uuid
+  sellerId    String   @map("seller_id") @db.Uuid
+  symbol      String   @db.VarChar(20)
+  price       Decimal  @db.Decimal(20, 8)
+  quantity    Decimal  @db.Decimal(20, 8)
+  total       Decimal  @db.Decimal(20, 8)
+  executedAt  DateTime @map("executed_at") @db.Timestamptz()
 
   @@index([symbol, executedAt(sort: Desc)])
   @@index([buyerId, executedAt(sort: Desc)])

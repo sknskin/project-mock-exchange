@@ -8,6 +8,10 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import Decimal from 'decimal.js';
 import { generateTradeId } from '@virtuex/common';
+
+// 시장 조성자(가상) UUID — 오더북에 상대방이 없을 때 사용
+// Virtual market-maker UUID — used when no counterparty exists in the order book
+const MARKET_MAKER_ID = '00000000-0000-0000-0000-000000000000';
 import { PrismaService } from '../../infrastructure/persistence/prisma/prisma.service';
 
 export interface OrderBookEntry {
@@ -204,10 +208,10 @@ export class MatchingEngineService implements OnModuleInit {
       const tradeId = generateTradeId();
       matches.push({
         tradeId,
-        buyOrderId: side === 'BUY' ? orderId : 'MARKET_MAKER',
-        sellOrderId: side === 'SELL' ? orderId : 'MARKET_MAKER',
-        buyerId: side === 'BUY' ? userId : 'MARKET_MAKER',
-        sellerId: side === 'SELL' ? userId : 'MARKET_MAKER',
+        buyOrderId: side === 'BUY' ? orderId : `mm_${tradeId}`,
+        sellOrderId: side === 'SELL' ? orderId : `mm_${tradeId}`,
+        buyerId: side === 'BUY' ? userId : MARKET_MAKER_ID,
+        sellerId: side === 'SELL' ? userId : MARKET_MAKER_ID,
         symbol,
         matchedQuantity: remainingQty.toString(),
         matchedPrice: marketPrice.toString(),

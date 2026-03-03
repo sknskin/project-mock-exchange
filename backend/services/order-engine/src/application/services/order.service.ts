@@ -45,6 +45,10 @@ export class OrderService {
   private readonly internalToken: string;
   private readonly httpTimeout: number;
 
+  /** 환율 캐시 (USD → KRW) / Exchange rate cache */
+  private cachedExchangeRate: { rate: Decimal; fetchedAt: number } | null = null;
+  private static readonly EXCHANGE_RATE_TTL_MS = 10 * 60 * 1000; // 10분
+
   constructor(
     private readonly eventStore: EventStoreService,
     private readonly matchingEngine: MatchingEngineService,
@@ -55,6 +59,57 @@ export class OrderService {
     this.portfolioUrl = this.config.getOrThrow<string>('PORTFOLIO_URL');
     this.internalToken = this.config.getOrThrow<string>('INTERNAL_SERVICE_SECRET');
     this.httpTimeout = this.config.get<number>('INTERNAL_HTTP_TIMEOUT', 5000);
+  }
+
+  /**
+   * 심볼이 USD 기반인지 판별 / Check if symbol is USD-denominated
+   * .KS 접미사 = KRW, 그 외 = USD
+   */
+  private isUsdSymbol(symbol: string): boolean {
+    return !symbol.endsWith('.KS');
+  }
+
+  /**
+   * USD → KRW 환율을 가져옵니다 (10분 캐시).
+   * Fetch USD→KRW exchange rate (cached 10min).
+   */
+  private async getExchangeRate(): Promise<Decimal> {
+    const now = Date.now();
+    if (
+      this.cachedExchangeRate &&
+      now - this.cachedExchangeRate.fetchedAt < OrderService.EXCHANGE_RATE_TTL_MS
+    ) {
+      return this.cachedExchangeRate.rate;
+    }
+    try {
+      const { data } = await axios.get<{ rates: { KRW: number } }>(
+        'https://api.frankfurter.app/latest?from=USD&to=KRW',
+        { timeout: 5000 },
+      );
+      const rate = new Decimal(data.rates.KRW);
+      this.cachedExchangeRate = { rate, fetchedAt: now };
+      this.logger.log(`Fetched USD→KRW exchange rate: ${rate}`);
+      return rate;
+    } catch (e) {
+      // 캐시 만료되었더라도 이전 값 사용 / Use stale cache as fallback
+      if (this.cachedExchangeRate) {
+        this.logger.warn('Exchange rate fetch failed, using stale cache');
+        return this.cachedExchangeRate.rate;
+      }
+      // 최초 실패 시 기본값 / Default fallback
+      this.logger.warn('Exchange rate fetch failed, using default 1450');
+      return new Decimal(1450);
+    }
+  }
+
+  /**
+   * USD 가격을 KRW로 변환 (KRW 심볼이면 변환하지 않음)
+   * Convert USD price to KRW (no-op for KRW symbols)
+   */
+  private async toKrw(price: Decimal, symbol: string): Promise<Decimal> {
+    if (!this.isUsdSymbol(symbol)) return price;
+    const rate = await this.getExchangeRate();
+    return price.mul(rate);
   }
 
   async placeOrder(params: PlaceOrderParams): Promise<{
@@ -90,10 +145,11 @@ export class OrderService {
     const quantity = new Decimal(params.quantity);
     const totalCost = executionPrice.mul(quantity);
 
-    // 4. 매수 주문 시 자금 예약, 매도 주문 시 보유량 검증
-    // For BUY orders reserve funds, for SELL orders validate holdings
+    // 4. 매수 주문 시 자금 예약 (KRW 변환), 매도 주문 시 보유량 검증
+    // For BUY orders reserve funds (converted to KRW), for SELL orders validate holdings
     if (params.side === 'BUY') {
-      await this.reserveFunds(params.userId, totalCost.toString(), 'pending');
+      const reserveKrw = await this.toKrw(totalCost, params.symbol);
+      await this.reserveFunds(params.userId, reserveKrw.toString(), 'pending');
     } else {
       // 매도 주문: 보유량 검증 + 보유량 예약 (이중 매도 방지)
       // SELL order: validate + reserve holdings (prevents double-sell)
@@ -124,7 +180,7 @@ export class OrderService {
       await this.eventStore.appendEvent(
         {
           streamId,
-          expectedVersion: order.version - order.uncommittedEvents.length + order.uncommittedEvents.indexOf(event),
+          expectedVersion: order.version - order.uncommittedEvents.length + 1 + order.uncommittedEvents.indexOf(event),
           eventType: event.eventType,
           eventData: event.eventData,
           metadata: { correlationId, userId: params.userId },
@@ -241,13 +297,14 @@ export class OrderService {
       },
     });
 
-    // 매수 주문의 예약 자금 해제 / Release reserved funds for BUY orders
+    // 매수 주문의 예약 자금 해제 (KRW 변환) / Release reserved funds for BUY orders (converted to KRW)
     if (order.side === 'BUY' && order.remainingQuantity) {
       const price = order.price || new Decimal(0);
       const unfilledCost = order.remainingQuantity.mul(price);
       if (unfilledCost.gt(0)) {
         try {
-          await this.releaseFunds(userId, unfilledCost.toString(), orderId);
+          const releaseKrw = await this.toKrw(unfilledCost, order.symbol);
+          await this.releaseFunds(userId, releaseKrw.toString(), orderId);
         } catch (releaseErr) {
           // 자금 해제 실패 시 주문을 CANCELLED 상태에서 롤백하여 재시도 가능하도록 함
           // On release failure, revert order status so cancellation can be retried
@@ -526,7 +583,7 @@ export class OrderService {
               await this.eventStore.appendEvent(
                 {
                   streamId,
-                  expectedVersion: aggregate.version - aggregate.uncommittedEvents.length + aggregate.uncommittedEvents.indexOf(event),
+                  expectedVersion: aggregate.version - aggregate.uncommittedEvents.length + 1 + aggregate.uncommittedEvents.indexOf(event),
                   eventType: event.eventType,
                   eventData: event.eventData,
                   metadata: { correlationId, userId: order.userId },
@@ -614,7 +671,7 @@ export class OrderService {
         await this.eventStore.appendEvent(
           {
             streamId,
-            expectedVersion: aggregate.version - aggregate.uncommittedEvents.length + aggregate.uncommittedEvents.indexOf(event),
+            expectedVersion: aggregate.version - aggregate.uncommittedEvents.length + 1 + aggregate.uncommittedEvents.indexOf(event),
             eventType: event.eventType,
             eventData: event.eventData,
             metadata: { correlationId, userId: params.userId },
@@ -681,7 +738,7 @@ export class OrderService {
         await this.eventStore.appendEvent(
           {
             streamId,
-            expectedVersion: aggregate.version - aggregate.uncommittedEvents.length + aggregate.uncommittedEvents.indexOf(event),
+            expectedVersion: aggregate.version - aggregate.uncommittedEvents.length + 1 + aggregate.uncommittedEvents.indexOf(event),
             eventType: event.eventType,
             eventData: event.eventData,
             metadata: { correlationId, userId: params.userId },
@@ -811,8 +868,13 @@ export class OrderService {
   }
 
   private async settleTrade(fill: MatchResult): Promise<void> {
+    // USD 가격을 KRW로 변환 / Convert USD price to KRW for portfolio settlement
+    const krwPrice = await this.toKrw(new Decimal(fill.matchedPrice), fill.symbol);
+    const priceForPortfolio = krwPrice.toString();
+
     // 매수자 정산 / Settle buyer side
-    if (fill.buyerId !== 'MARKET_MAKER') {
+    const MARKET_MAKER_ID = '00000000-0000-0000-0000-000000000000';
+    if (fill.buyerId !== MARKET_MAKER_ID) {
       try {
         await this.withRetry(
           () => axios.post(
@@ -820,7 +882,7 @@ export class OrderService {
             {
               symbol: fill.symbol,
               quantity: fill.matchedQuantity,
-              price: fill.matchedPrice,
+              price: priceForPortfolio,
               tradeId: fill.tradeId,
             },
             { headers: { 'x-user-id': fill.buyerId, 'x-internal-token': this.internalToken }, timeout: this.httpTimeout },
@@ -836,7 +898,7 @@ export class OrderService {
     }
 
     // 매도자 정산 / Settle seller side
-    if (fill.sellerId !== 'MARKET_MAKER') {
+    if (fill.sellerId !== MARKET_MAKER_ID) {
       try {
         await this.withRetry(
           () => axios.post(
@@ -844,7 +906,7 @@ export class OrderService {
             {
               symbol: fill.symbol,
               quantity: fill.matchedQuantity,
-              price: fill.matchedPrice,
+              price: priceForPortfolio,
               tradeId: fill.tradeId,
             },
             { headers: { 'x-user-id': fill.sellerId, 'x-internal-token': this.internalToken }, timeout: this.httpTimeout },

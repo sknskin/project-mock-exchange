@@ -61,26 +61,40 @@ export class OrderProxyController {
 
   private async sendTradeNotification(userId: string, responseData: unknown, req: Request) {
     try {
-      const data = responseData as { data?: { status?: string; symbol?: string; side?: string; filledQuantity?: string; price?: string; trades?: unknown[] } };
+      const data = responseData as {
+        data?: {
+          orderId?: string;
+          status?: string;
+          fills?: { symbol?: string; matchedQuantity?: string; matchedPrice?: string; buyerId?: string }[];
+        };
+      };
       const order = data?.data;
       if (!order) return;
 
-      const hasTrades = order.trades && Array.isArray(order.trades) && order.trades.length > 0;
+      const fills = order.fills;
+      const hasFills = fills && Array.isArray(fills) && fills.length > 0;
       const isFilled = order.status === 'FILLED' || order.status === 'PARTIALLY_FILLED';
 
-      if (hasTrades || isFilled) {
-        const sideLabel = order.side === 'BUY' ? 'Buy' : 'Sell';
-        const title = `${sideLabel} ${order.symbol}`;
+      if (hasFills || isFilled) {
+        const firstFill = fills?.[0];
+        const symbol = firstFill?.symbol ?? '???';
+        const isBuy = firstFill?.buyerId === userId;
+        const sideLabel = isBuy ? 'Buy' : 'Sell';
+        const title = `${sideLabel} ${symbol}`;
+        const totalQty = fills?.reduce((s, f) => s + Number(f.matchedQuantity || 0), 0) ?? 0;
+        const avgPrice = fills && fills.length > 0
+          ? fills.reduce((s, f) => s + Number(f.matchedPrice || 0), 0) / fills.length
+          : 0;
         const message = order.status === 'FILLED'
-          ? `${order.filledQuantity} @ ${order.price} - Filled`
-          : `${order.filledQuantity} @ ${order.price} - Partially Filled`;
+          ? `${totalQty} @ ${avgPrice.toFixed(2)} - Filled`
+          : `${totalQty} @ ${avgPrice.toFixed(2)} - Partially Filled`;
 
         // WebSocket으로 푸시 (Push via WebSocket)
         this.chatGateway.notifyUser(userId, 'notification:trade', {
           type: 'TRADE_EXECUTION',
           title,
           message,
-          symbol: order.symbol,
+          symbol,
           timestamp: new Date().toISOString(),
         });
 
