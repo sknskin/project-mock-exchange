@@ -8,7 +8,6 @@
 'use client';
 
 import { useTranslation } from '@/hooks/useTranslation';
-import { useAuthStore } from '@/stores/auth';
 import VirtuExLogo from '@/components/ui/VirtuExLogo';
 
 interface ServiceErrorProps {
@@ -18,11 +17,15 @@ interface ServiceErrorProps {
 const envEmail = process.env.NEXT_PUBLIC_CONTACT_EMAIL;
 const envPhone = process.env.NEXT_PUBLIC_CONTACT_PHONE;
 
+// 플레이스홀더/더미 값 감지 — 실제 연락처가 아닌 기본값은 숨김
+// Detect placeholder/dummy values — hide default contact info
+const isPlaceholder = (v?: string) =>
+  !v || /^0{2,}|@example\.com|support@virtuex\.com|000-/.test(v);
+
 export default function ServiceError({ onRetry }: ServiceErrorProps) {
   const { t } = useTranslation();
-  const user = useAuthStore((s) => s.user);
-  const contactEmail = user?.email || envEmail;
-  const contactPhone = user?.phone || envPhone;
+  const contactEmail = isPlaceholder(envEmail) ? undefined : envEmail;
+  const contactPhone = isPlaceholder(envPhone) ? undefined : envPhone;
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] pt-8 px-5 text-center">

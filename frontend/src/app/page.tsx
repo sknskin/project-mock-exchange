@@ -9,7 +9,6 @@
 
 import { useState, useCallback } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useTranslation } from '@/hooks/useTranslation';
 import { techItems } from '@/lib/constants';
 import ContentModal from '@/components/ui/ContentModal';
@@ -41,7 +40,7 @@ export default function LandingPage() {
   }, []);
 
   const openSwaggerNewTab = useCallback(() => {
-    window.open('http://localhost:3000/api-docs', '_blank');
+    window.open(`${process.env.NEXT_PUBLIC_API_URL || ''}/api-docs`, '_blank');
   }, []);
 
   const features = [
@@ -125,14 +124,13 @@ export default function LandingPage() {
                 className="flex flex-col items-center gap-2 px-5 shrink-0"
               >
                 <div className="w-10 h-10 rounded-xl bg-bg-secondary/80 flex items-center justify-center p-2">
-                  <Image
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
                     src={tech.icon}
                     alt={`${tech.name} logo`}
                     width={20}
                     height={20}
                     className={cn('w-5 h-5 object-contain', tech.invertInLight && 'icon-invert-light')}
-                    priority
-                    unoptimized
                   />
                 </div>
                 <span className="text-[10px] font-medium text-text-quaternary whitespace-nowrap">

@@ -7,6 +7,7 @@
  */
 'use client';
 
+import Link from 'next/link';
 import { useTranslation } from '@/hooks/useTranslation';
 
 export default function NotFoundPage() {
@@ -27,12 +28,12 @@ export default function NotFoundPage() {
         {t('error.notFoundDesc')}
       </p>
 
-      <a
+      <Link
         href="/"
         className="h-10 px-6 text-[14px] font-bold text-white bg-accent rounded-xl hover:bg-accent/85 transition-colors flex items-center"
       >
         {t('error.goHome')}
-      </a>
+      </Link>
     </div>
   );
 }

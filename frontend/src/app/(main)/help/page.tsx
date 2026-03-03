@@ -7,7 +7,7 @@
  */
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useAuthStore } from '@/stores/auth';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/format';
@@ -2556,7 +2556,8 @@ export default function HelpPage() {
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const isAdmin = user?.role === 'SYSTEM' || user?.role === 'ADMIN';
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTabRaw] = useState('dashboard');
+  const setActiveTab = useCallback((v: string) => { setActiveTabRaw(v); window.scrollTo({ top: 0, behavior: 'smooth' }); }, []);
 
   const tabs: { key: string; label: TranslationKey; icon: React.ReactNode; adminOnly?: boolean }[] = [
     { key: 'dashboard', label: 'help.tab.dashboard', icon: <LayoutDashboard className="w-4 h-4" /> },
@@ -2731,7 +2732,7 @@ export default function HelpPage() {
 
   return (
     <div>
-      <div className="py-6 flex items-center gap-2.5">
+      <div className="py-6 flex items-center gap-2.5 h-[88px]">
         <HelpCircle className="w-5 h-5 text-accent" />
         <h1 className="text-[20px] font-extrabold text-text-primary">{t('help.title')}</h1>
       </div>

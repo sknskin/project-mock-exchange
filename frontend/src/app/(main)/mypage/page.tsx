@@ -62,7 +62,7 @@ function NotifToggle({ label, prefKey }: { label: string; prefKey: keyof Notific
     setPref(prefKey, newValue);
 
     try {
-      await api.put('/api/admin/settings', {
+      await api.put('/api/user/notification-settings', {
         [`notif.${prefKey}`]: newValue.toString(),
       });
     } catch {
@@ -499,9 +499,9 @@ export default function MyPage() {
             onClick={handleClosePasswordModal}
           />
           <div className="fixed inset-0 z-[61] flex items-center justify-center pointer-events-none px-4">
-            <div ref={passwordModalRef} onKeyDown={handlePasswordModalKeyDown} className="relative bg-bg-primary border border-border rounded-2xl p-6 w-full max-w-[360px] max-w-[calc(100vw-2rem)] shadow-2xl pointer-events-auto" role="dialog" aria-modal="true">
+            <div ref={passwordModalRef} onKeyDown={handlePasswordModalKeyDown} className="relative bg-bg-primary border border-border rounded-2xl p-6 w-full max-w-[min(360px,calc(100vw-2rem))] shadow-2xl pointer-events-auto" role="dialog" aria-modal="true" aria-labelledby="password-modal-title">
               <div className="flex items-center justify-between mb-5">
-                <h3 className="text-[16px] font-bold text-text-primary">
+                <h3 id="password-modal-title" className="text-[16px] font-bold text-text-primary">
                   {t('mypage.changePassword')}
                 </h3>
                 <button
@@ -627,12 +627,12 @@ export default function MyPage() {
         <>
           <div className="fixed inset-0 z-[70] bg-black/70" onClick={() => setConfirmPasswordOpen(false)} />
           <div className="fixed inset-0 z-[71] flex items-center justify-center pointer-events-none px-4">
-            <div className="relative bg-bg-primary border border-danger/30 rounded-2xl p-6 w-full max-w-[380px] max-w-[calc(100vw-2rem)] shadow-2xl pointer-events-auto">
+            <div className="relative bg-bg-primary border border-danger/30 rounded-2xl p-6 w-full max-w-[min(380px,calc(100vw-2rem))] shadow-2xl pointer-events-auto" role="dialog" aria-modal="true" aria-labelledby="confirm-password-modal-title">
               <div className="flex items-center gap-2 mb-3">
                 <div className="w-8 h-8 rounded-full bg-danger/15 flex items-center justify-center">
                   <Lock className="w-4 h-4 text-danger" />
                 </div>
-                <h3 className="text-[16px] font-bold text-text-primary">
+                <h3 id="confirm-password-modal-title" className="text-[16px] font-bold text-text-primary">
                   {t('mypage.confirmPasswordChange')}
                 </h3>
               </div>

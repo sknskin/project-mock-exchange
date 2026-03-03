@@ -58,7 +58,7 @@ export default function OrderSheet({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center" role="dialog" aria-modal="true">
+    <div className="fixed inset-0 z-50 flex items-center justify-center" role="dialog" aria-modal="true" aria-labelledby="order-sheet-title">
       <div
         className="absolute inset-0 bg-black/50"
         onClick={onClose}
@@ -66,11 +66,12 @@ export default function OrderSheet({
       <div className="relative bg-bg-elevated rounded-2xl w-full max-w-[400px] mx-4 max-h-[85vh] overflow-y-auto">
         {/* 헤더 / Header */}
         <div className="flex items-center justify-between px-6 pt-5 pb-3">
-          <h3 className="text-[18px] font-bold text-text-primary">
+          <h3 id="order-sheet-title" className="text-[18px] font-bold text-text-primary">
             {symbol} {t('order.title')}
           </h3>
           <button
             onClick={onClose}
+            aria-label="Close"
             className="p-3 text-text-quaternary hover:text-text-tertiary transition-colors rounded-lg"
           >
             <X className="w-5 h-5" />

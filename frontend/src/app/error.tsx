@@ -8,6 +8,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useTranslation } from '@/hooks/useTranslation';
 
 
@@ -134,12 +135,12 @@ export default function ErrorPage({
         >
           {t('error.retry')}
         </button>
-        <a
+        <Link
           href="/"
           className="h-10 px-6 text-[14px] font-semibold text-text-secondary bg-bg-secondary rounded-xl hover:bg-bg-tertiary transition-colors flex items-center"
         >
           {t('error.goHome')}
-        </a>
+        </Link>
       </div>
 
       {/* 커서 기준 토스트 알림 / Cursor-relative toast notifications */}

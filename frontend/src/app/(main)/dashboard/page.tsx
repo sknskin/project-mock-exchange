@@ -84,6 +84,7 @@ export default function DashboardPage() {
       return;
     }
     setActiveMainTab(key);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [isAuthenticated]);
 
   const mainTabs = [
@@ -177,10 +178,12 @@ export default function DashboardPage() {
         </>
       )}
 
-      <div className="flex items-end gap-3 sm:gap-5 md:gap-7 pt-7 pb-0 border-b border-border overflow-x-auto scrollbar-hide">
+      <div className="flex items-end gap-3 sm:gap-5 md:gap-7 pt-7 pb-0 border-b border-border overflow-x-auto scrollbar-hide" role="tablist">
         {mainTabs.map((tab) => (
           <button
             key={tab.key}
+            role="tab"
+            aria-selected={activeMainTab === tab.key}
             onClick={() => handleMainTabChange(tab.key)}
             className={cn(
               'pb-3.5 text-[13px] sm:text-[14px] md:text-[15px] font-bold transition-colors relative whitespace-nowrap shrink-0',

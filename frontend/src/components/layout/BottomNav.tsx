@@ -21,13 +21,13 @@ export default function BottomNav() {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 bg-bg-primary/95 backdrop-blur-md border-t border-border lg:hidden safe-bottom landscape-hide-sm" role="navigation" aria-label="Bottom navigation">
-      <div className="flex items-center justify-around h-[48px] md:h-[52px]">
+      <div className="flex items-center justify-around h-[56px] md:h-[60px]">
         {/* 항상 표시 / Always visible */}
         <Link
           href="/dashboard"
           aria-label={t('nav.dashboard')}
           className={cn(
-            'flex flex-col items-center gap-0.5 py-1 px-4 transition-colors active:scale-95',
+            'flex flex-col items-center justify-center gap-0.5 py-1.5 px-4 min-h-[44px] min-w-[44px] transition-colors active:scale-95',
             pathname.startsWith('/dashboard') ? 'text-text-primary' : 'text-text-quaternary',
           )}
         >
@@ -41,7 +41,7 @@ export default function BottomNav() {
             href="/portfolio"
             aria-label={t('nav.portfolio')}
             className={cn(
-              'flex flex-col items-center gap-0.5 py-1 px-4 transition-colors active:scale-95',
+              'flex flex-col items-center justify-center gap-0.5 py-1.5 px-4 min-h-[44px] min-w-[44px] transition-colors active:scale-95',
               pathname.startsWith('/portfolio') ? 'text-text-primary' : 'text-text-quaternary',
             )}
           >
@@ -52,7 +52,7 @@ export default function BottomNav() {
             href="/orders"
             aria-label={t('nav.orders')}
             className={cn(
-              'flex flex-col items-center gap-0.5 py-1 px-4 transition-colors active:scale-95',
+              'flex flex-col items-center justify-center gap-0.5 py-1.5 px-4 min-h-[44px] min-w-[44px] transition-colors active:scale-95',
               pathname.startsWith('/orders') ? 'text-text-primary' : 'text-text-quaternary',
             )}
           >
@@ -63,7 +63,7 @@ export default function BottomNav() {
             href="/leaderboard"
             aria-label={t('nav.leaderboard')}
             className={cn(
-              'flex flex-col items-center gap-0.5 py-1 px-4 transition-colors active:scale-95',
+              'flex flex-col items-center justify-center gap-0.5 py-1.5 px-4 min-h-[44px] min-w-[44px] transition-colors active:scale-95',
               pathname.startsWith('/leaderboard') ? 'text-text-primary' : 'text-text-quaternary',
             )}
           >
@@ -78,7 +78,7 @@ export default function BottomNav() {
             href="/news"
             aria-label={t('nav.news')}
             className={cn(
-              'flex flex-col items-center gap-0.5 py-1 px-4 transition-colors active:scale-95',
+              'flex flex-col items-center justify-center gap-0.5 py-1.5 px-4 min-h-[44px] min-w-[44px] transition-colors active:scale-95',
               pathname.startsWith('/news') ? 'text-text-primary' : 'text-text-quaternary',
             )}
           >
@@ -89,7 +89,7 @@ export default function BottomNav() {
             href="/help"
             aria-label={t('help.title')}
             className={cn(
-              'flex flex-col items-center gap-0.5 py-1 px-4 transition-colors active:scale-95',
+              'flex flex-col items-center justify-center gap-0.5 py-1.5 px-4 min-h-[44px] min-w-[44px] transition-colors active:scale-95',
               pathname.startsWith('/help') ? 'text-text-primary' : 'text-text-quaternary',
             )}
           >
@@ -100,7 +100,7 @@ export default function BottomNav() {
             href="/login"
             aria-label={t('nav.login')}
             className={cn(
-              'flex flex-col items-center gap-0.5 py-1 px-4 transition-colors active:scale-95',
+              'flex flex-col items-center justify-center gap-0.5 py-1.5 px-4 min-h-[44px] min-w-[44px] transition-colors active:scale-95',
               pathname.startsWith('/login') ? 'text-text-primary' : 'text-text-quaternary',
             )}
           >

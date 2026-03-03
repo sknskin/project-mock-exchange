@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { RefreshCw, ExternalLink, Newspaper, Search, Calendar } from 'lucide-react';
 import { useNews, useScrapeStatus, useTriggerScrape } from '@/hooks/useNews';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -16,7 +16,8 @@ export default function NewsPage() {
   const { t } = useTranslation();
   const locale = useSettingsStore((s) => s.locale);
   const dateLocale = locale === 'ko' ? 'ko-KR' : 'en-US';
-  const [activeTab, setActiveTab] = useState<NewsTab>('CRYPTO');
+  const [activeTab, setActiveTabRaw] = useState<NewsTab>('CRYPTO');
+  const setActiveTab = useCallback((v: NewsTab) => { setActiveTabRaw(v); window.scrollTo({ top: 0, behavior: 'smooth' }); }, []);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [searchQuery, setSearchQuery] = useState('');
@@ -125,7 +126,7 @@ export default function NewsPage() {
   return (
     <div>
       {/* Header */}
-      <div className="py-6 flex items-center gap-2.5">
+      <div className="py-6 flex items-center gap-2.5 h-[88px]">
         <Newspaper className="w-5 h-5 text-accent" />
         <h1 className="text-[20px] font-extrabold text-text-primary">
           {t('news.title')}

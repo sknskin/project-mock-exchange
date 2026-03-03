@@ -17,9 +17,11 @@ import { useSettingsStore } from '@/stores/settings';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/format';
 import { LogOut, Search, Menu, X, Megaphone, Newspaper, Users, BarChart3, LayoutDashboard, Briefcase, ClipboardList, Trophy, ChevronDown, User, Sun, Moon, Globe, HelpCircle, Settings, Activity, FileText } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import VirtuExLogo from '@/components/ui/VirtuExLogo';
-import NotificationBell from '@/components/layout/NotificationBell';
+const NotificationBell = dynamic(() => import('@/components/layout/NotificationBell'), { ssr: false });
 import ChatButton from '@/components/chat/ChatButton';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 
 export default function Header() {
   const pathname = usePathname();
@@ -94,14 +96,6 @@ export default function Header() {
     window.addEventListener('open-mobile-menu', handler);
     return () => window.removeEventListener('open-mobile-menu', handler);
   }, []);
-
-  // ESC 키로 로그아웃 모달 닫기 (Close logout modal on ESC)
-  useEffect(() => {
-    if (!logoutModalOpen) return;
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') setLogoutModalOpen(false); };
-    document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
-  }, [logoutModalOpen]);
 
   return (
     <>
@@ -488,33 +482,15 @@ export default function Header() {
       )}
 
       {/* 로그아웃 확인 모달 / Logout Confirmation Modal */}
-      {logoutModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setLogoutModalOpen(false)} />
-          <div className="relative bg-bg-primary border border-border rounded-2xl p-6 w-[320px] max-w-full max-w-[calc(100vw-2rem)] shadow-2xl">
-            <h3 className="text-[16px] font-bold text-text-primary text-center">
-              {t('modal.logoutTitle')}
-            </h3>
-            <p className="text-[14px] text-text-secondary text-center mt-3">
-              {t('modal.logoutMessage')}
-            </p>
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => { logout(); setLogoutModalOpen(false); router.push('/dashboard'); }}
-                className="flex-1 h-11 rounded-xl bg-danger text-white text-[14px] font-semibold hover:bg-danger/85 transition-colors"
-              >
-                {t('modal.logoutConfirm')}
-              </button>
-              <button
-                onClick={() => setLogoutModalOpen(false)}
-                className="flex-1 h-11 rounded-xl border border-border text-[14px] font-semibold text-text-secondary hover:bg-bg-secondary transition-colors"
-              >
-                {t('modal.cancel')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmModal
+        isOpen={logoutModalOpen}
+        onClose={() => setLogoutModalOpen(false)}
+        onConfirm={() => { logout(); setLogoutModalOpen(false); router.push('/dashboard'); }}
+        title={t('modal.logoutTitle')}
+        message={t('modal.logoutMessage')}
+        confirmLabel={t('modal.logoutConfirm')}
+        confirmVariant="danger"
+      />
     </>
   );
 }

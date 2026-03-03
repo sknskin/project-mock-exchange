@@ -18,7 +18,8 @@ export function useMarketPrices() {
       const { data } = await api.get('/api/market/prices');
       return data.data ?? data;
     },
-    refetchInterval: 5000,
+    // WebSocket handles real-time updates; REST polling serves as a fallback
+    refetchInterval: 30_000,
   });
 }
 
@@ -29,7 +30,8 @@ export function useAssetPrice(symbol: string) {
       const { data } = await api.get(`/api/market/prices/${symbol}`);
       return data.data ?? data;
     },
-    refetchInterval: 3000,
+    // WebSocket handles real-time updates; REST polling serves as a fallback
+    refetchInterval: 30_000,
     enabled: !!symbol,
   });
 }
@@ -87,9 +89,9 @@ export function useCandlesticks(
   const fetchLimit = interval === '1m' ? limit
     : interval === '5m' ? limit * 5
     : interval === '15m' ? limit * 15
-    : interval === '1h' ? Math.min(limit * 60, 20000)
-    : interval === '4h' ? Math.min(limit * 240, 30000)
-    : Math.min(limit * 1440, 50000);
+    : interval === '1h' ? Math.min(limit * 60, 5000)
+    : interval === '4h' ? Math.min(limit * 240, 5000)
+    : Math.min(limit * 1440, 2000);
 
   return useQuery<Candlestick[]>({
     queryKey: ['market', 'candlesticks', symbol, interval],
@@ -131,14 +133,11 @@ export function useCandlesticks(
         candles1m.push({ time, open, high, low, close, volume: isFinite(volume) ? volume : 0 });
       }
 
-      // 이미 올바른 interval로 받았으면 집계 불필요 (Skip aggregation if data already in correct interval)
-      if (candles1m.length > 0 && candles1m.length <= limit * 2) {
-        return aggregateCandles(candles1m, interval);
-      }
       return aggregateCandles(candles1m, interval);
     },
     enabled: !!symbol,
-    refetchInterval: 5_000,
+    // WebSocket handles real-time updates; REST polling serves as a fallback
+    refetchInterval: 60_000,
   });
 }
 
@@ -149,7 +148,8 @@ export function useOrderBook(symbol: string) {
       const { data } = await api.get(`/api/orders/book/${symbol}`);
       return data.data ?? data;
     },
-    refetchInterval: 3000,
+    // WebSocket handles real-time updates; REST polling serves as a fallback
+    refetchInterval: 30_000,
     enabled: !!symbol,
     retry: false,
   });
@@ -191,11 +191,14 @@ export function useRecentTrades(symbol: string, enabled: boolean = true) {
         symbol: String(t.symbol ?? ''),
         price: Number(t.price) || 0,
         quantity: Number(t.quantity) || 0,
-        side: (t.buyerId === t.sellerId ? 'BUY' : 'BUY') as Trade['side'],
+        // side: taker가 매수이면 BUY, 아니면 SELL (isBuyerMaker 필드 활용, 없으면 기본 BUY)
+        // side: BUY if taker is buyer (isBuyerMaker=false), SELL otherwise
+        side: (t.isBuyerMaker === true ? 'SELL' : 'BUY') as Trade['side'],
         timestamp: String(t.executedAt ?? ''),
       }));
     },
-    refetchInterval: 5000,
+    // WebSocket handles real-time updates; REST polling serves as a fallback
+    refetchInterval: 30_000,
     enabled: !!symbol && enabled,
   });
 }

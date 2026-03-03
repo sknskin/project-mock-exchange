@@ -78,18 +78,6 @@ function formatTimestamp(ts: number, locale: string): string {
   return `${month}월 ${day}일 ${hours}:${minutes}:${seconds}`;
 }
 
-/** 랭크 변동값 시뮬레이션 (시드 기반 의사 난수) / Simulated rank change (seed-based pseudo-random) */
-function getSimulatedRankChange(userId: string, rank: number): number {
-  let hash = 0;
-  for (let i = 0; i < userId.length; i++) {
-    hash = ((hash << 5) - hash + userId.charCodeAt(i)) | 0;
-  }
-  const seed = Math.abs(hash + rank) % 100;
-  if (seed < 30) return 0;
-  if (seed < 65) return (seed % 5) + 1;
-  return -((seed % 4) + 1);
-}
-
 /** 절대 수익 계산 / Calculate absolute PnL from totalValue and pnlPercent */
 function calcAbsolutePnl(totalValue: number, pnlPercent: number): number {
   if (pnlPercent === 0) return 0;
@@ -368,7 +356,9 @@ export default function LeaderboardPage() {
             const isPositive = entry.pnlPercent >= 0;
             const isMe = entry.userId === user?.id;
             const displayName = entry.name || entry.username || '-';
-            const rankChange = getSimulatedRankChange(entry.userId, entry.rank);
+            // 실제 이전 순위 대비 변동 계산 (Real rank change from previous data)
+            const prevRank = prevRankMap.current.get(entry.userId);
+            const rankChange = prevRank !== undefined ? prevRank - entry.rank : 0;
             const absolutePnl = calcAbsolutePnl(entry.totalValue, entry.pnlPercent);
 
             return (

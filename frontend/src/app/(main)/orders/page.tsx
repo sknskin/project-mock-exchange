@@ -7,7 +7,7 @@
  */
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import AuthGuard from '@/components/layout/AuthGuard';
 import TransactionList from '@/components/portfolio/TransactionList';
@@ -21,6 +21,7 @@ import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn, formatQuantity, formatDate, formatPriceDisplay, formatCurrencyDisplay } from '@/lib/format';
 import { useAuthStore } from '@/stores/auth';
+import { useToastStore } from '@/stores/toast';
 import { Search, ChevronDown, ClipboardList, Check, BarChart, LayoutDashboard, TrendingUp, Activity, Download } from 'lucide-react';
 import { exportToCSV } from '@/lib/export';
 import type { TranslationKey } from '@/lib/i18n';
@@ -295,7 +296,8 @@ export default function OrdersPage() {
   const { data: rateData } = useExchangeRate();
   const { display: currencyMode } = useCurrencyDisplay();
   const rate = rateData?.rate;
-  const [tab, setTab] = useState<'orders' | 'trades' | 'analysis'>('orders');
+  const [tab, setTabRaw] = useState<'orders' | 'trades' | 'analysis'>('orders');
+  const setTab = useCallback((v: typeof tab) => { setTabRaw(v); window.scrollTo({ top: 0, behavior: 'smooth' }); }, []);
   const [statusFilter, setStatusFilter] = useState('all');
   const [searchInput, setSearchInput] = useState('');
   const [symbolSearch, setSymbolSearch] = useState('');
@@ -327,6 +329,7 @@ export default function OrdersPage() {
     try {
       await modifyOrder.mutateAsync({ orderId, price, quantity });
       setEditingOrderId(null);
+      useToastStore.getState().addToast(t('orders.modifySuccess'), 'success');
     } catch {
       // handled by query client
     }
@@ -368,7 +371,7 @@ export default function OrdersPage() {
   return (
     <AuthGuard>
       <div>
-        <div className="py-6 flex items-center gap-2.5">
+        <div className="py-6 flex items-center gap-2.5 h-[88px]">
           <ClipboardList className="w-5 h-5 text-accent" />
           <h1 className="text-[20px] font-extrabold text-text-primary">{t('orders.title')}</h1>
         </div>
@@ -712,7 +715,9 @@ export default function OrdersPage() {
         onClose={() => setCancelTargetId(null)}
         onConfirm={() => {
           if (cancelTargetId) {
-            cancelOrder.mutate(cancelTargetId);
+            cancelOrder.mutate(cancelTargetId, {
+              onSuccess: () => useToastStore.getState().addToast(t('orders.cancelSuccess'), 'success'),
+            });
             setCancelTargetId(null);
           }
         }}

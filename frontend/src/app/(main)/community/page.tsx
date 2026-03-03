@@ -9,7 +9,7 @@
  */
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import AuthGuard from '@/components/layout/AuthGuard';
 import { useLeaderboard } from '@/hooks/useLeaderboard';
 import { useAuthStore } from '@/stores/auth';
@@ -388,7 +388,8 @@ function generateMockPosts(locale: 'ko' | 'en'): MockPost[] {
 
 export default function CommunityPage() {
   const { t, locale } = useTranslation();
-  const [tab, setTab] = useState<'discussions' | 'strategies' | 'traders'>('discussions');
+  const [tab, setTabRaw] = useState<'discussions' | 'strategies' | 'traders'>('discussions');
+  const setTab = useCallback((v: typeof tab) => { setTabRaw(v); window.scrollTo({ top: 0, behavior: 'smooth' }); }, []);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const { data: leaderboardData, isLoading } = useLeaderboard();
   const [followedUsers, setFollowedUsers] = useState<Set<string>>(new Set());
@@ -429,7 +430,7 @@ export default function CommunityPage() {
     <AuthGuard>
       <div>
         {/* 헤더 / Header */}
-        <div className="py-6 flex items-center gap-2.5">
+        <div className="py-6 flex items-center gap-2.5 h-[88px]">
           <Users className="w-5 h-5 text-accent" />
           <h1 className="text-[20px] font-extrabold text-text-primary">
             {t('community.title')}

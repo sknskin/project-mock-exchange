@@ -7,7 +7,7 @@
  */
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import AuthGuard from '@/components/layout/AuthGuard';
 import BalanceCard from '@/components/portfolio/BalanceCard';
@@ -25,6 +25,7 @@ import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn, formatCurrency, formatDollar, formatCurrencyDisplay, formatPercent } from '@/lib/format';
+import { useToastStore } from '@/stores/toast';
 import { Briefcase, ShoppingCart, LayoutDashboard, Download, RefreshCw, TrendingUp, TrendingDown } from 'lucide-react';
 import { exportToCSV } from '@/lib/export';
 
@@ -42,12 +43,14 @@ export default function PortfolioPage() {
   const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [withdrawConfirmOpen, setWithdrawConfirmOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<PortfolioTab>('overview');
+  const [activeTab, setActiveTabRaw] = useState<PortfolioTab>('overview');
+  const setActiveTab = useCallback((v: PortfolioTab) => { setActiveTabRaw(v); window.scrollTo({ top: 0, behavior: 'smooth' }); }, []);
 
   // 마지막 갱신 시간 표시 (Last updated display)
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now()), 1000);
+    // Display granularity is in minutes, so 60s interval is sufficient
+    const timer = setInterval(() => setNow(Date.now()), 60_000);
     return () => clearInterval(timer);
   }, []);
 
@@ -73,6 +76,7 @@ export default function PortfolioPage() {
       await deposit.mutateAsync(toBackendAmount(amount));
       setDepositAmount('');
       setDepositOpen(false);
+      useToastStore.getState().addToast(t('portfolio.depositSuccess'), 'success');
     } catch {
       // Error handled by query client
     }
@@ -86,6 +90,7 @@ export default function PortfolioPage() {
       await withdraw.mutateAsync(toBackendAmount(amount));
       setWithdrawAmount('');
       setWithdrawOpen(false);
+      useToastStore.getState().addToast(t('portfolio.withdrawSuccess'), 'success');
     } catch {
       // Error handled by query client
     }
