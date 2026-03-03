@@ -14,6 +14,7 @@ import BottomNav from '@/components/layout/BottomNav';
 import Footer from '@/components/layout/Footer';
 import ThemeProvider from '@/components/layout/ThemeProvider';
 import PageViewTracker from '@/components/layout/PageViewTracker';
+import ScrollToTop from '@/components/layout/ScrollToTop';
 import ToastContainer from '@/components/ui/ToastContainer';
 import LiveToastContainer from '@/components/ui/LiveToastContainer';
 import ConnectionGuard from '@/components/layout/ConnectionGuard';
@@ -31,7 +32,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="ko" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         {/*
@@ -58,6 +59,12 @@ export default function RootLayout({
               }
             }
           } catch (e) {}
+          try {
+            var s = JSON.parse(localStorage.getItem('virtuex-settings') || '{}');
+            if (s.state && s.state.locale) {
+              document.documentElement.lang = s.state.locale;
+            }
+          } catch (e) {}
         `}</Script>
       </head>
       <body className="bg-bg-primary text-text-primary min-h-screen">
@@ -72,6 +79,7 @@ export default function RootLayout({
           <ConnectionGuard>
             <ThemeProvider />
             <PageViewTracker />
+            <ScrollToTop />
             <Header />
             <MainContent>
               {children}
