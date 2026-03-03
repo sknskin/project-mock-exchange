@@ -7,7 +7,7 @@
  */
 'use client';
 
-import { use, useState } from 'react';
+import { use, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Info, ShoppingCart } from 'lucide-react';
@@ -120,7 +120,8 @@ export default function AdminUserDetailPage({
   const [activeModal, setActiveModal] = useState<ModalType>(null);
   const [note, setNote] = useState('');
   const [selectedRole, setSelectedRole] = useState('');
-  const [activeTab, setActiveTab] = useState<TabKey>('info');
+  const [activeTab, setActiveTabRaw] = useState<TabKey>('info');
+  const setActiveTab = useCallback((v: TabKey) => { setActiveTabRaw(v); window.scrollTo({ top: 0, behavior: 'smooth' }); }, []);
 
   // Redirect non-admin users
   if (currentUser && currentUser.role !== 'ADMIN' && currentUser.role !== 'SYSTEM') {

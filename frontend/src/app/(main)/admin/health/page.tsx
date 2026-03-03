@@ -175,7 +175,11 @@ export default function AdminHealthPage() {
   const user = useAuthStore((s) => s.user);
   const token = useAuthStore((s) => s.accessToken);
 
-  const [activeTab, setActiveTab] = useState<string>('overview');
+  const [activeTab, setActiveTabRaw] = useState<string>('overview');
+  const setActiveTab = useCallback((tab: string) => {
+    setActiveTabRaw(tab);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
   const [portMap, setPortMap] = useState<Record<string, number>>(DEFAULT_PORTS);
   const [services, setServices] = useState<ServiceHealth[]>(
     SERVICE_META.map((s) => ({ key: s.key, status: 'checking' as HealthStatus })),
@@ -620,7 +624,7 @@ export default function AdminHealthPage() {
               </div>
               <div className="space-y-3">
                 <InfoRow label={t('admin.health.port')} value={`${activeService.port}`} mono />
-                <InfoRow label={t('admin.health.endpoint')} value={`http://localhost:${activeService.port}`} mono />
+                <InfoRow label={t('admin.health.endpoint')} value={`${activeService.key}:${activeService.port}`} mono />
                 <InfoRow label={t('admin.health.protocol')} value={SERVICE_DETAIL_META[activeTab]?.protocol ?? 'HTTP'} />
                 {SERVICE_DETAIL_META[activeTab]?.db && (
                   <InfoRow label={t('admin.health.database')} value={SERVICE_DETAIL_META[activeTab].db!} mono />

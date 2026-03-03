@@ -250,7 +250,8 @@ export default function AdminStatsPage() {
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
 
-  const [tab, setTab] = useState('overview');
+  const [tab, setTabRaw] = useState('overview');
+  const setTab = useCallback((v: string) => { setTabRaw(v); window.scrollTo({ top: 0, behavior: 'smooth' }); }, []);
   const [period, setPeriod] = useState('daily');
   const [days, setDays] = useState(30);
   const tabsRef = useRef<HTMLDivElement>(null);
@@ -388,7 +389,7 @@ export default function AdminStatsPage() {
   return (
     <div className="overflow-hidden">
       {/* Page header */}
-      <div className="py-6 flex items-center gap-2.5">
+      <div className="py-6 flex items-center gap-2.5 h-[88px]">
         <BarChart3 className="w-5 h-5 text-accent" />
         <h1 className="text-[20px] font-extrabold text-text-primary">{t('stats.title')}</h1>
       </div>

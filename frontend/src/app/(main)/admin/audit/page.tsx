@@ -95,7 +95,7 @@ export default function AdminAuditPage() {
   return (
     <div className="pb-16">
       {/* Page header */}
-      <div className="py-6 flex items-center gap-2.5">
+      <div className="py-6 flex items-center gap-2.5 h-[88px]">
         <FileText className="w-5 h-5 text-accent" />
         <h1 className="text-[20px] font-extrabold text-text-primary">
           {t('admin.audit.title')}

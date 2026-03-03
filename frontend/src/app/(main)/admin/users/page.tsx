@@ -12,7 +12,6 @@ import { useRouter } from 'next/navigation';
 import { Search, Shield, ShieldCheck, User, Users, ChevronDown, Check } from 'lucide-react';
 import { useAdminUsers } from '@/hooks/useAdmin';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useAuthStore } from '@/stores/auth';
 import Pagination from '@/components/ui/Pagination';
 import Skeleton from '@/components/ui/Skeleton';
 import { cn, formatDate } from '@/lib/format';
@@ -182,20 +181,12 @@ function TableSkeleton({ limit }: { limit: number }) {
 export default function AdminUsersPage() {
   const router = useRouter();
   const { t } = useTranslation();
-  const user = useAuthStore((s) => s.user);
 
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [searchInput, setSearchInput] = useState('');
-
-  // Non-admin redirect
-  useEffect(() => {
-    if (user && user.role !== 'SYSTEM' && user.role !== 'ADMIN') {
-      router.replace('/dashboard');
-    }
-  }, [user, router]);
 
   // Debounce search
   useEffect(() => {
@@ -218,15 +209,10 @@ export default function AdminUsersPage() {
   const total = data?.total ?? 0;
   const totalPages = data?.totalPages ?? 1;
 
-  // Guard: if user is not yet loaded or not admin, render nothing
-  if (user && user.role !== 'SYSTEM' && user.role !== 'ADMIN') {
-    return null;
-  }
-
   return (
     <div>
       {/* Page header */}
-      <div className="py-6 flex items-center gap-2.5">
+      <div className="py-6 flex items-center gap-2.5 h-[88px]">
         <Users className="w-5 h-5 text-accent" />
         <h1 className="text-[20px] font-extrabold text-text-primary">
           {t('admin.users.title')}
@@ -269,8 +255,11 @@ export default function AdminUsersPage() {
           users.map((u) => (
             <div
               key={u.id}
+              tabIndex={0}
+              role="button"
               onClick={() => router.push(`/admin/users/${u.id}`)}
-              className="p-4 rounded-xl border border-border bg-bg-secondary hover:bg-bg-tertiary hover:border-accent/40 cursor-pointer transition-colors"
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); router.push(`/admin/users/${u.id}`); } }}
+              className="p-4 rounded-xl border border-border bg-bg-secondary hover:bg-bg-tertiary hover:border-accent/40 cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-accent/60 focus:ring-offset-1"
             >
               <div className="flex items-center justify-between mb-2">
                 <span className="text-[14px] font-semibold text-text-primary">{u.name}</span>
@@ -332,8 +321,12 @@ export default function AdminUsersPage() {
               users.map((u) => (
                 <tr
                   key={u.id}
+                  tabIndex={0}
+                  role="link"
+                  aria-label={`${u.name} - ${u.email}`}
                   onClick={() => router.push(`/admin/users/${u.id}`)}
-                  className="hover:bg-bg-secondary/60 cursor-pointer transition-colors"
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); router.push(`/admin/users/${u.id}`); } }}
+                  className="hover:bg-bg-secondary/60 cursor-pointer transition-colors focus:outline-none focus:bg-bg-secondary/60"
                 >
                   <td className="px-4 py-3">
                     <span className="text-[14px] font-semibold text-text-primary">

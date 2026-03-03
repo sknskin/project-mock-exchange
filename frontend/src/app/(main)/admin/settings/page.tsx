@@ -445,7 +445,7 @@ export default function AdminSettingsPage() {
   if (isLoading) {
     return (
       <div className="pb-16">
-        <div className="py-6 flex items-center gap-2.5">
+        <div className="py-6 flex items-center gap-2.5 h-[88px]">
           <Settings className="w-5 h-5 text-accent" />
           <h1 className="text-[20px] font-extrabold text-text-primary">{t('admin.settings.title')}</h1>
         </div>
