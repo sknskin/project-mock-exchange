@@ -28,7 +28,7 @@ export class ProfileController {
 
   @Get()
   async getProfile(@CurrentUser() user: UserDto) {
-    const profile = await this.prisma.user.findUnique({
+    const raw = await this.prisma.user.findUnique({
       where: { id: user.id },
       select: {
         id: true,
@@ -42,10 +42,17 @@ export class ProfileController {
         zipCode: true,
         isActive: true,
         approvalStatus: true,
+        totpEnabled: true,
+        encryptedRrn: true,
         createdAt: true,
         updatedAt: true,
       },
     });
+    // 민감 데이터 마스킹 — 존재 여부만 노출 (Mask sensitive data — expose only existence)
+    const profile = raw ? {
+      ...raw,
+      encryptedRrn: raw.encryptedRrn ? '***' : null,
+    } : null;
     return { success: true, data: profile };
   }
 
