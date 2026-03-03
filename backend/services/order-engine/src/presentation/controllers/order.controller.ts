@@ -151,7 +151,7 @@ export class OrderController {
 
   @Get('stats/trading')
   async tradingStats(@Query('days') days?: string) {
-    const daysNum = parseInt(days || '30', 10) || 30;
+    const daysNum = Math.min(parseInt(days || '30', 10) || 30, 365);
     const stats = await this.orderService.getTradingStats(daysNum);
     return { success: true, data: stats };
   }
@@ -162,9 +162,11 @@ export class OrderController {
     return { success: true, data: book };
   }
 
+  private readonly UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
   private validateUserId(userId: string): void {
-    if (!userId) {
-      throw new BadRequestException('x-user-id header is required');
+    if (!userId || !this.UUID_REGEX.test(userId)) {
+      throw new BadRequestException('Valid x-user-id header is required');
     }
   }
 }

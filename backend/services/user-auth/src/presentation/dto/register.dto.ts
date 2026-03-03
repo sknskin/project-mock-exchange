@@ -44,14 +44,18 @@ export class RegisterRequestDto {
   phone: string;
 
   @IsString()
+  @Matches(/^\d{6}[1-4]\d{6}$/, { message: 'Invalid resident number format' })
   residentNumber: string;
 
   @IsString()
+  @MaxLength(200)
   address: string;
 
   @IsString()
+  @MaxLength(200)
   addressDetail: string;
 
   @IsString()
+  @Matches(/^\d{5}$/, { message: 'Zip code must be 5 digits' })
   zipCode: string;
 }

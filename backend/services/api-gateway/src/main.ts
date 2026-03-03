@@ -52,27 +52,31 @@ async function bootstrap() {
   );
   app.use(cookieParser());
 
-  const swaggerConfig = new DocumentBuilder()
-    .setTitle('VirtuEx API')
-    .setDescription('실시간 모의 주식/암호화폐 거래 플랫폼 API')
-    .setVersion('0.1.0')
-    .addBearerAuth()
-    .addTag('Auth', '인증 관련 API')
-    .addTag('Market', '시장 데이터 API')
-    .addTag('Orders', '주문 관련 API')
-    .addTag('Portfolio', '포트폴리오 API')
-    .addTag('Admin', '관리자 API')
-    .addTag('Announcements', '공지사항 API')
-    .addTag('Chat', '채팅 API')
-    .addTag('Notifications', '알림 API')
-    .addTag('News', '뉴스 API')
-    .addTag('Price Alerts', '가격 알림 API')
-    .addTag('Profile', '프로필 API')
-    .addTag('Statistics', '통계 API')
-    .addTag('Health', '헬스 체크 API')
-    .build();
-  const document = SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup('api-docs', app, document);
+  // Swagger 문서는 프로덕션 환경에서 비활성화
+  // Swagger docs disabled in production
+  if (process.env.NODE_ENV !== 'production') {
+    const swaggerConfig = new DocumentBuilder()
+      .setTitle('VirtuEx API')
+      .setDescription('실시간 모의 주식/암호화폐 거래 플랫폼 API')
+      .setVersion('0.1.0')
+      .addBearerAuth()
+      .addTag('Auth', '인증 관련 API')
+      .addTag('Market', '시장 데이터 API')
+      .addTag('Orders', '주문 관련 API')
+      .addTag('Portfolio', '포트폴리오 API')
+      .addTag('Admin', '관리자 API')
+      .addTag('Announcements', '공지사항 API')
+      .addTag('Chat', '채팅 API')
+      .addTag('Notifications', '알림 API')
+      .addTag('News', '뉴스 API')
+      .addTag('Price Alerts', '가격 알림 API')
+      .addTag('Profile', '프로필 API')
+      .addTag('Statistics', '통계 API')
+      .addTag('Health', '헬스 체크 API')
+      .build();
+    const document = SwaggerModule.createDocument(app, swaggerConfig);
+    SwaggerModule.setup('api-docs', app, document);
+  }
 
   app.useGlobalFilters(new AllExceptionsFilter());
   app.useGlobalInterceptors(new LoggingInterceptor());

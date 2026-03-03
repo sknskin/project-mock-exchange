@@ -32,8 +32,8 @@ export class TotpService {
     private readonly configService: ConfigService,
     @Inject(REDIS_CLIENT) private readonly redis: Redis,
   ) {
-    const secret = this.configService.getOrThrow<string>('JWT_SECRET');
-    this.encryptionKey = createHash('sha256').update(secret).digest();
+    const totpKey = this.configService.getOrThrow<string>('TOTP_ENCRYPTION_KEY');
+    this.encryptionKey = createHash('sha256').update(totpKey).digest();
   }
 
   async setup(userId: string): Promise<{ secret: string; uri: string }> {

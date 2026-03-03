@@ -16,10 +16,19 @@ export class PriceCacheService implements OnModuleDestroy {
   private readonly logger = new Logger(PriceCacheService.name);
 
   constructor(private readonly configService: ConfigService) {
-    this.redis = new Redis(
-      this.configService.get<string>('REDIS_URL', 'redis://localhost:6379'),
-    );
-    this.redis.on('error', (err) => this.logger.error('Redis error', err));
+    const redisUrl = this.configService.get<string>('REDIS_URL', 'redis://localhost:6379');
+    const redisPassword = this.configService.get<string>('REDIS_PASSWORD', '');
+
+    // REDIS_PASSWORD 환경변수로 비밀번호를 분리하여 URL 내 인라인 비밀번호 노출 방지 (#19)
+    // Separate password via REDIS_PASSWORD env var to avoid inline password exposure in URL
+    if (redisPassword) {
+      const parsed = new URL(redisUrl);
+      parsed.password = redisPassword;
+      this.redis = new Redis(parsed.toString());
+    } else {
+      this.redis = new Redis(redisUrl);
+    }
+    this.redis.on('error', (err) => this.logger.error('Redis error', err.message));
   }
 
   async onModuleDestroy() {

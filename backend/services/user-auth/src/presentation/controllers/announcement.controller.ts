@@ -45,7 +45,11 @@ export class AnnouncementController {
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
     @Query('search') search?: string,
   ) {
-    const result = await this.announcementService.list({ page, limit, search });
+    // 페이지네이션 최대값 제한 — 메모리 소진 방지 / Cap pagination limit to prevent memory exhaustion
+    const safePage = Math.max(1, page);
+    const safeLimit = Math.min(Math.max(1, limit), 100);
+    const safeSearch = search ? search.slice(0, 100) : undefined;
+    const result = await this.announcementService.list({ page: safePage, limit: safeLimit, search: safeSearch });
     return { success: true, data: result };
   }
 

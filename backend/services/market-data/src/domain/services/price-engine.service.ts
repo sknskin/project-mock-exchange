@@ -42,12 +42,18 @@ export class PriceEngineService {
   private readonly DRIFT: number;
   private readonly VOLATILITY_EVENT_PROBABILITY: number;
   private readonly VOLATILITY_EVENT_DURATION_MS: number;
+  private readonly VOLATILITY_MULTIPLIER_MIN: number;
+  private readonly VOLATILITY_MULTIPLIER_MAX: number;
+  private readonly MIN_PRICE: number;
 
   constructor(private readonly config: ConfigService) {
     this.TICK_INTERVAL_MS = this.config.get<number>('PRICE_ENGINE_TICK_INTERVAL_MS', 1000);
     this.DRIFT = this.config.get<number>('PRICE_ENGINE_DRIFT', 0.0);
     this.VOLATILITY_EVENT_PROBABILITY = this.config.get<number>('PRICE_ENGINE_VOLATILITY_EVENT_PROBABILITY', 0.002);
     this.VOLATILITY_EVENT_DURATION_MS = this.config.get<number>('PRICE_ENGINE_VOLATILITY_EVENT_DURATION_MS', 30000);
+    this.VOLATILITY_MULTIPLIER_MIN = this.config.get<number>('PRICE_ENGINE_VOLATILITY_MULTIPLIER_MIN', 2);
+    this.VOLATILITY_MULTIPLIER_MAX = this.config.get<number>('PRICE_ENGINE_VOLATILITY_MULTIPLIER_MAX', 4);
+    this.MIN_PRICE = this.config.get<number>('PRICE_ENGINE_MIN_PRICE', 0.0001);
   }
 
   initializeAsset(config: AssetConfig): void {
@@ -65,7 +71,7 @@ export class PriceEngineService {
    * Trigger a volatility event for a symbol (2-4x normal volatility for 30s).
    */
   triggerVolatilityEvent(symbol: string): void {
-    const multiplier = 2 + Math.random() * 2; // 2x-4x
+    const multiplier = this.VOLATILITY_MULTIPLIER_MIN + Math.random() * (this.VOLATILITY_MULTIPLIER_MAX - this.VOLATILITY_MULTIPLIER_MIN);
     this.volatilityMultipliers.set(symbol, {
       multiplier,
       expiresAt: Date.now() + this.VOLATILITY_EVENT_DURATION_MS,
@@ -108,8 +114,8 @@ export class PriceEngineService {
     // GBM 공식: dS = μ*S*dt + σ*S*dW
     const dS = this.DRIFT * currentPrice * dt + effectiveVolatility * currentPrice * dW;
 
-    // 새 가격 (최소값 0.0001 적용) / New price (enforce minimum of 0.0001)
-    let newPrice = Math.max(currentPrice + dS, 0.0001);
+    // 새 가격 (최소값 적용) / New price (enforce minimum)
+    let newPrice = Math.max(currentPrice + dS, this.MIN_PRICE);
 
     // 가격 크기에 따른 반올림 / Round based on price magnitude
     newPrice = this.roundPrice(newPrice);

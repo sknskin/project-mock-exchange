@@ -15,14 +15,16 @@ import { REDIS_CLIENT } from '../../infrastructure/redis/redis.module';
 export class SmsVerificationService {
   private readonly logger = new Logger(SmsVerificationService.name);
   private readonly CODE_TTL: number;
-  private readonly VERIFIED_TTL = 600; // 10분 / 10 minutes
-  private readonly MAX_ATTEMPTS = 5;
+  private readonly VERIFIED_TTL: number;
+  private readonly MAX_ATTEMPTS: number;
 
   constructor(
     @Inject(REDIS_CLIENT) private readonly redis: Redis,
     private readonly configService: ConfigService,
   ) {
     this.CODE_TTL = this.configService.get<number>('SMS_CODE_TTL', 180);
+    this.VERIFIED_TTL = this.configService.get<number>('SMS_VERIFIED_TTL', 600);
+    this.MAX_ATTEMPTS = this.configService.get<number>('SMS_MAX_ATTEMPTS', 5);
   }
 
   async sendVerificationCode(phone: string): Promise<void> {

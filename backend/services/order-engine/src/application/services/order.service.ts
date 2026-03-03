@@ -122,7 +122,11 @@ export class OrderService {
       throw new BadRequestException('Order engine is initializing. Please try again in a moment.');
     }
 
-    // 1. 멱등성 검사 / Idempotency check
+    // 1. 멱등성 사전 검사 (빠른 경로) / Idempotency pre-check (fast path)
+    // 주의: 이 검사만으로는 TOCTOU 경쟁 조건이 있으므로, 아래 projectOrderPlaced에서
+    // 유니크 제약 조건 위반(P2002) catch로 원자적 멱등성을 보장합니다.
+    // Note: This pre-check alone has a TOCTOU race condition; atomic idempotency is
+    // guaranteed by catching unique constraint violations (P2002) in projectOrderPlaced below.
     const existing = await this.prisma.orderRead.findUnique({
       where: { idempotencyKey: params.idempotencyKey },
     });
@@ -194,8 +198,11 @@ export class OrderService {
     }
     order.clearUncommittedEvents();
 
-    // 7. 읽기 모델에 투영 / Project to read model
-    await this.projectOrderPlaced(orderId, params, executionPrice);
+    // 7. 읽기 모델에 투영 (멱등키 중복 시 기존 주문 반환) / Project to read model (returns existing on duplicate idempotency key)
+    const projectionResult = await this.projectOrderPlaced(orderId, params, executionPrice);
+    if (projectionResult?.duplicate) {
+      return { orderId: projectionResult.orderId, status: projectionResult.status, fills: [] };
+    }
 
     // 7.5 조건부 주문은 매칭 엔진을 건너뛰고 트리거 대기 / Conditional orders skip matching and wait for trigger
     if (isConditional) {
@@ -309,6 +316,23 @@ export class OrderService {
           // 자금 해제 실패 시 주문을 CANCELLED 상태에서 롤백하여 재시도 가능하도록 함
           // On release failure, revert order status so cancellation can be retried
           this.logger.error(`[CANCEL_ROLLBACK] Fund release failed for order ${orderId}, reverting to PENDING`);
+          await this.prisma.orderRead.update({
+            where: { orderId },
+            data: { status: order.status, updatedAt: new Date() },
+          });
+          throw releaseErr;
+        }
+      }
+    } else if (order.side === 'SELL' && order.remainingQuantity) {
+      // 매도 주문의 예약 보유량 해제 / Release reserved holdings for SELL orders
+      const remainingQty = order.remainingQuantity;
+      if (remainingQty.gt(0)) {
+        try {
+          await this.releaseHoldings(userId, order.symbol, remainingQty.toString(), orderId);
+        } catch (releaseErr) {
+          // 보유량 해제 실패 시 주문을 CANCELLED 상태에서 롤백하여 재시도 가능하도록 함
+          // On release failure, revert order status so cancellation can be retried
+          this.logger.error(`[CANCEL_ROLLBACK] Holdings release failed for order ${orderId}, reverting to PENDING`);
           await this.prisma.orderRead.update({
             where: { orderId },
             data: { status: order.status, updatedAt: new Date() },
@@ -459,6 +483,11 @@ export class OrderService {
       throw new BadRequestException("Cannot modify another user's order");
     }
 
+    // 수정 전 기존 가격/수량 저장 (자금/보유량 재조정용)
+    // Capture old price/quantity before modify (for fund/holdings re-adjustment)
+    const oldPrice = order.price || new Decimal(0);
+    const oldRemainingQty = order.remainingQuantity || new Decimal(0);
+
     order.modify(newPrice, newQuantity);
 
     const correlationId = generateCorrelationId();
@@ -490,6 +519,37 @@ export class OrderService {
         updatedAt: new Date(),
       },
     });
+
+    // 자금/보유량 재조정: 가격/수량 변경에 따른 차액 예약 또는 해제
+    // Re-adjust funds/holdings: reserve or release the difference due to price/quantity changes
+    const newPriceDec = new Decimal(newPrice);
+    const newQtyDec = new Decimal(newQuantity);
+
+    if (order.side === 'BUY') {
+      const oldCost = oldPrice.mul(oldRemainingQty);
+      const newCost = newPriceDec.mul(newQtyDec);
+      const diff = newCost.minus(oldCost);
+
+      if (diff.gt(0)) {
+        // 새 비용이 더 크면 추가 자금 예약 / New cost is higher — reserve additional funds
+        const diffKrw = await this.toKrw(diff, order.symbol);
+        await this.reserveFunds(userId, diffKrw.toString(), orderId);
+      } else if (diff.lt(0)) {
+        // 새 비용이 더 작으면 차액 해제 / New cost is lower — release the difference
+        const diffKrw = await this.toKrw(diff.abs(), order.symbol);
+        await this.releaseFunds(userId, diffKrw.toString(), orderId);
+      }
+    } else if (order.side === 'SELL') {
+      const qtyDiff = newQtyDec.minus(oldRemainingQty);
+
+      if (qtyDiff.gt(0)) {
+        // 매도 수량 증가 — 추가 보유량 예약 / Sell quantity increased — reserve additional holdings
+        await this.validateAndReserveHoldings(userId, order.symbol, qtyDiff.toString());
+      } else if (qtyDiff.lt(0)) {
+        // 매도 수량 감소 — 차액 보유량 해제 / Sell quantity decreased — release the difference
+        await this.releaseHoldings(userId, order.symbol, qtyDiff.abs().toString(), orderId);
+      }
+    }
 
     // 오더북 갱신 (제거 후 재삽입, 시간 우선순위 상실) / Update in order book (removes and re-inserts, losing time priority)
     this.matchingEngine.modifyOrderInBook({
@@ -545,11 +605,23 @@ export class OrderService {
       }
 
       if (shouldTrigger) {
-        // 트리거 발동 표시 / Mark as triggered
-        await this.prisma.orderRead.update({
-          where: { orderId: order.orderId },
+        // 원자적 트리거 발동: triggered: false 조건부 업데이트로 TOCTOU 레이스 방지
+        // Atomic trigger claim: updateMany with triggered: false prevents TOCTOU race condition
+        const claimResult = await this.prisma.orderRead.updateMany({
+          where: {
+            orderId: order.orderId,
+            triggered: false,
+            status: 'PENDING',
+          },
           data: { triggered: true, updatedAt: new Date() },
         });
+
+        // count === 0이면 다른 인스턴스가 먼저 트리거를 발동함 — 건너뛰기
+        // If count === 0, another instance already claimed this trigger — skip
+        if (claimResult.count === 0) {
+          this.logger.debug(`Trigger for order ${order.orderId} already claimed by another instance`);
+          continue;
+        }
 
         // 시장가 주문으로 매칭 엔진 실행 / Execute as market order via matching engine
         try {
@@ -867,6 +939,29 @@ export class OrderService {
     }
   }
 
+  private async releaseHoldings(
+    userId: string,
+    symbol: string,
+    quantity: string,
+    orderId: string,
+  ): Promise<void> {
+    try {
+      await this.withRetry(
+        () => axios.post(
+          `${this.portfolioUrl}/portfolio/internal/release-holdings`,
+          { symbol, quantity, orderId },
+          { headers: { 'x-user-id': userId, 'x-internal-token': this.internalToken }, timeout: this.httpTimeout },
+        ),
+        `releaseHoldings(order=${orderId}, ${symbol})`,
+      );
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.error(
+        `[HOLDINGS_FROZEN] Failed to release holdings for order ${orderId}, user=${userId.substring(0, 8)}..., symbol=${symbol}, qty=${quantity}: ${message}`,
+      );
+    }
+  }
+
   private async settleTrade(fill: MatchResult): Promise<void> {
     // USD 가격을 KRW로 변환 / Convert USD price to KRW for portfolio settlement
     const krwPrice = await this.toKrw(new Decimal(fill.matchedPrice), fill.symbol);
@@ -922,32 +1017,58 @@ export class OrderService {
     }
   }
 
+  /**
+   * 읽기 모델에 주문을 투영합니다. idempotencyKey 유니크 제약 조건 위반(P2002) 시
+   * 중복 주문으로 판단하고 기존 주문을 반환합니다 — TOCTOU 경쟁 조건을 DB 수준에서 방지합니다.
+   *
+   * Projects the order into the read model. If a P2002 unique constraint violation
+   * occurs on idempotencyKey, the duplicate is detected atomically at the DB level,
+   * preventing TOCTOU race conditions. Returns the existing order if duplicate.
+   */
   private async projectOrderPlaced(
     orderId: string,
     params: PlaceOrderParams,
     executionPrice: Decimal,
-  ): Promise<void> {
-    await this.prisma.orderRead.create({
-      data: {
-        orderId,
-        userId: params.userId,
-        symbol: params.symbol,
-        side: params.side,
-        orderType: params.type,
-        price: params.type === 'LIMIT' ? new Decimal(params.price!) : executionPrice,
-        quantity: new Decimal(params.quantity),
-        filledQuantity: new Decimal(0),
-        remainingQuantity: new Decimal(params.quantity),
-        status: 'PENDING',
-        triggerPrice: params.triggerPrice ? new Decimal(params.triggerPrice) : null,
-        triggerType: params.triggerType || null,
-        triggered: false,
-        idempotencyKey: params.idempotencyKey,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        lastEventPosition: 0,
-      },
-    });
+  ): Promise<{ duplicate: true; orderId: string; status: string } | void> {
+    try {
+      await this.prisma.orderRead.create({
+        data: {
+          orderId,
+          userId: params.userId,
+          symbol: params.symbol,
+          side: params.side,
+          orderType: params.type,
+          price: params.type === 'LIMIT' ? new Decimal(params.price!) : executionPrice,
+          quantity: new Decimal(params.quantity),
+          filledQuantity: new Decimal(0),
+          remainingQuantity: new Decimal(params.quantity),
+          status: 'PENDING',
+          triggerPrice: params.triggerPrice ? new Decimal(params.triggerPrice) : null,
+          triggerType: params.triggerType || null,
+          triggered: false,
+          idempotencyKey: params.idempotencyKey,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          lastEventPosition: 0,
+        },
+      });
+    } catch (error: unknown) {
+      // P2002 = Prisma unique constraint violation (idempotencyKey 중복)
+      // P2002 = Prisma unique constraint violation (duplicate idempotencyKey)
+      const prismaError = error as { code?: string };
+      if (prismaError.code === 'P2002') {
+        this.logger.warn(
+          `Duplicate idempotencyKey detected (race condition resolved): ${params.idempotencyKey}`,
+        );
+        const dup = await this.prisma.orderRead.findUnique({
+          where: { idempotencyKey: params.idempotencyKey },
+        });
+        if (dup) {
+          return { duplicate: true, orderId: dup.orderId, status: dup.status };
+        }
+      }
+      throw error;
+    }
   }
 
   private async projectTrade(fill: MatchResult): Promise<void> {

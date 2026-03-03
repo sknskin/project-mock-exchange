@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import { ChatService } from './chat.service';
 import { CreateRoomDto } from './dto/create-room.dto';
+import { RenameRoomDto } from './dto/rename-room.dto';
 import { SendMessageDto } from './dto/send-message.dto';
 import { InviteUserDto } from './dto/invite-user.dto';
 import { InternalAuthGuard } from '../common/guards/internal-auth.guard';
@@ -72,7 +73,9 @@ export class ChatController {
     @Query('cursor') cursor?: string,
     @Query('limit', new DefaultValuePipe(30), ParseIntPipe) limit?: number,
   ) {
-    const result = await this.chatService.getMessages(roomId, userId, cursor, limit);
+    // 페이지네이션 최대값 제한 — 메모리 소진 방지 / Cap pagination limit to prevent memory exhaustion
+    const safeLimit = Math.min(Math.max(1, limit ?? 30), 100);
+    const result = await this.chatService.getMessages(roomId, userId, cursor, safeLimit);
     return { success: true, data: result };
   }
 
@@ -143,7 +146,7 @@ export class ChatController {
   async renameRoom(
     @Param('id') roomId: string,
     @Headers('x-user-id') userId: string,
-    @Body() body: { name: string },
+    @Body() body: RenameRoomDto,
   ) {
     const result = await this.chatService.renameRoom(roomId, userId, body.name);
     return { success: true, data: result };

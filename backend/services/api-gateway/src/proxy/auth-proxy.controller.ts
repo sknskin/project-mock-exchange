@@ -62,7 +62,7 @@ export class AuthProxyController {
   }
 
   @Post('login/verify-sms')
-  @Throttle({ default: { ttl: 60000, limit: 10 } })
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '로그인 SMS 인증', description: '로그인 2단계 SMS 인증번호를 검증합니다' })
   @ApiResponse({ status: 200, description: '인증 성공 (access token + refresh cookie)' })
@@ -186,7 +186,7 @@ export class AuthProxyController {
   }
 
   @Post('forgot-password/verify-sms')
-  @Throttle({ default: { ttl: 60000, limit: 10 } })
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '비밀번호 찾기 SMS 인증', description: '비밀번호 재설정 SMS 인증번호를 검증합니다' })
   @ApiResponse({ status: 200, description: '인증 성공' })
@@ -214,6 +214,7 @@ export class AuthProxyController {
   }
 
   @Get('check-duplicate')
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
   @ApiOperation({ summary: '중복 확인', description: '이메일 또는 아이디의 중복 여부를 확인합니다' })
   @ApiQuery({ name: 'field', description: '확인할 필드 (email | username)' })
   @ApiQuery({ name: 'value', description: '확인할 값' })

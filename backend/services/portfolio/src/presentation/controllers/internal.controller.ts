@@ -20,7 +20,8 @@ import Decimal from 'decimal.js';
 import { BalanceService } from '../../domain/services/balance.service';
 import { InternalAuthGuard } from '../../common/guards/internal-auth.guard';
 
-const SYMBOL_REGEX = /^[A-Z]{2,10}(-USD)?$/;
+// 한국 주식(005930.KS) + 미국 주식/암호화폐(AAPL-USD, BTC-USD) 모두 지원
+const SYMBOL_REGEX = /^[A-Z0-9]{2,10}([.-][A-Z]{1,4})?(-USD)?$/;
 
 /** @tag Portfolio Internal */
 @UseGuards(InternalAuthGuard)
@@ -140,6 +141,40 @@ export class InternalController {
         symbol: body.symbol,
         requestedQuantity: qty.toFixed(8),
         availableQuantity: availableQty.toFixed(8),
+      },
+    };
+  }
+
+  @Post('release-holdings')
+  /** 보유 자산 예약 해제 — 매도 주문 취소 시 예약된 보유 자산을 해제합니다 */
+  /** Release holdings — release reserved holdings when a sell order is cancelled */
+  async releaseHoldings(
+    @Headers('x-user-id') userId: string,
+    @Body() body: { symbol: string; quantity: string; orderId?: string },
+  ) {
+    this.validateUserId(userId);
+
+    if (!body.symbol || !SYMBOL_REGEX.test(body.symbol)) {
+      throw new BadRequestException('Invalid or missing symbol');
+    }
+
+    const qty = new Decimal(body.quantity);
+    if (qty.lte(0)) {
+      throw new BadRequestException('Quantity must be positive');
+    }
+
+    // TODO: Implement full holding release with a reservedQuantity column
+    // For now, we log and acknowledge — mirrors reserve-holdings TODO pattern.
+    this.logger.warn(
+      `release-holdings: full holding release is a TODO — ` +
+        `releasing ${qty.toFixed(8)} ${body.symbol} for user ${userId.substring(0, 8)}..., order ${body.orderId || 'unknown'}`,
+    );
+
+    return {
+      success: true,
+      data: {
+        symbol: body.symbol,
+        releasedQuantity: qty.toFixed(8),
       },
     };
   }

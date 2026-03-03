@@ -52,12 +52,15 @@ export class NotificationController {
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
   ) {
-    const skip = (page - 1) * limit;
+    // 페이지네이션 최대값 제한 — 메모리 소진 방지 / Cap pagination limit to prevent memory exhaustion
+    const safePage = Math.max(1, page);
+    const safeLimit = Math.min(Math.max(1, limit), 100);
+    const skip = (safePage - 1) * safeLimit;
     const [items, total, unreadCount] = await Promise.all([
       this.prisma.notification.findMany({
         where: { userId: user.id },
         skip,
-        take: limit,
+        take: safeLimit,
         orderBy: { createdAt: 'desc' },
       }),
       this.prisma.notification.count({ where: { userId: user.id } }),
@@ -70,9 +73,9 @@ export class NotificationController {
         items,
         total,
         unreadCount,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
+        page: safePage,
+        limit: safeLimit,
+        totalPages: Math.ceil(total / safeLimit),
       },
     };
   }

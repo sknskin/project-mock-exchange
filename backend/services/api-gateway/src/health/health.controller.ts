@@ -156,17 +156,23 @@ export class HealthController {
   }
 
   /**
-   * 다운스트림 서비스에 /health/live 프로브를 보내 상태를 확인합니다.
+   * 다운스트림 서비스에 /health/ready 프로브를 보내 상태를 확인합니다.
+   * DB 연결 상태를 포함한 전체 준비 상태를 검증합니다.
    *
-   * Probe a downstream service via /health/live and return a health indicator result.
+   * Probe a downstream service via /health/ready and return a health indicator result.
+   * This verifies full readiness including DB connectivity.
    */
   private async probeDownstreamService(service: string): Promise<HealthIndicatorResult> {
     try {
-      await this.proxyService.forward(service, {
+      const res = await this.proxyService.forward(service, {
         method: 'GET',
-        url: '/health/live',
+        url: '/health/ready',
         timeout: 3000,
       });
+      // /health/ready 가 503을 반환하면 down으로 처리 / Treat 503 from /health/ready as down
+      if (res.status >= 500) {
+        return { [service]: { status: 'down' } };
+      }
       return { [service]: { status: 'up' } };
     } catch {
       return { [service]: { status: 'down' } };

@@ -34,10 +34,7 @@ import { HealthController } from './health/health.controller';
         const config = args[0] as ConfigService;
         return {
           connectionConfig: {
-            connectionString: config.get<string>(
-              'ORDER_ENGINE_DATABASE_URL',
-              'postgresql://postgres:postgres@localhost:5432/mex_orders',
-            ),
+            connectionString: config.getOrThrow<string>('ORDER_ENGINE_DATABASE_URL'),
           },
         };
       },

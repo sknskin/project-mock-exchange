@@ -14,6 +14,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { IsEmail, IsString, IsOptional } from 'class-validator';
+import { timingSafeEqual } from 'crypto';
 import { EmailService } from './email.service';
 
 class SendEmailDto {
@@ -45,7 +46,9 @@ export class EmailController {
     @Headers('x-internal-token') token: string,
   ) {
     const secret = this.configService.get<string>('INTERNAL_SERVICE_SECRET');
-    if (!token || token !== secret) {
+    if (!token || !secret
+      || Buffer.byteLength(token) !== Buffer.byteLength(secret)
+      || !timingSafeEqual(Buffer.from(token), Buffer.from(secret))) {
       throw new UnauthorizedException('Invalid internal token');
     }
 

@@ -16,7 +16,7 @@ export class PlaceOrderRequestDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(20)
-  @Matches(/^[A-Z0-9-]{1,20}$/, { message: 'symbol must be uppercase alphanumeric with hyphens, max 20 chars' })
+  @Matches(/^[A-Z0-9]{1,10}([.-][A-Z]{1,4})?(-USD)?$/, { message: 'symbol must be a valid trading pair (e.g., BTC-USD, AAPL, BRK.B)' })
   symbol: string;
 
   @IsEnum(['BUY', 'SELL'])

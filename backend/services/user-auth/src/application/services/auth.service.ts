@@ -96,7 +96,7 @@ export class AuthService {
     }
 
     const rrnSecret = this.configService.getOrThrow<string>('JWT_SECRET');
-    const encryptionSalt = this.configService.get<string>('ENCRYPTION_SALT', 'virtuex-salt');
+    const encryptionSalt = this.configService.getOrThrow<string>('ENCRYPTION_SALT');
     const encryptedRrn = rrn.encrypt(rrnSecret, encryptionSalt);
 
     const passwordHash = await bcrypt.hash(password, this.SALT_ROUNDS);

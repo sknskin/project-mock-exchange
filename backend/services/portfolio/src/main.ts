@@ -6,9 +6,25 @@
  * @description Bootstraps the portfolio microservice
  */
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe, Logger } from '@nestjs/common';
+import { ValidationPipe, Logger, Catch, ExceptionFilter, ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { BigIntSerializerInterceptor } from './common/interceptors/bigint-serializer.interceptor';
+
+@Catch()
+class AllExceptionsFilter implements ExceptionFilter {
+  private readonly logger = new Logger('ExceptionFilter');
+  catch(exception: unknown, host: ArgumentsHost) {
+    if (host.getType() !== 'http') return;
+    const ctx = host.switchToHttp();
+    const response = ctx.getResponse();
+    const status = exception instanceof HttpException ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
+    const message = exception instanceof HttpException ? exception.message : 'Internal server error';
+    if (!(exception instanceof HttpException)) {
+      this.logger.error(`Unhandled: ${exception instanceof Error ? exception.message : exception}`, exception instanceof Error ? exception.stack : undefined);
+    }
+    response.status(status).json({ success: false, statusCode: status, message, timestamp: new Date().toISOString() });
+  }
+}
 
 async function bootstrap() {
   const logger = new Logger('PortfolioService');
@@ -23,6 +39,7 @@ async function bootstrap() {
 
   const app = await NestFactory.create(AppModule);
 
+  app.useGlobalFilters(new AllExceptionsFilter());
   app.useGlobalInterceptors(new BigIntSerializerInterceptor());
 
   app.useGlobalPipes(
@@ -33,13 +50,8 @@ async function bootstrap() {
     }),
   );
 
-  app.enableCors({
-    origin: process.env.CORS_ORIGIN || 'http://localhost:4000',
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-internal-token', 'x-user-id'],
-    maxAge: 86400,
-  });
+  // 내부 전용 서비스 — CORS 비활성화 (API Gateway만 접근)
+  // Internal-only service — CORS disabled (access through API Gateway only)
 
   const port = process.env.PORTFOLIO_PORT || 3003;
   await app.listen(port);

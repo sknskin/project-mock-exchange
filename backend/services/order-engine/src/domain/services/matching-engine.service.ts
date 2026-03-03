@@ -76,7 +76,7 @@ export class MatchingEngineService implements OnModuleInit {
         const remaining = new Decimal(order.remainingQuantity.toString());
         if (remaining.lte(0)) continue;
 
-        this.addToOrderBook({
+        this.insertEntry({
           orderId: order.orderId,
           userId: order.userId,
           symbol: order.symbol,
@@ -98,7 +98,26 @@ export class MatchingEngineService implements OnModuleInit {
     }
   }
 
+  /**
+   * 초기화 완료 전 호출 시 에러를 던집니다.
+   * Throws if the engine has not finished initialization.
+   */
+  private assertReady(method: string): void {
+    if (!this.initialized) {
+      throw new Error(`MatchingEngine not ready: ${method}() called before initialization completed`);
+    }
+  }
+
   addToOrderBook(entry: OrderBookEntry): void {
+    this.assertReady('addToOrderBook');
+    this.insertEntry(entry);
+  }
+
+  /**
+   * 오더북에 항목을 삽입하는 내부 메서드 — 초기화 중에도 호출 가능.
+   * Internal method to insert an entry into the order book — callable during initialization.
+   */
+  private insertEntry(entry: OrderBookEntry): void {
     if (entry.side === 'BUY') {
       const book = this.bids.get(entry.symbol) || [];
       book.push(entry);
@@ -121,6 +140,7 @@ export class MatchingEngineService implements OnModuleInit {
   }
 
   removeFromOrderBook(orderId: string, symbol: string, side: 'BUY' | 'SELL'): void {
+    this.assertReady('removeFromOrderBook');
     const book = side === 'BUY' ? this.bids : this.asks;
     const entries = book.get(symbol);
     if (!entries) {
@@ -151,6 +171,7 @@ export class MatchingEngineService implements OnModuleInit {
     quantity: Decimal;
     marketPrice: Decimal;
   }): MatchResult[] {
+    this.assertReady('matchMarketOrder');
     const { orderId, userId, symbol, side, quantity, marketPrice } = params;
     const matches: MatchResult[] = [];
 
@@ -244,6 +265,7 @@ export class MatchingEngineService implements OnModuleInit {
     limitPrice: Decimal;
     quantity: Decimal;
   }): { fills: MatchResult[]; remainingQuantity: Decimal } {
+    this.assertReady('matchLimitOrder');
     const { orderId, userId, symbol, side, limitPrice, quantity } = params;
     const fills: MatchResult[] = [];
     let remainingQty = quantity;
@@ -314,6 +336,7 @@ export class MatchingEngineService implements OnModuleInit {
     newPrice: Decimal;
     newQuantity: Decimal;
   }): void {
+    this.assertReady('modifyOrderInBook');
     this.removeFromOrderBook(params.orderId, params.symbol, params.side);
     this.addToOrderBook({
       orderId: params.orderId,

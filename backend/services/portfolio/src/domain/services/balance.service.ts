@@ -155,13 +155,20 @@ export class BalanceService {
       throw new BadRequestException('Deposit amount must be positive');
     }
 
-    const account = await this.ensureAccount(userId);
+    await this.ensureAccount(userId);
 
     const updated = await this.prisma.$transaction(async (tx) => {
+      // FOR UPDATE 락으로 동시 입금 Lost Update 방지
+      const [locked] = await tx.$queryRaw<Array<{
+        userId: string; availableCash: string; reservedCash: string;
+      }>>`SELECT "user_id" AS "userId", "available_cash" AS "availableCash", "reserved_cash" AS "reservedCash" FROM "accounts" WHERE "user_id" = ${userId}::uuid FOR UPDATE`;
+
+      if (!locked) throw new NotFoundException(`Account not found for user ${userId}`);
+
       const updatedAccount = await tx.account.update({
         where: { userId },
         data: {
-          availableCash: new Decimal(account.availableCash.toString())
+          availableCash: new Decimal(locked.availableCash.toString())
             .plus(depositAmount)
             .toFixed(8),
         },
@@ -197,16 +204,23 @@ export class BalanceService {
       throw new BadRequestException('Withdraw amount must be positive');
     }
 
-    const account = await this.ensureAccount(userId);
-    const available = new Decimal(account.availableCash.toString());
-
-    if (available.lt(withdrawAmount)) {
-      throw new BadRequestException(
-        `Insufficient funds: available ${available.toFixed(2)}, requested ${withdrawAmount.toFixed(2)}`,
-      );
-    }
+    await this.ensureAccount(userId);
 
     const updated = await this.prisma.$transaction(async (tx) => {
+      // FOR UPDATE 락으로 동시 출금 Lost Update 방지
+      const [locked] = await tx.$queryRaw<Array<{
+        userId: string; availableCash: string; reservedCash: string;
+      }>>`SELECT "user_id" AS "userId", "available_cash" AS "availableCash", "reserved_cash" AS "reservedCash" FROM "accounts" WHERE "user_id" = ${userId}::uuid FOR UPDATE`;
+
+      if (!locked) throw new NotFoundException(`Account not found for user ${userId}`);
+
+      const available = new Decimal(locked.availableCash.toString());
+      if (available.lt(withdrawAmount)) {
+        throw new BadRequestException(
+          `Insufficient funds: available ${available.toFixed(2)}, requested ${withdrawAmount.toFixed(2)}`,
+        );
+      }
+
       const updatedAccount = await tx.account.update({
         where: { userId },
         data: {
@@ -404,9 +418,10 @@ export class BalanceService {
       });
 
       // 가중 평균 단가로 보유 자산 Upsert / Upsert holding with weighted average cost basis
-      const existingHolding = await tx.holding.findUnique({
-        where: { userId_symbol: { userId, symbol } },
-      });
+      // FOR UPDATE 락으로 동시 체결 시 Holding 덮어쓰기 방지
+      const [existingHolding] = await tx.$queryRaw<Array<{
+        id: string; userId: string; symbol: string; quantity: string; avgCostBasis: string; totalCost: string;
+      } | undefined>>`SELECT "id", "user_id" AS "userId", "symbol", "quantity"::text, "avg_cost_basis"::text AS "avgCostBasis", "total_cost"::text AS "totalCost" FROM "holdings" WHERE "user_id" = ${userId}::uuid AND "symbol" = ${symbol} FOR UPDATE`;
 
       let updatedHolding;
 
@@ -495,9 +510,10 @@ export class BalanceService {
         throw new NotFoundException(`Account not found for user ${userId}`);
       }
 
-      const existingHolding = await tx.holding.findUnique({
-        where: { userId_symbol: { userId, symbol } },
-      });
+      // FOR UPDATE 락으로 동시 체결 시 Holding 덮어쓰기 방지
+      const [existingHolding] = await tx.$queryRaw<Array<{
+        id: string; userId: string; symbol: string; quantity: string; avgCostBasis: string; totalCost: string;
+      } | undefined>>`SELECT "id", "user_id" AS "userId", "symbol", "quantity"::text, "avg_cost_basis"::text AS "avgCostBasis", "total_cost"::text AS "totalCost" FROM "holdings" WHERE "user_id" = ${userId}::uuid AND "symbol" = ${symbol} FOR UPDATE`;
 
       if (!existingHolding) {
         throw new BadRequestException(

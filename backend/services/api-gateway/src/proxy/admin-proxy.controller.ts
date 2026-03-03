@@ -21,12 +21,13 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery }
 import { Request, Response } from 'express';
 import { ProxyService } from './proxy.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { AdminRolesGuard } from '../auth/admin-roles.guard';
 import { ChatGateway } from '../gateway/chat.gateway';
 
 @ApiTags('Admin')
 @ApiBearerAuth()
 @Controller('api/admin')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, AdminRolesGuard)
 export class AdminProxyController {
   constructor(
     private readonly proxyService: ProxyService,

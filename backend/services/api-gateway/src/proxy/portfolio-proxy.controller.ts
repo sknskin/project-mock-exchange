@@ -145,8 +145,9 @@ export class PortfolioProxyController {
             }
             data.data = entries.map((entry) => {
               const userInfo = userMap.get(entry.userId as string);
+              const { userId: _uid, ...rest } = entry;
               return {
-                ...entry,
+                ...rest,
                 username: userInfo?.username || '',
                 name: userInfo?.name || '',
               };

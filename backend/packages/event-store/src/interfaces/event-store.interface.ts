@@ -48,3 +48,42 @@ export interface SnapshotData {
   streamPosition: number;
   createdAt: Date;
 }
+
+/**
+ * Dead Letter Queue 엔트리
+ * Represents a failed outbox entry that has been moved to the DLQ
+ */
+export interface DlqEntry {
+  id: number;
+  originalOutboxId: number;
+  eventId: string;
+  topic: string;
+  partitionKey: string;
+  payload: Record<string, unknown>;
+  errorMessage: string;
+  retryCount: number;
+  status: 'PENDING' | 'RETRIED' | 'DISCARDED';
+  createdAt: Date;
+  lastRetriedAt: Date | null;
+}
+
+/**
+ * 애그리거트 버전 추적 정보
+ * Tracks the latest version (stream_position) for each aggregate stream
+ */
+export interface AggregateVersion {
+  streamId: string;
+  currentVersion: number;
+  eventCount: number;
+  updatedAt: Date;
+}
+
+/**
+ * 이벤트 시퀀스 갭 정보
+ * Represents a detected gap in the event sequence for a stream
+ */
+export interface SequenceGap {
+  streamId: string;
+  expectedPosition: number;
+  actualPosition: number;
+}

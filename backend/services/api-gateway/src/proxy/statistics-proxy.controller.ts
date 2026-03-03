@@ -230,6 +230,9 @@ export class StatisticsProxyController {
       method: 'GET',
       url: '/statistics',
       params: req.query,
+      headers: {
+        'x-internal-token': this.configService.get('INTERNAL_SERVICE_SECRET'),
+      },
     });
     return res.status(result.status).json(result.data);
   }

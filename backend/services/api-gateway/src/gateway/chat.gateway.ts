@@ -12,12 +12,18 @@ import { Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Server, Socket } from 'socket.io';
 
+/** 채팅 메시지 본문 최대 길이 (Max chat message content length) */
+const MAX_MESSAGE_LENGTH = 2000;
+
 @WebSocketGateway({
   namespace: '/chat',
   cors: {
     origin: (process.env.CORS_ORIGIN || 'http://localhost:4000').split(','),
     credentials: true,
   },
+  // WS 페이로드 크기 제한 — 대용량 메시지를 통한 메모리 소진 방지 (#17)
+  // Limit WS payload size to prevent memory exhaustion via oversized messages
+  maxHttpBufferSize: 16 * 1024, // 16 KB
 })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit {
   @WebSocketServer()
@@ -36,6 +42,26 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
     server.engine?.on('connection_error', (err: Error) => {
       this.logger.error(`Chat WebSocket connection error: ${err.message}`);
     });
+
+    // 모든 수신 이벤트에 대해 content 필드 길이 검증 미들웨어 (#17)
+    // Middleware: validate content field length on all incoming events
+    server.use((socket, next) => {
+      socket.onAny((_event: string, ...args: unknown[]) => {
+        for (const arg of args) {
+          if (arg && typeof arg === 'object' && 'content' in arg) {
+            const content = (arg as { content: unknown }).content;
+            if (typeof content === 'string' && content.length > MAX_MESSAGE_LENGTH) {
+              socket.emit('chat:error', {
+                message: `Message content exceeds maximum length of ${MAX_MESSAGE_LENGTH} characters`,
+              });
+              return;
+            }
+          }
+        }
+      });
+      next();
+    });
+
     this.logger.log('Chat WebSocket gateway initialized');
   }
 

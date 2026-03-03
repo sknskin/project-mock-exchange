@@ -56,7 +56,7 @@ model Transaction {
   price       Decimal?        @db.Decimal(20, 8)
   cashDelta   Decimal         @map("cash_delta") @db.Decimal(20, 8)
   realizedPnl Decimal?        @map("realized_pnl") @db.Decimal(20, 8)
-  referenceId String?         @map("reference_id") @db.Uuid
+  referenceId String?         @unique @map("reference_id") @db.Uuid
   createdAt   DateTime        @default(now()) @map("created_at") @db.Timestamptz()
 
   account Account @relation(fields: [userId], references: [userId], onDelete: Cascade)

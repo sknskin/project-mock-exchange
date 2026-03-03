@@ -21,6 +21,7 @@ import { ChatProxyController } from './chat-proxy.controller';
 import { PriceAlertProxyController } from './price-alert-proxy.controller';
 import { AiProxyController } from './ai-proxy.controller';
 import { SettingsProxyController } from './settings-proxy.controller';
+import { UserSettingsProxyController } from './user-settings-proxy.controller';
 import { ProxyService } from './proxy.service';
 import { GatewayModule } from '../gateway/gateway.module';
 
@@ -41,6 +42,7 @@ import { GatewayModule } from '../gateway/gateway.module';
     PriceAlertProxyController,
     AiProxyController,
     SettingsProxyController,
+    UserSettingsProxyController,
   ],
   providers: [ProxyService, ConfigService],
   exports: [ProxyService],

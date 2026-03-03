@@ -5,14 +5,16 @@
  * @file Modify Order DTO
  * @description Data Transfer Object for validating order modification requests
  */
-import { IsString, Matches } from 'class-validator';
+import { IsString, Matches, MaxLength } from 'class-validator';
 
 export class ModifyOrderRequestDto {
   @IsString()
+  @MaxLength(50)
   @Matches(/^\d+(\.\d+)?$/, { message: 'price must be a valid decimal string' })
   price: string;
 
   @IsString()
+  @MaxLength(50)
   @Matches(/^\d+(\.\d+)?$/, { message: 'quantity must be a valid decimal string' })
   quantity: string;
 }
