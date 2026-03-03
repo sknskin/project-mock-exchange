@@ -7,11 +7,13 @@
  */
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Activity, RefreshCw, CheckCircle2, XCircle, Loader2,
   Server, Database, Cpu, Clock, Globe, Zap, Code, Link2, Layers, Info,
+  BarChart3, Monitor, HardDrive, FileText, RotateCcw, ArrowRight, ArrowLeft,
+  Shield,
 } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { TranslationKey } from '@/lib/i18n';
@@ -122,6 +124,27 @@ const SERVICE_DETAIL_META: Record<string, ServiceMeta> = {
   },
 };
 
+// 서비스별 로그 레벨 (Log level per service - placeholder/static)
+const SERVICE_LOG_LEVELS: Record<string, 'debug' | 'info' | 'warn'> = {
+  'api-gateway': 'info',
+  'user-auth': 'info',
+  'market-data': 'debug',
+  'order-engine': 'info',
+  'portfolio': 'info',
+  'notification': 'warn',
+  'chat': 'debug',
+  'ai-service': 'info',
+};
+
+// 서비스별 DB 스키마 정보 (DB schema info per service)
+const SERVICE_DB_SCHEMAS: Record<string, string[]> = {
+  'user-auth': ['User', 'Session', 'PageView', 'Announcement', 'SystemSetting'],
+  'market-data': ['Asset', 'Candle', 'News', 'PriceHistory'],
+  'order-engine': ['Order', 'OrderEvent', 'TradeExecution'],
+  'portfolio': ['Portfolio', 'Holding', 'Transaction', 'Balance'],
+  'chat': ['Room', 'Message', 'Participant', 'ReadReceipt'],
+};
+
 type HealthStatus = 'healthy' | 'unhealthy' | 'checking';
 
 interface ServiceHealth {
@@ -143,6 +166,9 @@ interface ServiceDetail {
   checkedAt: string;
 }
 
+// 응답 시간 이력 최대 횟수 (Max response time history entries)
+const MAX_HISTORY = 5;
+
 export default function AdminHealthPage() {
   const router = useRouter();
   const { t } = useTranslation();
@@ -157,6 +183,10 @@ export default function AdminHealthPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [serviceDetail, setServiceDetail] = useState<ServiceDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+
+  // 응답 시간 이력 (Response time history) - keyed by service key
+  const [responseHistory, setResponseHistory] = useState<Record<string, number[]>>({});
+  const checkCountRef = useRef(0);
 
   // 포트 정보 API에서 가져오기 (Fetch port info from API)
   useEffect(() => {
@@ -209,6 +239,20 @@ export default function AdminHealthPage() {
       }),
     );
     setServices(results);
+
+    // 응답 시간 이력 업데이트 (Update response time history)
+    checkCountRef.current += 1;
+    setResponseHistory((prev) => {
+      const next = { ...prev };
+      for (const r of results) {
+        if (r.responseTime !== undefined) {
+          const existing = next[r.key] ?? [];
+          next[r.key] = [...existing, r.responseTime].slice(-MAX_HISTORY);
+        }
+      }
+      return next;
+    });
+
     setIsRefreshing(false);
   }, []);
 
@@ -250,6 +294,18 @@ export default function AdminHealthPage() {
   const allHealthy = healthyCount === SERVICES.length;
   const checkingCount = services.filter((s) => s.status === 'checking').length;
 
+  // 시스템 리소스 요약 계산 (Calculate system resource summary)
+  const totalResponseTime = services.reduce((sum, s) => sum + (s.responseTime ?? 0), 0);
+  const validResponseServices = services.filter((s) => s.responseTime !== undefined);
+  const avgResponseTime = validResponseServices.length > 0
+    ? Math.round(totalResponseTime / validResponseServices.length)
+    : 0;
+  const uptimePercent = SERVICES.length > 0
+    ? Math.round((healthyCount / SERVICES.length) * 100)
+    : 0;
+  const dbCount = Object.values(SERVICE_DETAIL_META).filter((m) => m.db).length;
+  const totalEndpoints = Object.values(SERVICE_DETAIL_META).reduce((sum, m) => sum + m.endpoints.length, 0);
+
   const formatTime = (date?: Date) => {
     if (!date) return '-';
     return date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -273,22 +329,29 @@ export default function AdminHealthPage() {
             </p>
           </div>
         </div>
-        <button
-          onClick={() => {
-            checkHealth();
-            if (activeTab !== 'overview') loadServiceDetail(activeTab);
-          }}
-          disabled={isRefreshing}
-          className={cn(
-            'flex items-center gap-2 h-10 px-4 rounded-xl text-[13px] font-semibold transition-colors border',
-            isRefreshing
-              ? 'border-border text-text-quaternary cursor-not-allowed'
-              : 'border-accent/30 text-accent hover:bg-accent/10',
+        <div className="flex flex-col items-end gap-1">
+          <button
+            onClick={() => {
+              checkHealth();
+              if (activeTab !== 'overview') loadServiceDetail(activeTab);
+            }}
+            disabled={isRefreshing}
+            className={cn(
+              'flex items-center gap-2 h-10 px-4 rounded-xl text-[13px] font-semibold transition-colors border',
+              isRefreshing
+                ? 'border-border text-text-quaternary cursor-not-allowed'
+                : 'border-accent/30 text-accent hover:bg-accent/10',
+            )}
+          >
+            <RefreshCw className={cn('w-4 h-4', isRefreshing && 'animate-spin')} />
+            {isRefreshing ? t('admin.health.refreshing') : t('admin.health.refresh')}
+          </button>
+          {services.some((s) => s.lastChecked) && (
+            <span className="text-[11px] text-text-quaternary tabular-nums pr-1">
+              {formatTime(services.find((s) => s.lastChecked)?.lastChecked)}
+            </span>
           )}
-        >
-          <RefreshCw className={cn('w-4 h-4', isRefreshing && 'animate-spin')} />
-          {isRefreshing ? t('admin.health.refreshing') : t('admin.health.refresh')}
-        </button>
+        </div>
       </div>
 
       {/* Tab bar */}
@@ -354,8 +417,65 @@ export default function AdminHealthPage() {
             </div>
           )}
 
+          {/* [NEW] System Resource Summary */}
+          {checkingCount === 0 && (
+            <div className="bg-bg-secondary rounded-2xl p-5 border border-border mb-6">
+              <div className="flex items-center gap-2 mb-4">
+                <BarChart3 className="w-4 h-4 text-accent" />
+                <h3 className="text-[14px] font-bold text-text-primary">{t('admin.health.systemSummary')}</h3>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                <SummaryCell
+                  label={t('admin.health.serviceCount')}
+                  value={`${SERVICES.length}`}
+                  sub={`${healthyCount} OK`}
+                  icon={<Server className="w-4 h-4" />}
+                  color="text-accent"
+                />
+                <SummaryCell
+                  label={t('admin.health.uptimePercent')}
+                  value={`${uptimePercent}%`}
+                  sub={uptimePercent === 100 ? 'ALL UP' : `${SERVICES.length - healthyCount} DOWN`}
+                  icon={<Shield className="w-4 h-4" />}
+                  color={uptimePercent === 100 ? 'text-emerald-400' : uptimePercent >= 50 ? 'text-yellow-400' : 'text-red-400'}
+                />
+                <SummaryCell
+                  label={t('admin.health.totalResponseTime')}
+                  value={`${totalResponseTime}ms`}
+                  sub={`${SERVICES.length} svc`}
+                  icon={<Zap className="w-4 h-4" />}
+                  color="text-text-secondary"
+                />
+                <SummaryCell
+                  label={t('admin.health.avgResponseTime')}
+                  value={`${avgResponseTime}ms`}
+                  sub={avgResponseTime < 200 ? 'FAST' : avgResponseTime < 1000 ? 'OK' : 'SLOW'}
+                  icon={<Clock className="w-4 h-4" />}
+                  color={avgResponseTime < 200 ? 'text-emerald-400' : avgResponseTime < 1000 ? 'text-yellow-400' : 'text-red-400'}
+                />
+                <SummaryCell
+                  label={t('admin.health.dbCount')}
+                  value={`${dbCount}`}
+                  sub="PostgreSQL"
+                  icon={<Database className="w-4 h-4" />}
+                  color="text-blue-400"
+                />
+                <SummaryCell
+                  label={t('admin.health.totalEndpoints')}
+                  value={`${totalEndpoints}`}
+                  sub={`${Object.keys(SERVICE_DETAIL_META).length} svc`}
+                  icon={<Globe className="w-4 h-4" />}
+                  color="text-purple-400"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* [NEW] Architecture Diagram */}
+          <ArchitectureDiagram services={services} t={t} />
+
           {/* Service cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
             {SERVICES.map((svc) => {
               const health = services.find((s) => s.key === svc.key);
               const status = health?.status ?? 'checking';
@@ -440,9 +560,13 @@ export default function AdminHealthPage() {
                 : activeHealth?.status === 'unhealthy' ? 'text-red-400' : 'text-text-quaternary',
             )} />
             <div className="flex-1">
-              <h2 className="text-[18px] font-bold text-text-primary">
-                {t(activeService.nameKey as Parameters<typeof t>[0])}
-              </h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-[18px] font-bold text-text-primary">
+                  {t(activeService.nameKey as Parameters<typeof t>[0])}
+                </h2>
+                {/* [NEW] Log Level Badge */}
+                <LogLevelBadge level={SERVICE_LOG_LEVELS[activeTab] ?? 'info'} t={t} />
+              </div>
               <p className="text-[13px] text-text-tertiary">
                 {t(activeService.descKey as Parameters<typeof t>[0])}
               </p>
@@ -483,6 +607,9 @@ export default function AdminHealthPage() {
               </div>
             );
           })()}
+
+          {/* [NEW] Quick Actions */}
+          <QuickActionsCard serviceKey={activeTab} t={t} />
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Service Info Card */}
@@ -578,7 +705,23 @@ export default function AdminHealthPage() {
                 </div>
               </div>
             )}
+
+            {/* [NEW] Environment Info Card */}
+            <EnvironmentInfoCard serviceKey={activeTab} t={t} />
+
+            {/* [NEW] Database Info Card */}
+            <DatabaseInfoCard serviceKey={activeTab} serviceHealth={activeHealth} t={t} />
           </div>
+
+          {/* [NEW] Response Time History */}
+          <ResponseTimeHistoryCard
+            serviceKey={activeTab}
+            history={responseHistory[activeTab] ?? []}
+            t={t}
+          />
+
+          {/* [NEW] Service Communication Map */}
+          <ServiceCommunicationMap serviceKey={activeTab} services={services} t={t} />
 
           {/* Key Endpoints Card */}
           {SERVICE_DETAIL_META[activeTab] && (
@@ -656,6 +799,444 @@ function ProbeRow({ label, status, responseTime, data }: {
   );
 }
 
+// ===== [NEW] System Resource Summary Cell =====
+function SummaryCell({ label, value, sub, icon, color }: {
+  label: string;
+  value: string;
+  sub: string;
+  icon: React.ReactNode;
+  color: string;
+}) {
+  return (
+    <div className="bg-bg-primary/50 rounded-xl px-4 py-3 text-center">
+      <div className={cn('flex justify-center mb-1.5', color)}>{icon}</div>
+      <div className={cn('text-[18px] font-bold tabular-nums', color)}>{value}</div>
+      <div className="text-[11px] text-text-quaternary mt-0.5">{label}</div>
+      <div className="text-[10px] text-text-quaternary/60 mt-0.5">{sub}</div>
+    </div>
+  );
+}
+
+// ===== [NEW] Architecture Diagram =====
+function ArchitectureDiagram({ services, t }: {
+  services: ServiceHealth[];
+  t: (key: TranslationKey) => string;
+}) {
+  const getStatusDot = (key: string) => {
+    const svc = services.find((s) => s.key === key);
+    if (!svc) return 'text-text-quaternary';
+    return svc.status === 'healthy' ? 'text-emerald-400' : svc.status === 'unhealthy' ? 'text-red-400' : 'text-text-quaternary';
+  };
+
+  const getStatusChar = (key: string) => {
+    const svc = services.find((s) => s.key === key);
+    if (!svc || svc.status === 'checking') return '~';
+    return svc.status === 'healthy' ? '+' : 'x';
+  };
+
+  const healthyCount = services.filter((s) => s.status === 'healthy').length;
+  const unhealthyCount = services.filter((s) => s.status === 'unhealthy').length;
+  const checkingCount = services.filter((s) => s.status === 'checking').length;
+  const totalMs = services.reduce((s, sv) => s + (sv.responseTime ?? 0), 0);
+
+  return (
+    <div className="bg-bg-secondary rounded-2xl p-5 border border-border">
+      <div className="flex items-center gap-2 mb-2">
+        <Layers className="w-4 h-4 text-accent" />
+        <h3 className="text-[14px] font-bold text-text-primary">{t('admin.health.architectureDiagram')}</h3>
+      </div>
+      <p className="text-[12px] text-text-quaternary mb-4">{t('admin.health.architectureDiagramDesc')}</p>
+
+      <div className="flex flex-col lg:flex-row lg:gap-10">
+        {/* Diagram */}
+        <div className="overflow-x-auto shrink-0">
+          <pre className="text-[11px] leading-[1.6] font-mono whitespace-pre">
+            <span className="text-text-quaternary">{'                    +-----------+\n'}</span>
+            <span className="text-text-quaternary">{'     Client  -----> '}</span>
+            <span className={getStatusDot('api-gateway')}>{'|  Gateway  |'}</span>
+            <span className="text-text-quaternary">{` [${getStatusChar('api-gateway')}]\n`}</span>
+            <span className="text-text-quaternary">{'     (Next.js)      '}</span>
+            <span className={getStatusDot('api-gateway')}>{'| :3000     |'}</span>
+            <span className="text-text-quaternary">{'\n'}</span>
+            <span className="text-text-quaternary">{'                    +-----------+\n'}</span>
+            <span className="text-text-quaternary">{'                         |\n'}</span>
+            <span className="text-text-quaternary">{'          +--------------+---------------+\n'}</span>
+            <span className="text-text-quaternary">{'          |              |               |\n'}</span>
+            <span className="text-text-quaternary">{'    +-----+----+   +-----+-----+  +------+------+\n'}</span>
+            <span className={getStatusDot('user-auth')}>{'    | UserAuth |'}</span>
+            <span className="text-text-quaternary">{'   '}</span>
+            <span className={getStatusDot('market-data')}>{'| MarketData |'}</span>
+            <span className="text-text-quaternary">{'  '}</span>
+            <span className={getStatusDot('order-engine')}>{'| OrderEngine |'}</span>
+            <span className="text-text-quaternary">{'\n'}</span>
+            <span className={getStatusDot('user-auth')}>{`    | :3007 [${getStatusChar('user-auth')}] |`}</span>
+            <span className="text-text-quaternary">{'   '}</span>
+            <span className={getStatusDot('market-data')}>{`| :3001  [${getStatusChar('market-data')}] |`}</span>
+            <span className="text-text-quaternary">{'  '}</span>
+            <span className={getStatusDot('order-engine')}>{`| :3002   [${getStatusChar('order-engine')}] |`}</span>
+            <span className="text-text-quaternary">{'\n'}</span>
+            <span className="text-text-quaternary">{'    +----------+   +----------+-+  +------+------+\n'}</span>
+            <span className="text-text-quaternary">{'          |              |                |\n'}</span>
+            <span className="text-text-quaternary">{'       [Prisma]      [Prisma]         [Prisma]\n'}</span>
+            <span className="text-text-quaternary">{'       mex_auth      mex_market       mex_orders\n'}</span>
+            <span className="text-text-quaternary">{'                                        |\n'}</span>
+            <span className="text-text-quaternary">{'          +--------------+---------------+\n'}</span>
+            <span className="text-text-quaternary">{'          |              |               |\n'}</span>
+            <span className="text-text-quaternary">{'    +-----+----+  +------+-----+  +-----+-------+\n'}</span>
+            <span className={getStatusDot('portfolio')}>{'    |Portfolio |'}</span>
+            <span className="text-text-quaternary">{'  '}</span>
+            <span className={getStatusDot('notification')}>{'| Notificat. |'}</span>
+            <span className="text-text-quaternary">{'  '}</span>
+            <span className={getStatusDot('chat')}>{'|    Chat     |'}</span>
+            <span className="text-text-quaternary">{'\n'}</span>
+            <span className={getStatusDot('portfolio')}>{`    | :3003 [${getStatusChar('portfolio')}] |`}</span>
+            <span className="text-text-quaternary">{'  '}</span>
+            <span className={getStatusDot('notification')}>{`| :3004  [${getStatusChar('notification')}] |`}</span>
+            <span className="text-text-quaternary">{'  '}</span>
+            <span className={getStatusDot('chat')}>{`| :3005   [${getStatusChar('chat')}] |`}</span>
+            <span className="text-text-quaternary">{'\n'}</span>
+            <span className="text-text-quaternary">{'    +----------+  +------------+  +-------------+\n'}</span>
+            <span className="text-text-quaternary">{'       [Prisma]                       [Prisma]\n'}</span>
+            <span className="text-text-quaternary">{'       mex_portfolio                  mex_chat\n'}</span>
+            <span className="text-text-quaternary">{'                        |\n'}</span>
+            <span className="text-text-quaternary">{'                  +-----+------+\n'}</span>
+            <span className={getStatusDot('ai-service')}>{'                  | AI Service |'}</span>
+            <span className="text-text-quaternary">{'\n'}</span>
+            <span className={getStatusDot('ai-service')}>{`                  | :3006  [${getStatusChar('ai-service')}] |`}</span>
+            <span className="text-text-quaternary">{'\n'}</span>
+            <span className="text-text-quaternary">{'                  +------------+\n'}</span>
+            <span className="text-text-quaternary">{'                    [Claude API]\n'}</span>
+          </pre>
+        </div>
+
+        {/* Service status sidebar — desktop only */}
+        <div className="hidden lg:flex flex-col gap-3 flex-1 min-w-[220px] pt-1">
+          {/* Quick summary */}
+          <div className="grid grid-cols-3 gap-2">
+            <div className="bg-emerald-500/10 rounded-xl px-3 py-2.5 text-center">
+              <div className="text-[18px] font-bold text-emerald-400 tabular-nums">{healthyCount}</div>
+              <div className="text-[10px] text-emerald-400/70">Healthy</div>
+            </div>
+            <div className="bg-red-500/10 rounded-xl px-3 py-2.5 text-center">
+              <div className="text-[18px] font-bold text-red-400 tabular-nums">{unhealthyCount}</div>
+              <div className="text-[10px] text-red-400/70">Down</div>
+            </div>
+            <div className="bg-text-quaternary/10 rounded-xl px-3 py-2.5 text-center">
+              <div className="text-[18px] font-bold text-text-quaternary tabular-nums">{checkingCount}</div>
+              <div className="text-[10px] text-text-quaternary/70">Checking</div>
+            </div>
+          </div>
+          <div className="text-[11px] text-text-quaternary text-center tabular-nums">
+            {t('admin.health.totalResponseTime')}: {totalMs}ms
+          </div>
+          {/* Per-service list */}
+          <div className="space-y-1.5 flex-1">
+            {services.map((svc) => (
+              <div key={svc.key} className="flex items-center gap-2 px-3 py-1.5 bg-bg-primary/50 rounded-lg">
+                <span className={cn(
+                  'w-2 h-2 rounded-full shrink-0',
+                  svc.status === 'healthy' ? 'bg-emerald-400' : svc.status === 'unhealthy' ? 'bg-red-400' : 'bg-text-quaternary',
+                )} />
+                <span className="text-[12px] text-text-secondary flex-1 truncate">{svc.key}</span>
+                <span className={cn(
+                  'text-[11px] font-mono tabular-nums',
+                  svc.status === 'healthy' ? 'text-emerald-400' : svc.status === 'unhealthy' ? 'text-red-400' : 'text-text-quaternary',
+                )}>
+                  {svc.responseTime != null ? `${svc.responseTime}ms` : '—'}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Legend — mobile */}
+      <div className="flex items-center gap-4 mt-3 text-[11px] text-text-quaternary lg:hidden">
+        <span className="flex items-center gap-1">
+          <span className="text-emerald-400">[+]</span> Healthy
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="text-red-400">[x]</span> Down
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="text-text-quaternary">[~]</span> Checking
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// ===== [NEW] Response Time History Card =====
+function ResponseTimeHistoryCard({ serviceKey, history, t }: {
+  serviceKey: string;
+  history: number[];
+  t: (key: TranslationKey) => string;
+}) {
+  const maxTime = Math.max(...history, 1);
+
+  return (
+    <div className="bg-bg-secondary rounded-2xl p-5 border border-border">
+      <div className="flex items-center gap-2 mb-2">
+        <BarChart3 className="w-4 h-4 text-accent" />
+        <h3 className="text-[14px] font-bold text-text-primary">{t('admin.health.responseHistory')}</h3>
+      </div>
+      <p className="text-[12px] text-text-quaternary mb-4">{t('admin.health.responseHistoryDesc')}</p>
+
+      {history.length === 0 ? (
+        <div className="flex items-center justify-center py-6">
+          <Clock className="w-4 h-4 text-text-quaternary mr-2" />
+          <span className="text-[13px] text-text-quaternary">{t('admin.health.noHistory')}</span>
+        </div>
+      ) : (
+        <div className="flex items-end gap-3 h-[120px]">
+          {history.map((time, idx) => {
+            const heightPct = Math.max((time / maxTime) * 100, 8);
+            const color = time < 200 ? 'bg-emerald-400' : time < 1000 ? 'bg-yellow-400' : 'bg-red-400';
+            return (
+              <div key={idx} className="flex-1 flex flex-col items-center justify-end h-full gap-1">
+                <span className={cn(
+                  'text-[10px] font-mono tabular-nums',
+                  time < 200 ? 'text-emerald-400' : time < 1000 ? 'text-yellow-400' : 'text-red-400',
+                )}>
+                  {time}ms
+                </span>
+                <div
+                  className={cn('w-full rounded-t-lg transition-all', color)}
+                  style={{ height: `${heightPct}%`, minHeight: '8px' }}
+                />
+                <span className="text-[10px] text-text-quaternary">#{idx + 1}</span>
+              </div>
+            );
+          })}
+          {/* 빈 슬롯 표시 (Show empty slots) */}
+          {Array.from({ length: MAX_HISTORY - history.length }).map((_, idx) => (
+            <div key={`empty-${idx}`} className="flex-1 flex flex-col items-center justify-end h-full gap-1">
+              <span className="text-[10px] text-text-quaternary/40">--</span>
+              <div className="w-full rounded-t-lg bg-border/30" style={{ height: '8px' }} />
+              <span className="text-[10px] text-text-quaternary/40">#{history.length + idx + 1}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ===== [NEW] Environment Info Card =====
+function EnvironmentInfoCard({ serviceKey, t }: {
+  serviceKey: string;
+  t: (key: TranslationKey) => string;
+}) {
+  return (
+    <div className="bg-bg-secondary rounded-2xl p-5 border border-border">
+      <div className="flex items-center gap-2 mb-4">
+        <Monitor className="w-4 h-4 text-accent" />
+        <h3 className="text-[14px] font-bold text-text-primary">{t('admin.health.envInfo')}</h3>
+      </div>
+      <div className="space-y-3">
+        <InfoRow label={t('admin.health.nodeEnv')} value="development" />
+        <InfoRow label={t('admin.health.serviceVersion')} value="1.0.0" mono />
+        <InfoRow label={t('admin.health.memoryUsage')} value="~128 MB" mono />
+        <InfoRow label={t('admin.health.processUptime')} value="--:--:--" mono />
+        <InfoRow label={t('admin.health.logLevel')} value={SERVICE_LOG_LEVELS[serviceKey] ?? 'info'} />
+      </div>
+    </div>
+  );
+}
+
+// ===== [NEW] Database Info Card =====
+function DatabaseInfoCard({ serviceKey, serviceHealth, t }: {
+  serviceKey: string;
+  serviceHealth?: ServiceHealth;
+  t: (key: TranslationKey) => string;
+}) {
+  const meta = SERVICE_DETAIL_META[serviceKey];
+  if (!meta?.db) return null;
+
+  const schemas = SERVICE_DB_SCHEMAS[serviceKey] ?? [];
+  const isConnected = serviceHealth?.status === 'healthy';
+
+  return (
+    <div className="bg-bg-secondary rounded-2xl p-5 border border-border">
+      <div className="flex items-center gap-2 mb-4">
+        <HardDrive className="w-4 h-4 text-accent" />
+        <h3 className="text-[14px] font-bold text-text-primary">{t('admin.health.dbInfo')}</h3>
+      </div>
+      <div className="space-y-3">
+        <InfoRow label={t('admin.health.dbName')} value={meta.db} mono />
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[12px] text-text-quaternary shrink-0">{t('admin.health.dbConnection')}</span>
+          <div className="flex items-center gap-1.5">
+            <span className={cn('w-2 h-2 rounded-full', isConnected ? 'bg-emerald-400' : 'bg-red-400')} />
+            <span className={cn('text-[12px] font-semibold', isConnected ? 'text-emerald-400' : 'text-red-400')}>
+              {isConnected ? t('admin.health.dbConnected') : t('admin.health.dbDisconnected')}
+            </span>
+          </div>
+        </div>
+        {schemas.length > 0 && (
+          <div>
+            <span className="text-[12px] text-text-quaternary block mb-2">{t('admin.health.dbSchema')}</span>
+            <div className="flex flex-wrap gap-1.5">
+              {schemas.map((schema) => (
+                <span key={schema} className="px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-400 text-[11px] font-mono">
+                  {schema}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ===== [NEW] Log Level Badge =====
+function LogLevelBadge({ level, t }: {
+  level: 'debug' | 'info' | 'warn';
+  t: (key: TranslationKey) => string;
+}) {
+  const config = {
+    debug: { bg: 'bg-blue-500/10', text: 'text-blue-400', border: 'border-blue-500/20' },
+    info: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/20' },
+    warn: { bg: 'bg-yellow-500/10', text: 'text-yellow-400', border: 'border-yellow-500/20' },
+  };
+  const c = config[level];
+  return (
+    <span className={cn('px-2 py-0.5 rounded-md text-[10px] font-bold uppercase border', c.bg, c.text, c.border)}>
+      {level}
+    </span>
+  );
+}
+
+// ===== [NEW] Service Communication Map =====
+function ServiceCommunicationMap({ serviceKey, services: svcHealth, t }: {
+  serviceKey: string;
+  services: ServiceHealth[];
+  t: (key: TranslationKey) => string;
+}) {
+  const meta = SERVICE_DETAIL_META[serviceKey];
+  if (!meta) return null;
+
+  // 이 서비스가 호출하는 다른 서비스 (microservices only)
+  // Services this service calls (microservices only)
+  const outgoing = meta.deps.filter((dep) => SERVICE_DETAIL_META[dep]);
+
+  // 이 서비스를 호출하는 서비스들 (Services that call this service)
+  const incoming = Object.entries(SERVICE_DETAIL_META)
+    .filter(([key, m]) => key !== serviceKey && m.deps.includes(serviceKey))
+    .map(([key]) => key);
+
+  return (
+    <div className="bg-bg-secondary rounded-2xl p-5 border border-border">
+      <div className="flex items-center gap-2 mb-4">
+        <Link2 className="w-4 h-4 text-accent" />
+        <h3 className="text-[14px] font-bold text-text-primary">{t('admin.health.commMap')}</h3>
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Outgoing calls */}
+        <div>
+          <div className="flex items-center gap-1.5 mb-3">
+            <ArrowRight className="w-3.5 h-3.5 text-blue-400" />
+            <span className="text-[12px] font-semibold text-text-secondary">{t('admin.health.callsTo')}</span>
+          </div>
+          {outgoing.length === 0 ? (
+            <p className="text-[12px] text-text-quaternary pl-5">{t('admin.health.noOutgoing')}</p>
+          ) : (
+            <div className="space-y-1.5">
+              {outgoing.map((dep) => {
+                const health = svcHealth.find((s) => s.key === dep);
+                const nameKey = SERVICE_META.find((m) => m.key === dep)?.nameKey;
+                return (
+                  <div key={dep} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-bg-primary/50">
+                    <ArrowRight className="w-3 h-3 text-blue-400 shrink-0" />
+                    {health && (
+                      <span className={cn('w-2 h-2 rounded-full shrink-0', health.status === 'healthy' ? 'bg-emerald-400' : health.status === 'unhealthy' ? 'bg-red-400' : 'bg-text-quaternary')} />
+                    )}
+                    <span className="text-[12px] text-text-primary">
+                      {nameKey ? dep : dep}
+                    </span>
+                    {health && (
+                      <span className={cn('text-[10px] ml-auto font-mono', health.status === 'healthy' ? 'text-emerald-400' : 'text-red-400')}>
+                        {health.responseTime ?? '--'}ms
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Incoming calls */}
+        <div>
+          <div className="flex items-center gap-1.5 mb-3">
+            <ArrowLeft className="w-3.5 h-3.5 text-purple-400" />
+            <span className="text-[12px] font-semibold text-text-secondary">{t('admin.health.calledBy')}</span>
+          </div>
+          {incoming.length === 0 ? (
+            <p className="text-[12px] text-text-quaternary pl-5">{t('admin.health.noIncoming')}</p>
+          ) : (
+            <div className="space-y-1.5">
+              {incoming.map((caller) => {
+                const health = svcHealth.find((s) => s.key === caller);
+                return (
+                  <div key={caller} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-bg-primary/50">
+                    <ArrowLeft className="w-3 h-3 text-purple-400 shrink-0" />
+                    {health && (
+                      <span className={cn('w-2 h-2 rounded-full shrink-0', health.status === 'healthy' ? 'bg-emerald-400' : health.status === 'unhealthy' ? 'bg-red-400' : 'bg-text-quaternary')} />
+                    )}
+                    <span className="text-[12px] text-text-primary">{caller}</span>
+                    {health && (
+                      <span className={cn('text-[10px] ml-auto font-mono', health.status === 'healthy' ? 'text-emerald-400' : 'text-red-400')}>
+                        {health.responseTime ?? '--'}ms
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ===== [NEW] Quick Actions Card =====
+function QuickActionsCard({ serviceKey, t }: {
+  serviceKey: string;
+  t: (key: TranslationKey) => string;
+}) {
+  return (
+    <div className="bg-bg-secondary rounded-2xl p-5 border border-border">
+      <div className="flex items-center gap-2 mb-4">
+        <Zap className="w-4 h-4 text-accent" />
+        <h3 className="text-[14px] font-bold text-text-primary">{t('admin.health.quickActions')}</h3>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <button
+          className="flex items-center gap-2 px-4 py-2 rounded-xl border border-border bg-bg-primary/50 text-[12px] font-semibold text-text-secondary hover:bg-bg-primary transition-colors cursor-not-allowed opacity-60"
+          disabled
+          title="Log viewer - coming soon"
+        >
+          <FileText className="w-3.5 h-3.5" />
+          {t('admin.health.viewLogs')}
+        </button>
+        <button
+          className="flex items-center gap-2 px-4 py-2 rounded-xl border border-red-500/20 bg-red-500/5 text-[12px] font-semibold text-red-400/60 cursor-not-allowed opacity-60"
+          disabled
+          title="Restart service - disabled for safety"
+        >
+          <RotateCcw className="w-3.5 h-3.5" />
+          {t('admin.health.restart')}
+          <span className="text-[10px] ml-1 opacity-70">({t('admin.health.restartDisabled')})</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ===== Service Metrics Card =====
 function ServiceMetricsCard({ serviceKey, stats, loading, t }: {
   serviceKey: string;
   stats: Record<string, unknown> | null | undefined;

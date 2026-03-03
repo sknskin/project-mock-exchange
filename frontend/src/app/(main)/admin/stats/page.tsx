@@ -1392,34 +1392,6 @@ export default function AdminStatsPage() {
             </ChartCard>
           </div>
 
-          {/* Top Rooms */}
-          {chatStats?.topRooms && chatStats.topRooms.length > 0 && (
-            <ChartCard title={t('stats.topRooms')}>
-              <div className="space-y-2">
-                {chatStats.topRooms.map((room: { roomId: string; name: string; type: string; messageCount: number }, i: number) => (
-                  <div
-                    key={room.roomId}
-                    className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-bg-tertiary transition-colors"
-                  >
-                    <span className="text-[13px] font-bold text-text-quaternary w-5 shrink-0 text-center">
-                      {i + 1}
-                    </span>
-                    <span className="text-[13px] text-text-primary truncate flex-1">
-                      {room.name}
-                    </span>
-                    <span className="text-[12px] text-text-quaternary shrink-0 flex items-center gap-3">
-                      <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-bg-tertiary">
-                        {room.type === 'DM' ? t('stats.dm') : t('stats.group')}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <MessageSquare className="w-3 h-3" /> {room.messageCount}
-                      </span>
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </ChartCard>
-          )}
 
         </div>
       )}
