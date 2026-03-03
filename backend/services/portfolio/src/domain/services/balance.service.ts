@@ -16,6 +16,10 @@ import { PrismaService } from '../../infrastructure/persistence/prisma/prisma.se
 import Decimal from 'decimal.js';
 import axios from 'axios';
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const toUuidOrNull = (v?: string | null): string | null =>
+  v && UUID_RE.test(v) ? v : null;
+
 export interface BalanceInfo {
   userId: string;
   availableCash: string;
@@ -61,6 +65,10 @@ export class BalanceService {
   private readonly logger = new Logger(BalanceService.name);
   private readonly marketDataUrl: string;
 
+  /** 환율 캐시 (USD → KRW) / Exchange rate cache */
+  private cachedExchangeRate: { rate: Decimal; fetchedAt: number } | null = null;
+  private static readonly EXCHANGE_RATE_TTL_MS = 10 * 60 * 1000; // 10분
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
@@ -69,6 +77,45 @@ export class BalanceService {
       'MARKET_DATA_URL',
       'http://localhost:3001',
     );
+  }
+
+  /**
+   * 심볼이 USD 기반인지 판별 / Check if symbol is USD-denominated
+   * .KS 접미사 = KRW, 그 외 = USD
+   */
+  private isUsdSymbol(symbol: string): boolean {
+    return !symbol.endsWith('.KS');
+  }
+
+  /**
+   * USD → KRW 환율을 가져옵니다 (10분 캐시).
+   * Fetch USD→KRW exchange rate (cached 10min).
+   */
+  private async getExchangeRate(): Promise<Decimal> {
+    const now = Date.now();
+    if (
+      this.cachedExchangeRate &&
+      now - this.cachedExchangeRate.fetchedAt < BalanceService.EXCHANGE_RATE_TTL_MS
+    ) {
+      return this.cachedExchangeRate.rate;
+    }
+    try {
+      const { data } = await axios.get<{ rates: { KRW: number } }>(
+        'https://api.frankfurter.app/latest?from=USD&to=KRW',
+        { timeout: 5000 },
+      );
+      const rate = new Decimal(data.rates.KRW);
+      this.cachedExchangeRate = { rate, fetchedAt: now };
+      this.logger.log(`Fetched USD→KRW exchange rate: ${rate}`);
+      return rate;
+    } catch (e) {
+      if (this.cachedExchangeRate) {
+        this.logger.warn('Exchange rate fetch failed, using stale cache');
+        return this.cachedExchangeRate.rate;
+      }
+      this.logger.warn('Exchange rate fetch failed, using default 1450');
+      return new Decimal(1450);
+    }
   }
 
   /**
@@ -225,7 +272,7 @@ export class BalanceService {
           userId,
           type: 'RESERVE',
           cashDelta: reserveAmount.negated().toFixed(8),
-          referenceId: orderId,
+          referenceId: toUuidOrNull(orderId),
         },
       });
 
@@ -291,7 +338,7 @@ export class BalanceService {
           userId,
           type: 'RELEASE',
           cashDelta: releaseAmount.toFixed(8),
-          referenceId: orderId,
+          referenceId: toUuidOrNull(orderId),
         },
       });
 
@@ -396,7 +443,7 @@ export class BalanceService {
           quantity: qty.toFixed(8),
           price: prc.toFixed(8),
           cashDelta: totalCost.negated().toFixed(8),
-          referenceId: tradeId,
+          referenceId: toUuidOrNull(tradeId),
         },
       });
 
@@ -500,7 +547,7 @@ export class BalanceService {
           price: prc.toFixed(8),
           cashDelta: totalProceeds.toFixed(8),
           realizedPnl: realizedPnl.toFixed(8),
-          referenceId: tradeId,
+          referenceId: toUuidOrNull(tradeId),
         },
       });
 
@@ -639,10 +686,17 @@ export class BalanceService {
     let totalCost = new Decimal(0);
     let totalMarketValue = new Decimal(0);
 
+    // USD 시장가를 KRW로 변환하여 KRW 기준 totalCost와 비교
+    // Convert USD market prices to KRW so they match KRW-denominated totalCost
+    const exchangeRate = await this.getExchangeRate();
+
     const holdingsWithPnL: HoldingWithPnL[] = holdings.map((h) => {
       const qty = new Decimal(h.quantity);
       const cost = new Decimal(h.totalCost);
-      const currentPrice = priceMap.get(h.symbol) || new Decimal(h.avgCostBasis);
+      const rawPrice = priceMap.get(h.symbol) || new Decimal(h.avgCostBasis);
+      const currentPrice = this.isUsdSymbol(h.symbol)
+        ? rawPrice.mul(exchangeRate)
+        : rawPrice;
       const marketValue = qty.mul(currentPrice);
       const unrealizedPnL = marketValue.minus(cost);
       const unrealizedPnLPercent = cost.gt(0)
@@ -657,7 +711,7 @@ export class BalanceService {
         currentPrice: currentPrice.toFixed(8),
         marketValue: marketValue.toFixed(8),
         unrealizedPnL: unrealizedPnL.toFixed(8),
-        unrealizedPnLPercent: unrealizedPnLPercent.toFixed(2),
+        unrealizedPnLPercent: unrealizedPnLPercent.toFixed(3),
       };
     });
 
@@ -677,7 +731,7 @@ export class BalanceService {
       totalCost: totalCost.toFixed(8),
       totalMarketValue: totalMarketValue.toFixed(8),
       totalUnrealizedPnL: totalUnrealizedPnL.toFixed(8),
-      totalUnrealizedPnLPercent: totalUnrealizedPnLPercent.toFixed(2),
+      totalUnrealizedPnLPercent: totalUnrealizedPnLPercent.toFixed(3),
       totalRealizedPnL: totalRealizedPnL.toFixed(8),
       totalPortfolioValue: totalPortfolioValue.toFixed(8),
     };
@@ -704,9 +758,9 @@ export class BalanceService {
 
     const userIds = accounts.map((a) => a.userId);
 
-    // 배치 조회: 모든 보유 자산, 입출금 집계를 한 번에 처리 (N+1 → 4 쿼리)
-    // Batch queries: fetch all holdings and deposit/withdraw aggregates at once
-    const [allHoldings, depositAggs, withdrawAggs] = await Promise.all([
+    // 배치 조회: 보유 자산, 입출금 집계, 실현 손익을 한 번에 처리
+    // Batch queries: fetch holdings, deposit/withdraw aggregates, and realized P&L
+    const [allHoldings, depositAggs, withdrawAggs, realizedPnlAggs] = await Promise.all([
       this.prisma.holding.findMany({
         where: { userId: { in: userIds } },
       }),
@@ -719,6 +773,11 @@ export class BalanceService {
         by: ['userId'],
         where: { userId: { in: userIds }, type: 'WITHDRAWAL' },
         _sum: { cashDelta: true },
+      }),
+      this.prisma.transaction.groupBy({
+        by: ['userId'],
+        where: { userId: { in: userIds }, type: 'SELL', realizedPnl: { not: null } },
+        _sum: { realizedPnl: true },
       }),
     ]);
 
@@ -734,9 +793,13 @@ export class BalanceService {
       holdingsByUser.set(h.userId, list);
     }
 
-    // 유저별 입출금 맵 구성 / Build deposit/withdraw maps per user
+    // 유저별 입출금/실현손익 맵 구성 / Build deposit/withdraw/realized P&L maps per user
     const depositMap = new Map(depositAggs.map((d) => [d.userId, d._sum.cashDelta]));
     const withdrawMap = new Map(withdrawAggs.map((w) => [w.userId, w._sum?.cashDelta]));
+    const realizedPnlMap = new Map(realizedPnlAggs.map((r) => [r.userId, r._sum.realizedPnl]));
+
+    // USD 시장가를 KRW로 변환 / Convert USD market prices to KRW
+    const exchangeRate = await this.getExchangeRate();
 
     const results: { userId: string; totalValue: Decimal; netDeposit: Decimal }[] = [];
 
@@ -744,23 +807,43 @@ export class BalanceService {
       const holdings = holdingsByUser.get(account.userId) || [];
 
       let holdingsValue = new Decimal(0);
+      let holdingsCost = new Decimal(0);
       for (const h of holdings) {
         const qty = new Decimal(h.quantity.toString());
-        const price = priceMap.get(h.symbol) || new Decimal(h.avgCostBasis.toString());
+        const rawPrice = priceMap.get(h.symbol) || new Decimal(h.avgCostBasis.toString());
+        const price = this.isUsdSymbol(h.symbol)
+          ? rawPrice.mul(exchangeRate)
+          : rawPrice;
         holdingsValue = holdingsValue.plus(qty.mul(price));
+        holdingsCost = holdingsCost.plus(new Decimal(h.totalCost.toString()));
       }
 
       const cashTotal = new Decimal(account.availableCash.toString()).plus(
         new Decimal(account.reservedCash.toString()),
       );
+      const totalValue = cashTotal.plus(holdingsValue);
 
+      // netDeposit: 트랜잭션 기반 or 역산 (totalValue - totalPnl)
+      // Use transaction-based netDeposit if available, otherwise derive from totalValue - totalPnl
       const totalDeposits = new Decimal(depositMap.get(account.userId)?.toString() || '0');
       const totalWithdraws = new Decimal(withdrawMap.get(account.userId)?.toString() || '0').abs();
-      const netDeposit = totalDeposits.minus(totalWithdraws);
+      const txNetDeposit = totalDeposits.minus(totalWithdraws);
+
+      let netDeposit: Decimal;
+      if (txNetDeposit.gt(0)) {
+        netDeposit = txNetDeposit;
+      } else {
+        // 트랜잭션 기록이 없는 경우: totalValue - totalPnl 역산
+        // Fallback when transaction records are missing: derive from totalValue - totalPnl
+        const unrealizedPnl = holdingsValue.minus(holdingsCost);
+        const realizedPnl = new Decimal(realizedPnlMap.get(account.userId)?.toString() || '0');
+        const totalPnl = unrealizedPnl.plus(realizedPnl);
+        netDeposit = totalValue.minus(totalPnl);
+      }
 
       results.push({
         userId: account.userId,
-        totalValue: cashTotal.plus(holdingsValue),
+        totalValue,
         netDeposit,
       });
     }
@@ -776,7 +859,7 @@ export class BalanceService {
         userId: r.userId,
         totalCash: r.totalValue.toFixed(8),
         totalPortfolioValue: r.totalValue.toFixed(8),
-        pnlPercent: pnlPercent.toFixed(2),
+        pnlPercent: pnlPercent.toFixed(3),
       };
     });
   }
