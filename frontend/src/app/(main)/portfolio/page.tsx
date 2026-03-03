@@ -24,8 +24,8 @@ import { usePortfolioValuation, useDeposit, useWithdraw } from '@/hooks/usePortf
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
 import { useTranslation } from '@/hooks/useTranslation';
-import { cn, formatCurrency, formatDollar } from '@/lib/format';
-import { Briefcase, ArrowLeftRight, ShoppingCart, LayoutDashboard, Download, RefreshCw } from 'lucide-react';
+import { cn, formatCurrency, formatDollar, formatCurrencyDisplay, formatPercent } from '@/lib/format';
+import { Briefcase, ShoppingCart, LayoutDashboard, Download, RefreshCw, TrendingUp, TrendingDown } from 'lucide-react';
 import { exportToCSV } from '@/lib/export';
 
 type PortfolioTab = 'overview' | 'analytics';
@@ -59,22 +59,7 @@ export default function PortfolioPage() {
     return t('portfolio.minutesAgo').replace('{n}', String(Math.floor(diff / 60)));
   })();
 
-  // 환율 계산기 상태 (Exchange calculator state)
-  const [calcAmount, setCalcAmount] = useState('');
-  const [calcDirection, setCalcDirection] = useState<'krwToUsd' | 'usdToKrw'>('krwToUsd');
-
   const rate = rateData?.rate ?? 0;
-
-  const calcResult = (() => {
-    const amount = parseFloat(calcAmount || '0');
-    if (!amount || !rate) return '';
-    if (calcDirection === 'krwToUsd') {
-      const usd = amount / rate;
-      return '$' + usd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    }
-    const krw = Math.round(amount * rate);
-    return krw.toLocaleString('ko-KR') + '원';
-  })();
 
   // 입력값을 백엔드(KRW 기준)로 변환 / Convert input to backend unit (KRW-based)
   const toBackendAmount = (input: number) =>
@@ -128,19 +113,24 @@ export default function PortfolioPage() {
   return (
     <AuthGuard>
       <div>
-        <div className="py-6 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
+        <div className="py-6 flex items-start justify-between">
+          <div className="flex items-center gap-2.5 h-10">
             <Briefcase className="w-5 h-5 text-accent" />
             <h1 className="text-[20px] font-extrabold text-text-primary">{t('nav.portfolio')}</h1>
           </div>
-          <div className="flex flex-col items-end gap-0.5">
+          <div className="flex flex-col items-end gap-1">
             <button
               onClick={() => refetch()}
               disabled={isFetching}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium text-text-tertiary hover:text-accent hover:bg-bg-secondary transition-colors disabled:opacity-50"
+              className={cn(
+                'flex items-center gap-2 h-10 px-4 rounded-xl text-[13px] font-semibold transition-colors border',
+                isFetching
+                  ? 'border-border text-text-quaternary cursor-not-allowed'
+                  : 'border-accent/30 text-accent hover:bg-accent/10',
+              )}
             >
-              <RefreshCw className={cn('w-3.5 h-3.5', isFetching && 'animate-spin')} />
-              {t('portfolio.refresh')}
+              <RefreshCw className={cn('w-4 h-4', isFetching && 'animate-spin')} />
+              {isFetching ? t('portfolio.refreshing') : t('portfolio.refresh')}
             </button>
             {lastUpdatedText && (
               <span className="text-[11px] text-text-quaternary tabular-nums pr-1">
@@ -208,6 +198,9 @@ export default function PortfolioPage() {
           <>
             {activeTab === 'overview' ? (
               <>
+                {/* 환율 정보 / Exchange Rate — 최상단 */}
+                <ExchangeRateBar />
+
                 <BalanceCard
                   totalValue={portfolio.totalValue}
                   totalPnl={portfolio.totalPnl}
@@ -223,86 +216,57 @@ export default function PortfolioPage() {
                   onWithdraw={() => setWithdrawOpen(true)}
                 />
 
-                {/* 환율 정보 / Exchange Rate */}
-                <ExchangeRateBar />
-
-                {/* 환율 계산기 / Exchange Calculator */}
-                {rate > 0 && (
-                  <div className="py-4 border-b border-border/60">
-                    <div className="flex items-center gap-2 mb-3">
-                      <ArrowLeftRight className="w-4 h-4 text-accent" />
-                      <h2 className="text-[14px] font-bold text-text-secondary">
-                        {t('exchange.calculator')}
-                      </h2>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1">
-                        <Input
-                          label={calcDirection === 'krwToUsd' ? t('exchange.fromKRW') : t('exchange.fromUSD')}
-                          type="number"
-                          value={calcAmount}
-                          onChange={(e) => setCalcAmount(e.target.value)}
-                          placeholder="0"
-                        />
-                      </div>
-                      <button
-                        onClick={() => {
-                          setCalcDirection((d) => d === 'krwToUsd' ? 'usdToKrw' : 'krwToUsd');
-                          setCalcAmount('');
-                        }}
-                        className="mt-5 p-2 rounded-lg border border-border text-text-tertiary hover:text-accent hover:border-accent/50 transition-colors"
-                        title={t('exchange.swap')}
-                      >
-                        <ArrowLeftRight className="w-4 h-4" />
-                      </button>
-                      <div className="flex-1">
-                        <div className="text-[12px] font-medium text-text-tertiary mb-1.5">
-                          {t('exchange.result')}
-                        </div>
-                        <div className="h-11 flex items-center px-3 rounded-xl bg-bg-secondary text-[14px] font-bold text-text-primary tabular-nums">
-                          {calcResult || '-'}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* 투자 비중 / Investment Weight */}
+                {/* 보유 종목 시세 / Holdings Market Pulse */}
                 {portfolio.holdings.length > 0 && (
-                  <div className="mb-6 py-4 border-b border-border/60">
+                  <div className="py-4 border-b border-border/60">
                     <h2 className="text-[14px] font-bold text-text-secondary mb-3">
-                      {t('portfolio.investmentWeight')}
+                      {t('portfolio.marketPulse')}
                     </h2>
-                    <div className="space-y-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {portfolio.holdings
+                        .slice()
                         .sort((a, b) => b.value - a.value)
                         .map((holding) => {
+                          const isUp = holding.pnl >= 0;
                           const weight = portfolio.totalValue > 0
-                            ? (holding.value / portfolio.totalValue) * 100
-                            : 0;
+                            ? ((holding.value / portfolio.totalValue) * 100).toFixed(1)
+                            : '0.0';
                           return (
-                            <div key={holding.symbol} className="flex items-center gap-3">
-                              <span className="text-[13px] font-medium text-text-primary w-[100px] sm:w-[140px] truncate">
-                                {holding.name || holding.symbol}
-                              </span>
-                              <div className="flex-1 h-5 bg-bg-tertiary rounded-full overflow-hidden">
-                                <div
-                                  className="h-full bg-accent rounded-full transition-all flex items-center justify-end pr-2"
-                                  style={{ width: `${Math.max(weight, 3)}%` }}
-                                >
-                                  {weight >= 8 && (
-                                    <span className="text-[10px] font-bold text-white">
-                                      {weight.toFixed(1)}%
-                                    </span>
-                                  )}
+                            <Link
+                              key={holding.symbol}
+                              href={`/asset/${encodeURIComponent(holding.symbol)}`}
+                              className="flex items-center gap-3 p-3 rounded-xl bg-bg-secondary hover:bg-bg-tertiary transition-colors"
+                            >
+                              <div className={cn(
+                                'w-8 h-8 rounded-full flex items-center justify-center shrink-0',
+                                isUp ? 'bg-rise/12' : 'bg-fall/12',
+                              )}>
+                                {isUp
+                                  ? <TrendingUp className="w-4 h-4 text-rise" />
+                                  : <TrendingDown className="w-4 h-4 text-fall" />}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[13px] font-semibold text-text-primary truncate">
+                                    {holding.name || holding.symbol}
+                                  </span>
+                                  <span className="text-[13px] font-bold text-text-primary tabular-nums ml-2 shrink-0">
+                                    {formatCurrencyDisplay(holding.currentPrice, currencyMode, rate)}
+                                  </span>
+                                </div>
+                                <div className="flex items-center justify-between mt-0.5">
+                                  <span className="text-[11px] text-text-quaternary">
+                                    {t('portfolio.portfolioWeight')} {weight}%
+                                  </span>
+                                  <span className={cn(
+                                    'text-[12px] font-bold tabular-nums',
+                                    isUp ? 'text-rise' : 'text-fall',
+                                  )}>
+                                    {formatPercent(holding.pnlPercent)}
+                                  </span>
                                 </div>
                               </div>
-                              {weight < 8 && (
-                                <span className="text-[11px] font-medium text-text-tertiary tabular-nums shrink-0">
-                                  {weight.toFixed(1)}%
-                                </span>
-                              )}
-                            </div>
+                            </Link>
                           );
                         })}
                     </div>

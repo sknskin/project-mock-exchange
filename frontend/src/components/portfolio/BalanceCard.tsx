@@ -28,6 +28,43 @@ interface BalanceCardProps {
   onWithdraw?: () => void;
 }
 
+function DonutChart({ cashPercent, investedPercent }: { cashPercent: number; investedPercent: number }) {
+  const { t } = useTranslation();
+  const size = 120;
+  const strokeWidth = 16;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const cashDash = (cashPercent / 100) * circumference;
+  const investedDash = (investedPercent / 100) * circumference;
+
+  return (
+    <div className="relative" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="-rotate-90">
+        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="var(--color-bg-tertiary)" strokeWidth={strokeWidth} />
+        <circle
+          cx={size / 2} cy={size / 2} r={radius} fill="none"
+          stroke="#3182F6" strokeWidth={strokeWidth}
+          strokeDasharray={`${investedDash} ${circumference}`}
+          strokeLinecap="round"
+          className="transition-all duration-500"
+        />
+        <circle
+          cx={size / 2} cy={size / 2} r={radius} fill="none"
+          stroke="#3182F680" strokeWidth={strokeWidth}
+          strokeDasharray={`${cashDash} ${circumference}`}
+          strokeDashoffset={`${-investedDash}`}
+          strokeLinecap="round"
+          className="transition-all duration-500"
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-[11px] text-text-quaternary">{t('portfolio.investedRatio')}</span>
+        <span className="text-[16px] font-bold text-text-primary tabular-nums">{investedPercent.toFixed(0)}%</span>
+      </div>
+    </div>
+  );
+}
+
 export default function BalanceCard({
   totalValue,
   totalPnl,
@@ -49,157 +86,162 @@ export default function BalanceCard({
   const fmt = (v: number) => formatCurrencyDisplay(v, display, rate);
   const isPositive = totalPnl >= 0;
 
+  const cashRatio = totalValue > 0 ? (cashBalance / totalValue) * 100 : 100;
+  const investedRatio = totalValue > 0 ? ((totalValue - cashBalance) / totalValue) * 100 : 0;
+
   return (
     <div className="py-6 sm:py-7">
       {/* 총 자산 / Total Assets */}
-      <div className="text-[12px] text-text-quaternary mb-0.5">{t('portfolio.totalAssetsDesc')}</div>
-      <div className="text-[13px] text-text-tertiary font-medium mb-2">{t('portfolio.totalAssets')}</div>
-      <div className="text-[28px] sm:text-[32px] font-extrabold text-text-primary tabular-nums leading-tight">
-        {fmt(totalValue)}
+      <div>
+        <div className="text-[12px] text-text-quaternary mb-0.5">{t('portfolio.totalAssetsDesc')}</div>
+        <div className="text-[13px] text-text-tertiary font-medium mb-2">{t('portfolio.totalAssets')}</div>
+        <div className="text-[28px] sm:text-[32px] font-extrabold text-text-primary tabular-nums leading-tight">
+          {fmt(totalValue)}
+        </div>
+
+        {/* 총 손익 / Total P&L */}
+        <div className="flex items-center gap-2.5 mt-2.5">
+          <span
+            className={cn(
+              'text-[14px] font-bold tabular-nums',
+              isPositive ? 'text-rise' : 'text-fall',
+            )}
+          >
+            {isPositive ? '+' : ''}
+            {fmt(totalPnl)}
+          </span>
+          <span
+            className={cn(
+              'text-[12px] font-bold px-2 py-0.5 rounded-lg',
+              isPositive ? 'bg-rise/12 text-rise' : 'bg-fall/12 text-fall',
+            )}
+          >
+            {formatPercent(totalPnlPercent)}
+          </span>
+          <span className="text-[11px] text-text-quaternary">
+            {t('portfolio.totalReturnDesc')}
+          </span>
+        </div>
       </div>
 
-      {/* 총 손익 / Total P&L */}
-      <div className="flex items-center gap-2.5 mt-2.5">
-        <span
-          className={cn(
-            'text-[14px] font-bold tabular-nums',
-            isPositive ? 'text-rise' : 'text-fall',
+      {/* 입금/출금 버튼 / Deposit/Withdraw Buttons */}
+      {(onDeposit || onWithdraw) && (
+        <div className="flex items-center gap-2 mt-5">
+          {onDeposit && (
+            <button
+              onClick={onDeposit}
+              className="flex-1 flex items-center justify-center gap-1.5 h-11 text-[13px] font-semibold text-accent border border-accent/30 rounded-xl hover:bg-accent/10 transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              {t('portfolio.deposit')}
+            </button>
           )}
-        >
-          {isPositive ? '+' : ''}
-          {fmt(totalPnl)}
-        </span>
-        <span
-          className={cn(
-            'text-[12px] font-bold px-2 py-0.5 rounded-lg',
-            isPositive ? 'bg-rise/12 text-rise' : 'bg-fall/12 text-fall',
+          {onWithdraw && (
+            <button
+              onClick={onWithdraw}
+              className="flex-1 flex items-center justify-center gap-1.5 h-11 text-[13px] font-semibold text-text-tertiary border border-border rounded-xl hover:bg-bg-secondary transition-colors"
+            >
+              <Minus className="w-3.5 h-3.5" />
+              {t('portfolio.withdraw')}
+            </button>
           )}
-        >
-          {formatPercent(totalPnlPercent)}
-        </span>
-        <span className="text-[11px] text-text-quaternary">
-          {t('portfolio.totalReturnDesc')}
-        </span>
-      </div>
+        </div>
+      )}
 
-      {/* 상세 항목 / Detail Items */}
-      <div className="mt-6 pt-4 border-t border-border/50 space-y-3">
-        {/* 순 투자 원금 / Net Deposit */}
-        {netDeposit > 0 && (
-          <div className="flex justify-between text-[14px]">
-            <div>
-              <span className="text-text-tertiary">{t('portfolio.netDeposit')}</span>
-              <span className="text-[11px] text-text-quaternary ml-1.5">{t('portfolio.netDepositDesc')}</span>
+      {/* 현금/투자 비중 도넛 + 상세 항목 / Donut + Detail Items */}
+      <div className="mt-6 pt-4 border-t border-border/50">
+        {totalValue > 0 && (
+          <div className="flex items-center gap-5 mb-5">
+            <DonutChart cashPercent={cashRatio} investedPercent={investedRatio} />
+            <div className="flex-1 space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="w-2.5 h-2.5 rounded-full bg-[#3182F6] shrink-0" />
+                <span className="text-[13px] text-text-tertiary flex-1">{t('portfolio.investedRatio')}</span>
+                <span className="text-[13px] font-bold text-text-primary tabular-nums">{fmt(totalValue - cashBalance)}</span>
+                <span className="text-[11px] text-text-quaternary tabular-nums w-[42px] text-right">{investedRatio.toFixed(1)}%</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2.5 h-2.5 rounded-full bg-[#3182F680] shrink-0" />
+                <span className="text-[13px] text-text-tertiary flex-1">{t('portfolio.cashRatio')}</span>
+                <span className="text-[13px] font-bold text-text-primary tabular-nums">{fmt(cashBalance)}</span>
+                <span className="text-[11px] text-text-quaternary tabular-nums w-[42px] text-right">{cashRatio.toFixed(1)}%</span>
+              </div>
             </div>
-            <span className="text-text-primary font-bold tabular-nums">
-              {fmt(netDeposit)}
-            </span>
           </div>
         )}
 
-        {/* 예수금 / Cash Balance */}
-        <div className="flex justify-between items-center text-[14px]">
-          <span className="text-text-tertiary">{t('portfolio.cashBalance')}</span>
-          <div className="flex items-center gap-2">
+        <div className="space-y-3">
+          {/* 순 투자 원금 / Net Deposit */}
+          {netDeposit > 0 && (
+            <div className="flex justify-between text-[14px]">
+              <div>
+                <span className="text-text-tertiary">{t('portfolio.netDeposit')}</span>
+                <span className="text-[11px] text-text-quaternary ml-1.5">{t('portfolio.netDepositDesc')}</span>
+              </div>
+              <span className="text-text-primary font-bold tabular-nums">
+                {fmt(netDeposit)}
+              </span>
+            </div>
+          )}
+
+          {/* 예수금 / Cash Balance */}
+          <div className="flex justify-between items-center text-[14px]">
+            <span className="text-text-tertiary">{t('portfolio.cashBalance')}</span>
             <span className="text-text-primary font-bold tabular-nums">
               {fmt(cashBalance)}
             </span>
-            <div className="flex items-center gap-1.5">
-              {onDeposit && (
-                <button
-                  onClick={onDeposit}
-                  className="flex items-center gap-1 px-2.5 py-1.5 text-[12px] font-semibold text-accent border border-accent/30 rounded-lg hover:bg-accent/10 transition-colors"
-                >
-                  <Plus className="w-3 h-3" />
-                  {t('portfolio.deposit')}
-                </button>
-              )}
-              {onWithdraw && (
-                <button
-                  onClick={onWithdraw}
-                  className="flex items-center gap-1 px-2.5 py-1.5 text-[12px] font-semibold text-fall border border-fall/30 rounded-lg hover:bg-fall/10 transition-colors"
-                >
-                  <Minus className="w-3 h-3" />
-                  {t('portfolio.withdraw')}
-                </button>
-              )}
-            </div>
           </div>
+
+          {/* 투자 금액 (매입 원가) / Total Cost */}
+          {totalCost > 0 && (
+            <div className="flex justify-between text-[14px]">
+              <span className="text-text-tertiary">{t('portfolio.totalCost')}</span>
+              <span className="text-text-primary font-bold tabular-nums">
+                {fmt(totalCost)}
+              </span>
+            </div>
+          )}
+
+          {/* 평가 금액 / Market Value */}
+          {totalMarketValue > 0 && (
+            <div className="flex justify-between text-[14px]">
+              <span className="text-text-tertiary">{t('portfolio.totalMarketValue')}</span>
+              <span className="text-text-primary font-bold tabular-nums">
+                {fmt(totalMarketValue)}
+              </span>
+            </div>
+          )}
+
+          {/* 미실현 손익 / Unrealized P&L */}
+          {(unrealizedPnl !== 0 || totalCost > 0) && (
+            <div className="flex justify-between text-[14px]">
+              <div>
+                <span className="text-text-tertiary">{t('portfolio.unrealizedPnl')}</span>
+                {investedReturnPercent !== 0 && (
+                  <span className={cn(
+                    'text-[11px] font-bold ml-1.5',
+                    investedReturnPercent >= 0 ? 'text-rise' : 'text-fall',
+                  )}>
+                    {formatPercent(investedReturnPercent)}
+                  </span>
+                )}
+              </div>
+              <span className={cn('font-bold tabular-nums', unrealizedPnl >= 0 ? 'text-rise' : 'text-fall')}>
+                {unrealizedPnl >= 0 ? '+' : ''}{fmt(unrealizedPnl)}
+              </span>
+            </div>
+          )}
+
+          {/* 실현 손익 / Realized P&L */}
+          {realizedPnl !== 0 && (
+            <div className="flex justify-between text-[14px]">
+              <span className="text-text-tertiary">{t('portfolio.realizedPnl')}</span>
+              <span className={cn('font-bold tabular-nums', realizedPnl >= 0 ? 'text-rise' : 'text-fall')}>
+                {realizedPnl >= 0 ? '+' : ''}{fmt(realizedPnl)}
+              </span>
+            </div>
+          )}
         </div>
-
-        {/* 투자 금액 (매입 원가) / Total Cost */}
-        {totalCost > 0 && (
-          <div className="flex justify-between text-[14px]">
-            <span className="text-text-tertiary">{t('portfolio.totalCost')}</span>
-            <span className="text-text-primary font-bold tabular-nums">
-              {fmt(totalCost)}
-            </span>
-          </div>
-        )}
-
-        {/* 평가 금액 / Market Value */}
-        {totalMarketValue > 0 && (
-          <div className="flex justify-between text-[14px]">
-            <span className="text-text-tertiary">{t('portfolio.totalMarketValue')}</span>
-            <span className="text-text-primary font-bold tabular-nums">
-              {fmt(totalMarketValue)}
-            </span>
-          </div>
-        )}
-
-        {/* 미실현 손익 / Unrealized P&L */}
-        {(unrealizedPnl !== 0 || totalCost > 0) && (
-          <div className="flex justify-between text-[14px]">
-            <div>
-              <span className="text-text-tertiary">{t('portfolio.unrealizedPnl')}</span>
-              {investedReturnPercent !== 0 && (
-                <span className={cn(
-                  'text-[11px] font-bold ml-1.5',
-                  investedReturnPercent >= 0 ? 'text-rise' : 'text-fall',
-                )}>
-                  {formatPercent(investedReturnPercent)}
-                </span>
-              )}
-            </div>
-            <span className={cn('font-bold tabular-nums', unrealizedPnl >= 0 ? 'text-rise' : 'text-fall')}>
-              {unrealizedPnl >= 0 ? '+' : ''}{fmt(unrealizedPnl)}
-            </span>
-          </div>
-        )}
-
-        {/* 실현 손익 / Realized P&L */}
-        {realizedPnl !== 0 && (
-          <div className="flex justify-between text-[14px]">
-            <span className="text-text-tertiary">{t('portfolio.realizedPnl')}</span>
-            <span className={cn('font-bold tabular-nums', realizedPnl >= 0 ? 'text-rise' : 'text-fall')}>
-              {realizedPnl >= 0 ? '+' : ''}{fmt(realizedPnl)}
-            </span>
-          </div>
-        )}
-
-        {/* 현금/투자 비중 바 / Cash vs Invested ratio bar */}
-        {totalValue > 0 && (() => {
-          const investedRatio = ((totalValue - cashBalance) / totalValue) * 100;
-          const cashRatioVal = (cashBalance / totalValue) * 100;
-          return (
-            <div className="pt-1">
-              <div className="flex items-center justify-between text-[12px] mb-1.5">
-                <span className="text-text-quaternary">{t('portfolio.cashRatio')} {cashRatioVal.toFixed(1)}%</span>
-                <span className="text-text-quaternary">{t('portfolio.investedRatio')} {investedRatio.toFixed(1)}%</span>
-              </div>
-              <div className="h-2 rounded-full bg-bg-tertiary overflow-hidden flex">
-                <div
-                  className="h-full bg-accent/60 rounded-l-full transition-all"
-                  style={{ width: `${cashRatioVal}%` }}
-                />
-                <div
-                  className="h-full bg-accent rounded-r-full transition-all"
-                  style={{ width: `${investedRatio}%` }}
-                />
-              </div>
-            </div>
-          );
-        })()}
       </div>
     </div>
   );
