@@ -8,7 +8,7 @@
 'use client';
 
 import Link from 'next/link';
-import { cn, formatPrice, formatPercent, formatQuantity, formatCurrencyDisplay, formatDollar } from '@/lib/format';
+import { cn, formatPercent, formatQuantity, formatCurrencyDisplay } from '@/lib/format';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
@@ -56,7 +56,7 @@ export default function HoldingCard({ holding }: HoldingCardProps) {
           </div>
           <div className="text-[12px] text-text-quaternary mt-0.5">
             {formatQuantity(holding.quantity)}{t('portfolio.holdingUnit')} · {t('portfolio.avgPrice')}{' '}
-            {formatPrice(holding.averagePrice)}
+            {fmt(holding.averagePrice)}
           </div>
         </div>
       </div>
@@ -70,9 +70,7 @@ export default function HoldingCard({ holding }: HoldingCardProps) {
             isPositive ? 'text-rise' : 'text-fall',
           )}
         >
-          {isPositive ? '+' : ''}{display === 'original' && rate
-            ? formatDollar(holding.pnl / rate)
-            : formatPrice(holding.pnl)} ({formatPercent(holding.pnlPercent)})
+          {isPositive ? '+' : ''}{fmt(Math.abs(holding.pnl))} ({formatPercent(holding.pnlPercent)})
         </div>
       </div>
     </Link>

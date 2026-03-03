@@ -18,6 +18,12 @@ interface BalanceCardProps {
   totalPnl: number;
   totalPnlPercent: number;
   cashBalance: number;
+  realizedPnl?: number;
+  unrealizedPnl?: number;
+  totalCost?: number;
+  totalMarketValue?: number;
+  investedReturnPercent?: number;
+  netDeposit?: number;
   onDeposit?: () => void;
   onWithdraw?: () => void;
 }
@@ -27,6 +33,12 @@ export default function BalanceCard({
   totalPnl,
   totalPnlPercent,
   cashBalance,
+  realizedPnl = 0,
+  unrealizedPnl = 0,
+  totalCost = 0,
+  totalMarketValue = 0,
+  investedReturnPercent = 0,
+  netDeposit = 0,
   onDeposit,
   onWithdraw,
 }: BalanceCardProps) {
@@ -39,10 +51,14 @@ export default function BalanceCard({
 
   return (
     <div className="py-6 sm:py-7">
+      {/* 총 자산 / Total Assets */}
+      <div className="text-[12px] text-text-quaternary mb-0.5">{t('portfolio.totalAssetsDesc')}</div>
       <div className="text-[13px] text-text-tertiary font-medium mb-2">{t('portfolio.totalAssets')}</div>
       <div className="text-[28px] sm:text-[32px] font-extrabold text-text-primary tabular-nums leading-tight">
         {fmt(totalValue)}
       </div>
+
+      {/* 총 손익 / Total P&L */}
       <div className="flex items-center gap-2.5 mt-2.5">
         <span
           className={cn(
@@ -61,8 +77,27 @@ export default function BalanceCard({
         >
           {formatPercent(totalPnlPercent)}
         </span>
+        <span className="text-[11px] text-text-quaternary">
+          {t('portfolio.totalReturnDesc')}
+        </span>
       </div>
+
+      {/* 상세 항목 / Detail Items */}
       <div className="mt-6 pt-4 border-t border-border/50 space-y-3">
+        {/* 순 투자 원금 / Net Deposit */}
+        {netDeposit > 0 && (
+          <div className="flex justify-between text-[14px]">
+            <div>
+              <span className="text-text-tertiary">{t('portfolio.netDeposit')}</span>
+              <span className="text-[11px] text-text-quaternary ml-1.5">{t('portfolio.netDepositDesc')}</span>
+            </div>
+            <span className="text-text-primary font-bold tabular-nums">
+              {fmt(netDeposit)}
+            </span>
+          </div>
+        )}
+
+        {/* 예수금 / Cash Balance */}
         <div className="flex justify-between items-center text-[14px]">
           <span className="text-text-tertiary">{t('portfolio.cashBalance')}</span>
           <div className="flex items-center gap-2">
@@ -91,12 +126,56 @@ export default function BalanceCard({
             </div>
           </div>
         </div>
-        <div className="flex justify-between text-[14px]">
-          <span className="text-text-tertiary">{t('portfolio.investedValue')}</span>
-          <span className="text-text-primary font-bold tabular-nums">
-            {fmt(totalValue - cashBalance)}
-          </span>
-        </div>
+
+        {/* 투자 금액 (매입 원가) / Total Cost */}
+        {totalCost > 0 && (
+          <div className="flex justify-between text-[14px]">
+            <span className="text-text-tertiary">{t('portfolio.totalCost')}</span>
+            <span className="text-text-primary font-bold tabular-nums">
+              {fmt(totalCost)}
+            </span>
+          </div>
+        )}
+
+        {/* 평가 금액 / Market Value */}
+        {totalMarketValue > 0 && (
+          <div className="flex justify-between text-[14px]">
+            <span className="text-text-tertiary">{t('portfolio.totalMarketValue')}</span>
+            <span className="text-text-primary font-bold tabular-nums">
+              {fmt(totalMarketValue)}
+            </span>
+          </div>
+        )}
+
+        {/* 미실현 손익 / Unrealized P&L */}
+        {(unrealizedPnl !== 0 || totalCost > 0) && (
+          <div className="flex justify-between text-[14px]">
+            <div>
+              <span className="text-text-tertiary">{t('portfolio.unrealizedPnl')}</span>
+              {investedReturnPercent !== 0 && (
+                <span className={cn(
+                  'text-[11px] font-bold ml-1.5',
+                  investedReturnPercent >= 0 ? 'text-rise' : 'text-fall',
+                )}>
+                  {formatPercent(investedReturnPercent)}
+                </span>
+              )}
+            </div>
+            <span className={cn('font-bold tabular-nums', unrealizedPnl >= 0 ? 'text-rise' : 'text-fall')}>
+              {unrealizedPnl >= 0 ? '+' : ''}{fmt(unrealizedPnl)}
+            </span>
+          </div>
+        )}
+
+        {/* 실현 손익 / Realized P&L */}
+        {realizedPnl !== 0 && (
+          <div className="flex justify-between text-[14px]">
+            <span className="text-text-tertiary">{t('portfolio.realizedPnl')}</span>
+            <span className={cn('font-bold tabular-nums', realizedPnl >= 0 ? 'text-rise' : 'text-fall')}>
+              {realizedPnl >= 0 ? '+' : ''}{fmt(realizedPnl)}
+            </span>
+          </div>
+        )}
 
         {/* 현금/투자 비중 바 / Cash vs Invested ratio bar */}
         {totalValue > 0 && (() => {

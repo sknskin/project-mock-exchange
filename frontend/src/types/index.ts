@@ -111,8 +111,14 @@ export interface Portfolio {
   totalValue: number;
   cashBalance: number;
   investedValue: number;
+  totalCost: number;
+  totalMarketValue: number;
   totalPnl: number;
   totalPnlPercent: number;
+  investedReturnPercent: number;
+  realizedPnl: number;
+  unrealizedPnl: number;
+  netDeposit: number;
   holdings: Holding[];
 }
 

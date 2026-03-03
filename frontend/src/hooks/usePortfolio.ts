@@ -38,11 +38,22 @@ function mapSummaryToPortfolio(raw: Record<string, unknown>): Portfolio {
   }));
 
   const investedValue = mappedHoldings.reduce((sum, h) => sum + h.value, 0);
-  const totalPnl = mappedHoldings.reduce((sum, h) => sum + h.pnl, 0);
-  const totalCost = mappedHoldings.reduce((sum, h) => sum + (h.averagePrice * h.quantity), 0);
-  const totalPnlPercent = totalCost > 0 ? (totalPnl / totalCost) * 100 : 0;
+  const unrealizedPnl = mappedHoldings.reduce((sum, h) => sum + h.pnl, 0);
+  const realizedPnl = parseFloat(raw.totalRealizedPnL as string ?? '0') || 0;
+  const totalPnl = unrealizedPnl + realizedPnl;
+  const totalCost = parseFloat(raw.totalCost as string ?? '0')
+    || mappedHoldings.reduce((sum, h) => sum + (h.averagePrice * h.quantity), 0);
+  const totalMarketValue = parseFloat(raw.totalMarketValue as string ?? '0') || investedValue;
+  const netDeposit = totalValue - totalPnl;
+  const totalPnlPercent = netDeposit > 0 ? (totalPnl / netDeposit) * 100 : 0;
+  const investedReturnPercent = totalCost > 0 ? (unrealizedPnl / totalCost) * 100 : 0;
 
-  return { totalValue, cashBalance, investedValue, totalPnl, totalPnlPercent, holdings: mappedHoldings };
+  return {
+    totalValue, cashBalance, investedValue, totalCost, totalMarketValue,
+    totalPnl, totalPnlPercent, investedReturnPercent,
+    realizedPnl, unrealizedPnl, netDeposit,
+    holdings: mappedHoldings,
+  };
 }
 
 export function usePortfolio() {

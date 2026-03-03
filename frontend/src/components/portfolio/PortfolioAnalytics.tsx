@@ -26,7 +26,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
 import { useOrders } from '@/hooks/useOrders';
-import { PieChart as PieChartIcon, TrendingUp, BarChart3, Activity } from 'lucide-react';
+import { PieChart as PieChartIcon, TrendingUp, BarChart3, Activity, Wallet } from 'lucide-react';
 import type { Portfolio } from '@/types';
 
 interface PortfolioAnalyticsProps {
@@ -72,26 +72,8 @@ export default function PortfolioAnalytics({ portfolio }: PortfolioAnalyticsProp
     return items;
   }, [portfolio, t]);
 
-  // --- Unrealized P&L (from current holdings) ---
-  const unrealizedPnl = useMemo(() => {
-    if (!portfolio.holdings?.length) return 0;
-    return portfolio.holdings.reduce((sum, h) => sum + (h.pnl ?? 0), 0);
-  }, [portfolio.holdings]);
-
-  // --- Realized P&L (from filled sell orders) ---
-  const realizedPnl = useMemo(() => {
-    if (!filledOrders) return 0;
-    return filledOrders
-      .filter((o) => o.side === 'SELL' && o.filledPrice != null && o.filledQuantity > 0)
-      .reduce((sum, o) => {
-        // Approximate realized: sold value - cost basis (we use filled price vs order price as proxy)
-        const sellValue = (o.filledPrice ?? 0) * o.filledQuantity;
-        const costBasis = (o.price ?? o.filledPrice ?? 0) * o.filledQuantity;
-        return sum + (sellValue - costBasis);
-      }, 0);
-  }, [filledOrders]);
-
-  const totalPnl = realizedPnl + unrealizedPnl;
+  // Use backend-computed P&L values directly
+  const { unrealizedPnl, realizedPnl, totalPnl } = portfolio;
 
   // --- Daily P&L from filled orders ---
   const dailyPnlData = useMemo(() => {
@@ -143,6 +125,74 @@ export default function PortfolioAnalytics({ portfolio }: PortfolioAnalyticsProp
 
   return (
     <div className="space-y-6 pb-8">
+      {/* Portfolio Summary Cards */}
+      <section className="py-4 border-b border-border/60">
+        <div className="flex items-center gap-2 mb-1">
+          <Wallet className="w-4 h-4 text-accent" />
+          <h2 className="text-[14px] font-bold text-text-secondary">
+            {t('portfolio.analytics.summary')}
+          </h2>
+        </div>
+        <p className="text-[12px] text-text-quaternary mb-4">
+          {t('portfolio.analytics.summaryDesc')}
+        </p>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {/* Net Deposit */}
+          <div className="p-3.5 rounded-xl bg-bg-secondary">
+            <div className="text-[11px] text-text-quaternary mb-1">{t('portfolio.netDeposit')}</div>
+            <div className="text-[16px] font-bold text-text-primary tabular-nums">
+              {fmt(portfolio.netDeposit)}
+            </div>
+          </div>
+
+          {/* Total Assets */}
+          <div className="p-3.5 rounded-xl bg-bg-secondary">
+            <div className="text-[11px] text-text-quaternary mb-1">{t('portfolio.totalAssets')}</div>
+            <div className="text-[16px] font-bold text-text-primary tabular-nums">
+              {fmt(portfolio.totalValue)}
+            </div>
+          </div>
+
+          {/* Total Return */}
+          <div className="p-3.5 rounded-xl bg-bg-secondary">
+            <div className="text-[11px] text-text-quaternary mb-1">{t('portfolio.analytics.totalReturn')}</div>
+            <div className={cn('text-[16px] font-bold tabular-nums', totalPnl >= 0 ? 'text-rise' : 'text-fall')}>
+              {formatPercent(portfolio.totalPnlPercent)}
+            </div>
+            <div className="text-[11px] text-text-quaternary mt-0.5">{t('portfolio.totalReturnDesc')}</div>
+          </div>
+
+          {/* Cash Balance */}
+          <div className="p-3.5 rounded-xl bg-bg-secondary">
+            <div className="text-[11px] text-text-quaternary mb-1">{t('portfolio.cashBalance')}</div>
+            <div className="text-[16px] font-bold text-text-primary tabular-nums">
+              {fmt(portfolio.cashBalance)}
+            </div>
+          </div>
+
+          {/* Total Cost */}
+          {portfolio.totalCost > 0 && (
+            <div className="p-3.5 rounded-xl bg-bg-secondary">
+              <div className="text-[11px] text-text-quaternary mb-1">{t('portfolio.totalCost')}</div>
+              <div className="text-[16px] font-bold text-text-primary tabular-nums">
+                {fmt(portfolio.totalCost)}
+              </div>
+            </div>
+          )}
+
+          {/* Market Value */}
+          {portfolio.totalMarketValue > 0 && (
+            <div className="p-3.5 rounded-xl bg-bg-secondary">
+              <div className="text-[11px] text-text-quaternary mb-1">{t('portfolio.totalMarketValue')}</div>
+              <div className="text-[16px] font-bold text-text-primary tabular-nums">
+                {fmt(portfolio.totalMarketValue)}
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
       {/* Asset Allocation Pie Chart */}
       {allocationData.length > 0 && (
         <section className="py-4 border-b border-border/60">
@@ -223,14 +273,40 @@ export default function PortfolioAnalytics({ portfolio }: PortfolioAnalyticsProp
 
       {/* P&L Breakdown */}
       <section className="py-4 border-b border-border/60">
-        <div className="flex items-center gap-2 mb-4">
+        <div className="flex items-center gap-2 mb-1">
           <TrendingUp className="w-4 h-4 text-accent" />
           <h2 className="text-[14px] font-bold text-text-secondary">
             {t('portfolio.analytics.pnlBreakdown')}
           </h2>
         </div>
+        <p className="text-[12px] text-text-quaternary mb-4">
+          {t('portfolio.analytics.pnlBreakdownDesc')}
+        </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {/* Unrealized P&L */}
+          <div className="p-4 rounded-xl bg-bg-secondary">
+            <div className="text-[12px] text-text-tertiary mb-1">
+              {t('portfolio.analytics.unrealizedPnl')}
+            </div>
+            <div
+              className={cn(
+                'text-[18px] font-bold tabular-nums',
+                unrealizedPnl >= 0 ? 'text-rise' : 'text-fall',
+              )}
+            >
+              {unrealizedPnl >= 0 ? '+' : ''}{fmt(unrealizedPnl)}
+            </div>
+            {portfolio.investedReturnPercent !== 0 && (
+              <div className={cn('text-[12px] font-bold mt-0.5', portfolio.investedReturnPercent >= 0 ? 'text-rise' : 'text-fall')}>
+                {formatPercent(portfolio.investedReturnPercent)}
+              </div>
+            )}
+            <div className="text-[11px] text-text-quaternary mt-1">
+              {t('portfolio.analytics.unrealizedDesc')}
+            </div>
+          </div>
+
           {/* Realized P&L */}
           <div className="p-4 rounded-xl bg-bg-secondary">
             <div className="text-[12px] text-text-tertiary mb-1">
@@ -249,24 +325,6 @@ export default function PortfolioAnalytics({ portfolio }: PortfolioAnalyticsProp
             </div>
           </div>
 
-          {/* Unrealized P&L */}
-          <div className="p-4 rounded-xl bg-bg-secondary">
-            <div className="text-[12px] text-text-tertiary mb-1">
-              {t('portfolio.analytics.unrealizedPnl')}
-            </div>
-            <div
-              className={cn(
-                'text-[18px] font-bold tabular-nums',
-                unrealizedPnl >= 0 ? 'text-rise' : 'text-fall',
-              )}
-            >
-              {unrealizedPnl >= 0 ? '+' : ''}{fmt(unrealizedPnl)}
-            </div>
-            <div className="text-[11px] text-text-quaternary mt-1">
-              {t('portfolio.analytics.unrealizedDesc')}
-            </div>
-          </div>
-
           {/* Total P&L */}
           <div className="p-4 rounded-xl bg-bg-secondary">
             <div className="text-[12px] text-text-tertiary mb-1">
@@ -280,17 +338,14 @@ export default function PortfolioAnalytics({ portfolio }: PortfolioAnalyticsProp
             >
               {totalPnl >= 0 ? '+' : ''}{fmt(totalPnl)}
             </div>
-            <div className="flex items-center gap-1.5 mt-1">
-              <span
-                className={cn(
-                  'text-[11px] font-bold px-1.5 py-0.5 rounded',
-                  totalPnl >= 0 ? 'bg-rise/12 text-rise' : 'bg-fall/12 text-fall',
-                )}
-              >
-                {totalPnl >= 0
-                  ? t('portfolio.analytics.profit')
-                  : t('portfolio.analytics.loss')}
-              </span>
+            <div className={cn(
+              'text-[12px] font-bold mt-0.5',
+              totalPnl >= 0 ? 'text-rise' : 'text-fall',
+            )}>
+              {formatPercent(portfolio.totalPnlPercent)}
+            </div>
+            <div className="text-[11px] text-text-quaternary mt-1">
+              {t('portfolio.analytics.totalPnlDesc')}
             </div>
           </div>
         </div>
@@ -299,12 +354,15 @@ export default function PortfolioAnalytics({ portfolio }: PortfolioAnalyticsProp
       {/* Per-Asset Performance */}
       {portfolio.holdings.length > 0 && (
         <section className="py-4 border-b border-border/60">
-          <div className="flex items-center gap-2 mb-4">
+          <div className="flex items-center gap-2 mb-1">
             <BarChart3 className="w-4 h-4 text-accent" />
             <h2 className="text-[14px] font-bold text-text-secondary">
               {t('portfolio.analytics.assetPerformance')}
             </h2>
           </div>
+          <p className="text-[12px] text-text-quaternary mb-4">
+            {t('portfolio.analytics.assetPerformanceDesc')}
+          </p>
 
           <div className="space-y-3">
             {portfolio.holdings
