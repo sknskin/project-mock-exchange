@@ -124,13 +124,23 @@ export class BalanceService {
    * Ensure an account exists for the given user, creating one if not found.
    */
   private async ensureAccount(userId: string) {
-    const account = await this.prisma.account.upsert({
-      where: { userId },
-      update: {},
-      create: { userId },
-    });
+    try {
+      const account = await this.prisma.account.upsert({
+        where: { userId },
+        update: {},
+        create: { userId },
+      });
 
-    return account;
+      return account;
+    } catch (error: any) {
+      if (error?.code === 'P2002') {
+        const account = await this.prisma.account.findUnique({
+          where: { userId },
+        });
+        if (account) return account;
+      }
+      throw error;
+    }
   }
 
   /**
