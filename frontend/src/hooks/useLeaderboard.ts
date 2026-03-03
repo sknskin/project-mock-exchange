@@ -39,6 +39,6 @@ export function useLeaderboard(options?: UseLeaderboardOptions) {
         pnlPercent: Number(e.pnlPercent || 0),
       }));
     },
-    refetchInterval: 30000,
+    refetchInterval: 10000,
   });
 }

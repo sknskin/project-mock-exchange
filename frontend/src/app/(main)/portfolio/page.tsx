@@ -7,7 +7,7 @@
  */
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import AuthGuard from '@/components/layout/AuthGuard';
 import BalanceCard from '@/components/portfolio/BalanceCard';
@@ -20,19 +20,19 @@ import BottomSheet from '@/components/ui/BottomSheet';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import Skeleton from '@/components/ui/Skeleton';
 import ServiceError from '@/components/ui/ServiceError';
-import { usePortfolio, useDeposit, useWithdraw } from '@/hooks/usePortfolio';
+import { usePortfolioValuation, useDeposit, useWithdraw } from '@/hooks/usePortfolio';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
 import { useTranslation } from '@/hooks/useTranslation';
-import { cn, formatCurrency, formatCurrencyDisplay } from '@/lib/format';
-import { Briefcase, ArrowLeftRight, ShoppingCart, LayoutDashboard, Download } from 'lucide-react';
+import { cn, formatCurrency, formatDollar } from '@/lib/format';
+import { Briefcase, ArrowLeftRight, ShoppingCart, LayoutDashboard, Download, RefreshCw } from 'lucide-react';
 import { exportToCSV } from '@/lib/export';
 
 type PortfolioTab = 'overview' | 'analytics';
 
 export default function PortfolioPage() {
   const { t } = useTranslation();
-  const { data: portfolio, isLoading, error: portfolioError, refetch } = usePortfolio();
+  const { data: portfolio, isLoading, isFetching, error: portfolioError, refetch, dataUpdatedAt } = usePortfolioValuation();
   const { data: rateData } = useExchangeRate();
   const { display: currencyMode } = useCurrencyDisplay();
   const deposit = useDeposit();
@@ -43,6 +43,21 @@ export default function PortfolioPage() {
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [withdrawConfirmOpen, setWithdrawConfirmOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<PortfolioTab>('overview');
+
+  // 마지막 갱신 시간 표시 (Last updated display)
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const lastUpdatedText = (() => {
+    if (!dataUpdatedAt) return '';
+    const diff = Math.floor((now - dataUpdatedAt) / 1000);
+    if (diff < 3) return t('portfolio.justNow');
+    if (diff < 60) return t('portfolio.secondsAgo').replace('{n}', String(diff));
+    return t('portfolio.minutesAgo').replace('{n}', String(Math.floor(diff / 60)));
+  })();
 
   // 환율 계산기 상태 (Exchange calculator state)
   const [calcAmount, setCalcAmount] = useState('');
@@ -61,12 +76,16 @@ export default function PortfolioPage() {
     return krw.toLocaleString('ko-KR') + '원';
   })();
 
+  // 입력값을 백엔드(KRW 기준)로 변환 / Convert input to backend unit (KRW-based)
+  const toBackendAmount = (input: number) =>
+    currencyMode === 'original' && rate > 0 ? input * rate : input;
+
   const handleDeposit = async () => {
     const amount = parseFloat(depositAmount);
     if (!amount || amount <= 0) return;
 
     try {
-      await deposit.mutateAsync(amount);
+      await deposit.mutateAsync(toBackendAmount(amount));
       setDepositAmount('');
       setDepositOpen(false);
     } catch {
@@ -79,7 +98,7 @@ export default function PortfolioPage() {
     if (!amount || amount <= 0) return;
 
     try {
-      await withdraw.mutateAsync(amount);
+      await withdraw.mutateAsync(toBackendAmount(amount));
       setWithdrawAmount('');
       setWithdrawOpen(false);
     } catch {
@@ -87,12 +106,48 @@ export default function PortfolioPage() {
     }
   };
 
+  // 통화 모드별 금액 버튼 / Amount buttons per currency mode
+  const amountButtons = currencyMode === 'original'
+    ? [100, 1000, 5000, 10000]
+    : [1000000, 5000000, 10000000, 100000000];
+
+  const formatAmountButton = (amount: number) => {
+    if (currencyMode === 'original') {
+      return `$${amount.toLocaleString('en-US')}`;
+    }
+    return amount >= 100000000
+      ? `${(amount / 100000000).toFixed(0)}${t('portfolio.hundredMillion')}`
+      : `${(amount / 10000).toFixed(0)}${t('portfolio.tenThousand')}`;
+  };
+
+  // 출금 가능 잔액을 현재 통화 모드 단위로 변환 / Available balance in current currency unit
+  const availableInCurrentUnit = portfolio
+    ? (currencyMode === 'original' && rate > 0 ? portfolio.cashBalance / rate : portfolio.cashBalance)
+    : 0;
+
   return (
     <AuthGuard>
       <div>
-        <div className="py-6 flex items-center gap-2.5">
-          <Briefcase className="w-5 h-5 text-accent" />
-          <h1 className="text-[20px] font-extrabold text-text-primary">{t('nav.portfolio')}</h1>
+        <div className="py-6 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <Briefcase className="w-5 h-5 text-accent" />
+            <h1 className="text-[20px] font-extrabold text-text-primary">{t('nav.portfolio')}</h1>
+          </div>
+          <div className="flex flex-col items-end gap-0.5">
+            <button
+              onClick={() => refetch()}
+              disabled={isFetching}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium text-text-tertiary hover:text-accent hover:bg-bg-secondary transition-colors disabled:opacity-50"
+            >
+              <RefreshCw className={cn('w-3.5 h-3.5', isFetching && 'animate-spin')} />
+              {t('portfolio.refresh')}
+            </button>
+            {lastUpdatedText && (
+              <span className="text-[11px] text-text-quaternary tabular-nums pr-1">
+                {lastUpdatedText}
+              </span>
+            )}
+          </div>
         </div>
         {/* 탭 네비게이션 / Tab Navigation */}
         <div className="flex gap-1 border-b border-border/60 mb-2">
@@ -158,6 +213,12 @@ export default function PortfolioPage() {
                   totalPnl={portfolio.totalPnl}
                   totalPnlPercent={portfolio.totalPnlPercent}
                   cashBalance={portfolio.cashBalance}
+                  realizedPnl={portfolio.realizedPnl}
+                  unrealizedPnl={portfolio.unrealizedPnl}
+                  totalCost={portfolio.totalCost}
+                  totalMarketValue={portfolio.totalMarketValue}
+                  investedReturnPercent={portfolio.investedReturnPercent}
+                  netDeposit={portfolio.netDeposit}
                   onDeposit={() => setDepositOpen(true)}
                   onWithdraw={() => setWithdrawOpen(true)}
                 />
@@ -331,14 +392,8 @@ export default function PortfolioPage() {
               onChange={(e) => setDepositAmount(e.target.value)}
               placeholder={t('portfolio.depositPlaceholder')}
             />
-            {depositAmount && parseFloat(depositAmount) > 0 && (
-              <p className="text-[12px] text-text-quaternary -mt-3">
-                {formatCurrencyDisplay(parseFloat(depositAmount), currencyMode, rate)}
-              </p>
-            )}
-
             <div className="grid grid-cols-4 gap-2">
-              {[1000000, 5000000, 10000000, 100000000].map((amount) => (
+              {amountButtons.map((amount) => (
                 <button
                   key={amount}
                   onClick={() => setDepositAmount((prev) => {
@@ -347,9 +402,7 @@ export default function PortfolioPage() {
                   })}
                   className="h-11 text-[13px] font-medium bg-bg-secondary text-text-secondary rounded-lg hover:bg-bg-tertiary transition-colors"
                 >
-                  {amount >= 100000000
-                    ? `${(amount / 100000000).toFixed(0)}${t('portfolio.hundredMillion')}`
-                    : `${(amount / 10000).toFixed(0)}${t('portfolio.tenThousand')}`}
+                  {formatAmountButton(amount)}
                 </button>
               ))}
             </div>
@@ -385,18 +438,15 @@ export default function PortfolioPage() {
               />
               {portfolio && (
                 <p className="mt-1.5 text-[12px] text-text-quaternary">
-                  {t('portfolio.availableBalance')}: {formatCurrencyDisplay(portfolio.cashBalance, currencyMode, rate)}
-                </p>
-              )}
-              {withdrawAmount && parseFloat(withdrawAmount) > 0 && (
-                <p className="mt-1 text-[12px] text-text-quaternary">
-                  {formatCurrencyDisplay(parseFloat(withdrawAmount), currencyMode, rate)}
+                  {t('portfolio.availableBalance')}: {currencyMode === 'original' && rate > 0
+                    ? formatDollar(availableInCurrentUnit)
+                    : formatCurrency(portfolio.cashBalance)}
                 </p>
               )}
             </div>
 
             <div className="grid grid-cols-4 gap-2">
-              {[1000000, 5000000, 10000000, 100000000].map((amount) => (
+              {amountButtons.map((amount) => (
                 <button
                   key={amount}
                   onClick={() => setWithdrawAmount((prev) => {
@@ -405,9 +455,7 @@ export default function PortfolioPage() {
                   })}
                   className="h-11 text-[13px] font-medium bg-bg-secondary text-text-secondary rounded-lg hover:bg-bg-tertiary transition-colors"
                 >
-                  {amount >= 100000000
-                    ? `${(amount / 100000000).toFixed(0)}${t('portfolio.hundredMillion')}`
-                    : `${(amount / 10000).toFixed(0)}${t('portfolio.tenThousand')}`}
+                  {formatAmountButton(amount)}
                 </button>
               ))}
             </div>
@@ -418,7 +466,7 @@ export default function PortfolioPage() {
                   key={pct}
                   onClick={() => {
                     if (portfolio) {
-                      const amount = Math.floor(portfolio.cashBalance * pct / 100);
+                      const amount = Math.floor(availableInCurrentUnit * pct / 100);
                       setWithdrawAmount(amount.toString());
                     }
                   }}
@@ -437,7 +485,7 @@ export default function PortfolioPage() {
                 withdraw.isPending ||
                 !withdrawAmount ||
                 parseFloat(withdrawAmount) <= 0 ||
-                (portfolio ? parseFloat(withdrawAmount) > portfolio.cashBalance : true)
+                (portfolio ? parseFloat(withdrawAmount) > availableInCurrentUnit : true)
               }
             >
               {withdraw.isPending ? t('portfolio.withdrawing') : t('portfolio.withdraw')}
@@ -453,7 +501,11 @@ export default function PortfolioPage() {
             handleWithdraw();
           }}
           title={t('portfolio.withdrawConfirmTitle')}
-          message={t('portfolio.withdrawConfirmMessage').replace('${amount}', withdrawAmount ? formatCurrencyDisplay(parseFloat(withdrawAmount), currencyMode, rate) : '0')}
+          message={t('portfolio.withdrawConfirmMessage').replace('${amount}', withdrawAmount
+            ? (currencyMode === 'original' && rate > 0
+              ? formatDollar(parseFloat(withdrawAmount))
+              : formatCurrency(parseFloat(withdrawAmount)))
+            : '0')}
           confirmVariant="danger"
           loading={withdraw.isPending}
         />

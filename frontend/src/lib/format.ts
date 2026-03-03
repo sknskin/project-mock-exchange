@@ -36,7 +36,7 @@ export function formatPrice(price: number): string {
 export function formatPercent(percent: number): string {
   if (percent == null || isNaN(percent)) return '-';
   const sign = percent >= 0 ? '+' : '';
-  return `${sign}${percent.toFixed(2)}%`;
+  return `${sign}${percent.toFixed(3)}%`;
 }
 
 export function formatAmount(amount: number): string {
@@ -111,7 +111,9 @@ export function formatQuantity(quantity: number): string {
 }
 
 export function formatTime(dateString: string): string {
+  if (!dateString) return '-';
   const date = new Date(dateString);
+  if (isNaN(date.getTime())) return '-';
   return date.toLocaleTimeString('ko-KR', {
     hour: '2-digit',
     minute: '2-digit',
@@ -120,7 +122,9 @@ export function formatTime(dateString: string): string {
 }
 
 export function formatDate(dateString: string): string {
+  if (!dateString) return '-';
   const date = new Date(dateString);
+  if (isNaN(date.getTime())) return '-';
   return date.toLocaleDateString('ko-KR', {
     month: '2-digit',
     day: '2-digit',
