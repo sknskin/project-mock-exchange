@@ -13,6 +13,7 @@ export interface User {
   role: string;
   isActive: boolean;
   approvalStatus: string;
+  phone?: string;
   createdAt: string;
 }
 
@@ -279,6 +280,8 @@ export interface UserProfile {
   zipCode: string;
   isActive: boolean;
   approvalStatus: string;
+  totpEnabled?: boolean;
+  encryptedRrn?: string | null;
   createdAt: string;
   updatedAt: string;
 }
