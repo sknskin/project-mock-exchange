@@ -79,26 +79,29 @@ export class OrderProxyController {
         const firstFill = fills?.[0];
         const symbol = firstFill?.symbol ?? '???';
         const isBuy = firstFill?.buyerId === userId;
-        const sideLabel = isBuy ? 'Buy' : 'Sell';
-        const title = `${sideLabel} ${symbol}`;
+        const side = isBuy ? 'BUY' : 'SELL';
         const totalQty = fills?.reduce((s, f) => s + Number(f.matchedQuantity || 0), 0) ?? 0;
         const avgPrice = fills && fills.length > 0
           ? fills.reduce((s, f) => s + Number(f.matchedPrice || 0), 0) / fills.length
           : 0;
-        const message = order.status === 'FILLED'
-          ? `${totalQty} @ ${avgPrice.toFixed(2)} - Filled`
-          : `${totalQty} @ ${avgPrice.toFixed(2)} - Partially Filled`;
+        const filledStatus = order.status === 'FILLED' ? 'FILLED' : 'PARTIALLY_FILLED';
 
-        // WebSocket으로 푸시 (Push via WebSocket)
+        // 구조화된 데이터 전송 — 프론트엔드에서 로케일에 맞게 포맷
+        // Send structured data — frontend formats according to locale
         this.chatGateway.notifyUser(userId, 'notification:trade', {
           type: 'TRADE_EXECUTION',
-          title,
-          message,
+          side,
           symbol,
+          quantity: totalQty,
+          price: avgPrice,
+          filledStatus,
           timestamp: new Date().toISOString(),
         });
 
         // 알림을 DB에 영구 저장 (Persist notification to DB)
+        const sideLabel = isBuy ? 'Buy' : 'Sell';
+        const title = `${sideLabel} ${symbol}`;
+        const message = `${totalQty} @ ${avgPrice.toFixed(2)} - ${filledStatus === 'FILLED' ? 'Filled' : 'Partially Filled'}`;
         await this.proxyService.forward('user-auth', {
           method: 'POST',
           url: '/notifications',

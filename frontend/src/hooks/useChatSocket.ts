@@ -149,15 +149,36 @@ function bindListeners(socket: Socket, qc: QueryClient) {
   });
 
   // 거래 체결 알림 (Trade execution)
-  socket.on('notification:trade', (data: { title?: string; message?: string }) => {
+  socket.on('notification:trade', (data: {
+    title?: string; message?: string;
+    side?: string; symbol?: string; quantity?: number; price?: number; filledStatus?: string;
+  }) => {
     qc.invalidateQueries({ queryKey: ['notifications'] });
     qc.invalidateQueries({ queryKey: ['unread-count'] });
+    qc.invalidateQueries({ queryKey: ['orders'] });
+    qc.invalidateQueries({ queryKey: ['portfolio-valuation'] });
     const { locale, notificationPrefs: prefs } = useSettingsStore.getState();
     if (!prefs.trade) return;
+
+    let title = data.title || t('liveToast.trade', locale);
+    let message = data.message || '';
+
+    // 구조화된 데이터가 있으면 로케일에 맞게 포맷 (Format with locale if structured data)
+    if (data.side && data.symbol) {
+      const sideText = data.side === 'BUY' ? t('liveToast.tradeBuy', locale) : t('liveToast.tradeSell', locale);
+      title = `${sideText} ${data.symbol}`;
+      const qty = data.quantity ?? 0;
+      const price = data.price ?? 0;
+      const statusText = data.filledStatus === 'FILLED'
+        ? t('liveToast.tradeFilled', locale)
+        : t('liveToast.tradePartiallyFilled', locale);
+      message = `${qty} @ ${price.toFixed(2)} — ${statusText}`;
+    }
+
     useLiveToastStore.getState().addToast({
       category: 'trade',
-      title: data.title || t('liveToast.trade', locale),
-      message: data.message || '',
+      title,
+      message,
       navigateTo: '/orders',
     });
   });
