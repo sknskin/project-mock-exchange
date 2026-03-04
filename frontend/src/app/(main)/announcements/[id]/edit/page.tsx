@@ -139,7 +139,7 @@ export default function EditAnnouncementPage({
   return (
     <div>
       {/* Header */}
-      <div className="flex items-center gap-3 py-6">
+      <div className="flex items-center gap-3 py-6 h-[88px]">
         <Link
           href={`/announcements/${id}`}
           className="flex items-center justify-center w-8 h-8 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-secondary transition-colors"

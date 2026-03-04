@@ -61,10 +61,23 @@ import {
   LineChart,
   BookOpen,
   ArrowLeftRight,
+  Settings,
+  Activity,
+  User,
+  Lock,
+  BellRing,
+  MessagesSquare,
+  Lightbulb,
+  Award,
+  Server,
+  Cpu,
+  Gauge,
+  FileCheck,
+  Download,
 } from 'lucide-react';
 import type { TranslationKey } from '@/lib/i18n';
 
-/* ─── Hand-drawn SVG filter ─── */
+/* ─── 손그림 효과 SVG 필터 — feTurbulence+feDisplacementMap으로 약간의 떨림 적용 / Hand-drawn SVG filter — applies subtle wobble via feTurbulence+feDisplacementMap ─── */
 const SketchFilter = () => (
   <defs>
     <filter id="sketch">
@@ -74,13 +87,13 @@ const SketchFilter = () => (
   </defs>
 );
 
-/* ─── Rough shapes ─── */
+/* ─── 손그림 기본 도형들 — path 좌표를 의도적으로 약간 어긋나게 하여 스케치 느낌 연출 / Rough shapes — intentionally offset path coordinates for sketch-like look ─── */
 function RoughRect({ x, y, w, h, fill = 'none', stroke = '#555', sw = 1.5 }: { x: number; y: number; w: number; h: number; fill?: string; stroke?: string; sw?: number }) {
   const d = `M${x + 1},${y + 2} L${x + w - 2},${y + 1} L${x + w - 1},${y + h - 1} L${x + 2},${y + h} Z`;
   return <path d={d} fill={fill} stroke={stroke} strokeWidth={sw} strokeLinejoin="round" />;
 }
 function RoughLine({ x1, y1, x2, y2, stroke = '#555', sw = 1.5 }: { x1: number; y1: number; x2: number; y2: number; stroke?: string; sw?: number }) {
-  // Deterministic offset based on coordinates to avoid SSR hydration mismatch
+  // 좌표 기반 결정론적 오프셋 — SSR 하이드레이션 불일치 방지 / Deterministic offset based on coordinates — prevents SSR hydration mismatch
   const seed = ((x1 * 7 + y1 * 13 + x2 * 17 + y2 * 23) % 100) / 100;
   const mx = (x1 + x2) / 2 + (seed - 0.5) * 2;
   const my = (y1 + y2) / 2 + ((1 - seed) - 0.5) * 2;
@@ -108,7 +121,7 @@ function RedLabel({ x, y, children }: { x: number; y: number; children: string }
   return <text x={x} y={y} fontSize={11} fill="#ef4444" fontWeight="bold" fontFamily="sans-serif" style={{ fontStyle: 'italic' }}>{children}</text>;
 }
 
-/* ─── Base screen wireframes ─── */
+/* ─── 기본 화면 와이어프레임 — 브라우저 크롬 + 네비 + 채팅 버튼 포함 / Base screen wireframe — includes browser chrome + nav + chat button ─── */
 function ScreenFrame({ children }: { children: React.ReactNode }) {
   return (
     <svg viewBox="0 0 660 440" className="w-full" style={{ filter: 'url(#sketch)' }}>
@@ -136,7 +149,7 @@ function ScreenFrame({ children }: { children: React.ReactNode }) {
   );
 }
 
-/* ─── Dashboard illustrations ─── */
+/* ─── 대시보드 기능별 일러스트레이션 — 각 기능을 손그림 와이어프레임으로 설명 / Dashboard feature illustrations — explains each feature via hand-drawn wireframes ─── */
 function DashboardChartIllust() {
   return (
     <ScreenFrame>
@@ -228,14 +241,12 @@ function DashboardSortIllust() {
     <ScreenFrame>
       <RoughRect x={20} y={55} w={130} h={22} fill="#2a2a2e" stroke="#555" sw={1} />
       {/* Sort buttons */}
-      <RoughRect x={330} y={55} w={65} h={22} fill="#3b3bff20" stroke="#7c7cff" sw={2} />
-      <RoughRect x={400} y={55} w={55} h={22} fill="#2a2a2e" stroke="#555" sw={1} />
-      <RoughRect x={460} y={55} w={55} h={22} fill="#2a2a2e" stroke="#555" sw={1} />
-      <RoughRect x={520} y={55} w={65} h={22} fill="#2a2a2e" stroke="#555" sw={1} />
-      <SketchText x={340} y={70} size={9} fill="#7c7cff">거래량</SketchText>
-      <SketchText x={410} y={70} size={9}>급상승</SketchText>
-      <SketchText x={470} y={70} size={9}>급하락</SketchText>
-      <SketchText x={530} y={70} size={9}>거래대금</SketchText>
+      <RoughRect x={370} y={55} w={65} h={22} fill="#3b3bff20" stroke="#7c7cff" sw={2} />
+      <RoughRect x={440} y={55} w={55} h={22} fill="#2a2a2e" stroke="#555" sw={1} />
+      <RoughRect x={500} y={55} w={55} h={22} fill="#2a2a2e" stroke="#555" sw={1} />
+      <SketchText x={380} y={70} size={9} fill="#7c7cff">거래량</SketchText>
+      <SketchText x={450} y={70} size={9}>급상승</SketchText>
+      <SketchText x={510} y={70} size={9}>급하락</SketchText>
       {/* Sorted list */}
       <RoughRect x={20} y={90} w={600} h={28} fill="#222" stroke="#444" sw={1} />
       <SketchText x={30} y={108} size={9}>XRP/KRW</SketchText>
@@ -1931,6 +1942,310 @@ function NotificationsRealtimeIllust() {
   );
 }
 
+/* ─── Community illustrations ─── */
+function CommunityTabsIllust() {
+  return (
+    <ScreenFrame>
+      {/* 3-tab navigation */}
+      <RoughRect x={20} y={55} w={200} h={28} fill="#2a2a2e" stroke="#555" sw={1} />
+      <RoughRect x={20} y={55} w={65} h={28} fill="#3b3bff20" stroke="#7c7cff" sw={1.5} />
+      <SketchText x={30} y={74} size={9} fill="#7c7cff">자유게시판</SketchText>
+      <SketchText x={95} y={74} size={9}>전략공유</SketchText>
+      <SketchText x={155} y={74} size={9}>트레이더</SketchText>
+      {/* Post list */}
+      <RoughRect x={20} y={95} w={440} h={45} fill="#222" stroke="#444" sw={1} />
+      <SketchText x={30} y={112} size={10} fill="#ccc">오늘의 BTC 분석</SketchText>
+      <SketchText x={30} y={128} size={7} fill="#888">trader1 · 5분 전 · ❤️ 12 · 💬 5</SketchText>
+      <RoughRect x={20} y={140} w={440} h={45} fill="#1e1e22" stroke="#444" sw={1} />
+      <SketchText x={30} y={157} size={10} fill="#ccc">신규 진입 시점 고민</SketchText>
+      <SketchText x={30} y={173} size={7} fill="#888">investor2 · 15분 전 · ❤️ 3 · 💬 2</SketchText>
+      <RoughRect x={20} y={185} w={440} h={45} fill="#222" stroke="#444" sw={1} />
+      <RoughRect x={20} y={230} w={440} h={45} fill="#1e1e22" stroke="#444" sw={1} />
+      {/* Write button */}
+      <RoughRect x={480} y={95} w={120} h={35} fill="#3b3bff20" stroke="#7c7cff" sw={1.5} />
+      <SketchText x={510} y={117} size={10} fill="#7c7cff">✏️ 글쓰기</SketchText>
+      {/* Highlight */}
+      <RoughCircle cx={120} cy={66} r={80} />
+      <RoughArrow x1={200} y1={66} x2={310} y2={66} />
+      <RedLabel x={320} y={60}>3개 탭으로 구분</RedLabel>
+      <RedLabel x={320} y={78}>자유게시판에서 글 작성/조회</RedLabel>
+    </ScreenFrame>
+  );
+}
+
+function CommunityStrategyIllust() {
+  return (
+    <ScreenFrame>
+      <SketchText x={25} y={70} size={12} fill="#ccc">전략 공유</SketchText>
+      {/* Strategy cards */}
+      <RoughRect x={20} y={85} w={200} h={140} fill="#222228" stroke="#444" sw={1.5} />
+      <SketchText x={35} y={105} size={10} fill="#ccc">모멘텀 전략</SketchText>
+      <SketchText x={35} y={120} size={8} fill="#888">BTC/ETH 중심 단기 매매</SketchText>
+      <SketchText x={35} y={140} size={8} fill="#22c55e">+15.3% 수익률</SketchText>
+      <SketchText x={35} y={160} size={7} fill="#666">by trader_pro</SketchText>
+      <RoughRect x={35} y={175} w={60} h={22} fill="#3b3bff10" stroke="#7c7cff" sw={1} />
+      <SketchText x={42} y={190} size={8} fill="#7c7cff">자세히</SketchText>
+      <RoughRect x={240} y={85} w={200} h={140} fill="#222228" stroke="#444" sw={1.5} />
+      <SketchText x={255} y={105} size={10} fill="#ccc">가치투자 전략</SketchText>
+      <SketchText x={255} y={120} size={8} fill="#888">장기 보유 포트폴리오</SketchText>
+      <SketchText x={255} y={140} size={8} fill="#22c55e">+8.7% 수익률</SketchText>
+      {/* Highlight */}
+      <RoughCircle cx={220} cy={155} r={130} />
+      <RedLabel x={250} y={280}>전략 카드에서 수익률과 상세 확인</RedLabel>
+    </ScreenFrame>
+  );
+}
+
+function CommunityTradersIllust() {
+  return (
+    <ScreenFrame>
+      <SketchText x={25} y={70} size={12} fill="#ccc">인기 트레이더</SketchText>
+      {/* Trader cards */}
+      <RoughRect x={20} y={85} w={190} h={120} fill="#222228" stroke="#444" sw={1.5} />
+      <RoughCircle cx={60} cy={115} r={16} stroke="#555" sw={1} fill="#333" />
+      <SketchText x={85} y={110} size={10} fill="#ccc">trader_pro</SketchText>
+      <SketchText x={85} y={125} size={8} fill="#22c55e">+25.3%</SketchText>
+      <SketchText x={35} y={150} size={8} fill="#888">거래 152회 · 승률 68%</SketchText>
+      <SketchText x={35} y={170} size={7} fill="#666">팔로워 45명</SketchText>
+      <RoughRect x={230} y={85} w={190} h={120} fill="#222228" stroke="#444" sw={1.5} />
+      <RoughCircle cx={270} cy={115} r={16} stroke="#555" sw={1} fill="#333" />
+      <SketchText x={295} y={110} size={10} fill="#ccc">analyst_k</SketchText>
+      <SketchText x={295} y={125} size={8} fill="#22c55e">+18.7%</SketchText>
+      {/* Highlight */}
+      <RoughCircle cx={200} cy={145} r={120} />
+      <RedLabel x={200} y={270}>트레이더별 수익률/거래 통계 확인</RedLabel>
+    </ScreenFrame>
+  );
+}
+
+/* ─── Mypage illustrations ─── */
+function MypageProfileIllust() {
+  return (
+    <ScreenFrame>
+      <SketchText x={25} y={70} size={12} fill="#ccc">내 프로필</SketchText>
+      {/* Profile card */}
+      <RoughRect x={20} y={85} w={300} h={160} fill="#222228" stroke="#444" sw={1.5} />
+      <RoughCircle cx={65} cy={125} r={25} stroke="#555" sw={1.5} fill="#333" />
+      <SketchText x={100} y={115} size={11} fill="#ccc">사용자닉네임</SketchText>
+      <SketchText x={100} y={132} size={8} fill="#888">user@email.com</SketchText>
+      <SketchText x={100} y={148} size={8} fill="#666">가입일: 2026-01-15</SketchText>
+      <RoughRect x={35} y={170} w={80} h={24} fill="#3b3bff10" stroke="#7c7cff" sw={1} />
+      <SketchText x={42} y={186} size={8} fill="#7c7cff">프로필 수정</SketchText>
+      <RoughRect x={120} y={170} w={85} h={24} fill="#2a2a2e" stroke="#555" sw={1} />
+      <SketchText x={127} y={186} size={8}>닉네임 변경</SketchText>
+      {/* Highlight */}
+      <RoughCircle cx={160} cy={150} r={90} />
+      <RedLabel x={340} y={150}>프로필 정보 확인 및 수정</RedLabel>
+    </ScreenFrame>
+  );
+}
+
+function MypageTradingStatsIllust() {
+  return (
+    <ScreenFrame>
+      <SketchText x={25} y={70} size={12} fill="#ccc">거래 통계</SketchText>
+      {/* Stats grid */}
+      <RoughRect x={20} y={85} w={145} h={70} fill="#222228" stroke="#444" sw={1.5} />
+      <SketchText x={35} y={105} size={8} fill="#888">총 거래 횟수</SketchText>
+      <SketchText x={35} y={125} size={14} fill="#ccc">152회</SketchText>
+      <RoughRect x={175} y={85} w={145} h={70} fill="#222228" stroke="#444" sw={1.5} />
+      <SketchText x={190} y={105} size={8} fill="#888">승률</SketchText>
+      <SketchText x={190} y={125} size={14} fill="#22c55e">68.4%</SketchText>
+      <RoughRect x={330} y={85} w={145} h={70} fill="#222228" stroke="#444" sw={1.5} />
+      <SketchText x={345} y={105} size={8} fill="#888">총 수익</SketchText>
+      <SketchText x={345} y={125} size={14} fill="#22c55e">+₩3.2M</SketchText>
+      <RoughRect x={20} y={165} w={145} h={70} fill="#222228" stroke="#444" sw={1.5} />
+      <SketchText x={35} y={185} size={8} fill="#888">평균 수익률</SketchText>
+      <SketchText x={35} y={205} size={14} fill="#22c55e">+5.2%</SketchText>
+      {/* Highlight */}
+      <RoughCircle cx={250} cy={120} r={130} />
+      <RedLabel x={280} y={280}>거래 성과를 한눈에 확인</RedLabel>
+    </ScreenFrame>
+  );
+}
+
+function MypagePasswordIllust() {
+  return (
+    <ScreenFrame>
+      <SketchText x={25} y={70} size={12} fill="#ccc">보안 설정</SketchText>
+      {/* Password change form */}
+      <RoughRect x={20} y={85} w={350} h={200} fill="#222228" stroke="#444" sw={1.5} />
+      <SketchText x={35} y={110} size={10} fill="#ccc">비밀번호 변경</SketchText>
+      <SketchText x={35} y={135} size={8} fill="#888">현재 비밀번호</SketchText>
+      <RoughRect x={35} y={140} w={280} h={28} fill="#1a1a1e" stroke="#555" sw={1} />
+      <SketchText x={45} y={158} size={9} fill="#666">••••••••</SketchText>
+      <SketchText x={35} y={185} size={8} fill="#888">새 비밀번호</SketchText>
+      <RoughRect x={35} y={190} w={280} h={28} fill="#1a1a1e" stroke="#555" sw={1} />
+      <RoughRect x={35} y={235} w={100} h={30} fill="#3b3bff20" stroke="#7c7cff" sw={1.5} />
+      <SketchText x={55} y={255} size={9} fill="#7c7cff">변경하기</SketchText>
+      {/* Highlight */}
+      <RoughCircle cx={190} cy={190} r={80} />
+      <RedLabel x={400} y={190}>비밀번호 변경으로 계정 보안 강화</RedLabel>
+    </ScreenFrame>
+  );
+}
+
+function MypageNotificationSettingsIllust() {
+  return (
+    <ScreenFrame>
+      <SketchText x={25} y={70} size={12} fill="#ccc">알림 설정</SketchText>
+      {/* Toggle list */}
+      <RoughRect x={20} y={85} w={350} h={180} fill="#222228" stroke="#444" sw={1.5} />
+      <SketchText x={35} y={110} size={9} fill="#ccc">거래 체결 알림</SketchText>
+      <RoughRect x={300} y={97} w={40} h={20} fill="#22c55e40" stroke="#22c55e" sw={1} />
+      <RoughCircle cx={330} cy={107} r={7} stroke="#22c55e" sw={1} fill="#22c55e" />
+      <SketchText x={35} y={140} size={9} fill="#ccc">가격 알림</SketchText>
+      <RoughRect x={300} y={127} w={40} h={20} fill="#22c55e40" stroke="#22c55e" sw={1} />
+      <RoughCircle cx={330} cy={137} r={7} stroke="#22c55e" sw={1} fill="#22c55e" />
+      <SketchText x={35} y={170} size={9} fill="#ccc">채팅 메시지 알림</SketchText>
+      <RoughRect x={300} y={157} w={40} h={20} fill="#44444440" stroke="#555" sw={1} />
+      <RoughCircle cx={310} cy={167} r={7} stroke="#555" sw={1} fill="#555" />
+      <SketchText x={35} y={200} size={9} fill="#ccc">공지사항 알림</SketchText>
+      <RoughRect x={300} y={187} w={40} h={20} fill="#22c55e40" stroke="#22c55e" sw={1} />
+      <RoughCircle cx={330} cy={197} r={7} stroke="#22c55e" sw={1} fill="#22c55e" />
+      {/* Highlight */}
+      <RoughCircle cx={320} cy={140} r={40} />
+      <RoughArrow x1={360} y1={140} x2={420} y2={140} />
+      <RedLabel x={430} y={135}>토글로 알림 유형별 ON/OFF</RedLabel>
+    </ScreenFrame>
+  );
+}
+
+/* ─── Admin Settings illustrations ─── */
+function AdminSettingsGridIllust() {
+  return (
+    <ScreenFrame>
+      <SketchText x={25} y={70} size={12} fill="#ccc">⚙️ 시스템 설정</SketchText>
+      {/* Settings cards grid */}
+      <RoughRect x={20} y={85} w={200} h={100} fill="#222228" stroke="#444" sw={1.5} />
+      <SketchText x={35} y={105} size={9} fill="#888">초기 자금</SketchText>
+      <SketchText x={35} y={125} size={13} fill="#ccc">₩10,000,000</SketchText>
+      <SketchText x={35} y={145} size={7} fill="#666">신규 가입자 초기 잔고</SketchText>
+      <RoughRect x={240} y={85} w={200} h={100} fill="#222228" stroke="#444" sw={1.5} />
+      <SketchText x={255} y={105} size={9} fill="#888">운영 시간</SketchText>
+      <SketchText x={255} y={125} size={13} fill="#ccc">09:00 - 18:00</SketchText>
+      <SketchText x={255} y={145} size={7} fill="#666">거래 가능 시간</SketchText>
+      <RoughRect x={20} y={195} w={200} h={100} fill="#222228" stroke="#444" sw={1.5} />
+      <SketchText x={35} y={215} size={9} fill="#888">리스크 한도</SketchText>
+      <SketchText x={35} y={235} size={13} fill="#ccc">50%</SketchText>
+      <RoughRect x={240} y={195} w={200} h={100} fill="#222228" stroke="#444" sw={1.5} />
+      <SketchText x={255} y={215} size={9} fill="#888">세션 보안</SketchText>
+      <SketchText x={255} y={235} size={13} fill="#ccc">30분</SketchText>
+      {/* Highlight */}
+      <RoughCircle cx={230} cy={190} r={140} />
+      <RedLabel x={460} y={190}>카드 형태로 각 설정 값 확인</RedLabel>
+    </ScreenFrame>
+  );
+}
+
+function AdminSettingsEditIllust() {
+  return (
+    <ScreenFrame>
+      <SketchText x={25} y={70} size={12} fill="#ccc">설정 값 수정</SketchText>
+      {/* Edit form */}
+      <RoughRect x={20} y={85} w={400} h={180} fill="#222228" stroke="#444" sw={1.5} />
+      <SketchText x={35} y={108} size={10} fill="#ccc">초기 자금 설정</SketchText>
+      <SketchText x={35} y={130} size={8} fill="#888">변경할 값</SketchText>
+      <RoughRect x={35} y={135} w={350} h={30} fill="#1a1a1e" stroke="#7c7cff" sw={1.5} />
+      <SketchText x={45} y={155} size={10} fill="#ccc">15,000,000</SketchText>
+      <SketchText x={35} y={185} size={7} fill="#666">현재: ₩10,000,000 → 변경: ₩15,000,000</SketchText>
+      <RoughRect x={35} y={200} w={80} h={30} fill="#3b3bff20" stroke="#7c7cff" sw={1.5} />
+      <SketchText x={50} y={220} size={9} fill="#7c7cff">저장</SketchText>
+      <RoughRect x={125} y={200} w={80} h={30} fill="#2a2a2e" stroke="#555" sw={1} />
+      <SketchText x={142} y={220} size={9}>취소</SketchText>
+      {/* Highlight */}
+      <RoughCircle cx={210} cy={150} r={30} />
+      <RoughArrow x1={240} y1={150} x2={460} y2={150} />
+      <RedLabel x={470} y={145}>값을 입력하고 저장 버튼 클릭</RedLabel>
+    </ScreenFrame>
+  );
+}
+
+/* ─── Admin Health illustrations ─── */
+function AdminHealthStatusIllust() {
+  return (
+    <ScreenFrame>
+      <SketchText x={25} y={70} size={12} fill="#ccc">🏥 서비스 상태</SketchText>
+      {/* Service cards */}
+      <RoughRect x={20} y={85} w={190} h={60} fill="#22c55e10" stroke="#22c55e" sw={1.5} />
+      <SketchText x={35} y={105} size={9} fill="#ccc">API Gateway</SketchText>
+      <RoughCircle cx={190} cy={100} r={5} stroke="#22c55e" sw={1.5} fill="#22c55e" />
+      <SketchText x={35} y={120} size={8} fill="#22c55e">정상 · :3000</SketchText>
+      <RoughRect x={220} y={85} w={190} h={60} fill="#22c55e10" stroke="#22c55e" sw={1.5} />
+      <SketchText x={235} y={105} size={9} fill="#ccc">User Auth</SketchText>
+      <RoughCircle cx={390} cy={100} r={5} stroke="#22c55e" sw={1.5} fill="#22c55e" />
+      <SketchText x={235} y={120} size={8} fill="#22c55e">정상 · :3007</SketchText>
+      <RoughRect x={420} y={85} w={190} h={60} fill="#22c55e10" stroke="#22c55e" sw={1.5} />
+      <SketchText x={435} y={105} size={9} fill="#ccc">Market Data</SketchText>
+      <RoughCircle cx={590} cy={100} r={5} stroke="#22c55e" sw={1.5} fill="#22c55e" />
+      <SketchText x={435} y={120} size={8} fill="#22c55e">정상 · :3001</SketchText>
+      <RoughRect x={20} y={155} w={190} h={60} fill="#ef444410" stroke="#ef4444" sw={1.5} />
+      <SketchText x={35} y={175} size={9} fill="#ccc">Notification</SketchText>
+      <RoughCircle cx={190} cy={170} r={5} stroke="#ef4444" sw={1.5} fill="#ef4444" />
+      <SketchText x={35} y={190} size={8} fill="#ef4444">오류 · :3004</SketchText>
+      {/* Highlight */}
+      <RoughCircle cx={110} cy={185} r={55} />
+      <RedLabel x={250} y={200}>서비스별 상태(정상/오류) 실시간 확인</RedLabel>
+    </ScreenFrame>
+  );
+}
+
+function AdminHealthArchIllust() {
+  return (
+    <ScreenFrame>
+      <SketchText x={25} y={70} size={12} fill="#ccc">아키텍처 뷰</SketchText>
+      {/* Architecture diagram */}
+      <RoughRect x={250} y={85} w={120} h={40} fill="#3b3bff20" stroke="#7c7cff" sw={1.5} />
+      <SketchText x={275} y={110} size={9} fill="#7c7cff">API Gateway</SketchText>
+      <RoughLine x1={310} y1={125} x2={160} y2={155} stroke="#555" sw={1} />
+      <RoughLine x1={310} y1={125} x2={310} y2={155} stroke="#555" sw={1} />
+      <RoughLine x1={310} y1={125} x2={460} y2={155} stroke="#555" sw={1} />
+      <RoughRect x={100} y={155} w={110} h={35} fill="#222228" stroke="#22c55e" sw={1} />
+      <SketchText x={115} y={178} size={8} fill="#ccc">User Auth</SketchText>
+      <RoughRect x={250} y={155} w={110} h={35} fill="#222228" stroke="#22c55e" sw={1} />
+      <SketchText x={262} y={178} size={8} fill="#ccc">Market Data</SketchText>
+      <RoughRect x={400} y={155} w={110} h={35} fill="#222228" stroke="#22c55e" sw={1} />
+      <SketchText x={410} y={178} size={8} fill="#ccc">Order Engine</SketchText>
+      {/* Infra */}
+      <RoughRect x={100} y={230} w={80} h={30} fill="#2a2a2e" stroke="#555" sw={1} />
+      <SketchText x={112} y={250} size={7} fill="#888">PostgreSQL</SketchText>
+      <RoughRect x={200} y={230} w={60} h={30} fill="#2a2a2e" stroke="#555" sw={1} />
+      <SketchText x={212} y={250} size={7} fill="#888">Redis</SketchText>
+      <RoughRect x={280} y={230} w={60} h={30} fill="#2a2a2e" stroke="#555" sw={1} />
+      <SketchText x={292} y={250} size={7} fill="#888">Kafka</SketchText>
+      {/* Highlight */}
+      <RoughCircle cx={310} cy={155} r={120} />
+      <RedLabel x={300} y={310}>전체 시스템 아키텍처 시각적 확인</RedLabel>
+    </ScreenFrame>
+  );
+}
+
+/* ─── Admin Audit illustrations ─── */
+function AdminAuditListIllust() {
+  return (
+    <ScreenFrame>
+      <SketchText x={25} y={70} size={12} fill="#ccc">📋 감사 보고서</SketchText>
+      {/* Report list */}
+      <RoughRect x={20} y={85} w={600} h={55} fill="#222228" stroke="#444" sw={1.5} />
+      <SketchText x={35} y={105} size={10} fill="#ccc">VirtuEx 시스템 감사 보고서 (8차)</SketchText>
+      <SketchText x={35} y={120} size={7} fill="#888">📅 2026-03-04 · audit-report-8.pdf</SketchText>
+      <RoughRect x={490} y={92} w={55} h={26} fill="#2a2a2e" stroke="#555" sw={1} />
+      <SketchText x={498} y={109} size={8}>다운로드</SketchText>
+      <RoughRect x={550} y={92} w={55} h={26} fill="#3b3bff20" stroke="#7c7cff" sw={1} />
+      <SketchText x={563} y={109} size={8} fill="#7c7cff">보기</SketchText>
+      <RoughRect x={20} y={145} w={600} h={55} fill="#1e1e22" stroke="#444" sw={1} />
+      <SketchText x={35} y={165} size={10} fill="#aaa">VirtuEx 시스템 감사 보고서 (7차)</SketchText>
+      <SketchText x={35} y={180} size={7} fill="#666">📅 2026-03-03 · audit-report-7.pdf</SketchText>
+      <RoughRect x={20} y={205} w={600} h={55} fill="#222228" stroke="#444" sw={1} />
+      <SketchText x={35} y={225} size={10} fill="#aaa">VirtuEx 시스템 감사 보고서 (6차)</SketchText>
+      {/* Highlight */}
+      <RoughCircle cx={540} cy={105} r={50} />
+      <RoughArrow x1={540} y1={145} x2={540} y2={300} />
+      <RedLabel x={380} y={320}>보기/다운로드 버튼으로 보고서 확인</RedLabel>
+    </ScreenFrame>
+  );
+}
+
 /* ─── Illustration mapping ─── */
 const illustrationMap: Record<string, Record<number, () => React.ReactNode>> = {
   dashboard: {
@@ -2017,6 +2332,28 @@ const illustrationMap: Record<string, Record<number, () => React.ReactNode>> = {
     2: () => <NotificationsMarkAllIllust />,
     3: () => <NotificationsDeleteIllust />,
     4: () => <NotificationsRealtimeIllust />,
+  },
+  community: {
+    0: () => <CommunityTabsIllust />,
+    1: () => <CommunityStrategyIllust />,
+    2: () => <CommunityTradersIllust />,
+  },
+  mypage: {
+    0: () => <MypageProfileIllust />,
+    1: () => <MypageTradingStatsIllust />,
+    2: () => <MypagePasswordIllust />,
+    3: () => <MypageNotificationSettingsIllust />,
+  },
+  adminSettings: {
+    0: () => <AdminSettingsGridIllust />,
+    1: () => <AdminSettingsEditIllust />,
+  },
+  adminHealth: {
+    0: () => <AdminHealthStatusIllust />,
+    1: () => <AdminHealthArchIllust />,
+  },
+  adminAudit: {
+    0: () => <AdminAuditListIllust />,
   },
 };
 
@@ -2107,6 +2444,28 @@ const tipMap: Record<string, Record<number, TranslationKey[]>> = {
     3: ['help.notifications.delete.tip1', 'help.notifications.delete.tip2'],
     4: ['help.notifications.realtime.tip1', 'help.notifications.realtime.tip2'],
   },
+  community: {
+    0: ['help.community.discussions.tip1' as TranslationKey, 'help.community.discussions.tip2' as TranslationKey],
+    1: ['help.community.strategies.tip1' as TranslationKey, 'help.community.strategies.tip2' as TranslationKey],
+    2: ['help.community.traders.tip1' as TranslationKey, 'help.community.traders.tip2' as TranslationKey],
+  },
+  mypage: {
+    0: ['help.mypage.profile.tip1' as TranslationKey, 'help.mypage.profile.tip2' as TranslationKey],
+    1: ['help.mypage.tradingStats.tip1' as TranslationKey, 'help.mypage.tradingStats.tip2' as TranslationKey],
+    2: ['help.mypage.security.tip1' as TranslationKey, 'help.mypage.security.tip2' as TranslationKey],
+    3: ['help.mypage.notificationSettings.tip1' as TranslationKey, 'help.mypage.notificationSettings.tip2' as TranslationKey],
+  },
+  adminSettings: {
+    0: ['help.adminSettings.initialFund.tip1' as TranslationKey, 'help.adminSettings.initialFund.tip2' as TranslationKey],
+    1: ['help.adminSettings.operatingHours.tip1' as TranslationKey, 'help.adminSettings.operatingHours.tip2' as TranslationKey],
+  },
+  adminHealth: {
+    0: ['help.adminHealth.serviceStatus.tip1' as TranslationKey, 'help.adminHealth.serviceStatus.tip2' as TranslationKey],
+    1: ['help.adminHealth.architecture.tip1' as TranslationKey, 'help.adminHealth.architecture.tip2' as TranslationKey],
+  },
+  adminAudit: {
+    0: ['help.adminAudit.reportList.tip1' as TranslationKey, 'help.adminAudit.reportList.tip2' as TranslationKey],
+  },
 };
 
 /* ─── FAQ Illustration map (reuses existing feature illustrations) ─── */
@@ -2177,6 +2536,27 @@ const faqIllustrationMap: Record<string, Record<string, () => React.ReactNode>> 
     noti2: () => <NotificationsDeleteIllust />,
     noti3: () => <NotificationsRealtimeIllust />,
   },
+  community: {
+    cm1: () => <CommunityTabsIllust />,
+    cm2: () => <CommunityStrategyIllust />,
+    cm3: () => <CommunityTradersIllust />,
+  },
+  mypage: {
+    mp1: () => <MypageProfileIllust />,
+    mp2: () => <MypageTradingStatsIllust />,
+    mp3: () => <MypagePasswordIllust />,
+  },
+  adminSettings: {
+    as1: () => <AdminSettingsGridIllust />,
+    as2: () => <AdminSettingsEditIllust />,
+  },
+  adminHealth: {
+    ah1: () => <AdminHealthStatusIllust />,
+    ah2: () => <AdminHealthArchIllust />,
+  },
+  adminAudit: {
+    aa1: () => <AdminAuditListIllust />,
+  },
 };
 
 /* ─── FAQ Tip descriptions ─── */
@@ -2246,6 +2626,27 @@ const faqTipMap: Record<string, Record<string, string[]>> = {
     noti1: ['help.faq.noti1.t1', 'help.faq.noti1.t2', 'help.faq.noti1.t3'],
     noti2: ['help.faq.noti2.t1', 'help.faq.noti2.t2'],
     noti3: ['help.faq.noti3.t1', 'help.faq.noti3.t2', 'help.faq.noti3.t3', 'help.faq.noti3.t4'],
+  },
+  community: {
+    cm1: ['help.faq.cm1.t1', 'help.faq.cm1.t2'],
+    cm2: ['help.faq.cm2.t1', 'help.faq.cm2.t2'],
+    cm3: ['help.faq.cm3.t1', 'help.faq.cm3.t2'],
+  },
+  mypage: {
+    mp1: ['help.faq.mp1.t1', 'help.faq.mp1.t2'],
+    mp2: ['help.faq.mp2.t1', 'help.faq.mp2.t2'],
+    mp3: ['help.faq.mp3.t1', 'help.faq.mp3.t2'],
+  },
+  adminSettings: {
+    as1: ['help.faq.as1.t1', 'help.faq.as1.t2'],
+    as2: ['help.faq.as2.t1', 'help.faq.as2.t2'],
+  },
+  adminHealth: {
+    ah1: ['help.faq.ah1.t1', 'help.faq.ah1.t2'],
+    ah2: ['help.faq.ah2.t1', 'help.faq.ah2.t2'],
+  },
+  adminAudit: {
+    aa1: ['help.faq.aa1.t1', 'help.faq.aa1.t2'],
   },
   common: {
     g1: ['help.faq.g1.t1', 'help.faq.g1.t2', 'help.faq.g1.t3'],
@@ -2551,7 +2952,7 @@ function FaqSection({ tabFaqs, commonFaqs, activeTab, t }: {
   );
 }
 
-/* ─── Main page ─── */
+/* ─── 메인 도움말 페이지 — 16개 탭(일반 11 + 관리자 5), 각 탭마다 기능 목록 + SVG 와이어프레임 일러스트 / Main help page — 16 tabs (11 normal + 5 admin), each tab has feature list + SVG wireframe illustrations ─── */
 export default function HelpPage() {
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
@@ -2559,6 +2960,7 @@ export default function HelpPage() {
   const [activeTab, setActiveTabRaw] = useState('dashboard');
   const setActiveTab = useCallback((v: string) => { setActiveTabRaw(v); window.scrollTo({ top: 0, behavior: 'smooth' }); }, []);
 
+  // 탭 목록 — adminOnly: true인 탭은 관리자에게만 표시 / Tab list — tabs with adminOnly: true only shown to admins
   const tabs: { key: string; label: TranslationKey; icon: React.ReactNode; adminOnly?: boolean }[] = [
     { key: 'dashboard', label: 'help.tab.dashboard', icon: <LayoutDashboard className="w-4 h-4" /> },
     { key: 'assetDetail', label: 'help.tab.assetDetail', icon: <BarChart className="w-4 h-4" /> },
@@ -2569,14 +2971,27 @@ export default function HelpPage() {
     { key: 'news', label: 'help.tab.news', icon: <Newspaper className="w-4 h-4" /> },
     { key: 'chat', label: 'help.tab.chat', icon: <MessageCircle className="w-4 h-4" /> },
     { key: 'notifications', label: 'help.tab.notifications' as TranslationKey, icon: <Bell className="w-4 h-4" /> },
+    { key: 'community', label: 'help.tab.community' as TranslationKey, icon: <MessagesSquare className="w-4 h-4" /> },
+    { key: 'mypage', label: 'help.tab.mypage' as TranslationKey, icon: <User className="w-4 h-4" /> },
     { key: 'adminStats', label: 'help.tab.adminStats', icon: <BarChart3 className="w-4 h-4" />, adminOnly: true },
     { key: 'adminUsers', label: 'help.tab.adminUsers', icon: <Users className="w-4 h-4" />, adminOnly: true },
+    { key: 'adminSettings', label: 'help.tab.adminSettings' as TranslationKey, icon: <Settings className="w-4 h-4" />, adminOnly: true },
+    { key: 'adminHealth', label: 'help.tab.adminHealth' as TranslationKey, icon: <Activity className="w-4 h-4" />, adminOnly: true },
+    { key: 'adminAudit', label: 'help.tab.adminAudit' as TranslationKey, icon: <FileCheck className="w-4 h-4" />, adminOnly: true },
   ];
 
+  // 일반 탭/관리자 탭 분리 — 사이드바에서 구분선으로 나뉨 / Separate normal/admin tabs — divided by separator in sidebar
   const normalTabs = tabs.filter((tab) => !tab.adminOnly);
   const adminTabs = tabs.filter((tab) => tab.adminOnly && isAdmin);
   const visibleTabs = tabs.filter((tab) => !tab.adminOnly || isAdmin);
 
+  /**
+   * 각 탭의 콘텐츠 정의 — 아이콘, 제목, 설명, 기능 목록(items)
+   * items 클릭 시 해당 기능의 SVG 와이어프레임 일러스트가 표시됨
+   *
+   * Content definition for each tab — icon, title, description, feature list (items)
+   * Clicking an item displays its SVG wireframe illustration
+   */
   const sections: Record<string, HelpSection> = {
     dashboard: {
       icon: <LayoutDashboard className="w-5 h-5" />,
@@ -2701,6 +3116,28 @@ export default function HelpPage() {
         { icon: <RefreshCw className="w-4 h-4" />, text: 'help.notifications.realtime' as TranslationKey },
       ],
     },
+    community: {
+      icon: <MessagesSquare className="w-5 h-5" />,
+      title: 'help.community.title' as TranslationKey,
+      description: 'help.community.desc' as TranslationKey,
+      items: [
+        { icon: <MessagesSquare className="w-4 h-4" />, text: 'help.community.discussions' as TranslationKey },
+        { icon: <Lightbulb className="w-4 h-4" />, text: 'help.community.strategies' as TranslationKey },
+        { icon: <Award className="w-4 h-4" />, text: 'help.community.traders' as TranslationKey },
+      ],
+    },
+    mypage: {
+      icon: <User className="w-5 h-5" />,
+      title: 'help.mypage.title' as TranslationKey,
+      description: 'help.mypage.desc' as TranslationKey,
+      loginRequired: true,
+      items: [
+        { icon: <User className="w-4 h-4" />, text: 'help.mypage.profile' as TranslationKey },
+        { icon: <BarChart className="w-4 h-4" />, text: 'help.mypage.tradingStats' as TranslationKey },
+        { icon: <Lock className="w-4 h-4" />, text: 'help.mypage.security' as TranslationKey },
+        { icon: <BellRing className="w-4 h-4" />, text: 'help.mypage.notificationSettings' as TranslationKey },
+      ],
+    },
     adminStats: {
       icon: <BarChart3 className="w-5 h-5" />,
       title: 'help.adminStats.title',
@@ -2726,6 +3163,42 @@ export default function HelpPage() {
         { icon: <Eye className="w-4 h-4" />, text: 'help.adminUsers.detail' },
         { icon: <Shield className="w-4 h-4" />, text: 'help.adminUsers.role' },
         { icon: <ListFilter className="w-4 h-4" />, text: 'help.adminUsers.statusFilter' },
+      ],
+    },
+    adminSettings: {
+      icon: <Settings className="w-5 h-5" />,
+      title: 'help.adminSettings.title' as TranslationKey,
+      description: 'help.adminSettings.desc' as TranslationKey,
+      loginRequired: true,
+      adminOnly: true,
+      items: [
+        { icon: <DollarSign className="w-4 h-4" />, text: 'help.adminSettings.initialFund' as TranslationKey },
+        { icon: <Clock className="w-4 h-4" />, text: 'help.adminSettings.operatingHours' as TranslationKey },
+        { icon: <Shield className="w-4 h-4" />, text: 'help.adminSettings.riskLimits' as TranslationKey },
+        { icon: <Lock className="w-4 h-4" />, text: 'help.adminSettings.sessionSecurity' as TranslationKey },
+      ],
+    },
+    adminHealth: {
+      icon: <Activity className="w-5 h-5" />,
+      title: 'help.adminHealth.title' as TranslationKey,
+      description: 'help.adminHealth.desc' as TranslationKey,
+      loginRequired: true,
+      adminOnly: true,
+      items: [
+        { icon: <Server className="w-4 h-4" />, text: 'help.adminHealth.serviceStatus' as TranslationKey },
+        { icon: <Cpu className="w-4 h-4" />, text: 'help.adminHealth.architecture' as TranslationKey },
+        { icon: <Gauge className="w-4 h-4" />, text: 'help.adminHealth.metrics' as TranslationKey },
+      ],
+    },
+    adminAudit: {
+      icon: <FileCheck className="w-5 h-5" />,
+      title: 'help.adminAudit.title' as TranslationKey,
+      description: 'help.adminAudit.desc' as TranslationKey,
+      loginRequired: true,
+      adminOnly: true,
+      items: [
+        { icon: <FileText className="w-4 h-4" />, text: 'help.adminAudit.reportList' as TranslationKey },
+        { icon: <Download className="w-4 h-4" />, text: 'help.adminAudit.viewDownload' as TranslationKey },
       ],
     },
   };
@@ -2761,7 +3234,7 @@ export default function HelpPage() {
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
                 className={cn(
-                  'flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[12px] sm:text-[13px] font-medium transition-colors border border-accent/20',
+                  'flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[12px] sm:text-[13px] font-medium transition-colors border border-accent/20 shrink-0 whitespace-nowrap',
                   activeTab === tab.key
                     ? 'bg-accent/15 text-accent font-bold'
                     : 'text-text-quaternary hover:text-text-tertiary hover:bg-bg-secondary/50',
@@ -2791,8 +3264,13 @@ export default function HelpPage() {
           news: ['w1', 'w2', 'w3'],
           chat: ['c1', 'c2', 'c3', 'c4', 'c5'],
           notifications: ['noti1', 'noti2', 'noti3'],
+          community: ['cm1', 'cm2', 'cm3'],
+          mypage: ['mp1', 'mp2', 'mp3'],
           adminStats: ['a1', 'a2'],
           adminUsers: ['u1', 'u2'],
+          adminSettings: ['as1', 'as2'],
+          adminHealth: ['ah1', 'ah2'],
+          adminAudit: ['aa1'],
         };
         const tabFaqs = faqByTab[activeTab] ?? [];
         const commonFaqs = ['g1', 'g2', 'g3', 'g4', 'g5'];

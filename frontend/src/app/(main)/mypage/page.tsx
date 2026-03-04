@@ -20,6 +20,7 @@ import { useToastStore } from '@/stores/toast';
 import { cn } from '@/lib/format';
 import api from '@/lib/api';
 
+// 레이블-값 한 쌍을 표시하는 재사용 행 컴포넌트 / Reusable label-value row component for info display
 function InfoRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 py-2.5">
@@ -29,6 +30,7 @@ function InfoRow({ label, children }: { label: string; children: React.ReactNode
   );
 }
 
+// 역할(권한) 뱃지 — SYSTEM(보라), ADMIN(액센트), USER(기본) / Role badge — SYSTEM(purple), ADMIN(accent), USER(default)
 function RoleBadge({ role, t }: { role: string; t: (key: Parameters<ReturnType<typeof useTranslation>['t']>[0]) => string }) {
   if (role === 'SYSTEM') {
     return (
@@ -51,6 +53,13 @@ function RoleBadge({ role, t }: { role: string; t: (key: Parameters<ReturnType<t
   );
 }
 
+/**
+ * 알림 토글 스위치 — 낙관적 업데이트(optimistic update) 패턴 적용
+ * 1. 즉시 UI 반영 → 2. 서버 요청 → 3. 실패 시 원래 값으로 롤백
+ *
+ * Notification toggle switch — uses optimistic update pattern:
+ * 1. Update UI immediately → 2. Send server request → 3. Rollback on failure
+ */
 function NotifToggle({ label, prefKey }: { label: string; prefKey: keyof NotificationPrefs }) {
   const { t } = useTranslation();
   const value = useSettingsStore((s) => s.notificationPrefs[prefKey]);
@@ -58,7 +67,7 @@ function NotifToggle({ label, prefKey }: { label: string; prefKey: keyof Notific
 
   const handleToggle = async () => {
     const newValue = !value;
-    // Optimistic update
+    // 낙관적 업데이트 — 서버 응답 전에 즉시 UI 반영 / Optimistic update — reflect in UI before server response
     setPref(prefKey, newValue);
 
     try {
@@ -66,7 +75,7 @@ function NotifToggle({ label, prefKey }: { label: string; prefKey: keyof Notific
         [`notif.${prefKey}`]: newValue.toString(),
       });
     } catch {
-      // Rollback on failure
+      // 서버 요청 실패 시 이전 값으로 롤백 / Rollback to previous value on server error
       setPref(prefKey, value);
       useToastStore.getState().addToast(t('mypage.notificationSaveFailed'), 'error');
     }
@@ -108,13 +117,19 @@ export default function MyPage() {
   const { data: trades } = useTradeHistory();
   const user = useAuthStore((s) => s.user);
 
+  /**
+   * 거래 통계 집계 (메모이제이션) — 총 거래수, 총 거래량, 최고 수익률
+   * 최고 수익률: 종목별 평균가 대비 각 거래의 수익률을 계산하여 최대값 추출
+   *
+   * Trading stats aggregation (memoized) — total trades, total volume, best PnL %
+   * Best PnL: calculates each trade's return vs symbol avg price, takes the maximum
+   */
   const tradingStats = useMemo(() => {
     if (!trades || trades.length === 0) return null;
     const userId = user?.id;
     const totalTrades = trades.length;
     const totalVolume = trades.reduce((sum, t) => sum + t.total, 0);
 
-    // Calculate best trade PnL% (simplified: compare each trade price to average price for that symbol)
     let bestPnl = 0;
     const symbolTrades: Record<string, number[]> = {};
     for (const trade of trades) {
@@ -126,7 +141,8 @@ export default function MyPage() {
       if (prices.length < 2) continue;
       const avgPrice = prices.reduce((a, b) => a + b, 0) / prices.length;
       const isBuy = trade.buyerId === userId;
-      // For buy trades: profit if price < avg (bought low); for sell: profit if price > avg (sold high)
+      // 매수: 평균가보다 낮게 샀으면 이익 / 매도: 평균가보다 높게 팔았으면 이익
+      // Buy: profit if bought below avg / Sell: profit if sold above avg
       const pnlPct = isBuy
         ? ((avgPrice - trade.price) / trade.price) * 100
         : ((trade.price - avgPrice) / avgPrice) * 100;
@@ -146,6 +162,13 @@ export default function MyPage() {
   const [passwordSuccess, setPasswordSuccess] = useState('');
   const [confirmPasswordOpen, setConfirmPasswordOpen] = useState(false);
 
+  /**
+   * 비밀번호 모달 포커스 트랩 — Tab/Shift+Tab으로 포커스가 모달 밖으로 나가지 않도록
+   * 첫 번째 ↔ 마지막 포커스 가능 요소 사이를 순환시킴 (접근성 WCAG 2.1)
+   *
+   * Password modal focus trap — prevents Tab/Shift+Tab from leaving the modal
+   * Cycles focus between first and last focusable elements (WCAG 2.1 compliance)
+   */
   const passwordModalRef = useRef<HTMLDivElement>(null);
   const handlePasswordModalKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key !== 'Tab') return;
@@ -222,7 +245,7 @@ export default function MyPage() {
   return (
     <div className="pb-24">
       {/* Page header */}
-      <div className="py-6 flex items-center justify-between">
+      <div className="py-6 flex items-center justify-between h-[88px]">
         <div className="flex items-center gap-2.5">
           <User className="w-5 h-5 text-accent" />
           <h1 className="text-[20px] font-extrabold text-text-primary">
@@ -622,7 +645,7 @@ export default function MyPage() {
         </>
       )}
 
-      {/* 비밀번호 변경 최종 확인 모달 (강력한 경고) */}
+      {/* 비밀번호 변경 최종 확인 모달 — z-index 70으로 첫 번째 모달(z-60) 위에 표시 / Password change final confirm — z-index 70 to stack above first modal (z-60) */}
       {confirmPasswordOpen && (
         <>
           <div className="fixed inset-0 z-[70] bg-black/70" onClick={() => setConfirmPasswordOpen(false)} />

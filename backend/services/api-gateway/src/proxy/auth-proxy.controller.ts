@@ -13,14 +13,19 @@ import { ProxyService } from './proxy.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ChatGateway } from '../gateway/chat.gateway';
 
+// 인증 관련 모든 엔드포인트를 처리하는 프록시 컨트롤러
+// Proxy controller handling all authentication-related endpoints
 @ApiTags('Auth')
 @Controller('api/auth')
 export class AuthProxyController {
   constructor(
+    // ProxyService: 내부 마이크로서비스로 HTTP 요청 전달 / Forwards HTTP requests to internal microservices
     private readonly proxyService: ProxyService,
+    // ChatGateway: WebSocket을 통한 실시간 알림 전송 / Sends real-time notifications via WebSocket
     private readonly chatGateway: ChatGateway,
   ) {}
 
+  // 회원가입 — 하루 3회 제한으로 자동화된 대량 등록 방지 / Register — 3/day rate limit prevents automated mass registration
   @Post('register')
   @Throttle({ default: { ttl: 86400000, limit: 3 } })
   @ApiOperation({ summary: '회원가입', description: '새 사용자 계정을 생성합니다' })
@@ -33,6 +38,7 @@ export class AuthProxyController {
       url: '/auth/register',
       data: body,
     });
+    // 성공 시 WebSocket으로 관리자에게 가입 요청 알림 전송 / On success, notify admins of new registration request via WebSocket
     if (result.status < 400) {
       const data = result.data as { username?: string; name?: string };
       this.chatGateway.server.emit('notification:registration-request', {
@@ -45,6 +51,7 @@ export class AuthProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  // 로그인 — 1분 5회 제한으로 무차별 대입 방지 / Login — 5/min rate limit prevents brute-force attacks
   @Post('login')
   @Throttle({ default: { ttl: 60000, limit: 5 } })
   @HttpCode(HttpStatus.OK)
@@ -68,6 +75,7 @@ export class AuthProxyController {
   @ApiResponse({ status: 200, description: '인증 성공 (access token + refresh cookie)' })
   @ApiResponse({ status: 401, description: '인증 실패 또는 세션 만료' })
   async verifyLoginSms(@Body() body: unknown, @Req() req: Request, @Res() res: Response) {
+    // 쿠키 전달 — user-auth에서 리프레시 토큰 검증에 사용 / Forward cookies — used by user-auth for refresh token validation
     const result = await this.proxyService.forward('user-auth', {
       method: 'POST',
       url: '/auth/login/verify-sms',
@@ -121,6 +129,7 @@ export class AuthProxyController {
         Cookie: req.headers.cookie || '',
       },
     });
+    // 클라이언트 쿠키 제거 — path 일치 필수 / Clear client cookie — path must match the original cookie path
     res.clearCookie('refresh_token', { path: '/api/auth' });
     return res.status(result.status).json(result.data);
   }
@@ -214,7 +223,7 @@ export class AuthProxyController {
   }
 
   @Get('check-duplicate')
-  @Throttle({ default: { ttl: 60000, limit: 10 } })
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
   @ApiOperation({ summary: '중복 확인', description: '이메일 또는 아이디의 중복 여부를 확인합니다' })
   @ApiQuery({ name: 'field', description: '확인할 필드 (email | username)' })
   @ApiQuery({ name: 'value', description: '확인할 값' })
@@ -232,7 +241,7 @@ export class AuthProxyController {
     return res.status(result.status).json(result.data);
   }
 
-  // ── TOTP 2FA ──
+  // ── TOTP 2FA (시간 기반 일회용 비밀번호 2단계 인증) / Time-based One-Time Password 2-Factor Authentication ──
 
   @Post('totp/setup')
   @UseGuards(JwtAuthGuard)

@@ -49,7 +49,13 @@ export default function AnnouncementDetailPage({
   const toggleCommentLike = useToggleCommentLike();
   const incrementViewCount = useIncrementViewCount();
 
-  // View count increment (once per session per user, 30-min cooldown per announcement)
+  /**
+   * 조회수 증가 — 세션 기반 쿨다운으로 중복 카운트 방지
+   * sessionStorage에 마지막 조회 시간을 저장, 30분 이내 재조회 시 무시
+   *
+   * View count increment — session-based cooldown prevents duplicate counting
+   * Stores last view time in sessionStorage, ignores re-views within 30 minutes
+   */
   const viewTracked = useRef(false);
   useEffect(() => {
     if (!id || viewTracked.current) return;
@@ -78,12 +84,12 @@ export default function AnnouncementDetailPage({
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
 
-  // ─── Permissions ─────────────────────────────────────────────────────────────
+  // ─── 권한 체크 / Permissions ─────────────────────────────────────────────────
   const isSystem = user?.role === 'SYSTEM';
   const isAdmin = user?.role === 'ADMIN';
   const isAuthor = data?.author?.id === user?.id;
 
-  // Edit/Delete on announcement: SYSTEM always, ADMIN only if they are the author
+  // 수정/삭제 권한: SYSTEM은 항상, ADMIN은 본인 작성 글만 / Edit/Delete: SYSTEM always, ADMIN only own posts
   const canEditAnnouncement = isSystem || (isAdmin && isAuthor);
 
   // Format dates
@@ -170,6 +176,7 @@ export default function AnnouncementDetailPage({
     }
   };
 
+  // 댓글 삭제 권한: SYSTEM은 모든 댓글, 일반 사용자는 자기 댓글만 / Comment delete: SYSTEM can delete all, others only own comments
   const canDeleteComment = (comment: CommentItem): boolean => {
     if (!user) return false;
     if (isSystem) return true;
@@ -191,14 +198,14 @@ export default function AnnouncementDetailPage({
   return (
     <div className="pb-24">
       {/* Back button + title */}
-      <div className="flex items-center gap-3 py-4">
+      <div className="flex items-center gap-3 py-6 h-[88px]">
         <Link
           href="/announcements"
-          className="p-1.5 -ml-1.5 text-text-tertiary hover:text-text-primary transition-colors rounded-lg hover:bg-bg-secondary/60"
+          className="flex items-center justify-center w-8 h-8 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-secondary transition-colors"
         >
-          <ArrowLeft className="w-5 h-5" strokeWidth={2} />
+          <ArrowLeft className="w-4 h-4" />
         </Link>
-        <h1 className="text-[17px] font-bold text-text-primary">
+        <h1 className="text-[20px] font-extrabold text-text-primary">
           {t('announce.detail')}
         </h1>
       </div>
@@ -572,7 +579,7 @@ export default function AnnouncementDetailPage({
             )}
           </div>
 
-          {/* ── Prev / Next navigation ─────────────────────────────────────── */}
+          {/* ── 이전/다음 공지 네비게이션 — 작성 시간 기준 인접 글 / Prev/Next navigation — adjacent posts by creation time ── */}
           {adjacent && (adjacent.prev || adjacent.next) && (
             <div className="bg-bg-secondary rounded-2xl border border-border/50 divide-y divide-border/40 overflow-hidden">
               {adjacent.next && (

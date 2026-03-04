@@ -1,3 +1,10 @@
+/**
+ * @file 뉴스 페이지
+ * @description 암호화폐, 국내주식, 해외주식 카테고리별 뉴스 조회 페이지 (검색, 날짜 필터, 페이지네이션)
+ *
+ * @file News Page
+ * @description News browsing page with crypto, domestic stock, and foreign stock categories (search, date filter, pagination)
+ */
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -10,32 +17,43 @@ import { cn } from '@/lib/format';
 
 type NewsTab = 'CRYPTO' | 'DOMESTIC_STOCK' | 'FOREIGN_STOCK';
 
+// 필터 적용 시 클라이언트 측 페이지네이션을 위한 대량 조회 한도 / Large batch fetch limit for client-side pagination when filtered
 const FILTERED_FETCH_LIMIT = 200;
 
 export default function NewsPage() {
   const { t } = useTranslation();
   const locale = useSettingsStore((s) => s.locale);
   const dateLocale = locale === 'ko' ? 'ko-KR' : 'en-US';
+
+  // 카테고리 탭 상태 (암호화폐, 국내주식, 해외주식) / Category tab state (crypto, domestic, foreign)
   const [activeTab, setActiveTabRaw] = useState<NewsTab>('CRYPTO');
   const setActiveTab = useCallback((v: NewsTab) => { setActiveTabRaw(v); window.scrollTo({ top: 0, behavior: 'smooth' }); }, []);
+
+  // 페이지네이션 상태 / Pagination state
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+
+  // 검색 및 날짜 필터 상태 / Search and date filter state
   const [searchQuery, setSearchQuery] = useState('');
   const [dateFilter, setDateFilter] = useState<'all' | '24h' | '7d' | '30d'>('24h');
 
   const isFiltered = searchQuery.trim() !== '' || dateFilter !== 'all';
 
-  // When filtered, fetch a large batch for client-side pagination; otherwise use server-side pagination
+  /**
+   * 필터 적용 시 대량 조회 후 클라이언트 측 페이지네이션, 아닐 때 서버 측 페이지네이션
+   * When filtered: fetch large batch for client-side pagination; otherwise: server-side pagination
+   */
   const apiPage = isFiltered ? 1 : page;
   const apiLimit = isFiltered ? FILTERED_FETCH_LIMIT : pageSize;
 
   const { data, isLoading } = useNews({ category: activeTab, page: apiPage, limit: apiLimit });
 
-  // Reset page to 1 when search query or date filter changes
+  // 검색/날짜 필터 변경 시 페이지 초기화 / Reset page when search or date filter changes
   useEffect(() => {
     setPage(1);
   }, [searchQuery, dateFilter]);
 
+  // 뉴스 스크래핑 상태 및 수동 트리거 / News scrape status and manual trigger
   const { data: scrapeStatusList } = useScrapeStatus();
   const triggerScrape = useTriggerScrape();
 
@@ -61,6 +79,7 @@ export default function NewsPage() {
     { key: '30d', label: t('news.dateFilter.30d') },
   ];
 
+  // 날짜 필터에 해당하는 기준 시점 계산 / Calculate date cutoff for the selected filter
   const getDateCutoff = () => {
     if (dateFilter === 'all') return null;
     const now = new Date();
@@ -69,6 +88,7 @@ export default function NewsPage() {
     return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
   };
 
+  // 검색어 + 날짜 기준 클라이언트 필터링 / Client-side filtering by search query + date
   const filteredItems = useMemo(() => (data?.items ?? []).filter((item) => {
     const q = searchQuery.toLowerCase().trim();
     if (q && !item.title.toLowerCase().includes(q) && !(item.summary?.toLowerCase().includes(q))) {
@@ -82,7 +102,7 @@ export default function NewsPage() {
     return true;
   }), [data?.items, searchQuery, dateFilter]);
 
-  // Client-side pagination for filtered results
+  // 필터 적용 시 클라이언트 측 슬라이싱 페이지네이션 / Client-side slice pagination for filtered results
   const displayItems = isFiltered
     ? filteredItems.slice((page - 1) * pageSize, page * pageSize)
     : filteredItems;
@@ -133,28 +153,31 @@ export default function NewsPage() {
         </h1>
       </div>
 
-      {/* Tab bar + scrape status */}
-      <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
-        <div className="flex items-center gap-1">
+      {/* Tab bar */}
+      <div className="flex items-center justify-between border-b border-border mb-5">
+        <div className="flex">
           {tabs.map((tab) => (
             <button
               key={tab.key}
               onClick={() => handleTabChange(tab.key)}
               className={cn(
-                'px-3.5 py-2 rounded-lg text-[13px] font-semibold transition-colors',
+                'relative px-4 py-2.5 text-[13px] sm:text-[14px] font-semibold transition-colors',
                 activeTab === tab.key
-                  ? 'bg-accent text-white'
-                  : 'bg-bg-secondary text-text-tertiary hover:text-text-primary hover:bg-bg-tertiary',
+                  ? 'text-accent'
+                  : 'text-text-tertiary hover:text-text-primary',
               )}
             >
               {tab.label}
+              {activeTab === tab.key && (
+                <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-accent rounded-t" />
+              )}
             </button>
           ))}
         </div>
 
-        <div className="flex items-center gap-2 text-[12px] text-text-quaternary">
+        <div className="flex items-center gap-2 text-[12px] text-text-quaternary pb-1">
           {currentScrapeStatus && (
-            <span>
+            <span className="hidden sm:inline">
               {t('news.lastScraped')}: {formatTimeAgo(currentScrapeStatus.scrapedAt)}
             </span>
           )}

@@ -16,6 +16,7 @@ import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
 import { useAuthStore } from '@/stores/auth';
 import dynamic from 'next/dynamic';
+// CandlestickChart 동적 임포트 — 캔버스/WebGL 기반이므로 SSR 비활성화 / Dynamic import — canvas/WebGL based, SSR disabled
 const CandlestickChart = dynamic(() => import('@/components/chart/CandlestickChart'), { ssr: false });
 import ExchangeRateBar from '@/components/market/ExchangeRateBar';
 import OrderBookComponent from '@/components/trading/OrderBook';
@@ -32,6 +33,7 @@ import Link from 'next/link';
 import type { PriceUpdate } from '@/types';
 import type { TranslationKey } from '@/lib/i18n';
 
+// 차트 봉 간격 옵션 — i18n 키로 다국어 번역 지원 / Chart interval options — multilingual via i18n keys
 const chartIntervalKeys: { key: string; i18nKey: TranslationKey }[] = [
   { key: '1m', i18nKey: 'chart.1m' },
   { key: '5m', i18nKey: 'chart.5m' },
@@ -51,6 +53,7 @@ export default function AssetDetailPage({
 }: {
   params: Promise<{ symbol: string }>;
 }) {
+  // React 19 use() — Next.js 15에서 동적 라우트 params를 Promise로 전달 / React 19 use() — Next.js 15 passes dynamic route params as Promise
   const { symbol } = use(params);
   const router = useRouter();
   const { t } = useTranslation();
@@ -60,6 +63,8 @@ export default function AssetDetailPage({
   const currencyMode = useCurrencyDisplay((s) => s.display);
   const rate = rateData?.rate;
 
+  // 통화 모드(KRW/USD)에 따라 가격/금액/거래량을 포맷하는 축약 헬퍼
+  // Shorthand helpers to format price/amount/volume based on currency mode (KRW/USD)
   const fp = (price: number) => formatPriceDisplay(price, symbol, currencyMode, rate);
   const fa = (amount: number) => formatAmountDisplay(amount, symbol, currencyMode, rate);
   const fv = (volume: number) => formatVolumeDisplay(volume, symbol, currencyMode, rate);
@@ -102,6 +107,13 @@ export default function AssetDetailPage({
     }
   }, [isAuthenticated, isWatchlisted, symbol, addWatchlist, removeWatchlist]);
 
+  /**
+   * WebSocket 실시간 가격 구독 — 현재 심볼의 가격만 필터링
+   * REST API 가격을 초기값으로, WebSocket 수신 시 오버라이드
+   *
+   * WebSocket live price subscription — filters only current symbol's updates
+   * REST API price as initial value, overridden by WebSocket updates
+   */
   const [livePrice, setLivePrice] = useState<PriceUpdate | null>(null);
 
   const handlePriceUpdate = useCallback((update: PriceUpdate) => {
@@ -112,6 +124,8 @@ export default function AssetDetailPage({
 
   useWebSocket([symbol], handlePriceUpdate);
 
+  // 가격 폴백 체인: WebSocket → REST price → REST currentPrice → 0
+  // Price fallback chain: WebSocket → REST price → REST currentPrice → 0
   const currentPrice = livePrice?.price ?? asset?.price ?? asset?.currentPrice ?? 0;
   const changePercent = livePrice?.changePercent ?? asset?.changePercent24h ?? asset?.changePercent ?? 0;
   const changeAmount = livePrice?.changeAmount ?? asset?.changeAmount ?? asset?.change24h ?? 0;
@@ -135,9 +149,9 @@ export default function AssetDetailPage({
   return (
     <div className="pb-32">
       {/* 헤더 / Header */}
-      <div className="flex items-center gap-3 py-4">
-        <Link href="/dashboard" className="p-1.5 -ml-1.5 text-text-tertiary hover:text-text-primary transition-colors rounded-lg hover:bg-bg-secondary/60">
-          <ArrowLeft className="w-5 h-5" strokeWidth={2} />
+      <div className="flex items-center gap-3 py-6 h-[88px]">
+        <Link href="/dashboard" className="flex items-center justify-center w-8 h-8 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-secondary transition-colors">
+          <ArrowLeft className="w-4 h-4" />
         </Link>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
@@ -280,6 +294,8 @@ export default function AssetDetailPage({
             {t('detail.noChart')}
           </div>
         ) : (
+          // 환율 변환 로직: KRW 종목인데 USD 표시 → 1/rate, USD 종목인데 KRW 표시 → rate
+          // Exchange rate logic: KRW asset in USD mode → 1/rate, USD asset in KRW mode → rate
           <CandlestickChart
             data={candlesticks}
             chartType={chartType}
@@ -373,7 +389,7 @@ export default function AssetDetailPage({
         </div>
       )}
 
-      {/* 탭 — 로그인 시에만 표시 / Tabs — only visible when authenticated */}
+      {/* 호가창/체결내역 탭 — 로그인 시에만 표시 (미인증 사용자는 차트+정보만) / Order book/trade tabs — only visible when authenticated (unauthenticated users see chart+info only) */}
       {isAuthenticated && <div className="mt-5">
         <Tabs tabs={detailTabs} activeTab={activeTab} onChange={setActiveTab} />
 

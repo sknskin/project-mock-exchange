@@ -9,7 +9,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Search, Plus, MessageSquare, Pin, Paperclip, Eye, Heart, Megaphone } from 'lucide-react';
+import { Search, PenSquare, MessageSquare, Pin, Paperclip, Eye, Heart, Megaphone } from 'lucide-react';
 import { useAnnouncements } from '@/hooks/useAdmin';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuthStore } from '@/stores/auth';
@@ -27,10 +27,11 @@ export default function AnnouncementsPage() {
 
   const { data, isLoading } = useAnnouncements({ page, limit, search });
 
+  // 관리자(SYSTEM/ADMIN)만 새 공지사항 작성 가능 / Only SYSTEM/ADMIN can create new announcements
   const isAdminOrSystem =
     user?.role === 'SYSTEM' || user?.role === 'ADMIN';
 
-  // Debounced live search
+  // 디바운스 실시간 검색 — 300ms 지연 후 서버 쿼리 / Debounced live search — sends server query after 300ms delay
   useEffect(() => {
     const timer = setTimeout(() => {
       setSearch(searchInput);
@@ -39,6 +40,7 @@ export default function AnnouncementsPage() {
     return () => clearTimeout(timer);
   }, [searchInput]);
 
+  // 역할별 뱃지 색상 — SYSTEM(보라), ADMIN(액센트), 기타(기본) / Role badge color — SYSTEM(purple), ADMIN(accent), other(default)
   const getRoleBadgeClass = (role: string) => {
     switch (role) {
       case 'SYSTEM':
@@ -64,7 +66,7 @@ export default function AnnouncementsPage() {
   return (
     <div>
       {/* Header */}
-      <div className="flex items-center justify-between py-6">
+      <div className="flex items-center justify-between py-6 h-[88px]">
         <div className="flex items-center gap-2.5">
           <Megaphone className="w-5 h-5 text-accent" />
           <h1 className="text-[20px] font-extrabold text-text-primary">
@@ -79,7 +81,7 @@ export default function AnnouncementsPage() {
               'bg-accent text-white hover:bg-accent/90 transition-colors',
             )}
           >
-            <Plus className="w-4 h-4" />
+            <PenSquare className="w-3.5 h-3.5" />
             {t('announce.new')}
           </Link>
         )}
@@ -124,6 +126,7 @@ export default function AnnouncementsPage() {
             <Link
               key={item.id}
               href={`/announcements/${item.id}`}
+              // 고정 게시글은 왼쪽 보더 강조 + 액센트 배경 / Pinned posts get left border accent + subtle accent background
               className={cn(
                 'block p-4 rounded-xl border transition-colors cursor-pointer',
                 item.isPinned

@@ -22,6 +22,8 @@ import { Request, Response } from 'express';
 import { ProxyService } from './proxy.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
+// 모든 엔드포인트에 JWT 인증 필수 — 포트폴리오는 개인 자산 데이터
+// All endpoints require JWT auth — portfolio contains personal asset data
 @ApiTags('Portfolio')
 @ApiBearerAuth()
 @Controller('api/portfolio')
@@ -34,6 +36,7 @@ export class PortfolioProxyController {
   @ApiResponse({ status: 201, description: '입금 성공' })
   @ApiResponse({ status: 400, description: '유효성 검사 실패' })
   async deposit(@Body() body: unknown, @Req() req: Request, @Res() res: Response) {
+    // JWT에서 추출된 userId를 x-user-id 헤더로 전달 — 서비스 간 인증 / Pass JWT-extracted userId via x-user-id header for inter-service auth
     const userId = (req as Record<string, any>).user?.id;
     const result = await this.proxyService.forward('portfolio', {
       method: 'POST',
@@ -117,15 +120,25 @@ export class PortfolioProxyController {
   @ApiResponse({ status: 200, description: '리더보드 반환' })
   async getLeaderboard(
     @Query('limit') limit: string,
+    @Req() req: Request,
     @Res() res: Response,
   ) {
+    const currentUserId = (req as Record<string, any>).user?.id;
     const result = await this.proxyService.forward('portfolio', {
       method: 'GET',
       url: '/portfolio/leaderboard',
       params: { limit },
     });
 
-    // Enrich leaderboard entries with username/name from user-auth
+    /**
+     * 리더보드 데이터 보강 및 개인정보 마스킹 처리 (감사보고서 #12 권고사항)
+     * - user-auth에서 사용자명/이름 조회하여 리더보드 항목에 매핑
+     * - 현재 로그인 사용자의 userId만 유지, 나머지는 익명화(anon_N)
+     *
+     * Enrich leaderboard entries and mask PII (Audit Report #12 recommendation)
+     * - Fetch username/name from user-auth and map to leaderboard entries
+     * - Keep userId only for the current user, anonymize others (anon_N)
+     */
     const data = result.data as Record<string, unknown>;
     if (data?.success && Array.isArray(data?.data)) {
       const entries = data.data as Record<string, unknown>[];
@@ -143,18 +156,26 @@ export class PortfolioProxyController {
             for (const u of usersData.data as Record<string, string>[]) {
               userMap.set(u.id, { username: u.username, name: u.name });
             }
-            data.data = entries.map((entry) => {
+            data.data = entries.map((entry, idx) => {
               const userInfo = userMap.get(entry.userId as string);
+              const isMe = currentUserId && entry.userId === currentUserId;
               const { userId: _uid, ...rest } = entry;
               return {
                 ...rest,
+                id: isMe ? entry.userId : `anon_${idx}`,
+                isMe: !!isMe,
                 username: userInfo?.username || '',
                 name: userInfo?.name || '',
               };
             });
           }
         } catch {
-          // Fallback: return leaderboard without names
+          // Fallback: strip userId even without names
+          data.data = entries.map((entry, idx) => {
+            const isMe = currentUserId && entry.userId === currentUserId;
+            const { userId: _uid, ...rest } = entry;
+            return { ...rest, id: isMe ? entry.userId : `anon_${idx}`, isMe: !!isMe };
+          });
         }
       }
     }

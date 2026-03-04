@@ -32,9 +32,16 @@ export class ProxyService {
     this.initClients();
   }
 
+  /**
+   * 각 마이크로서비스에 대한 Axios 클라이언트를 초기화합니다.
+   * x-internal-token 헤더로 서비스 간 인증을 수행합니다.
+   *
+   * Initialize Axios clients for each microservice.
+   * Uses x-internal-token header for inter-service authentication.
+   */
   private initClients() {
     const internalToken = this.configService.getOrThrow<string>('INTERNAL_SERVICE_SECRET');
-    const host = this.configService.get<string>('SERVICE_HOST', 'localhost');
+    const host = this.configService.getOrThrow<string>('SERVICE_HOST');
     const services = {
       'user-auth': `http://${host}:${this.configService.getOrThrow('USER_AUTH_PORT')}`,
       'market-data': `http://${host}:${this.configService.getOrThrow('MARKET_DATA_PORT')}`,

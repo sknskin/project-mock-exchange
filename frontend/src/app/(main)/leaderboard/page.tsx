@@ -12,11 +12,9 @@ import { useLeaderboard } from '@/hooks/useLeaderboard';
 import type { LeaderboardPeriod, LeaderboardSortBy } from '@/hooks/useLeaderboard';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
-import { useAuthStore } from '@/stores/auth';
 import { useTranslation } from '@/hooks/useTranslation';
 import ExchangeRateBar from '@/components/market/ExchangeRateBar';
 import Skeleton from '@/components/ui/Skeleton';
-import Tabs from '@/components/ui/Tabs';
 import { cn, formatCurrencyDisplay, formatPercent } from '@/lib/format';
 import {
   Trophy,
@@ -139,9 +137,9 @@ export default function LeaderboardPage() {
   const { display: currencyMode } = useCurrencyDisplay();
   const rate = rateData?.rate;
   const fmt = (v: number) => formatCurrencyDisplay(v, currencyMode, rate);
-  const user = useAuthStore((s) => s.user);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [period, setPeriod] = useState<LeaderboardPeriod>('all');
+  const [period, setPeriodRaw] = useState<LeaderboardPeriod>('all');
+  const setPeriod = useCallback((v: LeaderboardPeriod) => { setPeriodRaw(v); window.scrollTo({ top: 0, behavior: 'smooth' }); }, []);
   const [sortMode, setSortMode] = useState<LeaderboardSortBy>('return');
 
   const { data: leaderboard, isLoading, dataUpdatedAt, refetch } = useLeaderboard({ period, sortBy: sortMode });
@@ -167,11 +165,15 @@ export default function LeaderboardPage() {
     [t],
   );
 
-  // Sort and re-rank entries client-side (filter out users with no deposits)
+  /**
+   * 클라이언트 측 정렬 + 순위 재계산 — 입금 없는 사용자 제외, userId 중복 제거
+   * Client-side sort + re-rank — filters out zero-deposit users, deduplicates by userId
+   */
   const sortedLeaderboard = useMemo(() => {
     if (!leaderboard) return [];
     const active = leaderboard.filter((e) => e.totalValue > 0);
-    const sorted = active.sort((a, b) => {
+    const unique = [...new Map(active.map((e) => [e.id, e])).values()];
+    const sorted = unique.sort((a, b) => {
       if (sortMode === 'return') return b.pnlPercent - a.pnlPercent;
       if (sortMode === 'absolute') {
         return calcAbsolutePnl(b.totalValue, b.pnlPercent) - calcAbsolutePnl(a.totalValue, a.pnlPercent);
@@ -181,8 +183,11 @@ export default function LeaderboardPage() {
     return sorted.map((entry, i) => ({ ...entry, rank: i + 1 }));
   }, [leaderboard, sortMode]);
 
-  const myEntry = sortedLeaderboard.find((e) => e.userId === user?.id);
+  // 현재 사용자 순위 강조 / Current user rank highlight
+  const myEntry = sortedLeaderboard.find((e) => e.isMe);
+  // 이전 순위 저장 (순위 변동 애니메이션용) / Previous rank storage (for rank change animation)
   const prevRankMap = useRef<Map<string, number>>(new Map());
+  // 행 DOM 참조 (순위 이동 애니메이션용) / Row DOM refs (for rank movement animation)
   const rowRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   const handleRefresh = useCallback(async () => {
@@ -191,17 +196,23 @@ export default function LeaderboardPage() {
     setIsRefreshing(false);
   }, [refetch]);
 
-  // 행 애니메이션 / Row animation on rank change
+  /**
+   * 순위 변동 시 행 슬라이드 애니메이션 — FLIP 기법 사용
+   * Row slide animation on rank change — uses FLIP technique
+   * 1) 이전 위치로 즉시 이동 (transition: none)
+   * 2) offsetHeight로 리플로우 강제
+   * 3) 원래 위치로 애니메이션 복귀
+   */
   useEffect(() => {
     if (!sortedLeaderboard.length) return;
 
     const prev = prevRankMap.current;
 
     sortedLeaderboard.forEach((entry) => {
-      const el = rowRefs.current.get(entry.userId);
+      const el = rowRefs.current.get(entry.id);
       if (!el) return;
 
-      const prevRank = prev.get(entry.userId);
+      const prevRank = prev.get(entry.id);
       if (prevRank !== undefined && prevRank !== entry.rank) {
         const delta = (prevRank - entry.rank) * ROW_HEIGHT;
         el.style.transition = 'none';
@@ -214,7 +225,7 @@ export default function LeaderboardPage() {
     });
 
     const next = new Map<string, number>();
-    sortedLeaderboard.forEach((entry) => next.set(entry.userId, entry.rank));
+    sortedLeaderboard.forEach((entry) => next.set(entry.id, entry.rank));
     prevRankMap.current = next;
   }, [sortedLeaderboard]);
 
@@ -224,12 +235,19 @@ export default function LeaderboardPage() {
   return (
     <div>
       {/* 헤더 / Header */}
-      <div className="py-6 flex items-start justify-between">
-        <div className="flex items-center gap-2.5 h-10">
-          <Trophy className="w-5 h-5 text-yellow-400" />
+      <div className="py-6 flex items-center justify-between h-[88px]">
+        <div className="flex items-center gap-2.5">
+          <Trophy className="w-5 h-5 text-accent" />
           <h1 className="text-[20px] font-extrabold text-text-primary">{t('leaderboard.title')}</h1>
         </div>
-        <div className="flex flex-col items-end gap-1">
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] text-text-quaternary tabular-nums">
+            {dataUpdatedAt
+              ? locale === 'ko'
+                ? `${formatTimestamp(dataUpdatedAt, locale)} ${t('leaderboard.asOf')}`
+                : formatTimestamp(dataUpdatedAt, locale)
+              : t('leaderboard.loading')}
+          </span>
           <button
             onClick={handleRefresh}
             disabled={isRefreshing}
@@ -243,26 +261,30 @@ export default function LeaderboardPage() {
             <RefreshCw className={cn('w-4 h-4', isRefreshing && 'animate-spin')} />
             {t('leaderboard.refresh')}
           </button>
-          <span className="text-[11px] text-text-quaternary tabular-nums pr-1">
-            {dataUpdatedAt
-              ? locale === 'ko'
-                ? `${formatTimestamp(dataUpdatedAt, locale)} ${t('leaderboard.asOf')}`
-                : formatTimestamp(dataUpdatedAt, locale)
-              : t('leaderboard.loading')}
-          </span>
         </div>
       </div>
 
       <ExchangeRateBar />
 
       {/* 기간 필터 탭 / Period filter tabs */}
-      <div className="pt-2 pb-4">
-        <Tabs
-          tabs={periodTabs}
-          activeTab={period}
-          onChange={(key) => setPeriod(key as LeaderboardPeriod)}
-          variant="pill"
-        />
+      <div className="flex items-center border-b border-border mb-5">
+        {periodTabs.map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setPeriod(tab.key as LeaderboardPeriod)}
+            className={cn(
+              'relative px-4 py-2.5 text-[14px] font-semibold transition-colors',
+              period === tab.key
+                ? 'text-accent'
+                : 'text-text-tertiary hover:text-text-primary',
+            )}
+          >
+            {tab.label}
+            {period === tab.key && (
+              <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-accent rounded-t" />
+            )}
+          </button>
+        ))}
       </div>
 
       {/* 참여자 수 + 내 순위 + 정렬 / Participants + My Rank + Sort */}
@@ -354,18 +376,18 @@ export default function LeaderboardPage() {
           {sortedLeaderboard.map((entry) => {
             const isTop3 = entry.rank <= 3;
             const isPositive = entry.pnlPercent >= 0;
-            const isMe = entry.userId === user?.id;
+            const isMe = entry.isMe;
             const displayName = entry.name || entry.username || '-';
             // 실제 이전 순위 대비 변동 계산 (Real rank change from previous data)
-            const prevRank = prevRankMap.current.get(entry.userId);
+            const prevRank = prevRankMap.current.get(entry.id);
             const rankChange = prevRank !== undefined ? prevRank - entry.rank : 0;
             const absolutePnl = calcAbsolutePnl(entry.totalValue, entry.pnlPercent);
 
             return (
               <div
-                key={entry.userId}
+                key={entry.id}
                 ref={(el) => {
-                  if (el) rowRefs.current.set(entry.userId, el);
+                  if (el) rowRefs.current.set(entry.id, el);
                 }}
                 className={cn(
                   'flex items-center py-3 sm:py-3.5 transition-colors',

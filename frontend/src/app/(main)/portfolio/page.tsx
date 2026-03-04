@@ -33,9 +33,12 @@ type PortfolioTab = 'overview' | 'analytics';
 
 export default function PortfolioPage() {
   const { t } = useTranslation();
+  // 포트폴리오 평가액 조회 — 잔고, 보유 종목, 수익률 포함 / Portfolio valuation — includes balance, holdings, returns
   const { data: portfolio, isLoading, isFetching, error: portfolioError, refetch, dataUpdatedAt } = usePortfolioValuation();
   const { data: rateData } = useExchangeRate();
   const { display: currencyMode } = useCurrencyDisplay();
+
+  // 입금/출금 뮤테이션 및 BottomSheet 상태 / Deposit/withdraw mutations and BottomSheet state
   const deposit = useDeposit();
   const [depositOpen, setDepositOpen] = useState(false);
   const [depositAmount, setDepositAmount] = useState('');
@@ -43,13 +46,17 @@ export default function PortfolioPage() {
   const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [withdrawConfirmOpen, setWithdrawConfirmOpen] = useState(false);
+
+  // 탭 전환 — overview(잔고+보유) vs analytics(차트 분석) / Tab switch — overview (balance+holdings) vs analytics (charts)
   const [activeTab, setActiveTabRaw] = useState<PortfolioTab>('overview');
   const setActiveTab = useCallback((v: PortfolioTab) => { setActiveTabRaw(v); window.scrollTo({ top: 0, behavior: 'smooth' }); }, []);
 
-  // 마지막 갱신 시간 표시 (Last updated display)
+  /**
+   * 마지막 갱신 시간 표시 — 분 단위 갱신이므로 60초 간격으로 충분
+   * Last updated display — minute-level granularity, so 60s interval is sufficient
+   */
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
-    // Display granularity is in minutes, so 60s interval is sufficient
     const timer = setInterval(() => setNow(Date.now()), 60_000);
     return () => clearInterval(timer);
   }, []);
@@ -64,7 +71,13 @@ export default function PortfolioPage() {
 
   const rate = rateData?.rate ?? 0;
 
-  // 입력값을 백엔드(KRW 기준)로 변환 / Convert input to backend unit (KRW-based)
+  /**
+   * 입력값을 백엔드(KRW 기준)로 변환 — 백엔드 API는 항상 KRW 단위를 기대
+   * USD 모드에서 사용자가 $100 입력 시 → 100 * 환율 = KRW 금액으로 전환
+   *
+   * Convert user input to backend unit (KRW-based) — backend API always expects KRW amounts
+   * When user enters $100 in USD mode → 100 * rate = KRW amount
+   */
   const toBackendAmount = (input: number) =>
     currencyMode === 'original' && rate > 0 ? input * rate : input;
 
@@ -96,7 +109,7 @@ export default function PortfolioPage() {
     }
   };
 
-  // 통화 모드별 금액 버튼 / Amount buttons per currency mode
+  // 통화 모드별 금액 버튼 — USD: $100~$10K, KRW: 100만~1억 / Amount buttons per currency mode — USD: $100-$10K, KRW: 1M-100M
   const amountButtons = currencyMode === 'original'
     ? [100, 1000, 5000, 10000]
     : [1000000, 5000000, 10000000, 100000000];
@@ -118,12 +131,17 @@ export default function PortfolioPage() {
   return (
     <AuthGuard>
       <div>
-        <div className="py-6 flex items-start justify-between">
-          <div className="flex items-center gap-2.5 h-10">
+        <div className="py-6 flex items-center justify-between h-[88px]">
+          <div className="flex items-center gap-2.5">
             <Briefcase className="w-5 h-5 text-accent" />
             <h1 className="text-[20px] font-extrabold text-text-primary">{t('nav.portfolio')}</h1>
           </div>
-          <div className="flex flex-col items-end gap-1">
+          <div className="flex items-center gap-2">
+            {lastUpdatedText && (
+              <span className="text-[11px] text-text-quaternary tabular-nums">
+                {lastUpdatedText}
+              </span>
+            )}
             <button
               onClick={() => refetch()}
               disabled={isFetching}
@@ -137,11 +155,6 @@ export default function PortfolioPage() {
               <RefreshCw className={cn('w-4 h-4', isFetching && 'animate-spin')} />
               {isFetching ? t('portfolio.refreshing') : t('portfolio.refresh')}
             </button>
-            {lastUpdatedText && (
-              <span className="text-[11px] text-text-quaternary tabular-nums pr-1">
-                {lastUpdatedText}
-              </span>
-            )}
           </div>
         </div>
         {/* 탭 네비게이션 / Tab Navigation */}
@@ -221,7 +234,7 @@ export default function PortfolioPage() {
                   onWithdraw={() => setWithdrawOpen(true)}
                 />
 
-                {/* 보유 종목 시세 / Holdings Market Pulse */}
+                {/* 보유 종목 시세 요약 — 평가금액 기준 내림차순 정렬 / Holdings Market Pulse — sorted by valuation descending */}
                 {portfolio.holdings.length > 0 && (
                   <div className="py-4 border-b border-border/60">
                     <h2 className="text-[14px] font-bold text-text-secondary mb-3">
@@ -348,6 +361,7 @@ export default function PortfolioPage() {
           </>
         )}
 
+        {/* 입금 바텀시트 — 금액 입력 + 빠른 금액 버튼 / Deposit BottomSheet — amount input + quick amount buttons */}
         <BottomSheet
           isOpen={depositOpen}
           onClose={() => setDepositOpen(false)}
@@ -391,6 +405,7 @@ export default function PortfolioPage() {
           </div>
         </BottomSheet>
 
+        {/* 출금 바텀시트 — 금액 입력 + 빠른 금액 + 잔액 비율(%) 버튼 / Withdraw BottomSheet — amount input + quick amount + balance % buttons */}
         <BottomSheet
           isOpen={withdrawOpen}
           onClose={() => setWithdrawOpen(false)}
@@ -462,6 +477,7 @@ export default function PortfolioPage() {
           </div>
         </BottomSheet>
 
+        {/* 출금 최종 확인 모달 — 금액 표시 후 위험 확인 / Withdraw final confirmation modal — shows amount with danger variant */}
         <ConfirmModal
           isOpen={withdrawConfirmOpen}
           onClose={() => setWithdrawConfirmOpen(false)}

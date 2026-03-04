@@ -27,6 +27,7 @@ import { exportToCSV } from '@/lib/export';
 import type { TranslationKey } from '@/lib/i18n';
 import type { Order } from '@/types';
 
+// 주문 상태 필터 옵션 — 서버 API의 status 파라미터 값과 일치 / Order status filter options — match server API status param values
 const STATUS_OPTIONS: { key: string; labelKey: TranslationKey }[] = [
   { key: 'all', labelKey: 'orders.all' },
   { key: 'PENDING', labelKey: 'orders.pending' },
@@ -34,6 +35,10 @@ const STATUS_OPTIONS: { key: string; labelKey: TranslationKey }[] = [
   { key: 'CANCELLED', labelKey: 'orders.cancelled' },
 ];
 
+/**
+ * 커스텀 드롭다운 — 네이티브 select 대신 디자인 일관성을 위해 사용
+ * Custom dropdown — replaces native select for design consistency
+ */
 function StatusDropdown({
   value,
   onChange,
@@ -48,6 +53,7 @@ function StatusDropdown({
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
+  // 외부 클릭 시 드롭다운 닫기 / Close dropdown on outside click
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
@@ -99,7 +105,7 @@ function StatusDropdown({
   );
 }
 
-/* ─── Analysis Tab ─── */
+/* ─── 분석 탭 컴포넌트 / Analysis Tab Component ─── */
 interface AnalysisTabProps {
   trades: TradeHistory[];
   userId: string;
@@ -112,18 +118,34 @@ interface AnalysisTabProps {
 }
 
 function AnalysisTab({ trades, userId, isLoading, error, refetch, t, currencyMode, rate }: AnalysisTabProps) {
+  // 통화 모드에 따라 가격을 포맷하는 헬퍼 / Helper to format price based on currency mode
   const fmt = (v: number, symbol: string) => formatPriceDisplay(v, symbol, currencyMode, rate);
+
+  /**
+   * 거래 데이터로부터 분석 통계를 계산 (메모이제이션)
+   * 포함: 총 거래수, 총 거래량(KRW), 승률, 시간대별 분포, 종목별 내역
+   *
+   * Compute analysis stats from trade data (memoized):
+   * Includes: total trades, total volume (KRW), win rate, hourly distribution, symbol breakdown
+   */
   const stats = useMemo(() => {
     if (!trades.length) return null;
 
     const totalTrades = trades.length;
-    // 총거래량을 KRW로 환산 (USD 심볼은 환율 곱하기)
+    // 총거래량을 KRW로 환산 — .KS 접미사가 없으면 USD 종목으로 간주하여 환율 곱하기
+    // Convert total volume to KRW — symbols without .KS suffix are treated as USD and multiplied by rate
     const totalVolumeKrw = trades.reduce((sum, tr) => {
       const isUsd = !tr.symbol.endsWith('.KS');
       return sum + (isUsd && rate ? tr.total * rate : tr.total);
     }, 0);
 
-    // Win rate: per-symbol, compare user's avg sell price vs avg buy price
+    /**
+     * 승률 계산: 종목별로 평균 매수가 vs 평균 매도가를 비교
+     * 매도 평균가 > 매수 평균가이면 '승', 그렇지 않으면 '패'
+     *
+     * Win rate calculation: compare avg buy price vs avg sell price per symbol
+     * avgSell > avgBuy = win, otherwise = loss
+     */
     const symbolMap: Record<string, { buyTotal: number; buyQty: number; sellTotal: number; sellQty: number }> = {};
     for (const tr of trades) {
       if (!symbolMap[tr.symbol]) symbolMap[tr.symbol] = { buyTotal: 0, buyQty: 0, sellTotal: 0, sellQty: 0 };
@@ -141,6 +163,7 @@ function AnalysisTab({ trades, userId, isLoading, error, refetch, t, currencyMod
     let losses = 0;
     for (const sym of Object.keys(symbolMap)) {
       const s = symbolMap[sym];
+      // 매수/매도 둘 다 있는 종목만 승패 판정 / Only evaluate symbols with both buy and sell trades
       if (s.buyQty > 0 && s.sellQty > 0) {
         const avgBuy = s.buyTotal / s.buyQty;
         const avgSell = s.sellTotal / s.sellQty;
@@ -150,7 +173,7 @@ function AnalysisTab({ trades, userId, isLoading, error, refetch, t, currencyMod
     }
     const winRate = wins + losses > 0 ? (wins / (wins + losses)) * 100 : 0;
 
-    // Time distribution (24h)
+    // 24시간 시간대별 거래 분포 — 바 차트 데이터 / 24-hour trading distribution — bar chart data
     const hourCounts = Array.from({ length: 24 }, () => 0);
     for (const tr of trades) {
       const hour = new Date(tr.executedAt).getHours();
@@ -158,7 +181,7 @@ function AnalysisTab({ trades, userId, isLoading, error, refetch, t, currencyMod
     }
     const maxHourCount = Math.max(...hourCounts, 1);
 
-    // Symbol breakdown
+    // 종목별 매수/매도 횟수, 총수량, 평균가, 거래대금 집계 / Per-symbol breakdown: buy/sell counts, qty, avg price, volume
     const breakdown = Object.entries(symbolMap).map(([symbol, s]) => ({
       symbol,
       buyCount: trades.filter((tr) => tr.symbol === symbol && tr.buyerId === userId).length,
@@ -296,22 +319,37 @@ export default function OrdersPage() {
   const { data: rateData } = useExchangeRate();
   const { display: currencyMode } = useCurrencyDisplay();
   const rate = rateData?.rate;
+
+  // 3개 탭 상태: 주문, 체결내역, 분석 / Three-tab state: orders, trades, analysis
   const [tab, setTabRaw] = useState<'orders' | 'trades' | 'analysis'>('orders');
+  // 탭 전환 시 상단으로 스크롤 / Scroll to top on tab change
   const setTab = useCallback((v: typeof tab) => { setTabRaw(v); window.scrollTo({ top: 0, behavior: 'smooth' }); }, []);
+
+  // 주문 탭 필터 상태 / Orders tab filter state
   const [statusFilter, setStatusFilter] = useState('all');
   const [searchInput, setSearchInput] = useState('');
   const [symbolSearch, setSymbolSearch] = useState('');
   const user = useAuthStore((s) => s.user);
+
+  // 데이터 조회 — 체결내역은 모든 탭에서 공유 (분석 탭에서도 사용) / Data fetching — trades shared across tabs (used by analysis tab too)
   const { data: trades, isLoading: tradesLoading, error: tradesError, refetch: refetchTrades } = useTradeHistory();
+  // statusFilter가 'all'이면 undefined 전달하여 전체 조회 / Pass undefined for 'all' to fetch all orders
   const { data: orders, isLoading, error: ordersError, refetch: refetchOrders } = useOrders(
     statusFilter === 'all' ? undefined : statusFilter,
   );
+
+  // 주문 취소/수정 뮤테이션 / Order cancel/modify mutations
   const cancelOrder = useCancelOrder();
   const modifyOrder = useModifyOrder();
+
+  // 인라인 수정 모드 상태 — editingOrderId가 설정되면 해당 주문이 수정 폼으로 전환
+  // Inline edit mode state — when editingOrderId is set, that order row becomes an edit form
   const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
   const [editPrice, setEditPrice] = useState('');
   const [editQuantity, setEditQuantity] = useState('');
   const [cancelTargetId, setCancelTargetId] = useState<string | null>(null);
+
+  // 체결내역 탭 필터 상태 / Trade history tab filter state
   const [tradeSideFilter, setTradeSideFilter] = useState<'all' | 'BUY' | 'SELL'>('all');
   const [tradeSearch, setTradeSearch] = useState('');
 
@@ -335,7 +373,7 @@ export default function OrdersPage() {
     }
   };
 
-  // Debounce symbol search
+  // 심볼 검색 디바운스 — 300ms 지연으로 불필요한 필터링 방지 / Debounce symbol search — 300ms delay to prevent unnecessary filtering
   useEffect(() => {
     const timer = setTimeout(() => {
       setSymbolSearch(searchInput);
@@ -343,7 +381,7 @@ export default function OrdersPage() {
     return () => clearTimeout(timer);
   }, [searchInput]);
 
-  // Client-side symbol filter
+  // 클라이언트 측 심볼 필터 — 서버에서 전체 조회 후 프론트에서 필터 / Client-side symbol filter — filter locally after full server fetch
   const filteredOrders = useMemo(() => {
     if (!orders) return [];
     if (!symbolSearch.trim()) return orders;
@@ -351,7 +389,13 @@ export default function OrdersPage() {
     return orders.filter((o) => o.symbol.toLowerCase().includes(q));
   }, [orders, symbolSearch]);
 
-  // Trade history client-side filter (side + symbol)
+  /**
+   * 체결내역 클라이언트 측 필터 (매수/매도 + 심볼 검색)
+   * buyerId === 현재 유저 ID이면 매수, 아니면 매도로 판정
+   *
+   * Trade history client-side filter (side + symbol)
+   * buyerId === current user ID means BUY side, otherwise SELL
+   */
   const filteredTrades = useMemo(() => {
     if (!trades) return [];
     return trades.filter((trade) => {
@@ -376,9 +420,7 @@ export default function OrdersPage() {
           <h1 className="text-[20px] font-extrabold text-text-primary">{t('orders.title')}</h1>
         </div>
 
-        <ExchangeRateBar />
-
-        <div className="flex border-b border-border mb-5">
+        <div className="flex border-b border-border mb-2">
           {([
             { key: 'orders' as const, label: t('orders.title') },
             { key: 'trades' as const, label: t('orders.tradeHistory') },
@@ -402,9 +444,12 @@ export default function OrdersPage() {
           ))}
         </div>
 
+        <ExchangeRateBar />
+        <div className="mb-5" />
+
         {tab === 'orders' && (
           <>
-            {/* Search + Status filter bar */}
+            {/* 검색 + 상태 필터 바 / Search + Status filter bar */}
             <div className="flex gap-2 sm:gap-3 mb-5">
               {/* Search input */}
               <div className="relative flex-1 min-w-0">
@@ -587,7 +632,7 @@ export default function OrdersPage() {
 
         {tab === 'trades' && (
           <div>
-            {/* Trade history filter bar */}
+            {/* 체결내역 필터 바 — 심볼 검색 + 매수/매도 세그먼트 / Trade history filter bar — symbol search + buy/sell segment */}
             <div className="flex gap-2 sm:gap-3 mb-5">
               <div className="relative flex-1 min-w-0">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-quaternary pointer-events-none" />
@@ -617,6 +662,7 @@ export default function OrdersPage() {
               </div>
             </div>
 
+            {/* CSV 내보내기 버튼 / CSV export button */}
             <div className="flex justify-end mb-3">
               <button
                 onClick={() => {
@@ -710,6 +756,7 @@ export default function OrdersPage() {
         )}
       </div>
 
+      {/* 주문 취소 확인 모달 / Order cancel confirmation modal */}
       <ConfirmModal
         isOpen={cancelTargetId !== null}
         onClose={() => setCancelTargetId(null)}

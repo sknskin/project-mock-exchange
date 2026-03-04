@@ -13,6 +13,7 @@ import { FileText, Eye, Calendar, Download } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuthStore } from '@/stores/auth';
 
+// 감사 보고서 항목 타입 / Audit report item type
 interface ReportItem {
   name: string;
   path: string;
@@ -20,7 +21,14 @@ interface ReportItem {
   date: string;
 }
 
+// 정적 보고서 목록 — public/docs/report/ 경로의 PDF 파일들 / Static report list — PDF files in public/docs/report/
 const REPORTS: ReportItem[] = [
+  {
+    name: 'audit-report-8.pdf',
+    path: '/docs/report/audit-report-8.pdf',
+    label: 'VirtuEx 시스템 감사 보고서 (8차)',
+    date: '2026-03-04',
+  },
   {
     name: 'audit-report-7.pdf',
     path: '/docs/report/audit-report-7.pdf',
@@ -81,10 +89,12 @@ export default function AdminAuditPage() {
     return null;
   }
 
+  // 새 탭에서 PDF 보기 / View PDF in new tab
   const handleView = (report: ReportItem) => {
     window.open(report.path, '_blank');
   };
 
+  // 프로그래매틱 다운로드 — 임시 <a> 태그 생성으로 download 속성 활용 / Programmatic download — creates temporary <a> tag to use download attribute
   const handleDownload = (report: ReportItem) => {
     const a = document.createElement('a');
     a.href = report.path;

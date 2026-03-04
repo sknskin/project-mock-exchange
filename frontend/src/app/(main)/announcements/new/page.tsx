@@ -28,10 +28,11 @@ export default function NewAnnouncementPage() {
   const [files, setFiles] = useState<File[]>([]);
   const [showConfirm, setShowConfirm] = useState(false);
 
+  // 공지사항 생성 + 첨부파일 업로드 뮤테이션 / Announcement creation + file upload mutations
   const { mutateAsync: createAnnouncement, isPending: isCreating } = useCreateAnnouncement();
   const { mutateAsync: uploadAttachment, isPending: isUploading } = useUploadAttachment();
 
-  // Redirect non-admin users
+  // 비관리자 리다이렉트 — SYSTEM/ADMIN 외 접근 차단 / Redirect non-admin — block access for non-SYSTEM/ADMIN users
   useEffect(() => {
     if (user && user.role !== 'SYSTEM' && user.role !== 'ADMIN') {
       router.replace('/announcements');
@@ -40,6 +41,7 @@ export default function NewAnnouncementPage() {
 
   if (user && user.role !== 'SYSTEM' && user.role !== 'ADMIN') return null;
 
+  // 파일 추가 — 5MB 이하만 허용 / Add files — only allows files under 5MB
   const handleAddFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newFiles = Array.from(e.target.files || []);
     const valid = newFiles.filter((f) => f.size <= 5 * 1024 * 1024);
@@ -63,12 +65,19 @@ export default function NewAnnouncementPage() {
     setShowConfirm(true);
   };
 
+  // 생성 또는 업로드 중 하나라도 진행 중이면 true / True if either creation or upload is in progress
   const isSaving = isCreating || isUploading;
 
+  /**
+   * 확인 후 실제 생성 — 공지 생성 → 첨부파일 순차 업로드
+   * 파일은 공지 ID가 필요하므로 생성 완료 후 순차 업로드
+   *
+   * Create handler — create announcement → upload files sequentially
+   * Files require announcement ID, so they upload after creation completes
+   */
   const handleConfirmCreate = async () => {
     try {
       const result = await createAnnouncement({ title: title.trim(), content: content.trim(), isPinned });
-      // Upload files after announcement is created
       if (files.length > 0 && result?.id) {
         for (const file of files) {
           await uploadAttachment({ announcementId: result.id, file });
@@ -84,7 +93,7 @@ export default function NewAnnouncementPage() {
   return (
     <div>
       {/* Header */}
-      <div className="flex items-center gap-3 py-6">
+      <div className="flex items-center gap-3 py-6 h-[88px]">
         <Link
           href="/announcements"
           className="flex items-center justify-center w-8 h-8 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-secondary transition-colors"

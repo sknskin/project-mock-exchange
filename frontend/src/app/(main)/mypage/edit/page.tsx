@@ -30,6 +30,7 @@ export default function MyPageEditPage() {
   const { data: profile, isLoading } = useProfile();
   const updateProfile = useUpdateProfile();
 
+  // 폼 상태 — 빈 문자열로 초기화 후 프로필 로드 시 채워짐 / Form state — initialized empty, populated when profile loads
   const [form, setForm] = useState({
     name: '',
     phone: '',
@@ -38,9 +39,12 @@ export default function MyPageEditPage() {
     zipCode: '',
   });
   const [error, setError] = useState('');
+  // initialized 플래그로 프로필 데이터의 중복 초기화 방지 / initialized flag prevents duplicate form population from profile data
   const [initialized, setInitialized] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
+  // 프로필 데이터 로드 시 폼 초기화 — initialized 플래그로 한 번만 실행
+  // Populate form from profile data — runs only once via initialized flag
   useEffect(() => {
     if (profile && !initialized) {
       setForm({
@@ -82,7 +86,7 @@ export default function MyPageEditPage() {
   return (
     <div className="pb-24">
       {/* Header */}
-      <div className="flex items-center gap-3 py-6">
+      <div className="flex items-center gap-3 py-6 h-[88px]">
         <Link
           href="/mypage"
           className="flex items-center justify-center w-8 h-8 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-secondary transition-colors"
@@ -127,7 +131,7 @@ export default function MyPageEditPage() {
           />
         </div>
 
-        {/* Address — uses AddressSearch modal (same as registration) */}
+        {/* 주소 — 회원가입과 동일한 AddressSearch 모달 컴포넌트 재사용 / Address — reuses same AddressSearch modal component as registration */}
         <div className="space-y-1.5">
           <label className="block text-[13px] font-semibold text-text-secondary">
             {t('mypage.address')}
@@ -170,7 +174,7 @@ export default function MyPageEditPage() {
         </div>
       </div>
 
-      {/* 수정 확인 모달 */}
+      {/* 수정 확인 모달 — 저장 전 최종 확인 / Edit confirm modal — final confirmation before save */}
       {confirmOpen && (
         <>
           <div className="fixed inset-0 z-[60] bg-black/60" onClick={() => setConfirmOpen(false)} />
