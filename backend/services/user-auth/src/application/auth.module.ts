@@ -24,13 +24,16 @@ import { StatisticsController } from '../presentation/controllers/statistics.con
 import { UserController } from '../presentation/controllers/user.controller';
 import { PriceAlertController } from '../presentation/controllers/price-alert.controller';
 import { SettingsController } from '../presentation/controllers/settings.controller';
+import { CommunityController } from '../presentation/controllers/community.controller';
 import { JwtStrategy } from '../infrastructure/config/jwt.strategy';
 import { UserRepository } from '../infrastructure/persistence/prisma/user.repository';
 import { USER_REPOSITORY } from '../domain/repositories/user.repository.interface';
 
 @Module({
   imports: [
+    // Passport: JWT 전략을 기본 인증 전략으로 등록 / Register JWT strategy as default auth strategy
     PassportModule.register({ defaultStrategy: 'jwt' }),
+    // JWT: 환경변수에서 시크릿 키와 만료 시간 로드 (기본 15분) / Load secret key and expiry from env vars (default 15m)
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
@@ -51,16 +54,19 @@ import { USER_REPOSITORY } from '../domain/repositories/user.repository.interfac
     UserController,
     PriceAlertController,
     SettingsController,
+    CommunityController,
   ],
   providers: [
-    AuthService,
-    AdminService,
-    AnnouncementService,
-    SmsVerificationService,
-    TotpService,
-    SettingsService,
-    JwtStrategy,
+    AuthService,           // 회원가입/로그인/토큰 관리 / Registration, login, token management
+    AdminService,          // 관리자 사용자 관리 / Admin user management
+    AnnouncementService,   // 공지사항 CRUD / Announcement CRUD
+    SmsVerificationService, // SMS 인증코드 발송/검증 / SMS code sending/verification
+    TotpService,           // TOTP 2FA 관리 / TOTP 2FA management
+    SettingsService,       // 시스템 설정 관리 / System settings management
+    JwtStrategy,           // Passport JWT 전략 구현 / Passport JWT strategy implementation
     {
+      // 의존성 역전: 도메인 인터페이스에 Prisma 구현체 바인딩
+      // Dependency Inversion: bind Prisma implementation to domain interface
       provide: USER_REPOSITORY,
       useClass: UserRepository,
     },

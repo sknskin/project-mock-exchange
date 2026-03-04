@@ -48,8 +48,13 @@
   | :3005         |   | :3006         |   | - 관심종목       |
   | - 1:1/그룹 채팅|   | - 시장 시그널  |   +-----------------+
   | - 초대/퇴장   |   | - 포트폴리오   |
-  | - 읽음 확인   |   |   분석        |
-  +---------------+   +---------------+
+  | - 읽음 확인   |   |   분석        |   +------------------+
+  +---------------+   +---------------+   | Notification     |
+                                          | :3004            |
+                                          | - 이메일 알림     |
+                                          | - 인앱 알림       |
+                                          | - 가격 알림       |
+                                          +------------------+
 ```
 
 ## 프로젝트 구조
@@ -220,6 +225,18 @@ curl http://localhost:3000/api/portfolio/valuation \
 | PATCH | `/api/admin/users/:id/role` | JWT (ADMIN) | 역할 변경 |
 | PATCH | `/api/admin/users/:id/toggle-active` | JWT (ADMIN) | 활성/비활성 전환 |
 | GET | `/api/admin/stats` | JWT (ADMIN) | 관리자 통계 |
+| GET | `/api/admin/users/:id` | JWT (ADMIN) | 사용자 상세 조회 |
+| GET | `/api/admin/settings` | JWT (ADMIN) | 시스템 설정 조회 |
+| PATCH | `/api/admin/settings` | JWT (ADMIN) | 시스템 설정 수정 |
+| GET | `/api/admin/health` | JWT (ADMIN) | 서비스 상태 조회 |
+| GET | `/api/admin/audit` | JWT (ADMIN) | 감사 보고서 목록 |
+
+### 프로필 (`/api/profile`)
+| 메서드 | 엔드포인트 | 인증 | 설명 |
+|--------|-----------|------|------|
+| GET | `/api/profile` | JWT | 내 프로필 조회 |
+| PATCH | `/api/profile` | JWT | 프로필 수정 (닉네임, 소개) |
+| PATCH | `/api/profile/password` | JWT | 비밀번호 변경 |
 
 ### 공지사항 (`/api/announcements`)
 | 메서드 | 엔드포인트 | 인증 | 설명 |
@@ -230,6 +247,14 @@ curl http://localhost:3000/api/portfolio/valuation \
 | PATCH | `/api/announcements/:id` | JWT (ADMIN) | 공지사항 수정 |
 | DELETE | `/api/announcements/:id` | JWT (ADMIN) | 공지사항 삭제 |
 | POST | `/api/announcements/:id/like` | JWT | 좋아요 토글 |
+| POST | `/api/announcements/:id/view` | 불필요 | 조회수 증가 |
+| GET | `/api/announcements/:id/comments` | 불필요 | 댓글 목록 |
+| POST | `/api/announcements/:id/comments` | JWT | 댓글 작성 |
+| DELETE | `/api/announcements/comments/:id` | JWT | 댓글 삭제 |
+| POST | `/api/announcements/comments/:id/like` | JWT | 댓글 좋아요 토글 |
+| GET | `/api/announcements/:id/adjacent` | 불필요 | 이전/다음 공지 |
+| PATCH | `/api/announcements/:id/pin` | JWT (ADMIN) | 고정/해제 |
+| POST | `/api/announcements/:id/attachments` | JWT (ADMIN) | 첨부파일 업로드 |
 
 ### 채팅 (`/api/chat`)
 | 메서드 | 엔드포인트 | 인증 | 설명 |
@@ -242,6 +267,9 @@ curl http://localhost:3000/api/portfolio/valuation \
 | POST | `/api/chat/rooms/:id/invite` | JWT | 채팅방 초대 |
 | POST | `/api/chat/rooms/:id/leave` | JWT | 채팅방 나가기 |
 | POST | `/api/chat/rooms/:id/kick` | JWT (ADMIN) | 사용자 강제 퇴장 |
+| PATCH | `/api/chat/rooms/:id/rename` | JWT | 채팅방 이름 변경 |
+| DELETE | `/api/chat/rooms/:id` | JWT | 채팅방 삭제 |
+| DELETE | `/api/chat/messages/:id` | JWT | 메시지 삭제 |
 | GET | `/api/chat/users/search` | JWT | 사용자 검색 (초대용) |
 
 ### 알림 (`/api/notifications`)
@@ -251,6 +279,7 @@ curl http://localhost:3000/api/portfolio/valuation \
 | GET | `/api/notifications/unread-count` | JWT | 읽지 않은 알림 수 |
 | POST | `/api/notifications/:id/read` | JWT | 알림 읽음 처리 |
 | POST | `/api/notifications/read-all` | JWT | 전체 읽음 처리 |
+| DELETE | `/api/notifications/:id` | JWT | 알림 삭제 |
 
 ### 가격 알림 (`/api/price-alerts`)
 | 메서드 | 엔드포인트 | 인증 | 설명 |
@@ -308,6 +337,7 @@ curl http://localhost:3000/api/portfolio/valuation \
 | Market Data | 3001 | Binance/Yahoo Finance 시세, 캔들스틱, 뉴스 |
 | Order Engine | 3002 | 주문 처리, 매칭 엔진 |
 | Portfolio | 3003 | 잔고, 보유 자산, 관심종목, 정산 |
+| Notification | 3004 | 이메일 알림, 인앱 알림, 가격 알림 |
 | Chat | 3005 | 1:1/그룹 채팅, 초대, 퇴장, 읽음 확인 |
 | AI Service | 3006 | AI 시장 분석 시그널, 포트폴리오 분석 |
 | User/Auth | 3007 | 회원가입, 로그인, JWT, 관리자, 공지사항, 알림, 통계, 가격 알림 |
@@ -405,7 +435,7 @@ cat logs/rotate.log
   - 포트폴리오 분석 (자산배분 파이차트, P&L 분석, CSV 내보내기)
   - 리더보드 고도화 (기간/정렬 필터, 메달 뱃지, 내 순위)
   - 커뮤니티 페이지 (전략 공유, 트레이더 프로필)
-  - Admin 패널 확장 (시스템 설정, 서비스 헬스, 감사 로그)
+  - Admin 패널 확장 (시스템 설정, 서비스 헬스 모니터링, 감사 보고서, 사용자 상세)
   - 접근성 개선 (포커스 트랩, ARIA, 키보드 내비게이션)
   - 마이페이지 거래 통계
 - [x] **Phase 4**: AI 통합 (시장 분석 시그널, 포트폴리오 AI 분석)

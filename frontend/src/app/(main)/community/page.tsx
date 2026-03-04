@@ -1,22 +1,23 @@
 /**
  * @file 커뮤니티 페이지
- * @description 전략 공유와 트레이더 랭킹을 보여주는 소셜/커뮤니티 페이지
- *              백엔드 미구현 상태이므로 리더보드 데이터와 모의 데이터를 활용합니다
+ * @description 자유게시판(실제 API), 전략 공유, 트레이더 랭킹을 보여주는 소셜/커뮤니티 페이지
  *
  * @file Community Page
- * @description Social/community page showing strategy sharing and trader rankings
- *              Uses leaderboard data and mock data since backend is not yet implemented
+ * @description Community page with real discussion board, strategy sharing, and trader rankings
  */
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import AuthGuard from '@/components/layout/AuthGuard';
+import Pagination from '@/components/ui/Pagination';
 import { useLeaderboard } from '@/hooks/useLeaderboard';
 import { useAuthStore } from '@/stores/auth';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn, formatPercent, formatCurrencyDisplay } from '@/lib/format';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
+import { useCommunityPosts } from '@/hooks/useCommunity';
 import {
   Users,
   TrendingUp,
@@ -30,6 +31,9 @@ import {
   PenSquare,
   Clock,
   ThumbsUp,
+  Eye,
+  Search,
+  Paperclip,
 } from 'lucide-react';
 import type { TranslationKey } from '@/lib/i18n';
 import type { LeaderboardEntry } from '@/types';
@@ -90,13 +94,17 @@ const DESCRIPTIONS_EN = [
   'Buy on bounce near support level',
 ];
 
-/* ───────── 시드 기반 의사 난수 / Seed-based pseudo-random ───────── */
+/**
+ * 시드 기반 의사 난수 — 서버/클라이언트 동일한 결과를 위해 Math.random 대신 사용
+ * Seed-based pseudo-random — used instead of Math.random for SSR/hydration consistency
+ */
 
 function seededRandom(seed: number): number {
   const x = Math.sin(seed) * 10000;
   return x - Math.floor(x);
 }
 
+// 문자열을 숫자로 변환하는 해시 함수 (시드 생성용) / String-to-number hash function (for seed generation)
 function hashString(str: string): number {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
@@ -131,7 +139,7 @@ function generateMockStrategies(
 
   for (let i = 0; i < Math.min(10, users.length); i++) {
     const user = users[i];
-    const seed = hashString(user.userId + i.toString());
+    const seed = hashString(user.id + i.toString());
     const symbolIndex = Math.floor(seededRandom(seed) * SYMBOLS.length);
     const symbol = SYMBOLS[symbolIndex];
     const titleOptions = titles[symbol] || titles['BTC'];
@@ -254,9 +262,9 @@ function TraderCard({
   fmt: (v: number) => string;
 }) {
   const mockFollowers = useMemo(() => {
-    const seed = hashString(entry.userId);
+    const seed = hashString(entry.id);
     return Math.floor(seededRandom(seed + 100) * 300) + 10;
-  }, [entry.userId]);
+  }, [entry.id]);
 
   const displayName = entry.name || entry.username || '-';
 
@@ -337,57 +345,45 @@ function TraderCard({
 
 /* ───────── 메인 페이지 / Main Page ───────── */
 
-/* ───────── 모의 게시판 데이터 / Mock Discussion Data ───────── */
+const DISCUSSION_CATEGORIES = [
+  { value: 'ALL', ko: '전체', en: 'All' },
+  { value: 'FREE', ko: '자유토론', en: 'Discussion' },
+  { value: 'INFO', ko: '정보공유', en: 'Info' },
+  { value: 'QUESTION', ko: '질문', en: 'Question' },
+  { value: 'STRATEGY', ko: '전략', en: 'Strategy' },
+  { value: 'ANALYSIS', ko: '분석', en: 'Analysis' },
+  { value: 'PROOF', ko: '인증', en: 'Proof' },
+];
 
-interface MockPost {
-  id: string;
-  author: string;
-  title: string;
-  preview: string;
-  likes: number;
-  comments: number;
-  hoursAgo: number;
-  category: string;
+const CATEGORY_LABELS: Record<string, { ko: string; en: string }> = {
+  FREE: { ko: '자유토론', en: 'Discussion' },
+  INFO: { ko: '정보공유', en: 'Info' },
+  QUESTION: { ko: '질문', en: 'Question' },
+  STRATEGY: { ko: '전략', en: 'Strategy' },
+  ANALYSIS: { ko: '분석', en: 'Analysis' },
+  PROOF: { ko: '인증', en: 'Proof' },
+};
+
+// 상대 시간 표시 유틸 (분/시간/일) / Relative time display utility (min/hour/day)
+function timeAgo(dateStr: string, locale: 'ko' | 'en'): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return locale === 'ko' ? '방금 전' : 'just now';
+  if (mins < 60) return locale === 'ko' ? `${mins}분 전` : `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return locale === 'ko' ? `${hours}시간 전` : `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return locale === 'ko' ? `${days}일 전` : `${days}d ago`;
 }
 
-function generateMockPosts(locale: 'ko' | 'en'): MockPost[] {
-  const postsKo = [
-    { title: 'BTC 10만 돌파 가능할까요?', preview: '최근 추세를 보면 올해 안에 가능할 것 같은데 여러분의 의견은?', category: '자유토론' },
-    { title: 'ETH 스테이킹 수익률 공유', preview: '현재 연 4.2% 정도 나오고 있습니다. 다른 분들은 어떤가요?', category: '정보공유' },
-    { title: '초보자 질문 - 지정가 주문이 뭔가요?', preview: '시장가랑 지정가 차이가 뭔지 잘 모르겠어요', category: '질문' },
-    { title: 'NVDA 실적 발표 전 매매 전략', preview: 'AI 수요 증가로 실적 좋을 것 같아서 미리 매수했습니다', category: '전략' },
-    { title: '오늘의 시장 분석 (03/01)', preview: 'BTC 강보합, ETH 소폭 상승. 주요 지지/저항 분석', category: '분석' },
-    { title: '모의투자 포트폴리오 인증합니다', preview: '시작한 지 2주 만에 12% 수익! 비결은 분산투자입니다', category: '인증' },
-  ];
-  const postsEn = [
-    { title: 'Can BTC break $100K?', preview: 'Looking at recent trends, seems possible this year. What do you think?', category: 'Discussion' },
-    { title: 'ETH staking yield sharing', preview: 'Currently getting about 4.2% APY. What about you all?', category: 'Info' },
-    { title: 'Beginner Q - What is a limit order?', preview: "I don't understand the difference between market and limit orders", category: 'Question' },
-    { title: 'NVDA pre-earnings strategy', preview: 'Bought early expecting strong earnings from AI demand', category: 'Strategy' },
-    { title: "Today's market analysis (03/01)", preview: 'BTC consolidating, ETH slightly up. Key support/resistance levels', category: 'Analysis' },
-    { title: 'Mock portfolio proof - 12% gain', preview: 'After 2 weeks, up 12%! Secret is diversification', category: 'Proof' },
-  ];
-
-  const posts = locale === 'ko' ? postsKo : postsEn;
-  const authors = ['TraderKim', 'CryptoLee', 'StockPark', 'InvestChoi', 'BullJang', 'BearYoon'];
-
-  return posts.map((p, i) => {
-    const seed = hashString(p.title);
-    return {
-      id: `post-${i}`,
-      author: authors[i % authors.length],
-      title: p.title,
-      preview: p.preview,
-      likes: Math.floor(seededRandom(seed + 10) * 50) + 3,
-      comments: Math.floor(seededRandom(seed + 11) * 20) + 1,
-      hoursAgo: Math.floor(seededRandom(seed + 12) * 24) + 1,
-      category: p.category,
-    };
-  });
+// HTML 태그 제거 유틸 (게시글 미리보기용) / Strip HTML tags utility (for post preview)
+function stripHtml(html: string): string {
+  return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
 }
 
 export default function CommunityPage() {
   const { t, locale } = useTranslation();
+  const router = useRouter();
   const [tab, setTabRaw] = useState<'discussions' | 'strategies' | 'traders'>('discussions');
   const setTab = useCallback((v: typeof tab) => { setTabRaw(v); window.scrollTo({ top: 0, behavior: 'smooth' }); }, []);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -397,6 +393,29 @@ export default function CommunityPage() {
   const { display: currencyMode } = useCurrencyDisplay();
   const rate = rateData?.rate;
   const fmt = (v: number) => formatCurrencyDisplay(v, currencyMode, rate);
+
+  // 자유게시판 상태 / Discussion board state
+  const [discussionPage, setDiscussionPage] = useState(1);
+  const [discussionCategory, setDiscussionCategory] = useState('ALL');
+  const [searchInput, setSearchInput] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
+
+  // 디바운스 검색 — 300ms 후 쿼리 적용 / Debounced search — applies query after 300ms
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setSearchQuery(searchInput);
+      setDiscussionPage(1);
+    }, 300);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [searchInput]);
+
+  const { data: postsData, isLoading: postsLoading } = useCommunityPosts(
+    discussionPage,
+    discussionCategory !== 'ALL' ? discussionCategory : undefined,
+    searchQuery || undefined,
+  );
 
   // 모의 전략 데이터 생성 / Generate mock strategies from leaderboard
   const strategies = useMemo(() => {
@@ -424,8 +443,6 @@ export default function CommunityPage() {
     });
   };
 
-  const mockPosts = useMemo(() => generateMockPosts(locale), [locale]);
-
   return (
     <AuthGuard>
       <div>
@@ -437,113 +454,167 @@ export default function CommunityPage() {
           </h1>
         </div>
 
-        {/* 개발 중 안내 배너 / Development notice banner */}
-        <div className="flex items-center gap-2 px-3 py-2 mb-4 rounded-lg bg-warning/10">
-          <AlertTriangle className="w-3.5 h-3.5 text-warning shrink-0" />
-          <span className="text-[12px] text-warning">
-            {t('community.mockNotice')}
-          </span>
-        </div>
+        {/* 개발 중 안내 배너 — 전략/트레이더 탭에만 표시 */}
+        {tab !== 'discussions' && (
+          <div className="flex items-center gap-2 px-3 py-2 mb-4 rounded-lg bg-warning/10">
+            <AlertTriangle className="w-3.5 h-3.5 text-warning shrink-0" />
+            <span className="text-[12px] text-warning">
+              {t('community.mockNotice')}
+            </span>
+          </div>
+        )}
 
         {/* 탭 네비게이션 / Tab navigation */}
-        <div className="flex items-center gap-1 bg-bg-secondary border border-border rounded-xl p-1 mb-6">
-          <button
-            onClick={() => setTab('discussions')}
-            className={cn(
-              'flex-1 px-4 py-2 rounded-lg text-[13px] font-semibold transition-colors',
-              tab === 'discussions'
-                ? 'bg-accent text-white'
-                : 'text-text-quaternary hover:text-text-secondary',
-            )}
-          >
-            {t('community.discussions')}
-          </button>
-          <button
-            onClick={() => setTab('strategies')}
-            className={cn(
-              'flex-1 px-4 py-2 rounded-lg text-[13px] font-semibold transition-colors',
-              tab === 'strategies'
-                ? 'bg-accent text-white'
-                : 'text-text-quaternary hover:text-text-secondary',
-            )}
-          >
-            {t('community.strategies')}
-          </button>
-          <button
-            onClick={() => setTab('traders')}
-            className={cn(
-              'flex-1 px-4 py-2 rounded-lg text-[13px] font-semibold transition-colors',
-              tab === 'traders'
-                ? 'bg-accent text-white'
-                : 'text-text-quaternary hover:text-text-secondary',
-            )}
-          >
-            {t('community.traders')}
-          </button>
+        <div className="flex items-center border-b border-border mb-5">
+          {([
+            { key: 'discussions' as const, label: t('community.discussions') },
+            { key: 'strategies' as const, label: t('community.strategies') },
+            { key: 'traders' as const, label: t('community.traders') },
+          ]).map((item) => (
+            <button
+              key={item.key}
+              onClick={() => setTab(item.key)}
+              className={cn(
+                'relative px-4 py-2.5 text-[14px] font-semibold transition-colors',
+                tab === item.key
+                  ? 'text-accent'
+                  : 'text-text-tertiary hover:text-text-primary',
+              )}
+            >
+              {item.label}
+              {tab === item.key && (
+                <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-accent rounded-t" />
+              )}
+            </button>
+          ))}
         </div>
 
         {/* 자유게시판 탭 / Discussions Tab */}
         {tab === 'discussions' && (
           <div>
-            {/* 글쓰기 버튼 / Write button */}
-            {isAuthenticated && (
-              <div className="flex justify-end mb-4">
-                <button className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-accent text-white text-[13px] font-semibold hover:bg-accent/90 transition-colors">
+            {/* 카테고리 필터 + 글쓰기 / Category filter + Write button */}
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <div className="flex flex-wrap gap-1.5">
+                {DISCUSSION_CATEGORIES.map((cat) => (
+                  <button
+                    key={cat.value}
+                    onClick={() => { setDiscussionCategory(cat.value); setDiscussionPage(1); }}
+                    className={cn(
+                      'px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors',
+                      discussionCategory === cat.value
+                        ? 'bg-accent text-white'
+                        : 'bg-bg-tertiary text-text-quaternary hover:text-text-secondary',
+                    )}
+                  >
+                    {locale === 'ko' ? cat.ko : cat.en}
+                  </button>
+                ))}
+              </div>
+              {isAuthenticated && (
+                <button
+                  onClick={() => router.push('/community/new')}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-accent text-white text-[13px] font-semibold hover:bg-accent/90 transition-colors shrink-0"
+                >
                   <PenSquare className="w-3.5 h-3.5" />
                   {t('community.writePost')}
                 </button>
+              )}
+            </div>
+
+            {/* 검색 / Search */}
+            <div className="relative mb-4">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-quaternary" />
+              <input
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                placeholder={t('community.post.searchPlaceholder')}
+                className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-bg-secondary border border-border/50 text-[13px] text-text-primary placeholder:text-text-quaternary focus:outline-none focus:border-accent/50"
+              />
+            </div>
+
+            {/* 게시글 목록 / Post list */}
+            {postsLoading ? (
+              <div className="space-y-3">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="bg-bg-secondary/60 border border-border/60 rounded-xl p-4 animate-pulse">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="h-4 w-16 bg-bg-tertiary rounded" />
+                      <div className="h-3 w-20 bg-bg-tertiary rounded" />
+                    </div>
+                    <div className="h-4 w-3/4 bg-bg-tertiary rounded mb-1" />
+                    <div className="h-3 w-1/2 bg-bg-tertiary rounded" />
+                  </div>
+                ))}
+              </div>
+            ) : (postsData?.data && postsData.data.length > 0) ? (
+              <div className="space-y-3">
+                {postsData.data.map((post) => (
+                  <div
+                    key={post.id}
+                    onClick={() => router.push(`/community/${post.id}`)}
+                    className="bg-bg-secondary/60 border border-border/60 rounded-xl p-4 hover:border-accent/30 transition-all cursor-pointer"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <span className="px-2 py-0.5 text-[10px] font-semibold rounded-md bg-accent/10 text-accent shrink-0">
+                            {CATEGORY_LABELS[post.category]?.[locale] ?? post.category}
+                          </span>
+                          <span className="text-[12px] text-text-quaternary truncate">
+                            {post.authorName}
+                          </span>
+                        </div>
+                        <h3 className="text-[14px] font-bold text-text-primary mb-1 line-clamp-1">
+                          {post.title}
+                        </h3>
+                        <p className="text-[12px] text-text-tertiary line-clamp-1 leading-relaxed">
+                          {stripHtml(post.content)}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border/40">
+                      <span className="flex items-center gap-1 text-[12px] text-text-quaternary">
+                        <ThumbsUp className="w-3.5 h-3.5" />
+                        <span className="tabular-nums">{post._count?.likes ?? post.likeCount ?? 0}</span>
+                      </span>
+                      <span className="flex items-center gap-1 text-[12px] text-text-quaternary">
+                        <MessageSquare className="w-3.5 h-3.5" />
+                        <span className="tabular-nums">{post._count?.comments ?? post.commentCount ?? 0}</span>
+                      </span>
+                      <span className="flex items-center gap-1 text-[12px] text-text-quaternary">
+                        <Eye className="w-3.5 h-3.5" />
+                        <span className="tabular-nums">{post.viewCount}</span>
+                      </span>
+                      {(post.attachmentCount ?? 0) > 0 && (
+                        <span className="flex items-center gap-1 text-[12px] text-text-quaternary">
+                          <Paperclip className="w-3.5 h-3.5" />
+                          <span className="tabular-nums">{post.attachmentCount}</span>
+                        </span>
+                      )}
+                      <span className="flex items-center gap-1 text-[12px] text-text-quaternary ml-auto">
+                        <Clock className="w-3 h-3" />
+                        {timeAgo(post.createdAt, locale)}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-24 text-center text-text-quaternary text-[14px]">
+                {t('community.post.noPosts')}
               </div>
             )}
 
-            <div className="space-y-3">
-              {mockPosts.map((post) => (
-                <div
-                  key={post.id}
-                  className="bg-bg-secondary/60 border border-border/60 rounded-xl p-4 hover:border-accent/30 transition-all cursor-pointer"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 mb-1.5">
-                        <span className="px-2 py-0.5 text-[10px] font-semibold rounded-md bg-accent/10 text-accent shrink-0">
-                          {post.category}
-                        </span>
-                        <span className="text-[12px] text-text-quaternary truncate">
-                          {post.author}
-                        </span>
-                      </div>
-                      <h3 className="text-[14px] font-bold text-text-primary mb-1 line-clamp-1">
-                        {post.title}
-                      </h3>
-                      <p className="text-[12px] text-text-tertiary line-clamp-1 leading-relaxed">
-                        {post.preview}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border/40">
-                    <span className="flex items-center gap-1 text-[12px] text-text-quaternary">
-                      <ThumbsUp className="w-3.5 h-3.5" />
-                      <span className="tabular-nums">{post.likes}</span>
-                    </span>
-                    <span className="flex items-center gap-1 text-[12px] text-text-quaternary">
-                      <MessageSquare className="w-3.5 h-3.5" />
-                      <span className="tabular-nums">{post.comments}</span>
-                    </span>
-                    <span className="flex items-center gap-1 text-[12px] text-text-quaternary ml-auto">
-                      <Clock className="w-3 h-3" />
-                      {post.hoursAgo}{locale === 'ko' ? '시간 전' : 'h ago'}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* 개발 중 안내 / Coming soon notice */}
-            <div className="flex items-center gap-2 px-3 py-2 mt-4 rounded-lg bg-warning/10">
-              <AlertTriangle className="w-3.5 h-3.5 text-warning shrink-0" />
-              <span className="text-[12px] text-warning">
-                {t('community.discussionNotice')}
-              </span>
-            </div>
+            {/* 페이지네이션 / Pagination */}
+            {postsData && postsData.totalPages > 1 && (
+              <Pagination
+                page={discussionPage}
+                totalPages={postsData.totalPages}
+                total={postsData.total}
+                limit={postsData.limit}
+                onPageChange={setDiscussionPage}
+              />
+            )}
           </div>
         )}
 
@@ -614,10 +685,10 @@ export default function CommunityPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {activeTraders.map((entry) => (
                   <TraderCard
-                    key={entry.userId}
+                    key={entry.id}
                     entry={entry}
-                    isFollowed={followedUsers.has(entry.userId)}
-                    onToggleFollow={() => toggleFollow(entry.userId)}
+                    isFollowed={followedUsers.has(entry.id)}
+                    onToggleFollow={() => toggleFollow(entry.id)}
                     t={t}
                     fmt={fmt}
                   />

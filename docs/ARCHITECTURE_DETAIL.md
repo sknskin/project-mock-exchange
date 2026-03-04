@@ -133,7 +133,7 @@ virtuex/
 │       │       ├── domain/            # BalanceService
 │       │       ├── infrastructure/    # Prisma
 │       │       └── presentation/      # PortfolioController, InternalController
-│       ├── notification/              # 알림 서비스 (포트 3004)
+│       ├── notification/              # 알림 서비스 (포트 3004) - 이메일 알림, 인앱 알림, 가격 알림
 │       ├── chat/                      # 채팅 서비스 (포트 3005) - 1:1/그룹 채팅, 초대, 퇴장, 읽음 확인
 │       └── ai-service/               # AI 서비스 (포트 3006) - 시장 분석 시그널, 포트폴리오 분석
 │
@@ -152,7 +152,20 @@ virtuex/
 │       │       ├── asset/[symbol]/page.tsx  # 종목 상세
 │       │       ├── portfolio/page.tsx       # 포트폴리오
 │       │       ├── orders/page.tsx          # 주문 내역
-│       │       └── leaderboard/page.tsx     # 리더보드
+│       │       ├── leaderboard/page.tsx     # 리더보드
+│       │       ├── community/page.tsx       # 커뮤니티 (자유게시판, 전략공유, 트레이더)
+│       │       ├── community/[id]/page.tsx  # 커뮤니티 게시글 상세
+│       │       ├── community/new/page.tsx   # 커뮤니티 게시글 작성
+│       │       ├── mypage/page.tsx          # 마이페이지 (프로필, 거래 통계, 설정)
+│       │       ├── news/page.tsx            # 뉴스 목록
+│       │       ├── announcements/page.tsx   # 공지사항 목록
+│       │       ├── help/page.tsx            # 도움말
+│       │       ├── admin/users/page.tsx     # 관리자 - 사용자 관리
+│       │       ├── admin/stats/page.tsx     # 관리자 - 통계
+│       │       ├── admin/announcements/page.tsx  # 관리자 - 공지사항
+│       │       ├── admin/settings/page.tsx  # 관리자 - 시스템 설정
+│       │       ├── admin/health/page.tsx    # 관리자 - 서비스 상태
+│       │       └── admin/audit/page.tsx     # 관리자 - 감사 보고서
 │       ├── components/
 │       │   ├── chart/
 │       │   │   └── CandlestickChart.tsx     # TradingView 캔들스틱 차트
@@ -275,6 +288,8 @@ API Gateway는 모든 클라이언트 요청의 진입점이며, 다음 역할�
 | `/api/notifications/*` | user-auth (3007) → `/notifications/*` | 필요 |
 | `/api/price-alerts/*` | user-auth (3007) → `/price-alerts/*` | 필요 |
 | `/api/statistics/*` | user-auth (3007) → `/statistics/*` | 필요 (ADMIN) |
+| `/api/profile/*` | user-auth (3007) → `/profile/*` | 필요 |
+| `/api/community/*` | user-auth (3007) → `/community/*` | 일부 |
 
 #### JWT 인증 구조
 
@@ -661,6 +676,78 @@ LeaderboardEntry = {
 
 ---
 
+### 4.6 Notification 서비스 (포트 3004)
+
+이메일 알림, 인앱 알림, 가격 알림을 담당합니다.
+
+#### 주요 기능
+
+- **인앱 알림**: 거래 체결, 주문 상태 변경, 시스템 공지 등 알림 생성 및 조회
+- **이메일 알림**: 중요 이벤트(비밀번호 변경, 계정 잠금 등) 이메일 전송
+- **가격 알림**: 사용자가 설정한 목표가에 도달 시 자동 알림 트리거
+- **Kafka 소비자**: `trade.events`, `order.events` 토픽에서 이벤트를 소비하여 알림 생성
+
+#### API 엔드포인트
+
+| 메서드 | 경로 | 설명 |
+|--------|------|------|
+| GET | `/notifications` | 알림 목록 (페이지네이션) |
+| GET | `/notifications/unread-count` | 읽지 않은 알림 수 |
+| POST | `/notifications/:id/read` | 알림 읽음 처리 |
+| POST | `/notifications/read-all` | 전체 읽음 처리 |
+| DELETE | `/notifications/:id` | 알림 삭제 |
+
+---
+
+### 4.7 Chat 서비스 (포트 3005)
+
+실시간 1:1/그룹 채팅을 담당합니다. Socket.IO 기반으로 동작합니다.
+
+#### 주요 기능
+
+- **1:1 채팅**: 사용자 간 직접 메시지 (DM)
+- **그룹 채팅**: 다수 사용자 참여 가능한 그룹 채팅방
+- **채팅방 관리**: 생성, 초대, 퇴장, 이름 변경, 삭제
+- **읽음 확인**: 메시지 읽음 상태 추적
+- **강제 퇴장**: ADMIN 사용자의 kick 기능
+- **프레즌스**: 온라인/오프라인 상태 표시
+
+#### API 엔드포인트
+
+| 메서드 | 경로 | 설명 |
+|--------|------|------|
+| GET | `/chat/rooms` | 내 채팅방 목록 |
+| POST | `/chat/rooms` | 채팅방 생성 (DM/GROUP) |
+| GET | `/chat/rooms/:id/messages` | 메시지 목록 (커서 페이지네이션) |
+| POST | `/chat/rooms/:id/messages` | 메시지 전송 |
+| POST | `/chat/rooms/:id/read` | 읽음 확인 |
+| POST | `/chat/rooms/:id/invite` | 채팅방 초대 |
+| POST | `/chat/rooms/:id/leave` | 채팅방 나가기 |
+| POST | `/chat/rooms/:id/kick` | 사용자 강제 퇴장 |
+| PATCH | `/chat/rooms/:id/rename` | 채팅방 이름 변경 |
+| DELETE | `/chat/rooms/:id` | 채팅방 삭제 |
+| DELETE | `/chat/messages/:id` | 메시지 삭제 |
+
+---
+
+### 4.8 AI Service (포트 3006)
+
+AI 기반 시장 분석 시그널 및 포트폴리오 분석을 제공합니다. 규칙 기반 분석 엔진을 사용합니다.
+
+#### 주요 기능
+
+- **시장 시그널**: 자산별 매수/매도/관망 시그널 생성 (기술적 지표 기반)
+- **포트폴리오 분석**: HHI 지수 기반 분산도, 리스크 평가, 리밸런싱 제안
+
+#### API 엔드포인트
+
+| 메서드 | 경로 | 설명 |
+|--------|------|------|
+| GET | `/analysis/signals` | AI 시장 분석 시그널 |
+| POST | `/analysis/portfolio-analysis` | 포트폴리오 AI 분석 |
+
+---
+
 ## 5. 프론트엔드 상세
 
 ### 5.1 디자인 시스템 (토스증권 스타일)
@@ -987,6 +1074,9 @@ useWebSocket(symbols: string[], onPriceUpdate: callback)
 | POST | `/api/chat/rooms/:id/invite` | **필요** | 채팅방 초대 |
 | POST | `/api/chat/rooms/:id/leave` | **필요** | 채팅방 나가기 |
 | POST | `/api/chat/rooms/:id/kick` | **필요** (ADMIN) | 사용자 강제 퇴장 |
+| PATCH | `/api/chat/rooms/:id/rename` | **필요** | 채팅방 이름 변경 |
+| DELETE | `/api/chat/rooms/:id` | **필요** | 채팅방 삭제 |
+| DELETE | `/api/chat/messages/:id` | **필요** | 메시지 삭제 |
 | GET | `/api/chat/users/search` | **필요** | 사용자 검색 (초대용) |
 
 ### AI 분석 (AI)
@@ -1006,6 +1096,18 @@ useWebSocket(symbols: string[], onPriceUpdate: callback)
 | PATCH | `/api/admin/users/:id/role` | **필요** (ADMIN) | 역할 변경 |
 | PATCH | `/api/admin/users/:id/toggle-active` | **필요** (ADMIN) | 활성/비활성 전환 |
 | GET | `/api/admin/stats` | **필요** (ADMIN) | 관리자 통계 |
+| GET | `/api/admin/users/:id` | **필요** (ADMIN) | 사용자 상세 조회 |
+| GET | `/api/admin/settings` | **필요** (ADMIN) | 시스템 설정 조회 |
+| PATCH | `/api/admin/settings` | **필요** (ADMIN) | 시스템 설정 수정 |
+| GET | `/api/admin/health` | **필요** (ADMIN) | 서비스 상태 조회 |
+
+### 프로필 (Profile)
+
+| 메서드 | 경로 | 인증 | 설명 |
+|--------|------|------|------|
+| GET | `/api/profile` | **필요** | 내 프로필 조회 |
+| PATCH | `/api/profile` | **필요** | 프로필 수정 |
+| PATCH | `/api/profile/password` | **필요** | 비밀번호 변경 |
 
 ### 알림 (Notifications)
 
@@ -1015,6 +1117,39 @@ useWebSocket(symbols: string[], onPriceUpdate: callback)
 | GET | `/api/notifications/unread-count` | **필요** | 읽지 않은 알림 수 |
 | POST | `/api/notifications/:id/read` | **필요** | 알림 읽음 처리 |
 | POST | `/api/notifications/read-all` | **필요** | 전체 읽음 처리 |
+| DELETE | `/api/notifications/:id` | **필요** | 알림 삭제 |
+
+### 가격 알림 (Price Alerts)
+
+| 메서드 | 경로 | 인증 | 설명 |
+|--------|------|------|------|
+| POST | `/api/price-alerts` | **필요** | 가격 알림 생성 (최대 20개) |
+| GET | `/api/price-alerts` | **필요** | 내 알림 목록 |
+| DELETE | `/api/price-alerts/:id` | **필요** | 가격 알림 삭제 |
+
+### 통계 (Statistics)
+
+| 메서드 | 경로 | 인증 | 설명 |
+|--------|------|------|------|
+| GET | `/api/statistics/overview` | **필요** (ADMIN) | 통계 개요 (KPI) |
+| GET | `/api/statistics/registrations` | **필요** (ADMIN) | 가입자 추이 |
+| GET | `/api/statistics/logins` | **필요** (ADMIN) | 로그인 추이 |
+| GET | `/api/statistics/page-views` | **필요** (ADMIN) | 페이지뷰 추이 |
+| POST | `/api/statistics/page-view` | 불필요 | 페이지 방문 기록 |
+
+### 커뮤니티 (Community)
+
+| 메서드 | 경로 | 인증 | 설명 |
+|--------|------|------|------|
+| GET | `/api/community/posts` | 불필요 | 게시글 목록 |
+| GET | `/api/community/posts/:id` | 불필요 | 게시글 상세 |
+| POST | `/api/community/posts` | **필요** | 게시글 작성 |
+| PUT | `/api/community/posts/:id` | **필요** | 게시글 수정 |
+| DELETE | `/api/community/posts/:id` | **필요** | 게시글 삭제 |
+| POST | `/api/community/posts/:id/like` | **필요** | 좋아요 토글 |
+| POST | `/api/community/posts/:id/comments` | **필요** | 댓글 작성 |
+| DELETE | `/api/community/comments/:id` | **필요** | 댓글 삭제 |
+| POST | `/api/community/comments/:id/like` | **필요** | 댓글 좋아요 |
 
 ### WebSocket
 

@@ -244,3 +244,83 @@ model SystemSetting {
 
   @@map("system_settings")
 }
+
+model CommunityPost {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title      String    @db.VarChar(200)
+  content    String    @db.Text
+  category   String    @default("FREE") @db.VarChar(50)
+  authorId   String    @map("author_id")
+  authorName String    @map("author_name") @db.VarChar(100)
+  viewCount  Int       @default(0) @map("view_count")
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt  DateTime  @updatedAt @map("updated_at") @db.Timestamptz()
+
+  comments    CommunityComment[]
+  likes       CommunityPostLike[]
+  attachments CommunityAttachment[]
+
+  @@index([authorId])
+  @@index([category])
+  @@index([createdAt])
+  @@map("community_posts")
+}
+
+model CommunityAttachment {
+  id           String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  postId       String        @map("post_id") @db.Uuid
+  post         CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  fileName     String        @map("file_name") @db.VarChar(255)
+  originalName String        @map("original_name") @db.VarChar(255)
+  mimeType     String        @map("mime_type") @db.VarChar(100)
+  size         Int
+  createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamptz()
+
+  @@index([postId])
+  @@map("community_attachments")
+}
+
+model CommunityComment {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  content    String    @db.VarChar(2000)
+  authorId   String    @map("author_id")
+  authorName String    @map("author_name") @db.VarChar(100)
+  postId     String    @map("post_id") @db.Uuid
+  parentId   String?   @map("parent_id") @db.Uuid
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+
+  post       CommunityPost    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  parent     CommunityComment?  @relation("CommunityCommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies    CommunityComment[] @relation("CommunityCommentReplies")
+  likes      CommunityCommentLike[]
+
+  @@index([postId])
+  @@index([parentId])
+  @@map("community_comments")
+}
+
+model CommunityPostLike {
+  id     String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId String   @map("user_id")
+  postId String   @map("post_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  post   CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@index([postId])
+  @@map("community_post_likes")
+}
+
+model CommunityCommentLike {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @map("user_id")
+  commentId String   @map("comment_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  comment   CommunityComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, commentId])
+  @@index([commentId])
+  @@map("community_comment_likes")
+}

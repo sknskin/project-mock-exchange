@@ -22,9 +22,17 @@ import { PriceAlertProxyController } from './price-alert-proxy.controller';
 import { AiProxyController } from './ai-proxy.controller';
 import { SettingsProxyController } from './settings-proxy.controller';
 import { UserSettingsProxyController } from './user-settings-proxy.controller';
+import { CommunityProxyController } from './community-proxy.controller';
 import { ProxyService } from './proxy.service';
 import { GatewayModule } from '../gateway/gateway.module';
 
+/**
+ * 모든 프록시 컨트롤러를 단일 모듈로 통합합니다.
+ * GatewayModule을 임포트하여 WebSocket 알림(ChatGateway)을 프록시 컨트롤러에서 사용 가능하게 합니다.
+ *
+ * Consolidates all proxy controllers into a single module.
+ * Imports GatewayModule to make WebSocket notifications (ChatGateway) available to proxy controllers.
+ */
 @Module({
   imports: [GatewayModule],
   controllers: [
@@ -43,7 +51,10 @@ import { GatewayModule } from '../gateway/gateway.module';
     AiProxyController,
     SettingsProxyController,
     UserSettingsProxyController,
+    CommunityProxyController,
   ],
+  // ProxyService: 마이크로서비스 프록시 + Circuit Breaker / Microservice proxy with Circuit Breaker
+  // ConfigService: 환경변수 접근용 / For accessing environment variables
   providers: [ProxyService, ConfigService],
   exports: [ProxyService],
 })

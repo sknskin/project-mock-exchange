@@ -199,19 +199,25 @@ node backend/services/portfolio/dist/main.js
 ```
 사용자 잔고 관리, 보유 자산 추적, 손익(P&L) 계산을 담당합니다.
 
-#### 터미널 5 - Chat (3005)
+#### 터미널 5 - Notification (3004)
+```bash
+node backend/services/notification/dist/main.js
+```
+이메일 알림, 인앱 알림, 가격 알림을 처리합니다.
+
+#### 터미널 6 - Chat (3005)
 ```bash
 node backend/services/chat/dist/main.js
 ```
 실시간 1:1/그룹 채팅, 초대, 퇴장, 읽음 확인을 처리합니다.
 
-#### 터미널 6 - AI Service (3006)
+#### 터미널 7 - AI Service (3006)
 ```bash
 node backend/services/ai-service/dist/main.js
 ```
 AI 시장 분석 시그널, 포트폴리오 분석을 제공합니다.
 
-#### 터미널 7 - API Gateway (3000)
+#### 터미널 8 - API Gateway (3000)
 ```bash
 node backend/services/api-gateway/dist/main.js
 ```
@@ -223,7 +229,7 @@ node backend/services/api-gateway/dist/main.js
 
 ### 7. 프론트엔드 실행
 
-#### 터미널 8
+#### 터미널 9
 ```bash
 cd frontend
 pnpm dev
@@ -250,11 +256,14 @@ Next.js 15 App Router 기반의 프론트엔드가 포트 4000에서 시작됩�
 | http://localhost:4000/announcements/:id | 공지사항 상세 (조회수, 좋아요) |
 | http://localhost:4000/community | 커뮤니티 (전략 공유, 트레이더) |
 | http://localhost:4000/mypage | 마이페이지 (프로필, 거래 통계, 설정) |
+| http://localhost:4000/help | 도움말 |
 | http://localhost:4000/admin/users | 관리자 - 사용자 관리 (ADMIN 전용) |
 | http://localhost:4000/admin/users/:id | 관리자 - 사용자 상세 (ADMIN 전용) |
 | http://localhost:4000/admin/stats | 관리자 - 통계 (ADMIN 전용) |
 | http://localhost:4000/admin/announcements | 관리자 - 공지사항 관리 (ADMIN 전용) |
 | http://localhost:4000/admin/settings | 관리자 - 시스템 설정 (ADMIN 전용) |
+| http://localhost:4000/admin/health | 관리자 - 서비스 상태 (ADMIN 전용) |
+| http://localhost:4000/admin/audit | 관리자 - 감사 보고서 (ADMIN 전용) |
 | http://localhost:3000/api-docs | Swagger API 문서 |
 
 ---
