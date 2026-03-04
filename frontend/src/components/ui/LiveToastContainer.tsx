@@ -1,3 +1,10 @@
+/**
+ * @file 실시간 토스트 알림 컨테이너
+ * @description WebSocket 이벤트(채팅, 거래, 가격알림, 공지 등)에 대응하는 실시간 토스트 UI
+ *
+ * @file Live Toast Container
+ * @description Real-time toast UI for WebSocket events (chat, trade, price alert, announcements, etc.)
+ */
 'use client';
 
 import { useRouter } from 'next/navigation';
@@ -19,6 +26,7 @@ import { useChatStore } from '@/stores/chat';
 import { useSettingsStore } from '@/stores/settings';
 import { t } from '@/lib/i18n';
 
+// 카테고리별 아이콘 매핑 / Icon mapping per toast category
 const ICON_MAP: Record<LiveToastCategory, typeof MessageSquare> = {
   'chat-message': MessageSquare,
   'chat-invited': UserPlus,
@@ -32,6 +40,7 @@ const ICON_MAP: Record<LiveToastCategory, typeof MessageSquare> = {
   'registration-request': UserCog,
 };
 
+// 카테고리별 색상 클래스 매핑 / Color class mapping per toast category
 const COLOR_MAP: Record<LiveToastCategory, string> = {
   'chat-message': 'border-accent/40 bg-accent/10 text-accent',
   'chat-invited': 'border-accent/40 bg-accent/10 text-accent',
@@ -54,6 +63,7 @@ export default function LiveToastContainer() {
 
   if (toasts.length === 0) return null;
 
+  // 토스트 클릭 시 채팅방 열기 또는 해당 페이지로 이동 / On click, open chat room or navigate to target page
   const handleClick = (toast: (typeof toasts)[0]) => {
     if (toast.chatRoomId) {
       openChat();

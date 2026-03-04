@@ -7,6 +7,7 @@
  */
 import { useSettingsStore } from '@/stores/settings';
 
+// 현재 설정된 로케일을 Zustand 스토어에서 가져옴 / Get current locale from Zustand store
 function getLocale(): 'ko' | 'en' {
   try {
     return useSettingsStore.getState().locale;
@@ -15,6 +16,7 @@ function getLocale(): 'ko' | 'en' {
   }
 }
 
+// 가격 포맷: 크기에 따라 소수점 자릿수 자동 조절 / Format price: auto-adjust decimal places by magnitude
 export function formatPrice(price: number): string {
   if (price >= 1_000_000) {
     return price.toLocaleString('ko-KR', {
@@ -33,12 +35,14 @@ export function formatPrice(price: number): string {
   });
 }
 
+// 퍼센트 포맷: 부호 포함, 소수점 3자리 / Format percent: with sign, 3 decimal places
 export function formatPercent(percent: number): string {
   if (percent == null || isNaN(percent)) return '-';
   const sign = percent >= 0 ? '+' : '';
   return `${sign}${percent.toFixed(3)}%`;
 }
 
+// 변동 금액 포맷: 부호 포함, 크기에 따라 소수점 자동 조절 / Format change amount: with sign, auto-adjust decimals
 export function formatAmount(amount: number): string {
   const sign = amount >= 0 ? '+' : '-';
   const abs = Math.abs(amount);
@@ -54,6 +58,7 @@ export function formatAmount(amount: number): string {
   return sign + abs.toFixed(6);
 }
 
+// 압축 가격 포맷: 인덱스 표시용 간결한 포맷 / Compact price format: concise format for index display
 export function formatCompactPrice(price: number): string {
   if (price >= 10000) {
     return price.toLocaleString('ko-KR', { maximumFractionDigits: 0 });
@@ -67,6 +72,7 @@ export function formatCompactPrice(price: number): string {
   return price.toFixed(6);
 }
 
+// 원화 통화 포맷: 로케일에 따라 '₩' 또는 '원' 접미사 사용 / KRW currency format: uses '₩' or '원' based on locale
 export function formatCurrency(value: number): string {
   if (value == null || isNaN(value)) return '-';
   const locale = getLocale();
@@ -99,6 +105,7 @@ export function formatCurrencyDisplay(
   return formatCurrency(value);
 }
 
+// 수량 포맷: 1 이상이면 소수점 4자리, 미만이면 8자리 / Format quantity: 4 decimals if >=1, else 8 decimals
 export function formatQuantity(quantity: number): string {
   if (quantity >= 1) {
     return quantity.toLocaleString('ko-KR', {
@@ -110,6 +117,7 @@ export function formatQuantity(quantity: number): string {
   });
 }
 
+// 시간 포맷: HH:MM:SS 형식 / Format time: HH:MM:SS format
 export function formatTime(dateString: string): string {
   if (!dateString) return '-';
   const date = new Date(dateString);
@@ -121,6 +129,7 @@ export function formatTime(dateString: string): string {
   });
 }
 
+// 날짜 포맷: MM/DD HH:MM 형식 / Format date: MM/DD HH:MM format
 export function formatDate(dateString: string): string {
   if (!dateString) return '-';
   const date = new Date(dateString);
@@ -133,6 +142,7 @@ export function formatDate(dateString: string): string {
   });
 }
 
+// 거래량 포맷: 로케일에 따라 B/M/K 또는 억/만 단위 축약 / Format volume: B/M/K or 억/만 abbreviation by locale
 export function formatVolume(volume: number): string {
   const locale = getLocale();
   if (locale === 'en') {
@@ -150,6 +160,7 @@ export function formatVolume(volume: number): string {
   return volume.toLocaleString('ko-KR', { maximumFractionDigits: 0 });
 }
 
+// 조건부 클래스명 결합 유틸리티 / Conditional class name join utility
 export function cn(...classes: (string | boolean | undefined | null)[]): string {
   return classes.filter(Boolean).join(' ');
 }

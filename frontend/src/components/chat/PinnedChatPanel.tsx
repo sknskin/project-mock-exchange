@@ -1,3 +1,10 @@
+/**
+ * @file 고정 채팅 패널 컴포넌트
+ * @description 데스크톱(lg+)에서 우측 사이드바로 고정되는 채팅 패널 — translate 애니메이션으로 열고 닫음
+ *
+ * @file Pinned Chat Panel Component
+ * @description Chat panel pinned to right sidebar on desktop (lg+) — slides in/out via translate animation
+ */
 'use client';
 
 import { useChatStore } from '@/stores/chat';

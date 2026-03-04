@@ -90,6 +90,13 @@ export class ProfileController {
     return { success: true, data: updated };
   }
 
+  /**
+   * 비밀번호 변경 — 현재 비밀번호 검증 후 새 비밀번호로 변경
+   * bcrypt 라운드 12로 해싱하여 보안 강화
+   *
+   * Change password — verify current password, then update to new one
+   * Hash with bcrypt round 12 for enhanced security
+   */
   @Post('change-password')
   async changePassword(
     @CurrentUser() user: UserDto,

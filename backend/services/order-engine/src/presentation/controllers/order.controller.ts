@@ -31,6 +31,8 @@ export class OrderController {
     private readonly orderService: OrderService,
   ) {}
 
+  // 주문 생성 — userId는 API Gateway에서 JWT로부터 추출하여 x-user-id 헤더로 전달
+  // Place order — userId extracted from JWT by API Gateway and forwarded via x-user-id header
   @Post()
   async placeOrder(
     @Headers('x-user-id') userId: string,
@@ -38,6 +40,7 @@ export class OrderController {
   ) {
     this.validateUserId(userId);
 
+    // 지정가 주문은 반드시 가격 필요 / Limit orders must specify a price
     if (dto.type === 'LIMIT' && !dto.price) {
       throw new BadRequestException('Limit orders require a price');
     }
@@ -65,6 +68,8 @@ export class OrderController {
     return { success: true, data: result };
   }
 
+  // 조건부 주문 트리거 확인 — Market Data 서비스에서 주기적으로 호출
+  // Check conditional order triggers — called periodically by Market Data service
   @Post('check-triggers')
   async checkTriggers(
     @Body() body: { symbol: string; currentPrice: string },
@@ -123,6 +128,7 @@ export class OrderController {
     @Query('status') status?: string,
   ) {
     this.validateUserId(userId);
+    // 페이지네이션 최대값 제한 (1~500) — 메모리 소진 방지 / Cap pagination limit (1-500) — prevents memory exhaustion
     const parsedLimit = Math.min(Math.max(parseInt(limit || '50', 10) || 50, 1), 500);
     const parsedOffset = Math.max(parseInt(offset || '0', 10) || 0, 0);
     const orders = await this.orderService.getUserOrders(
@@ -162,6 +168,8 @@ export class OrderController {
     return { success: true, data: book };
   }
 
+  // UUID v4 형식 검증 — 잘못된 userId로 인한 쿼리 오류 방지
+  // UUID v4 format validation — prevents query errors from invalid userId
   private readonly UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
   private validateUserId(userId: string): void {

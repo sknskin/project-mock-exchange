@@ -1,3 +1,10 @@
+/**
+ * @file 채팅방 초대 모달 컴포넌트
+ * @description 기존 채팅방에 새 참여자를 검색/선택하여 초대하는 모달 (포커스 트랩 적용)
+ *
+ * @file Invite Modal Component
+ * @description Modal to search/select and invite new participants to existing chat room (focus trap applied)
+ */
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -10,9 +17,13 @@ import { cn } from '@/lib/format';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 import type { ChatUserSearchResult } from '@/types';
 
+// 초대 모달 Props / Invite Modal Props
 interface InviteModalProps {
+  /** 초대할 채팅방 ID / Chat room ID to invite to */
   roomId: string;
+  /** 이미 참여 중인 사용자 ID 목록 (검색 결과에서 제외) / Existing participant IDs (excluded from search) */
   existingParticipantIds: string[];
+  /** 모달 닫기 콜백 / Modal close callback */
   onClose: () => void;
 }
 

@@ -13,7 +13,9 @@ import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
 import type { Order } from '@/types';
 
+// 거래 내역 Props / Transaction List Props
 interface TransactionListProps {
+  /** 주문 내역 배열 / Array of order records */
   orders: Order[];
 }
 

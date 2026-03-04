@@ -1,3 +1,10 @@
+/**
+ * @file 채팅 버튼 컴포넌트
+ * @description 헤더에 위치하며 채팅 패널 토글 및 읽지 않은 메시지 배지를 표시
+ *
+ * @file Chat Button Component
+ * @description Located in header; toggles chat panel and shows unread message badge
+ */
 'use client';
 
 import { useRef, useCallback } from 'react';
@@ -16,6 +23,7 @@ export default function ChatButton() {
   const { data: rooms } = useChatRooms();
   const btnRef = useRef<HTMLButtonElement>(null);
 
+  // 모든 채팅방의 총 읽지 않은 메시지 수 계산 / Calculate total unread messages across all rooms
   const totalUnread = rooms?.reduce((sum, r) => sum + r.unreadCount, 0) ?? 0;
 
   const handleClick = useCallback(() => {

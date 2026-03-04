@@ -13,21 +13,35 @@ import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
 import { Plus, Minus } from 'lucide-react';
 
+// 잔고 카드 Props / Balance Card Props
 interface BalanceCardProps {
+  /** 총 자산 가치 / Total asset value */
   totalValue: number;
+  /** 총 손익 / Total profit/loss */
   totalPnl: number;
+  /** 총 손익률 (%) / Total P&L percentage (%) */
   totalPnlPercent: number;
+  /** 현금 잔고 / Cash balance */
   cashBalance: number;
+  /** 실현 손익 / Realized P&L */
   realizedPnl?: number;
+  /** 미실현 손익 / Unrealized P&L */
   unrealizedPnl?: number;
+  /** 총 매입 비용 / Total cost basis */
   totalCost?: number;
+  /** 총 시장 가치 / Total market value */
   totalMarketValue?: number;
+  /** 투자 수익률 (%) / Invested return percentage */
   investedReturnPercent?: number;
+  /** 순 입금액 / Net deposit */
   netDeposit?: number;
+  /** 입금 콜백 / Deposit callback */
   onDeposit?: () => void;
+  /** 출금 콜백 / Withdraw callback */
   onWithdraw?: () => void;
 }
 
+// 현금/투자 비중 도넛 차트 (SVG) / Cash/investment ratio donut chart (SVG)
 function DonutChart({ cashPercent, investedPercent }: { cashPercent: number; investedPercent: number }) {
   const { t } = useTranslation();
   const size = 120;

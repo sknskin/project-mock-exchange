@@ -14,10 +14,13 @@ import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
 import type { Holding } from '@/types';
 
+// 보유 자산 카드 Props / Holding Card Props
 interface HoldingCardProps {
+  /** 보유 종목 데이터 / Holding data */
   holding: Holding;
 }
 
+// 심볼 해시 기반 색상 배정 (일관된 색상 보장) / Hash-based color assignment per symbol (ensures consistent colors)
 function getSymbolColor(symbol: string): string {
   const colors = [
     'bg-blue-500', 'bg-emerald-500', 'bg-violet-500', 'bg-orange-500',

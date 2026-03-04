@@ -31,15 +31,26 @@ import { CurrentUser } from '../../infrastructure/config/current-user.decorator'
 import { UserDto } from '@virtuex/common';
 import { InternalAuthGuard } from '../../common/guards/internal-auth.guard';
 
+// 리프레시 토큰 쿠키 이름 / Refresh token cookie name
 const REFRESH_TOKEN_COOKIE = 'refresh_token';
+/**
+ * 보안 쿠키 옵션:
+ * - httpOnly: JavaScript에서 접근 불가 (XSS 방지) / Inaccessible from JavaScript (XSS protection)
+ * - secure: 프로덕션에서 HTTPS만 허용 / HTTPS only in production
+ * - sameSite: CSRF 방지 / CSRF protection
+ * - path: /api/auth 경로에만 전송 / Only sent on /api/auth paths
+ * - maxAge: 7일 유효기간 / 7-day expiry
+ */
 const COOKIE_OPTIONS = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
   sameSite: 'lax' as const,
   path: '/api/auth',
-  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  maxAge: 7 * 24 * 60 * 60 * 1000, // 7일 / 7 days
 };
 
+// InternalAuthGuard — API Gateway만 접근 가능 (x-internal-token 검증)
+// InternalAuthGuard — Only accessible from API Gateway (validates x-internal-token)
 @UseGuards(InternalAuthGuard)
 @Controller('auth')
 export class AuthController {
@@ -66,9 +77,11 @@ export class AuthController {
     return { success: true, data: user };
   }
 
+  // 로그인 1단계: 비밀번호 검증 후 SMS 인증 세션 생성 / Login step 1: verify password, then create SMS verification session
   @Post('login')
   @HttpCode(HttpStatus.OK)
   async login(@Body() dto: LoginRequestDto) {
+    // identifier: 이메일 또는 아이디 (둘 다 허용) / identifier accepts both email and username
     const result = await this.authService.login(dto.identifier, dto.password);
 
     return {
@@ -81,6 +94,7 @@ export class AuthController {
     };
   }
 
+  // 로그인 2단계: SMS 인증코드 검증 후 JWT + 리프레시 토큰 발급 / Login step 2: verify SMS code, then issue JWT + refresh token
   @Post('login/verify-sms')
   @HttpCode(HttpStatus.OK)
   async verifyLoginSms(
@@ -115,6 +129,8 @@ export class AuthController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
+    // httpOnly 쿠키에서 리프레시 토큰 추출 — 클라이언트 JavaScript에서 접근 불가
+    // Extract refresh token from httpOnly cookie — inaccessible to client-side JavaScript
     const oldToken = req.cookies?.[REFRESH_TOKEN_COOKIE];
     if (!oldToken) {
       return res.status(HttpStatus.UNAUTHORIZED).json({
@@ -205,7 +221,7 @@ export class AuthController {
     return { success: true, data: { exists } };
   }
 
-  // ── TOTP 2FA ──
+  // ── TOTP 2FA (시간 기반 일회용 비밀번호) / Time-based One-Time Password ──
 
   @Post('totp/setup')
   @UseGuards(JwtAuthGuard)

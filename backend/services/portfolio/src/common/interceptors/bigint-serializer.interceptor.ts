@@ -1,3 +1,14 @@
+/**
+ * @file BigInt/Decimal 직렬화 인터셉터
+ * @description JSON 직렬화 시 BigInt, Decimal, Prisma Decimal, Date 타입을
+ *              안전하게 문자열로 변환합니다. BigInt가 Number.MAX_SAFE_INTEGER를
+ *              초과하면 문자열로 반환하여 정밀도 손실을 방지합니다.
+ *
+ * @file BigInt/Decimal Serializer Interceptor
+ * @description Safely converts BigInt, Decimal, Prisma Decimal, and Date types
+ *              to strings during JSON serialization. BigInt values exceeding
+ *              Number.MAX_SAFE_INTEGER are returned as strings to prevent precision loss.
+ */
 import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';

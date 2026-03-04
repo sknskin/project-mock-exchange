@@ -18,10 +18,15 @@ import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
 import { useToastStore } from '@/stores/toast';
 import { cn, isKRW, formatPriceDisplay } from '@/lib/format';
 
+// 가격 알림 모달 Props / Price Alert Modal Props
 interface PriceAlertModalProps {
+  /** 모달 열림 여부 / Whether modal is open */
   isOpen: boolean;
+  /** 모달 닫기 콜백 / Modal close callback */
   onClose: () => void;
+  /** 종목 심볼 / Asset symbol */
   symbol: string;
+  /** 현재 가격 (USD 기준) / Current price (USD-based) */
   currentPrice: number;
 }
 

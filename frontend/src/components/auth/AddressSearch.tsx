@@ -13,12 +13,19 @@ import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 import { useTranslation } from '@/hooks/useTranslation';
 
+// 주소 검색 Props / Address Search Props
 interface AddressSearchProps {
+  /** 선택된 주소 / Selected address */
   address: string;
+  /** 상세 주소 / Detail address */
   addressDetail: string;
+  /** 우편번호 / Zip code */
   zipCode: string;
+  /** 주소 선택 콜백 / Address selection callback */
   onAddressChange: (address: string, zipCode: string) => void;
+  /** 상세 주소 변경 콜백 / Detail address change callback */
   onAddressDetailChange: (detail: string) => void;
+  /** 상세 주소 에러 / Detail address error */
   addressDetailError?: string;
 }
 

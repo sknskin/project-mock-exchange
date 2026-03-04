@@ -1,3 +1,10 @@
+/**
+ * @file 채팅 컨트롤러
+ * @description 채팅방 CRUD, 메시지 송수신, 참여자 관리, 읽음 확인, 통계 API
+ *
+ * @file Chat Controller
+ * @description Chat room CRUD, messaging, participant management, read receipts, statistics API
+ */
 import {
   Controller,
   Get,
@@ -18,6 +25,8 @@ import { SendMessageDto } from './dto/send-message.dto';
 import { InviteUserDto } from './dto/invite-user.dto';
 import { InternalAuthGuard } from '../common/guards/internal-auth.guard';
 
+// InternalAuthGuard: API Gateway만 접근 가능 (x-internal-token 검증)
+// InternalAuthGuard: Only API Gateway can access (validates x-internal-token)
 @UseGuards(InternalAuthGuard)
 @Controller()
 export class ChatController {
@@ -45,8 +54,10 @@ export class ChatController {
     @Headers('x-participant-usernames') participantUsernamesHeader?: string,
     @Headers('x-participant-names') participantNamesHeader?: string,
   ) {
+    // 헤더에서 URI-인코딩된 한국어 이름 디코딩 (100자 제한) / Decode URI-encoded Korean name from header (max 100 chars)
     let decodedName = '';
     try { decodedName = name ? decodeURIComponent(name).slice(0, 100) : ''; } catch { decodedName = ''; }
+    // API Gateway에서 JSON으로 전달된 참여자 정보 파싱 / Parse participant info passed as JSON from API Gateway
     let participantUsernames: Record<string, string> = {};
     let participantNames: Record<string, string> = {};
     if (participantUsernamesHeader) {

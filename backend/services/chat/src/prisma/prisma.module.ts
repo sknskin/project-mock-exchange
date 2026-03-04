@@ -1,3 +1,10 @@
+/**
+ * @file Chat Prisma 모듈
+ * @description Chat 서비스의 Prisma DB 접근을 제공하는 글로벌 모듈
+ *
+ * @file Chat Prisma Module
+ * @description Global module providing Prisma DB access for Chat service
+ */
 import { Global, Module } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
 

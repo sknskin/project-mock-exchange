@@ -8,46 +8,73 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+// 거래 제한 설정 / Trading limit settings
 export interface TradingLimits {
+  /** 최소 주문 수량 / Minimum order quantity */
   minOrderQty: number;
+  /** 최대 주문 수량 / Maximum order quantity */
   maxOrderQty: number;
+  /** 사용자당 최대 미체결 주문 수 / Max open orders per user */
   maxOpenOrdersPerUser: number;
 }
 
+// 거래 수수료 설정 / Trading fee settings
 export interface TradingFees {
+  /** 메이커 수수료 (%) / Maker fee (%) */
   makerFee: number;
+  /** 테이커 수수료 (%) / Taker fee (%) */
   takerFee: number;
 }
 
+// 시스템 상태 / System status
 export interface SystemStatus {
+  /** 거래 활성화 여부 / Whether trading is enabled */
   tradingEnabled: boolean;
+  /** 유지보수 모드 여부 / Whether in maintenance mode */
   maintenanceMode: boolean;
 }
 
+// 초기 자금 설정 / Initial balance settings
 export interface InitialBalance {
+  /** 기본 지급 자금 (KRW) / Default starting balance (KRW) */
   defaultBalance: number;
 }
 
+// 시장 운영시간 설정 / Market hours settings
 export interface MarketHours {
+  /** 시장 개장 시간 (HH:mm) / Market open time (HH:mm) */
   marketOpenTime: string;
+  /** 시장 마감 시간 (HH:mm) / Market close time (HH:mm) */
   marketCloseTime: string;
+  /** 주말 거래 허용 여부 / Whether weekend trading is allowed */
   weekendTradingEnabled: boolean;
 }
 
+// 리스크 관리 설정 / Risk management settings
 export interface RiskManagement {
+  /** 단일 주문 최대 금액 / Maximum single order value */
   maxSingleOrderValue: number;
+  /** 일일 손실 제한 비율 (%) / Daily loss limit percentage (%) */
   dailyLossLimitPercent: number;
+  /** 마진콜 임계치 (%) / Margin call threshold (%) */
   marginCallThreshold: number;
 }
 
+// 알림 설정 / Notification settings
 export interface NotificationSettings {
+  /** 이메일 알림 활성화 여부 / Whether email notifications are enabled */
   emailNotificationEnabled: boolean;
+  /** 알림 보관 기간 (일) / Notification retention period (days) */
   notificationRetentionDays: number;
 }
 
+// 세션 및 보안 설정 / Session and security settings
 export interface SessionSecurity {
+  /** 세션 타임아웃 (분) / Session timeout (minutes) */
   sessionTimeoutMinutes: number;
+  /** 최대 로그인 시도 횟수 / Maximum login attempts */
   maxLoginAttempts: number;
+  /** 관리자 2FA 필수 여부 / Whether 2FA is required for admin */
   require2FAForAdmin: boolean;
 }
 

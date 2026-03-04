@@ -697,6 +697,13 @@ export class OrderService {
 
   // ---- 비공개 헬퍼 메서드 / Private helpers ----
 
+  /**
+   * 지수 백오프 재시도 — 일시적 네트워크 장애에 대응.
+   * 4xx 클라이언트 에러는 재시도하지 않습니다 (클라이언트 문제이므로).
+   *
+   * Exponential backoff retry — handles transient network failures.
+   * Does not retry 4xx client errors (they won't self-heal).
+   */
   private async withRetry<T>(
     fn: () => Promise<T>,
     label: string,
@@ -845,6 +852,13 @@ export class OrderService {
     return fills;
   }
 
+  /**
+   * Market Data 서비스에서 현재 시장 가격을 조회합니다.
+   * 내부 서비스 통신이므로 x-internal-token 헤더를 사용합니다.
+   *
+   * Fetches current market price from Market Data service.
+   * Uses x-internal-token header for inter-service communication.
+   */
   private async getMarketPrice(symbol: string): Promise<Decimal | null> {
     try {
       const response = await axios.get(
@@ -861,6 +875,13 @@ export class OrderService {
     }
   }
 
+  /**
+   * Portfolio 서비스에 자금 예약 요청.
+   * 매수 주문 전 사용자의 가용 현금에서 예약 현금으로 이동시킵니다.
+   *
+   * Request fund reservation from Portfolio service.
+   * Moves user's available cash to reserved cash before placing a buy order.
+   */
   private async reserveFunds(
     userId: string,
     amount: string,
@@ -962,6 +983,15 @@ export class OrderService {
     }
   }
 
+  /**
+   * 체결된 거래를 Portfolio 서비스에서 정산합니다.
+   * 매수자와 매도자 각각에 대해 settle-buy/settle-sell API를 호출합니다.
+   * MARKET_MAKER_ID(가상 시장 조성자)에 대해서는 정산을 건너뜁니다.
+   *
+   * Settles executed trades in Portfolio service.
+   * Calls settle-buy/settle-sell API for both buyer and seller.
+   * Skips settlement for MARKET_MAKER_ID (virtual market maker).
+   */
   private async settleTrade(fill: MatchResult): Promise<void> {
     // USD 가격을 KRW로 변환 / Convert USD price to KRW for portfolio settlement
     const krwPrice = await this.toKrw(new Decimal(fill.matchedPrice), fill.symbol);

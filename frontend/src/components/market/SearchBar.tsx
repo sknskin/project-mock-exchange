@@ -10,9 +10,13 @@
 import { Search } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 
+// 검색바 Props / Search Bar Props
 interface SearchBarProps {
+  /** 검색어 / Search query */
   value: string;
+  /** 검색어 변경 콜백 / Search query change callback */
   onChange: (value: string) => void;
+  /** 플레이스홀더 텍스트 / Placeholder text */
   placeholder?: string;
 }
 

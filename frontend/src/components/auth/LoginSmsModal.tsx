@@ -1,3 +1,10 @@
+/**
+ * @file 로그인 SMS 인증 모달 컴포넌트
+ * @description 2단계 인증(2FA) SMS 코드 입력 모달 — 타이머, 잠금, 포커스 트랩, 스크롤 잠금 포함
+ *
+ * @file Login SMS Verification Modal Component
+ * @description 2FA SMS code input modal — includes timer, lockout, focus trap, and scroll lock
+ */
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -8,11 +15,17 @@ import Input from '@/components/ui/Input';
 import api from '@/lib/api';
 import type { AxiosError } from 'axios';
 
+// SMS 인증 모달 Props / Login SMS Modal Props
 interface LoginSmsModalProps {
+  /** 모달 열림 여부 / Whether modal is open */
   isOpen: boolean;
+  /** 인증 세션 ID / Verification session ID */
   sessionId: string;
+  /** 마스킹된 전화번호 (예: 010-****-1234) / Masked phone number */
   maskedPhone: string;
+  /** 인증 성공 콜백 / Verification success callback */
   onSuccess: (data: { user: { id: string; email: string; name: string; role: string }; accessToken: string }) => void;
+  /** 모달 닫기 콜백 / Modal close callback */
   onClose: () => void;
 }
 

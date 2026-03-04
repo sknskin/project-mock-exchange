@@ -1,3 +1,10 @@
+/**
+ * @file 메시지 입력 컴포넌트
+ * @description 자동 높이 조절 textarea + @ 멘션 자동완성 + 타이핑 인디케이터 연동
+ *
+ * @file Message Input Component
+ * @description Auto-resizing textarea with @ mention autocomplete and typing indicator integration
+ */
 'use client';
 
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
@@ -6,12 +13,19 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/format';
 import type { ChatParticipant } from '@/types';
 
+// 메시지 입력 Props / Message Input Props
 interface MessageInputProps {
+  /** 메시지 전송 콜백 / Message send callback */
   onSend: (content: string) => void;
+  /** 입력 비활성화 여부 / Whether input is disabled */
   disabled?: boolean;
+  /** 부모에서 포커스를 호출하기 위한 ref / Ref for parent to call focus */
   focusRef?: React.MutableRefObject<(() => void) | null>;
+  /** 멘션 대상 참여자 목록 / Participants for mention autocomplete */
   participants?: ChatParticipant[];
+  /** 현재 사용자 ID (멘션에서 자신 제외) / Current user ID (excluded from mentions) */
   currentUserId?: string;
+  /** 타이핑 이벤트 콜백 / Typing event callback */
   onTyping?: () => void;
 }
 

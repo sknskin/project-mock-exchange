@@ -17,7 +17,7 @@ import Skeleton from '@/components/ui/Skeleton';
 import { cn, formatDate } from '@/lib/format';
 import type { AdminUser } from '@/types';
 
-// ===== Role badge =====
+// ===== 역할(권한) 뱃지 — 아이콘 + 배경색으로 구분 / Role badge — differentiated by icon + background color =====
 function RoleBadge({ role }: { role: string }) {
   if (role === 'SYSTEM') {
     return (
@@ -43,7 +43,7 @@ function RoleBadge({ role }: { role: string }) {
   );
 }
 
-// ===== Status badge =====
+// ===== 계정 상태 뱃지 — 비활성 > 반려 > 대기 > 승인 우선순위 / Status badge — priority: inactive > rejected > pending > approved =====
 function StatusBadge({ user, t }: { user: AdminUser; t: (key: Parameters<ReturnType<typeof useTranslation>['t']>[0]) => string }) {
   if (!user.isActive) {
     return (
@@ -82,7 +82,7 @@ const STATUS_OPTIONS = [
   { key: 'inactive', labelKey: 'admin.users.filterInactive' as const },
 ];
 
-// ===== Custom status dropdown =====
+// ===== 커스텀 상태 드롭다운 — 외부 클릭 닫기 포함 / Custom status dropdown — with outside click dismiss =====
 function StatusDropdown({
   value,
   onChange,
@@ -241,7 +241,7 @@ export default function AdminUsersPage() {
         />
       </div>
 
-      {/* Mobile card view */}
+      {/* 모바일 카드 뷰 — sm 미만에서 표시, 테이블 대신 카드 레이아웃 / Mobile card view — shown below sm breakpoint, card layout instead of table */}
       <div className="sm:hidden space-y-3">
         {isLoading ? (
           Array.from({ length: limit }).map((_, i) => (
@@ -280,7 +280,7 @@ export default function AdminUsersPage() {
         )}
       </div>
 
-      {/* Table - desktop only */}
+      {/* 데스크톱 테이블 뷰 — sm 이상에서만 표시, 행 클릭으로 상세 이동 / Desktop table view — shown sm+, row click navigates to detail */}
       <div className="hidden sm:block overflow-x-auto">
         <table className="w-full min-w-[640px]">
           <thead>

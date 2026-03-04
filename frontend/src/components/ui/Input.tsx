@@ -11,9 +11,13 @@ import { useState, useRef, useCallback, useEffect, forwardRef } from 'react';
 import { cn } from '@/lib/format';
 import { useTranslation } from '@/hooks/useTranslation';
 
+// 입력 필드 Props — 네이티브 input 속성 확장 / Input Props — extends native input attributes
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  /** 입력 필드 라벨 / Input field label */
   label?: string;
+  /** 에러 메시지 / Error message */
   error?: string;
+  /** 영문 전용 모드 (한글 입력 자동 제거) / English-only mode (auto-strips Korean input) */
   englishOnly?: boolean;
 }
 

@@ -22,6 +22,7 @@ import { UserDto, USER_ROLE } from '@virtuex/common';
 import { PrismaService } from '../../infrastructure/persistence/prisma/prisma.service';
 import { InternalAuthGuard } from '../../common/guards/internal-auth.guard';
 
+// 페이지 뷰 추적 DTO — 정규식으로 URL 인젝션 방지 / Page view tracking DTO — regex prevents URL injection
 class TrackPageViewDto {
   @IsString()
   @MaxLength(500)
@@ -33,6 +34,7 @@ class TrackPageViewDto {
   userId?: string;
 }
 
+// 기간 조회 쿼리 DTO — 최대 365일 제한으로 과도한 조회 방지 / Period query DTO — max 365 days to prevent excessive queries
 class PeriodQueryDto {
   @IsOptional()
   @IsString()
@@ -408,12 +410,17 @@ export class StatisticsController {
   }
 }
 
+// 오늘 0시 0분 0초를 반환하는 유틸리티 함수 / Utility function returning today's midnight
 function startOfDay(): Date {
   const d = new Date();
   d.setHours(0, 0, 0, 0);
   return d;
 }
 
+/**
+ * 날짜별 데이터를 지정된 기간(시간별/일별/주별/월별/연별)으로 그룹화합니다
+ * Aggregates date-based data by the specified period (hourly/daily/weekly/monthly/yearly)
+ */
 function groupByPeriod(
   items: Array<{ date: Date; value: number }>,
   period: string,

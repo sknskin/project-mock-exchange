@@ -13,11 +13,17 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/format';
 import { X } from 'lucide-react';
 
+// 주문 모달 Props / Order Sheet Props
 interface OrderSheetProps {
+  /** 모달 열림 여부 / Whether modal is open */
   isOpen: boolean;
+  /** 모달 닫기 콜백 / Modal close callback */
   onClose: () => void;
+  /** 종목 심볼 / Asset symbol */
   symbol: string;
+  /** 현재 가격 / Current price */
   currentPrice: number;
+  /** 초기 매수/매도 방향 / Initial buy/sell side */
   initialSide: 'BUY' | 'SELL';
 }
 

@@ -137,7 +137,13 @@ export class OrderAggregate extends AggregateRoot {
     });
   }
 
-  // 이벤트 핸들러 (컨벤션: on{이벤트명}) / Event handlers (convention: on{EventShortName})
+  /**
+   * 이벤트 핸들러 — AggregateRoot의 이벤트명에서 접두사를 제거한 이름으로 호출됩니다.
+   * 예: ORDER_PLACED → onPlaced, ORDER_MATCHED → onMatched
+   *
+   * Event handlers — called by AggregateRoot with the event name prefix stripped.
+   * e.g., ORDER_PLACED → onPlaced, ORDER_MATCHED → onMatched
+   */
   protected onPlaced(data: Record<string, unknown>): void {
     this._orderId = data.orderId as string;
     this._userId = data.userId as string;

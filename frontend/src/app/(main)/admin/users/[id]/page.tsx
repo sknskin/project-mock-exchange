@@ -129,17 +129,22 @@ export default function AdminUserDetailPage({
     return null;
   }
 
-  // Role hierarchy: SYSTEM(0) > ADMIN(1) > USER(2)
-  // Can only manage users with strictly lower role
+  /**
+   * 역할 계층 구조: SYSTEM(0) > ADMIN(1) > USER(2)
+   * 자신보다 낮은 역할만 관리 가능 — SYSTEM은 ADMIN/USER 관리, ADMIN은 USER만 관리
+   *
+   * Role hierarchy: SYSTEM(0) > ADMIN(1) > USER(2)
+   * Can only manage users with strictly lower role — SYSTEM manages ADMIN/USER, ADMIN manages USER only
+   */
   const ROLE_LEVEL: Record<string, number> = { SYSTEM: 0, ADMIN: 1, USER: 2 };
   const currentLevel = ROLE_LEVEL[currentUser?.role ?? ''] ?? 99;
   const targetLevel = ROLE_LEVEL[user?.role ?? ''] ?? 99;
   const canManage = user ? currentLevel < targetLevel : false;
 
-  // Modals with a note textarea: approve, reject
+  // 메모 입력란이 있는 모달: 승인, 반려 (사유 기록용) / Modals with note textarea: approve, reject (for recording reasons)
   const hasNoteField = activeModal === 'approve' || activeModal === 'reject';
 
-  // Simple modals (no note): deactivate, activate, delete, changeRole
+  // 단순 확인 모달: 비활성화, 활성화, 삭제, 역할변경 / Simple confirm modals: deactivate, activate, delete, changeRole
   const isSimpleModal = activeModal === 'deactivate' || activeModal === 'activate' || activeModal === 'delete' || activeModal === 'changeRole';
 
   const openModal = (type: ModalType) => {
@@ -477,7 +482,7 @@ export default function AdminUserDetailPage({
         </>
       )}
 
-      {/* Simple Confirm Modal — for deactivate, activate, delete (no note field) */}
+      {/* 단순 확인 모달 — 비활성화/활성화/삭제/역할변경용 (메모 없음) / Simple confirm modal — for deactivate/activate/delete/changeRole (no note field) */}
       <ConfirmModal
         isOpen={isSimpleModal}
         onClose={closeModal}
@@ -490,7 +495,7 @@ export default function AdminUserDetailPage({
         loading={isActionLoading}
       />
 
-      {/* Note Modal — for approve and reject (with optional textarea) */}
+      {/* 메모 모달 — 승인/반려 시 사유 입력용 (선택적 textarea) / Note modal — for approve/reject with optional reason textarea */}
       {hasNoteField && (
         <>
           <div

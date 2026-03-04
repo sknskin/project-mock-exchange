@@ -1,9 +1,17 @@
+/**
+ * @file 뉴스 프록시 컨트롤러
+ * @description API Gateway에서 Market Data 서비스의 뉴스 API로 프록시합니다
+ *
+ * @file News Proxy Controller
+ * @description Proxies news API requests from API Gateway to Market Data service
+ */
 import { Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { Request, Response } from 'express';
 import { ProxyService } from './proxy.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
+// 뉴스 목록은 공개, 스크래핑 관리는 인증 필수 / News listing is public, scraping management requires auth
 @ApiTags('News')
 @Controller('api/news')
 export class NewsProxyController {

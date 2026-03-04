@@ -10,11 +10,17 @@
 import { useRef } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 
+// 주민등록번호 입력 Props / Resident Number Input Props
 interface ResidentNumberInputProps {
+  /** 앞자리 6자리 / Front 6 digits */
   front: string;
+  /** 뒷자리 7자리 / Back 7 digits */
   back: string;
+  /** 앞자리 변경 콜백 / Front digit change callback */
   onFrontChange: (value: string) => void;
+  /** 뒷자리 변경 콜백 / Back digit change callback */
   onBackChange: (value: string) => void;
+  /** 에러 메시지 / Error message */
   error?: string;
 }
 
@@ -41,6 +47,7 @@ export default function ResidentNumberInput({
     onBackChange(val);
   };
 
+  // 뒷자리 마스킹: 첫 자리만 표시하고 나머지는 ● 처리 / Back digit masking: show only first digit, mask rest with ●
   const maskedBack = back.length > 0
     ? back[0] + '●'.repeat(Math.min(back.length - 1, 6))
     : '';

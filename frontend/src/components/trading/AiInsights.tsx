@@ -24,16 +24,24 @@ import {
 } from 'lucide-react';
 import Skeleton from '@/components/ui/Skeleton';
 
+// AI 시그널 데이터 타입 / AI signal data type
 interface MarketSignal {
   symbol: string;
+  /** 매매 시그널 강도 / Trading signal strength */
   signal: 'STRONG_BUY' | 'BUY' | 'HOLD' | 'SELL' | 'STRONG_SELL';
+  /** 신뢰도 (0~100) / Confidence level (0-100) */
   confidence: number;
+  /** 분석 사유 / Analysis reason */
   reason: string;
+  /** 목표가 / Target price */
   targetPrice: number;
+  /** 손절가 / Stop-loss price */
   stopLoss: number;
+  /** 위험도 / Risk level */
   riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
 }
 
+// AI 시그널 데이터 조회 훅 (5분마다 갱신) / AI signals query hook (refreshes every 5 min)
 function useAiSignals() {
   return useQuery<MarketSignal[]>({
     queryKey: ['ai-signals'],
@@ -46,6 +54,7 @@ function useAiSignals() {
   });
 }
 
+// 시그널별 색상/아이콘 설정 / Color/icon config per signal type
 const SIGNAL_CONFIG = {
   STRONG_BUY: { color: 'text-rise', bg: 'bg-rise/12', icon: TrendingUp },
   BUY: { color: 'text-rise', bg: 'bg-rise/8', icon: TrendingUp },
@@ -62,6 +71,7 @@ const SIGNAL_I18N_KEY = {
   STRONG_SELL: 'ai.signal.strong_sell',
 } as const;
 
+// 위험도별 색상/아이콘 설정 / Color/icon config per risk level
 const RISK_CONFIG = {
   LOW: { color: 'text-success', icon: Shield },
   MEDIUM: { color: 'text-warning', icon: AlertTriangle },

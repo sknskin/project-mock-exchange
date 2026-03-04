@@ -123,6 +123,15 @@ export class BalanceService {
    *
    * Ensure an account exists for the given user, creating one if not found.
    */
+  /**
+   * upsert를 사용하여 계정을 확인하고 없으면 생성합니다.
+   * P2002(유니크 제약 조건 위반)는 동시 upsert 경쟁 조건에서 발생할 수 있으며,
+   * 이 경우 기존 계정을 조회하여 반환합니다.
+   *
+   * Checks for an account and creates one if not found using upsert.
+   * P2002 (unique constraint violation) can occur from concurrent upsert race conditions;
+   * in this case, looks up and returns the existing account.
+   */
   private async ensureAccount(userId: string) {
     try {
       const account = await this.prisma.account.upsert({
@@ -890,6 +899,13 @@ export class BalanceService {
     });
   }
 
+  /**
+   * Market Data 서비스에서 전체 시장 가격을 한 번에 조회합니다.
+   * N+1 쿼리를 방지하기 위해 개별 심볼이 아닌 전체 가격 목록을 가져옵니다.
+   *
+   * Fetches all market prices from Market Data service in a single call.
+   * Avoids N+1 queries by fetching the full price list rather than individual symbols.
+   */
   private async fetchMarketPrices(
     symbols: string[],
   ): Promise<Map<string, Decimal>> {

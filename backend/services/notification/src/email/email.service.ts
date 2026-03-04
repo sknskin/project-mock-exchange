@@ -31,12 +31,13 @@ export class EmailService {
       this.transporter = nodemailer.createTransport({
         host,
         port,
-        secure: port === 465,
+        secure: port === 465, // 465 포트는 암시적 TLS (SMTPS) / Port 465 uses implicit TLS (SMTPS)
         auth: { user, pass },
       });
       this.logger.log(`Email transport configured: ${host}:${port}`);
     } else {
-      // Mock transport for development
+      // 개발 환경용 Mock transport — 실제 이메일을 보내지 않고 JSON 로그로 출력
+      // Mock transport for development — logs as JSON instead of sending real emails
       this.transporter = nodemailer.createTransport({
         jsonTransport: true,
       });
@@ -61,6 +62,8 @@ export class EmailService {
         html: options.html,
       });
 
+      // 이메일 주소 마스킹: 개인정보 보호를 위해 로그에 전체 이메일을 남기지 않음
+      // Mask email address: prevents full email from appearing in logs for privacy
       const maskedTo = options.to.replace(/^(.)(.*)(@.*)$/, (_, first, middle, domain) =>
         `${first}${'*'.repeat(Math.min(middle.length, 3))}${domain}`,
       );

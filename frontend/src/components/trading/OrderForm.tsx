@@ -19,10 +19,15 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { formatPriceDisplay, isKRW } from '@/lib/format';
 import type { TranslationKey } from '@/lib/i18n';
 
+// 주문 폼 Props / Order Form Props
 interface OrderFormProps {
+  /** 종목 심볼 / Asset symbol */
   symbol: string;
+  /** 현재 가격 (USD) / Current price (USD) */
   currentPrice: number;
+  /** 매수/매도 방향 / Buy/Sell side */
   side: 'BUY' | 'SELL';
+  /** 주문 성공 콜백 / Order success callback */
   onSuccess?: () => void;
 }
 

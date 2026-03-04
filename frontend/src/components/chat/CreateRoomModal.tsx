@@ -1,3 +1,10 @@
+/**
+ * @file 채팅방 생성 모달 컴포넌트
+ * @description 사용자 검색 → 선택 → DM/그룹 채팅방 생성 플로우를 제공하는 모달
+ *
+ * @file Create Room Modal Component
+ * @description Modal providing user search, selection, and DM/group room creation flow
+ */
 'use client';
 
 import { useState, useEffect } from 'react';

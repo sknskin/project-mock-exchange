@@ -30,6 +30,10 @@ import { InternalAuthGuard } from '../../common/guards/internal-auth.guard';
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
+  /**
+   * 관리자 권한 검증 — SYSTEM 또는 ADMIN 역할만 허용
+   * Admin authorization check — only SYSTEM or ADMIN roles allowed
+   */
   private assertAdmin(user: UserDto) {
     if (user.role !== USER_ROLE.SYSTEM && user.role !== USER_ROLE.ADMIN) {
       throw new ForbiddenException('Admin access required');

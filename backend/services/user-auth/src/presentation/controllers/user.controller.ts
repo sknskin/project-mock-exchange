@@ -1,8 +1,17 @@
+/**
+ * @file 사용자 조회 컨트롤러
+ * @description 서비스 간 내부 사용자 조회 API (상태 확인, ID 일괄 조회, 검색)
+ *
+ * @file User Lookup Controller
+ * @description Internal inter-service user lookup API (status check, batch by IDs, search)
+ */
 import { Controller, Get, Post, Param, Query, Body, NotFoundException, BadRequestException, UseGuards } from '@nestjs/common';
 import { Public } from '../../infrastructure/config/jwt-auth.guard';
 import { PrismaService } from '../../infrastructure/persistence/prisma/prisma.service';
 import { InternalAuthGuard } from '../../common/guards/internal-auth.guard';
 
+// 내부 서비스 전용 — API Gateway의 x-internal-token으로만 접근 가능
+// Internal service only — accessible only via API Gateway's x-internal-token
 @UseGuards(InternalAuthGuard)
 @Controller('users')
 export class UserController {
@@ -39,6 +48,7 @@ export class UserController {
     return { success: true, data: users };
   }
 
+  // 사용자 검색 — 채팅 초대 등에 사용, 활성/승인된 사용자만 반환 / User search — used for chat invites, returns only active/approved users
   @Public()
   @Get('search')
   async search(

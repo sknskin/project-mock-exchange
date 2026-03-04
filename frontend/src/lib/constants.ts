@@ -5,12 +5,17 @@
  * @file Frontend Shared Constants
  * @description Shared constants used across multiple components (tech stack, etc.)
  */
+// 기술 스택 아이템 인터페이스 / Tech stack item interface
 export interface TechItem {
+  /** 기술 이름 / Technology name */
   name: string;
+  /** 아이콘 CDN URL / Icon CDN URL */
   icon: string;
+  /** 라이트 모드에서 색상 반전 여부 / Whether to invert color in light mode */
   invertInLight?: boolean;
 }
 
+// 푸터에 표시할 기술 스택 목록 / Tech stack list displayed in footer marquee
 export const techItems: TechItem[] = [
   { name: 'Next.js', icon: 'https://cdn.simpleicons.org/nextdotjs/FFFFFF', invertInLight: true },
   { name: 'React', icon: 'https://cdn.simpleicons.org/react/61DAFB' },

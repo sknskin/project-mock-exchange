@@ -11,12 +11,19 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/format';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 
+// 페이지네이션 Props / Pagination Props
 interface PaginationProps {
+  /** 현재 페이지 번호 / Current page number */
   page: number;
+  /** 전체 페이지 수 / Total number of pages */
   totalPages: number;
+  /** 전체 항목 수 / Total item count */
   total: number;
+  /** 페이지당 항목 수 / Items per page */
   limit: number;
+  /** 페이지 변경 콜백 / Page change callback */
   onPageChange: (page: number) => void;
+  /** 페이지당 항목 수 변경 콜백 (선택) / Per-page change callback (optional) */
   onLimitChange?: (limit: number) => void;
 }
 
@@ -35,6 +42,7 @@ export default function Pagination({
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // 표시할 페이지 번호 배열 생성 (현재 페이지 +-2 범위 + 말줄임) / Generate page number array (current +-2 range + ellipsis)
   const getPageNumbers = () => {
     const pages: (number | '...')[] = [];
     const range = 2;

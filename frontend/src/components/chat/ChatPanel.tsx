@@ -1,3 +1,10 @@
+/**
+ * @file 채팅 패널 컴포넌트 (플로팅 모드)
+ * @description 드래그 이동 + 8방향 리사이즈가 가능한 플로팅 채팅 패널 (createPortal로 렌더링)
+ *
+ * @file Chat Panel Component (Floating Mode)
+ * @description Floating chat panel with drag-move and 8-directional resize (rendered via createPortal)
+ */
 'use client';
 
 import { useEffect, useRef, useCallback, useState } from 'react';
@@ -11,9 +18,11 @@ import RoomList from './RoomList';
 import MessageArea from './MessageArea';
 import CreateRoomModal from './CreateRoomModal';
 
+// 패널 최소 크기 제한 / Minimum panel size constraints
 const MIN_W = 320;
 const MIN_H = 400;
 
+// 드래그 모드: 이동 또는 8방향 리사이즈 / Drag mode: move or 8-directional resize
 type DragMode = 'move' | 'resize-se' | 'resize-sw' | 'resize-ne' | 'resize-nw' | 'resize-e' | 'resize-w' | 'resize-s' | 'resize-n';
 
 export default function ChatPanel() {

@@ -39,6 +39,8 @@ export class AnalysisService {
       { symbol: 'NVDA', basePrice: 850, volatility: 0.06 },
     ];
 
+    // 날짜 기반 시드: 같은 날에는 동일한 시그널 반환 (일관된 데모 데이터)
+    // Date-based seed: returns consistent signals for the same day (stable demo data)
     const daySeed = Math.floor(Date.now() / 86400000);
 
     return assets.map((asset, i) => {
@@ -126,11 +128,13 @@ export class AnalysisService {
     const totalValue = holdings.reduce((sum, h) => sum + h.value, 0);
     const weights = holdings.map((h) => h.value / totalValue);
 
-    // HHI (Herfindahl-Hirschman Index) 기반 분산 점수
+    // HHI (Herfindahl-Hirschman Index) 기반 분산 점수 — 0(모두 하나에 집중)~100(균등 분배)
+    // HHI-based diversification score — 0 (all in one asset) to 100 (evenly distributed)
     const hhi = weights.reduce((sum, w) => sum + w * w, 0);
     const diversificationScore = Math.round((1 - hhi) * 100);
 
-    // 암호화폐 비중 기반 위험 평가
+    // 암호화폐 비중 기반 위험 평가 — 높은 암호화폐 비중 = 높은 변동성 위험
+    // Risk assessment based on crypto allocation — higher crypto weight = higher volatility risk
     const cryptoSymbols = [
       'BTCUSDT',
       'ETHUSDT',

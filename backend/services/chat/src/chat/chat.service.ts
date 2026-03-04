@@ -1,3 +1,12 @@
+/**
+ * @file 채팅 서비스
+ * @description 채팅방 생성/조회, 메시지 CRUD, 참여자 관리, 읽음 확인, 통계 비즈니스 로직.
+ *              DM(1:1)과 GROUP(그룹) 채팅을 모두 지원합니다.
+ *
+ * @file Chat Service
+ * @description Business logic for room creation/retrieval, message CRUD, participant
+ *              management, read receipts, and statistics. Supports both DM (1:1) and GROUP chat.
+ */
 import {
   Injectable,
   BadRequestException,
@@ -102,6 +111,10 @@ export class ChatService {
     return roomsWithUnread;
   }
 
+  /**
+   * 채팅방을 생성합니다. DM은 기존 방이 있으면 재사용하고, 없으면 새로 생성합니다.
+   * Creates a chat room. For DM, reuses existing room if found, otherwise creates new.
+   */
   async createRoomWithUsernames(
     userId: string,
     username: string,
@@ -110,6 +123,7 @@ export class ChatService {
     creatorName?: string,
     participantNames?: Record<string, string>,
   ) {
+    // DM: 동일 두 사용자 간 기존 방 재사용 (중복 DM 방지) / DM: reuse existing room between same two users (prevents duplicate DMs)
     if (dto.type === RoomTypeDto.DM) {
       if (dto.participantIds.length !== 1) {
         throw new BadRequestException('DM requires exactly 1 other participant');
@@ -553,6 +567,13 @@ export class ChatService {
     };
   }
 
+  /**
+   * 시스템 메시지를 생성합니다 (초대, 퇴장, 강퇴 등의 알림).
+   * senderId로 UUID 0을 사용하여 일반 사용자 메시지와 구분합니다.
+   *
+   * Creates a system message (for invite, leave, kick notifications).
+   * Uses UUID 0 as senderId to distinguish from regular user messages.
+   */
   private async createSystemMessage(roomId: string, content: string) {
     const message = await this.prisma.message.create({
       data: {
@@ -583,6 +604,8 @@ export class ChatService {
     return { ...message, unreadCount: 0 };
   }
 
+  // 사용자가 채팅방의 활성 참여자인지 검증 — 모든 메시지 및 방 조작 API에서 호출
+  // Verifies user is an active participant — called by all message and room manipulation APIs
   private async verifyParticipant(roomId: string, userId: string) {
     const participant = await this.prisma.participant.findFirst({
       where: { roomId, userId, leftAt: null },

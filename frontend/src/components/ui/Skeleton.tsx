@@ -9,10 +9,13 @@
 
 import { cn } from '@/lib/format';
 
+// 스켈레톤 Props / Skeleton Props
 interface SkeletonProps {
+  /** 추가 CSS 클래스 (크기, 모양 등) / Additional CSS classes (size, shape, etc.) */
   className?: string;
 }
 
+// 기본 스켈레톤 블록 — animate-pulse로 깜빡임 효과 / Base skeleton block — flicker effect via animate-pulse
 export default function Skeleton({ className }: SkeletonProps) {
   return (
     <div
@@ -24,6 +27,7 @@ export default function Skeleton({ className }: SkeletonProps) {
   );
 }
 
+// 자산 목록 로딩 스켈레톤 — 10행 레이아웃 / Asset list loading skeleton — 10-row layout
 export function AssetListSkeleton() {
   return (
     <div className="pt-4">
@@ -50,6 +54,7 @@ export function AssetListSkeleton() {
   );
 }
 
+// 차트 로딩 스켈레톤 / Chart loading skeleton
 export function ChartSkeleton() {
   return <Skeleton className="w-full h-[300px] rounded-none" />;
 }

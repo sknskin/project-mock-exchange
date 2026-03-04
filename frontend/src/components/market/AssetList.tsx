@@ -15,13 +15,21 @@ import { cn } from '@/lib/format';
 
 const ROW_HEIGHT = 56;
 
+// 자산 목록 Props / Asset List Props
 interface AssetListProps {
+  /** 전체 자산 데이터 배열 / Full asset data array */
   assets: Asset[];
+  /** 현재 선택된 기간 (realtime, 1d, 1w 등) / Currently selected period (realtime, 1d, 1w, etc.) */
   period: string;
+  /** 기간 변경 콜백 / Period change callback */
   onPeriodChange: (period: string) => void;
+  /** 메인 탭 (realtime, popular, trending, watchlist) / Main tab (realtime, popular, trending, watchlist) */
   mainTab?: string;
+  /** 로그인 필요 시 콜백 / Callback when login is required */
   onLoginRequired?: () => void;
+  /** 관심종목 심볼 목록 / Watchlist symbol list */
   watchlistSymbols?: string[];
+  /** 관심종목 토글 콜백 / Watchlist toggle callback */
   onToggleWatchlist?: (symbol: string) => void;
 }
 

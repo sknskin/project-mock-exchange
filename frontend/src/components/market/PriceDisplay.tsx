@@ -9,9 +9,13 @@
 
 import { cn, formatPrice, formatPercent } from '@/lib/format';
 
+// 가격 표시 Props / Price Display Props
 interface PriceDisplayProps {
+  /** 표시할 가격 / Price to display */
   price: number;
+  /** 등락률 (%) / Change rate (%) */
   changePercent: number;
+  /** 텍스트 크기 / Text size */
   size?: 'sm' | 'md' | 'lg';
 }
 
@@ -20,9 +24,11 @@ export default function PriceDisplay({
   changePercent,
   size = 'md',
 }: PriceDisplayProps) {
+  // 상승/하락 판단 (색상 분기용) / Determine rise/fall (for color branching)
   const isRise = changePercent > 0;
   const isFall = changePercent < 0;
 
+  // 크기별 가격 텍스트 사이즈 / Price text size per variant
   const priceSize = {
     sm: 'text-[15px]',
     md: 'text-[16px]',

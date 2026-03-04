@@ -9,15 +9,23 @@
 
 import { cn } from '@/lib/format';
 
+// 개별 탭 항목 타입 / Individual tab item type
 interface Tab {
+  /** 탭 식별 키 / Tab identifier key */
   key: string;
+  /** 표시 라벨 / Display label */
   label: string;
 }
 
+// 탭 컴포넌트 Props / Tabs component Props
 interface TabsProps {
+  /** 탭 목록 / List of tabs */
   tabs: Tab[];
+  /** 현재 선택된 탭 키 / Currently selected tab key */
   activeTab: string;
+  /** 탭 변경 콜백 / Tab change callback */
   onChange: (key: string) => void;
+  /** 스타일 변형: default(밑줄) 또는 pill(둥근 버튼) / Style variant: default(underline) or pill(rounded button) */
   variant?: 'default' | 'pill';
 }
 
@@ -27,6 +35,7 @@ export default function Tabs({
   onChange,
   variant = 'default',
 }: TabsProps) {
+  // pill 변형: 둥근 테두리 버튼 스타일 / Pill variant: rounded border button style
   if (variant === 'pill') {
     return (
       <div className="flex gap-2.5">
@@ -48,6 +57,7 @@ export default function Tabs({
     );
   }
 
+  // default 변형: 밑줄 인디케이터 스타일 / Default variant: underline indicator style
   return (
     <div className="flex border-b border-border">
       {tabs.map((tab) => (

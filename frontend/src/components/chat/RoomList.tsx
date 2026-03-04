@@ -1,3 +1,10 @@
+/**
+ * @file 채팅방 목록 컴포넌트
+ * @description DM/그룹 채팅방 목록을 표시하며, 우클릭 컨텍스트 메뉴(이름변경/퇴장) 제공
+ *
+ * @file Room List Component
+ * @description Displays DM/group chat rooms with right-click context menu (rename/leave)
+ */
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
@@ -11,6 +18,7 @@ import { cn } from '@/lib/format';
 import Tooltip from '@/components/ui/Tooltip';
 import type { ChatRoom } from '@/types';
 
+// 상대적 시간 포맷 (방금, n분, n시간, n일) / Relative time formatter (now, Nm, Nh, Nd)
 function formatRelativeTime(dateString: string, locale: string) {
   const date = new Date(dateString);
   const now = new Date();

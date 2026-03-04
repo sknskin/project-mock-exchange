@@ -24,6 +24,8 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AdminRolesGuard } from '../auth/admin-roles.guard';
 import { ChatGateway } from '../gateway/chat.gateway';
 
+// JwtAuthGuard + AdminRolesGuard 이중 가드 — 인증 + 관리자 역할 모두 검증
+// Dual guard: JwtAuthGuard (authentication) + AdminRolesGuard (admin role authorization)
 @ApiTags('Admin')
 @ApiBearerAuth()
 @Controller('api/admin')
@@ -94,6 +96,7 @@ export class AdminProxyController {
       data: body,
       headers: { Authorization: req.headers.authorization || '' },
     });
+    // 승인 성공 시 해당 사용자에게 WebSocket 알림 전송 / On approval, notify the user via WebSocket
     if (result.status < 400) {
       this.chatGateway.notifyUser(id, 'notification:registration-approved', {
         type: 'registration-approved',
@@ -123,6 +126,7 @@ export class AdminProxyController {
       data: body,
       headers: { Authorization: req.headers.authorization || '' },
     });
+    // 거절 시 해당 사용자에게 사유와 함께 WebSocket 알림 전송 / On rejection, notify user with reason via WebSocket
     if (result.status < 400) {
       this.chatGateway.notifyUser(id, 'notification:registration-rejected', {
         type: 'registration-rejected',

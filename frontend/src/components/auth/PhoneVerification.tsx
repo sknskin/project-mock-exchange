@@ -13,11 +13,17 @@ import Button from '@/components/ui/Button';
 import { useTranslation } from '@/hooks/useTranslation';
 import api from '@/lib/api';
 
+// 전화번호 인증 Props / Phone Verification Props
 interface PhoneVerificationProps {
+  /** 전화번호 / Phone number */
   phone: string;
+  /** 전화번호 변경 콜백 / Phone number change callback */
   onPhoneChange: (phone: string) => void;
+  /** 인증 완료 콜백 / Verification success callback */
   onVerified: () => void;
+  /** 인증 완료 여부 / Whether verified */
   verified: boolean;
+  /** 에러 메시지 / Error message */
   error?: string;
 }
 

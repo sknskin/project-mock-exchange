@@ -5,8 +5,11 @@
  * @file VirtuEx Logo SVG Component
  * @description SVG component rendering the brand logo
  */
+// 로고 Props / Logo Props
 interface VirtuExLogoProps {
+  /** SVG 크기(px), 기본 24 / SVG size in px, default 24 */
   size?: number;
+  /** 추가 CSS 클래스 / Additional CSS classes */
   className?: string;
 }
 

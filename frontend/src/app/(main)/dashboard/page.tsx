@@ -30,14 +30,22 @@ import type { Asset, AssetInfo, PriceUpdate } from '@/types';
 
 export default function DashboardPage() {
   const router = useRouter();
+
+  // 시세 데이터 및 종목 정보 조회 / Fetch market prices and asset info
   const { data: rawPrices, isLoading: pricesLoading, error: pricesError, refetch } = useMarketPrices();
   const { data: assetInfos } = useAssets();
   const { t } = useTranslation();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+
+  // 실시간 WebSocket 가격 업데이트 저장소 / Live WebSocket price update store
   const [livePrices, setLivePrices] = useState<Record<string, PriceUpdate>>({});
+  // 메인 탭 상태 (실시간, 인기, 급상승, 관심종목) / Main tab state (realtime, popular, trending, watchlist)
   const [activeMainTab, setActiveMainTab] = useState('realtime');
+  // 기간 필터 (실시간, 1일, 1주 등) / Period filter (realtime, 1d, 1w, etc.)
   const [period, setPeriod] = useState('realtime');
+  // 스포트라이트 검색 모달 상태 / Spotlight search modal state
   const [spotlightOpen, setSpotlightOpen] = useState(false);
+  // 로그인 필요 모달 상태 / Login required modal state
   const [loginModalOpen, setLoginModalOpen] = useState(false);
 
   // / 키 또는 헤더 검색 클릭으로 스포트라이트 열기
@@ -60,12 +68,18 @@ export default function DashboardPage() {
     };
   }, []);
 
+  // 기간별 등락률 데이터 조회 / Fetch period-based change data
   const { data: periodChanges } = usePeriodChanges(period);
 
+  // 관심종목 데이터 및 토글 뮤테이션 / Watchlist data and toggle mutations
   const { data: watchlistSymbols } = useWatchlist();
   const addWatchlist = useAddWatchlist();
   const removeWatchlist = useRemoveWatchlist();
 
+  /**
+   * 관심종목 토글 핸들러 — 미인증 시 로그인 모달 표시
+   * Watchlist toggle handler — shows login modal if unauthenticated
+   */
   const handleToggleWatchlist = useCallback((symbol: string) => {
     if (!isAuthenticated) {
       setLoginModalOpen(true);
@@ -78,6 +92,10 @@ export default function DashboardPage() {
     }
   }, [isAuthenticated, watchlistSymbols, addWatchlist, removeWatchlist]);
 
+  /**
+   * 메인 탭 전환 — 관심종목 탭은 로그인 필요, 전환 시 상단으로 스크롤
+   * Main tab change — watchlist requires login, scrolls to top on switch
+   */
   const handleMainTabChange = useCallback((key: string) => {
     if (key === 'watchlist' && !isAuthenticated) {
       setLoginModalOpen(true);
@@ -94,6 +112,7 @@ export default function DashboardPage() {
     { key: 'watchlist', label: t('market.watchlist') },
   ];
 
+  // 종목명/유형 빠른 조회를 위한 심볼 맵 / Symbol-to-info map for fast lookup
   const assetMap = useMemo(() => {
     const map: Record<string, AssetInfo> = {};
     if (assetInfos) {
@@ -102,6 +121,10 @@ export default function DashboardPage() {
     return map;
   }, [assetInfos]);
 
+  /**
+   * REST API 가격 데이터와 종목 정보를 결합하여 Asset 배열 생성
+   * Merge REST price data with asset info to create Asset array
+   */
   const assets = useMemo(() => {
     if (!rawPrices) return [];
     return (rawPrices as Omit<Asset, 'name' | 'type' | 'currentPrice' | 'changePercent' | 'changeAmount'>[]).map((p): Asset => {
@@ -110,12 +133,15 @@ export default function DashboardPage() {
     });
   }, [rawPrices, assetMap]);
 
+  // WebSocket 구독 심볼 목록 추출 / Extract symbol list for WebSocket subscription
   const symbols = useMemo(() => assets.map((a) => a.symbol), [assets]);
+  // WebSocket 실시간 가격 콜백 / WebSocket real-time price callback
   const handlePriceUpdate = useCallback((update: PriceUpdate) => {
     setLivePrices((prev) => ({ ...prev, [update.symbol]: update }));
   }, []);
   useWebSocket(symbols, handlePriceUpdate);
 
+  // 기간별 등락 데이터를 심볼별 맵으로 변환 / Convert period changes to per-symbol map
   const periodChangeMap = useMemo(() => {
     const map: Record<string, { changePercent: number; changeAmount: number }> = {};
     if (periodChanges) {
@@ -126,6 +152,10 @@ export default function DashboardPage() {
     return map;
   }, [periodChanges]);
 
+  /**
+   * 표시용 자산 목록 — WebSocket 실시간 가격 + 기간별 등락률 오버레이
+   * Display assets — overlays WebSocket live prices + period change rates
+   */
   const displayAssets = useMemo(() => {
     let result = assets.map((asset) => {
       const live = livePrices[asset.symbol];
@@ -145,6 +175,7 @@ export default function DashboardPage() {
     return result;
   }, [assets, livePrices, period, periodChangeMap]);
 
+  // 관심종목 탭일 때 워치리스트 필터 적용 / Apply watchlist filter when on watchlist tab
   const filteredDisplayAssets = useMemo(() => {
     if (activeMainTab === 'watchlist' && watchlistSymbols) {
       const set = new Set(watchlistSymbols);
@@ -159,7 +190,7 @@ export default function DashboardPage() {
 
   return (
     <div>
-      {/* Mobile search bar */}
+      {/* 모바일 검색 바 — lg 이상에서는 숨김 / Mobile search bar — hidden on lg+ */}
       <div className="lg:hidden pt-2 pb-1">
         <button
           onClick={() => setSpotlightOpen(true)}
@@ -170,6 +201,7 @@ export default function DashboardPage() {
         </button>
       </div>
 
+      {/* 시장 요약 영역 — 시장 지수, 티커, 환율 바 / Market summary — index, ticker, exchange rate bar */}
       {!pricesLoading && displayAssets.length > 0 && (
         <>
           <MarketIndexSummary assets={displayAssets} />
@@ -178,6 +210,7 @@ export default function DashboardPage() {
         </>
       )}
 
+      {/* 메인 탭 바 — 접근성: role="tablist", aria-selected / Main tab bar — a11y: tablist + aria-selected */}
       <div className="flex items-end gap-3 sm:gap-5 md:gap-7 pt-7 pb-0 border-b border-border overflow-x-auto scrollbar-hide" role="tablist">
         {mainTabs.map((tab) => (
           <button
@@ -198,6 +231,7 @@ export default function DashboardPage() {
             )}
           </button>
         ))}
+        {/* 데이터 출처 배지 — 데스크탑에서만 표시 / Data source badges — desktop only */}
         <span className="ml-auto mb-2.5 hidden md:inline-flex items-center gap-2 shrink-0">
           <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/20">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -210,6 +244,7 @@ export default function DashboardPage() {
         </span>
       </div>
 
+      {/* 종목 목록 — 로딩 시 스켈레톤, 완료 시 AssetList / Asset list — skeleton on loading, AssetList when ready */}
       {pricesLoading ? (
         <AssetListSkeleton />
       ) : (

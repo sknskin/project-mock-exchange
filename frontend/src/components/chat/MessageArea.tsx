@@ -1,3 +1,10 @@
+/**
+ * @file 메시지 영역 컴포넌트
+ * @description 채팅방 내 메시지 목록, 날짜 구분선, 무한 스크롤, 검색, 참여자 관리(초대/강퇴/삭제) 등 핵심 채팅 UI
+ *
+ * @file Message Area Component
+ * @description Core chat UI: message list, date separators, infinite scroll, search, participant management (invite/kick/delete)
+ */
 'use client';
 
 import { Fragment, useEffect, useRef, useState, useCallback, useMemo } from 'react';
@@ -17,6 +24,7 @@ import { useTypingUsers } from '@/hooks/useChatSocket';
 import type { ChatRoom, ChatMessage } from '@/types';
 import type { TranslationKey } from '@/lib/i18n';
 
+// 시스템 메시지(초대/퇴장/강퇴) JSON을 사람이 읽을 수 있는 텍스트로 변환 / Parse system message JSON to human-readable text
 function formatSystemMessage(content: string, t: (key: TranslationKey) => string): string {
   try {
     const data = JSON.parse(content);
@@ -39,11 +47,17 @@ function SystemMessageRow({ message, t }: { message: ChatMessage; t: (key: Trans
   );
 }
 
+// 메시지 영역 Props / Message Area Props
 interface MessageAreaProps {
+  /** 현재 채팅방 ID / Current chat room ID */
   roomId: string;
+  /** 소켓 방 입장 함수 / Socket room join function */
   joinRoom: (roomId: string) => void;
+  /** 소켓 방 퇴장 함수 / Socket room leave function */
   leaveSocketRoom: (roomId: string) => void;
+  /** 채팅방 나가기 콜백 / Leave room callback */
   onLeaveRoom: () => void;
+  /** 타이핑 상태 전송 함수 / Typing indicator emit function */
   emitTyping: (roomId: string) => void;
 }
 

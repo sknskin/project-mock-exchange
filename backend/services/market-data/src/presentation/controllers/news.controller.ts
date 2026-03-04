@@ -1,3 +1,10 @@
+/**
+ * @file 뉴스 컨트롤러
+ * @description 카테고리별 뉴스 조회, 스크래핑 상태 확인, 수동 스크래핑 트리거 API
+ *
+ * @file News Controller
+ * @description API for category-based news listing, scrape status, and manual scrape trigger
+ */
 import { Controller, Get, Post, Query, UseGuards, ParseIntPipe, DefaultValuePipe } from '@nestjs/common';
 import { NewsService } from '../../application/services/news.service';
 import { NewsCategory } from '../../../generated/prisma';

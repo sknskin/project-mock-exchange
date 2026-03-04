@@ -28,7 +28,13 @@ import { InternalAuthGuard } from '../../common/guards/internal-auth.guard';
 export class NotificationController {
   constructor(private readonly prisma: PrismaService) {}
 
-  /** Internal endpoint for service-to-service notification creation */
+  /**
+   * 내부 서비스 간 알림 생성 엔드포인트 — JWT 불필요, InternalAuthGuard만 적용
+   * 주문 체결, 가격 알림 등 다른 서비스에서 호출
+   *
+   * Internal service-to-service notification creation — no JWT required, only InternalAuthGuard
+   * Called by other services for trade execution, price alerts, etc.
+   */
   @Post()
   async create(
     @Body() body: { userId: string; type?: string; title: string; message: string; link?: string },
@@ -118,6 +124,7 @@ export class NotificationController {
     @Param('id') id: string,
     @CurrentUser() user: any,
   ) {
+    // deleteMany + userId 조건으로 타인의 알림 삭제 방지 / deleteMany with userId condition prevents deleting other users' notifications
     await this.prisma.notification.deleteMany({
       where: { id, userId: user.id },
     });

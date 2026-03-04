@@ -46,7 +46,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useAuthStore } from '@/stores/auth';
 import { cn } from '@/lib/format';
 
-// ===== Theme constants =====
+// ===== 차트 테마 상수 — Recharts 차트에서 사용하는 색상 팔레트 / Chart theme constants — color palette used by Recharts =====
 const CHART_COLORS = {
   blue: '#3182F6',
   red: '#F04452',
@@ -67,7 +67,7 @@ const GRID_STROKE = 'var(--color-border, rgba(255,255,255,0.06))';
 const AXIS_TICK_FILL = 'var(--color-text-quaternary, #6B7683)';
 const AXIS_LINE_STROKE = 'var(--color-border, rgba(255,255,255,0.06))';
 
-// ===== Period / Days selector options =====
+// ===== 기간/일수 선택 옵션 — 통계 API의 period/days 파라미터 값 / Period/Days selector options — values for stats API period/days params =====
 const PERIOD_OPTIONS = [
   { value: 'hourly', labelKey: 'stats.period.hourly' as const },
   { value: 'daily', labelKey: 'stats.period.daily' as const },
@@ -83,7 +83,7 @@ const DAYS_OPTIONS = [
   { value: 365, labelKey: 'stats.days.365' as const },
 ];
 
-// ===== Tab definitions =====
+// ===== 통계 탭 정의 — 7개 탭: 개요, 회원, 활동, 거래, 콘텐츠, 채팅, 감사 / Stats tab definitions — 7 tabs: overview, users, activity, trading, content, chat, audit =====
 const STAT_TABS = [
   { key: 'overview', labelKey: 'stats.tab.overview' as const, icon: TrendingUp },
   { key: 'users', labelKey: 'stats.tab.users' as const, icon: Users },
@@ -94,7 +94,7 @@ const STAT_TABS = [
   { key: 'audit', labelKey: 'admin.stats.orderAudit' as const, icon: ClipboardList },
 ];
 
-// ===== Shared chart card wrapper =====
+// ===== 공통 차트 카드 래퍼 — 제목 + 설명 + 차트 본체 / Shared chart card wrapper — title + description + chart body =====
 function ChartCard({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
   return (
     <div className="bg-bg-secondary rounded-2xl p-5 border border-border">
@@ -117,12 +117,12 @@ function EmptyChart({ height = 280 }: { height?: number }) {
   );
 }
 
-// ===== Helper to check if chart data is sufficient =====
+// ===== 차트 데이터 충분 여부 확인 — 최소 2개 이상의 데이터 포인트 필요 / Check if chart data is sufficient — needs at least 2 data points =====
 function hasChartData(data: unknown[] | undefined, minPoints = 2): boolean {
   return !!data && data.length >= minPoints;
 }
 
-// ===== Custom tooltip =====
+// ===== 커스텀 툴팁 — Recharts 기본 툴팁 대신 다크 테마에 맞는 스타일 적용 / Custom tooltip — dark-theme styled replacement for Recharts default tooltip =====
 function CustomTooltip({
   active,
   payload,
@@ -154,7 +154,7 @@ function CustomTooltip({
   );
 }
 
-// ===== Trend badge =====
+// ===== 트렌드 뱃지 — 양수(녹색 ↑), 음수(빨간 ↓), 0(회색 −) / Trend badge — positive(green ↑), negative(red ↓), zero(gray −) =====
 function TrendBadge({ changePercent }: { changePercent: number }) {
   if (changePercent > 0) {
     return (
@@ -180,7 +180,7 @@ function TrendBadge({ changePercent }: { changePercent: number }) {
   );
 }
 
-// ===== Mini sparkline for KPI cards =====
+// ===== KPI 카드용 미니 스파크라인 — SVG polyline으로 경량 추세 차트 표시 / Mini sparkline for KPI cards — lightweight trend chart using SVG polyline =====
 function MiniSparkline({ data, color }: { data: number[]; color: string }) {
   if (!data || data.length < 2) return null;
   const max = Math.max(...data);
@@ -202,7 +202,7 @@ function MiniSparkline({ data, color }: { data: number[]; color: string }) {
   );
 }
 
-// ===== Overview card with optional trend =====
+// ===== 개요 카드 — 아이콘 + 값 + 트렌드 뱃지 + 스파크라인 / Overview card — icon + value + trend badge + sparkline =====
 function OverviewCard({
   icon: Icon,
   value,
@@ -256,8 +256,13 @@ export default function AdminStatsPage() {
   const [days, setDays] = useState(30);
   const tabsRef = useRef<HTMLDivElement>(null);
 
-  // 탭 영역에서 수평 스크롤만 변환, 수직 페이지 스크롤은 통과시킴
-  // (Convert horizontal scroll in tabs, pass vertical page scroll through)
+  /**
+   * 탭 영역 스크롤 처리 — 수평 스와이프만 탭 스크롤로 변환, 수직은 페이지 스크롤 유지
+   * 7개 탭이 모바일에서 넘칠 때 자연스러운 횡스크롤 제공
+   *
+   * Tab area scroll handling — converts horizontal swipe to tab scroll, preserves vertical page scroll
+   * Provides natural horizontal scrolling when 7 tabs overflow on mobile
+   */
   useEffect(() => {
     const el = tabsRef.current;
     if (!el) return;
@@ -300,7 +305,8 @@ export default function AdminStatsPage() {
     return null;
   }
 
-  // Merge announcement + comments into single dataset
+  // 공지사항 + 댓글 타임라인을 단일 데이터셋으로 병합 — AreaChart에서 두 계열 동시 표시
+  // Merge announcement + comment timelines into single dataset — shows both series in AreaChart
   const announcementChartData = (() => {
     if (!announcements) return [];
     const announcementMap = new Map(
@@ -319,7 +325,7 @@ export default function AdminStatsPage() {
     }));
   })();
 
-  // 좋아요 타임라인 데이터 병합 (공지사항 좋아요 + 댓글 좋아요)
+  // 좋아요 타임라인 병합 — 공지사항 좋아요 + 댓글 좋아요를 날짜별로 결합 / Like timeline merge — combine announcement likes + comment likes by date
   const likeChartData = (() => {
     if (!likeStats) return [];
     const aMap = new Map((likeStats.announcementLikes ?? []).map((e) => [e.label, e.count]));
@@ -332,7 +338,7 @@ export default function AdminStatsPage() {
     }));
   })();
 
-  // Role distribution for PieChart
+  // 역할별 분포 — PieChart 데이터 (SYSTEM: 보라, ADMIN: 파랑, USER: 회색) / Role distribution — PieChart data (SYSTEM: purple, ADMIN: blue, USER: gray)
   const roleData = (users?.byRole ?? []).map((r) => ({
     name: r.role,
     value: r.count,
@@ -344,7 +350,7 @@ export default function AdminStatsPage() {
           : CHART_COLORS.gray,
   }));
 
-  // Status distribution for PieChart
+  // 계정 상태별 분포 — PieChart 데이터 (승인: 녹색, 반려: 빨강, 대기: 노랑, 비활성: 빨강) / Status distribution — PieChart data (approved: green, rejected: red, pending: yellow, inactive: red)
   const statusData = (users?.byStatus ?? []).map((s) => {
     let statusLabel: string;
     let color: string;
@@ -372,7 +378,7 @@ export default function AdminStatsPage() {
   // Hourly activity data
   const hourlyData = hourlyPageViews?.timeline ?? [];
 
-  // Buy/Sell ratio for PieChart
+  // 매수/매도 비율 — 거래 분석 PieChart 데이터 / Buy/Sell ratio — trading analysis PieChart data
   const buySellData = trading
     ? [
         { name: t('stats.buy'), value: trading.buyCount, color: CHART_COLORS.red },
@@ -380,7 +386,7 @@ export default function AdminStatsPage() {
       ]
     : [];
 
-  // Participation rate
+  // 참여율 — 공지사항당 평균 댓글 수 / Participation rate — average comments per announcement
   const participationRate =
     announcements && announcements.totalAnnouncements > 0
       ? (announcements.totalComments / announcements.totalAnnouncements).toFixed(1)

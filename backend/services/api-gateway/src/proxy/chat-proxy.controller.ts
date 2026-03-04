@@ -1,3 +1,12 @@
+/**
+ * @file 채팅 프록시 컨트롤러
+ * @description API Gateway에서 Chat 서비스로 채팅 요청을 프록시하며,
+ *              WebSocket 이벤트(메시지 브로드캐스트, 읽음 처리 등)를 함께 처리합니다
+ *
+ * @file Chat Proxy Controller
+ * @description Proxies chat requests to Chat service and handles
+ *              WebSocket events (message broadcast, read receipts, etc.)
+ */
 import {
   Controller,
   Get,
@@ -21,6 +30,7 @@ import { ProxyService } from './proxy.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ChatGateway } from '../gateway/chat.gateway';
 
+// 모든 채팅 엔드포인트에 JWT 인증 필수 / All chat endpoints require JWT authentication
 @ApiTags('Chat')
 @ApiBearerAuth()
 @Controller('api/chat')

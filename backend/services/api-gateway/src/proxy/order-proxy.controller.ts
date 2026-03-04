@@ -34,6 +34,7 @@ export class OrderProxyController {
     private readonly chatGateway: ChatGateway,
   ) {}
 
+  // 주문 생성 — 분당 60건 제한으로 악의적 대량 주문 방지 / Place order — 60/min limit prevents malicious order flooding
   @Post()
   @UseGuards(JwtAuthGuard)
   @Throttle({ default: { ttl: 60000, limit: 60 } })
@@ -59,6 +60,13 @@ export class OrderProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /**
+   * 거래 체결 시 WebSocket 실시간 알림 + DB 영구 저장 (최선 노력 방식)
+   * 실패해도 주문 응답에는 영향 없음
+   *
+   * Send real-time WebSocket notification + persist to DB on trade execution (best-effort).
+   * Failures do not affect the order response.
+   */
   private async sendTradeNotification(userId: string, responseData: unknown, req: Request) {
     try {
       const data = responseData as {

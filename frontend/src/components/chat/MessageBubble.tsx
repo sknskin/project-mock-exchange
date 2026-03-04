@@ -1,3 +1,10 @@
+/**
+ * @file 메시지 버블 컴포넌트
+ * @description 채팅 메시지 하나를 표시 — 본인/상대/시스템/관리자 스타일 분기, 삭제 기능 포함
+ *
+ * @file Message Bubble Component
+ * @description Renders a single chat message — style varies for self/other/system/admin, includes delete
+ */
 'use client';
 
 import { useState } from 'react';
@@ -8,11 +15,17 @@ import { useTranslation } from '@/hooks/useTranslation';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import type { ChatMessage } from '@/types';
 
+// 메시지 버블 Props / Message Bubble Props
 interface MessageBubbleProps {
+  /** 채팅 메시지 데이터 / Chat message data */
   message: ChatMessage;
+  /** 본인이 보낸 메시지 여부 / Whether this message is sent by current user */
   isMine: boolean;
+  /** 발신자 이름 표시 여부 / Whether to show sender name */
   showSender: boolean;
+  /** 현재 로케일 (시간 포맷용) / Current locale (for time formatting) */
   locale: string;
+  /** 현재 사용자 역할 (삭제 권한 판단) / Current user role (for delete permission) */
   userRole?: string;
 }
 

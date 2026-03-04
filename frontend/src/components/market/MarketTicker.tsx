@@ -14,7 +14,9 @@ import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { Asset } from '@/types';
 
+// 마켓 티커 Props / Market Ticker Props
 interface MarketTickerProps {
+  /** 전체 자산 배열 (거래대금 상위 5개 추출) / Full asset array (top 5 by turnover extracted) */
   assets: Asset[];
 }
 
@@ -24,6 +26,7 @@ export default function MarketTicker({ assets }: MarketTickerProps) {
   const { data: rateData } = useExchangeRate();
   const rate = rateData?.rate;
 
+  // 거래대금(price * volume) 기준 상위 5개 추출 / Extract top 5 by turnover (price * volume)
   const topAssets = useMemo(() =>
     [...assets]
       .sort((a, b) => (b.currentPrice * (b.volume ?? 0)) - (a.currentPrice * (a.volume ?? 0)))

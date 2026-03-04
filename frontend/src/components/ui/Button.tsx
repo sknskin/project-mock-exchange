@@ -9,9 +9,13 @@
 
 import { cn } from '@/lib/format';
 
+// 버튼 Props — 네이티브 button 속성 확장 / Button Props — extends native button attributes
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  /** 스타일 변형 / Style variant */
   variant?: 'primary' | 'secondary' | 'danger' | 'buy' | 'sell' | 'ghost';
+  /** 크기 / Size */
   size?: 'sm' | 'md' | 'lg';
+  /** 전체 너비 확장 여부 / Whether to expand to full width */
   fullWidth?: boolean;
 }
 
@@ -24,8 +28,10 @@ export default function Button({
   children,
   ...props
 }: ButtonProps) {
+  // 공통 기본 스타일 / Common base styles
   const base = 'inline-flex items-center justify-center font-bold transition-colors disabled:opacity-35 disabled:cursor-not-allowed';
 
+  // 변형별 색상/배경 스타일 매핑 / Variant-specific color/background style mapping
   const variants = {
     primary: 'bg-accent text-white rounded-lg hover:bg-accent/85',
     secondary: 'bg-bg-secondary text-text-primary rounded-lg hover:bg-bg-tertiary',
@@ -35,6 +41,7 @@ export default function Button({
     ghost: 'bg-transparent text-text-tertiary rounded-lg hover:text-text-secondary hover:bg-bg-secondary',
   };
 
+  // 크기별 높이/패딩/폰트 매핑 / Size-specific height/padding/font mapping
   const sizes = {
     sm: 'h-9 px-4 text-[13px]',
     md: 'h-11 px-5 text-[14px]',
