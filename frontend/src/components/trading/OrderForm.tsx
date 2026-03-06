@@ -7,10 +7,12 @@
  */
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Tabs from '@/components/ui/Tabs';
+import InlineTooltip from '@/components/ui/InlineTooltip';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 import { usePlaceOrder } from '@/hooks/useOrders';
 import { usePortfolio } from '@/hooks/usePortfolio';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
@@ -33,11 +35,11 @@ interface OrderFormProps {
 
 type OrderFormType = 'MARKET' | 'LIMIT' | 'STOP_LOSS' | 'TAKE_PROFIT';
 
-const typeTabKeys: { key: string; i18nKey: TranslationKey }[] = [
-  { key: 'MARKET', i18nKey: 'order.market' },
-  { key: 'LIMIT', i18nKey: 'order.limit' },
-  { key: 'STOP_LOSS', i18nKey: 'order.stopLoss' },
-  { key: 'TAKE_PROFIT', i18nKey: 'order.takeProfit' },
+const typeTabKeys: { key: string; i18nKey: TranslationKey; tooltipKey: TranslationKey }[] = [
+  { key: 'MARKET', i18nKey: 'order.market', tooltipKey: 'order.marketTooltip' },
+  { key: 'LIMIT', i18nKey: 'order.limit', tooltipKey: 'order.limitTooltip' },
+  { key: 'STOP_LOSS', i18nKey: 'order.stopLoss', tooltipKey: 'order.stopLossTooltip' },
+  { key: 'TAKE_PROFIT', i18nKey: 'order.takeProfit', tooltipKey: 'order.takeProfitTooltip' },
 ];
 
 /** 표시 가격을 현재 통화 모드에 맞게 변환 (Display price → current currency mode) */
@@ -76,6 +78,7 @@ export default function OrderForm({
   const [priceError, setPriceError] = useState('');
   const placeOrder = usePlaceOrder();
   const { data: portfolio } = usePortfolio();
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   // currentPrice 또는 통화 모드 변경 시 지정가 갱신 (Sync limit price with currentPrice/currency)
   useEffect(() => {
@@ -151,12 +154,16 @@ export default function OrderForm({
     }
   };
 
-  const handleSubmit = async () => {
+  const handleRequestSubmit = () => {
     if (!quantity || parsedQty <= 0) return;
     if (isConditional && (!triggerPrice || parseFloat(triggerPrice) <= 0)) return;
     if (insufficientHoldings || noHoldings) return;
+    setConfirmOpen(true);
+  };
 
-    // 가격을 USD로 변환하여 백엔드에 전송 (Convert price to USD for backend)
+  const handleConfirmSubmit = async () => {
+    setConfirmOpen(false);
+
     const usdLimitPrice = toUsdPrice(parseFloat(price), symbol, currencyMode, rate);
     const usdTriggerPrice = toUsdPrice(parseFloat(triggerPrice || '0'), symbol, currencyMode, rate);
 
@@ -192,14 +199,19 @@ export default function OrderForm({
         variant="pill"
       />
 
-      {/* 조건부 주문 설명 / Conditional order description */}
-      {isConditional && (
+      {/* 주문 유형 설명 + 인라인 툴팁 / Order type description + inline tooltip */}
+      <div className="flex items-center gap-1">
         <p className="text-[11px] text-text-quaternary leading-relaxed">
           {orderType === 'STOP_LOSS'
             ? t('order.stopLossDesc')
-            : t('order.takeProfitDesc')}
+            : orderType === 'TAKE_PROFIT'
+              ? t('order.takeProfitDesc')
+              : t(`order.${orderType === 'MARKET' ? 'market' : 'limit'}Tooltip` as TranslationKey)}
         </p>
-      )}
+        <InlineTooltip
+          text={t(typeTabKeys.find((tab) => tab.key === orderType)!.tooltipKey)}
+        />
+      </div>
 
       {orderType === 'LIMIT' && (
         <div>
@@ -237,6 +249,27 @@ export default function OrderForm({
           aria-describedby={quantityError ? 'quantity-error' : undefined}
         />
         {quantityError && <p id="quantity-error" className="text-[11px] text-danger mt-1">{quantityError}</p>}
+        {/* 비율 수량 선택기 / Percentage quantity selector */}
+        <div className="flex gap-1.5 mt-2">
+          {[25, 50, 75, 100].map((pct) => (
+            <button
+              key={pct}
+              type="button"
+              onClick={() => {
+                if (isBuy && portfolio && safeCurrentPrice > 0) {
+                  const maxQty = portfolio.cashBalance / safeCurrentPrice;
+                  setQuantity((maxQty * pct / 100).toFixed(8).replace(/\.?0+$/, ''));
+                } else if (!isBuy && holdingQty > 0) {
+                  setQuantity((holdingQty * pct / 100).toFixed(8).replace(/\.?0+$/, ''));
+                }
+                setQuantityError('');
+              }}
+              className="flex-1 py-1.5 text-[11px] font-medium text-text-tertiary bg-bg-secondary rounded-md hover:bg-bg-tertiary hover:text-text-primary transition-colors"
+            >
+              {pct}%
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="space-y-1.5 py-3">
@@ -276,7 +309,7 @@ export default function OrderForm({
         variant={isBuy ? 'buy' : 'sell'}
         size="lg"
         fullWidth
-        onClick={handleSubmit}
+        onClick={handleRequestSubmit}
         aria-label={isBuy ? t('detail.buy') : t('detail.sell')}
         disabled={
           placeOrder.isPending ||
@@ -295,6 +328,17 @@ export default function OrderForm({
               ? `${fp(safeCurrentPrice)} ${t('detail.buy')}`
               : `${fp(safeCurrentPrice)} ${t('detail.sell')}`}
       </Button>
+
+      {/* 주문 확인 다이얼로그 / Order Confirmation Dialog */}
+      <ConfirmModal
+        isOpen={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={handleConfirmSubmit}
+        title={isBuy ? t('detail.buy') : t('detail.sell')}
+        message={`${symbol} ${parsedQty} ${t('order.quantity')}\n${orderType === 'MARKET' ? t('order.market') : `${t('order.price')}: ${fp(toUsdPrice(parseFloat(price || '0'), symbol, currencyMode, rate))}`}\n${t('order.estimatedTotal')}: ${Number.isFinite(estimatedTotalUsd) && estimatedTotalUsd > 0 ? fp(estimatedTotalUsd) : fp(0)}`}
+        confirmVariant={isBuy ? 'primary' : 'danger'}
+        loading={placeOrder.isPending}
+      />
     </div>
   );
 }

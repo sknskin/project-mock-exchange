@@ -7,9 +7,10 @@
  */
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import OrderForm from './OrderForm';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { cn } from '@/lib/format';
 import { X } from 'lucide-react';
 
@@ -36,6 +37,8 @@ export default function OrderSheet({
 }: OrderSheetProps) {
   const { t } = useTranslation();
   const [side, setSide] = useState<'BUY' | 'SELL'>(initialSide);
+  const modalRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(modalRef, isOpen);
 
   useEffect(() => {
     if (isOpen) {
@@ -64,7 +67,7 @@ export default function OrderSheet({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center" role="dialog" aria-modal="true" aria-labelledby="order-sheet-title">
+    <div className="fixed inset-0 z-50 flex items-center justify-center" role="dialog" aria-modal="true" aria-labelledby="order-sheet-title" ref={modalRef}>
       <div
         className="absolute inset-0 bg-black/50"
         onClick={onClose}

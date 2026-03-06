@@ -49,7 +49,7 @@ export default function RootLayout({
           strategy="beforeInteractive"
         >{`
           try {
-            var d = JSON.parse(localStorage.getItem('virtuex-auth') || '{}');
+            var d = JSON.parse(sessionStorage.getItem('virtuex-auth') || '{}');
             if (d.state && d.state.isAuthenticated) {
               var h = document.documentElement.dataset;
               h.authed = '1';
@@ -72,8 +72,9 @@ export default function RootLayout({
         <a
           href="#main-content"
           className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:bg-accent focus:text-white focus:rounded-lg focus:text-sm focus:font-semibold"
+          data-i18n-skip
         >
-          Skip to content
+          Skip to content / 본문으로 건너뛰기
         </a>
         <QueryProvider>
           <ConnectionGuard>

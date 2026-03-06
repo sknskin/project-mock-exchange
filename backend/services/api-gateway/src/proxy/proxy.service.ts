@@ -87,8 +87,13 @@ export class ProxyService {
 
     try {
       const response = await client.request(config);
-      // 성공 시 Circuit Breaker 리셋 / Reset circuit breaker on success
-      this.recordSuccess(service);
+      // 5xx 응답은 서비스 장애로 간주 — Circuit Breaker에 실패 기록
+      // Treat 5xx responses as service failures — record in circuit breaker
+      if (response.status >= 500) {
+        this.recordFailure(service);
+      } else {
+        this.recordSuccess(service);
+      }
       return {
         status: response.status,
         data: response.data,
@@ -97,9 +102,13 @@ export class ProxyService {
     } catch (error) {
       if (axios.isAxiosError(error)) {
         if (error.response) {
-          // 서버가 응답을 반환한 경우 — 서비스 자체는 살아있으므로 Circuit Breaker 리셋
-          // Server responded — service is alive, reset circuit breaker
-          this.recordSuccess(service);
+          // 5xx 응답은 서비스 장애로 기록, 4xx는 정상 응답으로 처리
+          // Record 5xx as failure, treat 4xx as normal response
+          if (error.response.status >= 500) {
+            this.recordFailure(service);
+          } else {
+            this.recordSuccess(service);
+          }
           return {
             status: error.response.status,
             data: error.response.data,

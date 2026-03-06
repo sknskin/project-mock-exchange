@@ -9,10 +9,11 @@ import { Controller, Get, Put, Body, Req, Res, UseGuards } from '@nestjs/common'
 import { Request, Response } from 'express';
 import { ProxyService } from './proxy.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { AdminRolesGuard } from '../auth/admin-roles.guard';
 
-// 관리자 전용 설정 관리 — JWT 인증 필수 / Admin-only settings management — JWT auth required
+// 관리자 전용 설정 관리 — JWT 인증 + 관리자 역할 필수 / Admin-only settings management — JWT auth + admin role required
 @Controller('api/admin/settings')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, AdminRolesGuard)
 export class SettingsProxyController {
   constructor(private readonly proxyService: ProxyService) {}
 

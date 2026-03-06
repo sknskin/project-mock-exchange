@@ -5,9 +5,12 @@
  * @file AI Analysis Controller
  * @description API endpoints for market signals and portfolio analysis
  */
-import { Controller, Get, Post, Body } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
 import { AnalysisService } from './analysis.service';
+import { InternalAuthGuard } from '../common/guards/internal-auth.guard';
+import { AnalyzePortfolioDto } from './dto/analyze-portfolio.dto';
 
+@UseGuards(InternalAuthGuard)
 @Controller('analysis')
 export class AnalysisController {
   constructor(private readonly analysisService: AnalysisService) {}
@@ -18,9 +21,7 @@ export class AnalysisController {
   }
 
   @Post('portfolio')
-  analyzePortfolio(
-    @Body() body: { holdings: { symbol: string; value: number }[] },
-  ) {
-    return this.analysisService.analyzePortfolio(body.holdings ?? []);
+  analyzePortfolio(@Body() dto: AnalyzePortfolioDto) {
+    return this.analysisService.analyzePortfolio(dto.holdings ?? []);
   }
 }

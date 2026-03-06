@@ -49,8 +49,21 @@ export function useAddWatchlist() {
       const { data } = await api.post(`/api/portfolio/watchlist/${symbol}`);
       return data;
     },
-    onSuccess: () => {
+    onMutate: async (symbol: string) => {
+      await queryClient.cancelQueries({ queryKey: ['portfolio', 'watchlist'] });
+      const previous = queryClient.getQueryData<string[]>(['portfolio', 'watchlist']);
+      queryClient.setQueryData<string[]>(['portfolio', 'watchlist'], (old) => [...(old ?? []), symbol]);
+      return { previous };
+    },
+    onError: (_err, _symbol, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(['portfolio', 'watchlist'], context.previous);
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['portfolio', 'watchlist'] });
+    },
+    onSuccess: () => {
       useToastStore.getState().addToast(t('toast.watchlistAdded'), 'success');
     },
   });
@@ -71,8 +84,21 @@ export function useRemoveWatchlist() {
       const { data } = await api.delete(`/api/portfolio/watchlist/${symbol}`);
       return data;
     },
-    onSuccess: () => {
+    onMutate: async (symbol: string) => {
+      await queryClient.cancelQueries({ queryKey: ['portfolio', 'watchlist'] });
+      const previous = queryClient.getQueryData<string[]>(['portfolio', 'watchlist']);
+      queryClient.setQueryData<string[]>(['portfolio', 'watchlist'], (old) => (old ?? []).filter((s) => s !== symbol));
+      return { previous };
+    },
+    onError: (_err, _symbol, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(['portfolio', 'watchlist'], context.previous);
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['portfolio', 'watchlist'] });
+    },
+    onSuccess: () => {
       useToastStore.getState().addToast(t('toast.watchlistRemoved'), 'success');
     },
   });

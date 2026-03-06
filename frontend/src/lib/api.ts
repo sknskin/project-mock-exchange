@@ -88,7 +88,12 @@ api.interceptors.response.use(
           authStore.logout();
         }
         if (typeof window !== 'undefined') {
-          window.location.href = '/login';
+          const { default: Router } = await import('next/router').catch(() => ({ default: null }));
+          if (Router?.push) {
+            Router.push('/login');
+          } else {
+            window.location.assign('/login');
+          }
         }
         return Promise.reject(refreshError);
       } finally {

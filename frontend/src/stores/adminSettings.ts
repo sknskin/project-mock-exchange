@@ -98,7 +98,7 @@ interface AdminSettingsState {
 }
 
 export const useAdminSettingsStore = create<AdminSettingsState>()(
-  persist(
+  persist<AdminSettingsState, [], [], Pick<AdminSettingsState, 'tradingLimits' | 'tradingFees' | 'systemStatus' | 'initialBalance' | 'marketHours' | 'riskManagement' | 'notificationSettings' | 'sessionSecurity'>>(
     (set, get) => ({
       tradingLimits: {
         minOrderQty: 0.001,
@@ -154,6 +154,14 @@ export const useAdminSettingsStore = create<AdminSettingsState>()(
     }),
     {
       name: 'virtuex-admin-settings',
+      storage: {
+        getItem: (name) => {
+          const value = sessionStorage.getItem(name);
+          return value ? JSON.parse(value) : null;
+        },
+        setItem: (name, value) => sessionStorage.setItem(name, JSON.stringify(value)),
+        removeItem: (name) => sessionStorage.removeItem(name),
+      },
       partialize: (state) => ({
         tradingLimits: state.tradingLimits,
         tradingFees: state.tradingFees,

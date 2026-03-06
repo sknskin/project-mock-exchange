@@ -174,3 +174,25 @@ export function useWithdraw() {
     },
   });
 }
+
+/**
+ * 계정 초기화 뮤테이션 훅 — 보유 자산, 거래 내역 삭제 및 잔고 리셋
+ * Mutation hook for account reset — deletes holdings, transactions, resets balance
+ *
+ * @returns mutate 함수 호출 시 계정 초기화 실행 / Triggers account reset when mutate is called
+ */
+export function useResetAccount() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const { data } = await api.post('/api/portfolio/reset');
+      return unwrapResponse(data);
+    },
+    onSuccess: () => {
+      // 계정 초기화 → 포트폴리오 및 관련 캐시 전체 갱신
+      // Account reset → refresh all portfolio and related caches
+      queryClient.invalidateQueries({ queryKey: ['portfolio'] });
+    },
+  });
+}

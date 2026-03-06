@@ -5,3 +5,5 @@ ALTER TABLE accounts ADD CONSTRAINT chk_reserved_cash_non_negative CHECK (reserv
 
 -- Holding 수량 음수 방지
 ALTER TABLE holdings ADD CONSTRAINT chk_quantity_non_negative CHECK (quantity >= 0);
+ALTER TABLE holdings ADD CONSTRAINT chk_reserved_quantity_non_negative CHECK (reserved_quantity >= 0);
+ALTER TABLE holdings ADD CONSTRAINT chk_reserved_not_exceed_quantity CHECK (reserved_quantity <= quantity);

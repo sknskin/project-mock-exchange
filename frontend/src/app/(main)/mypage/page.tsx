@@ -10,13 +10,15 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Lock, Edit2, User, Bell, BarChart3, Activity, Clock, Shield } from 'lucide-react';
+import { Lock, Edit2, User, Bell, BarChart3, Activity, Clock, Shield, RotateCcw } from 'lucide-react';
 import { useProfile, useChangePassword } from '@/hooks/useAdmin';
 import { useTradeHistory } from '@/hooks/useOrders';
+import { useResetAccount } from '@/hooks/usePortfolio';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuthStore } from '@/stores/auth';
 import { useSettingsStore, type NotificationPrefs } from '@/stores/settings';
 import { useToastStore } from '@/stores/toast';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 import { cn } from '@/lib/format';
 import api from '@/lib/api';
 
@@ -114,8 +116,12 @@ export default function MyPage() {
 
   const { data: profile, isLoading } = useProfile();
   const changePassword = useChangePassword();
+  const resetAccount = useResetAccount();
   const { data: trades } = useTradeHistory();
   const user = useAuthStore((s) => s.user);
+
+  // 계정 초기화 모달 상태 / Account reset modal state
+  const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
 
   /**
    * 거래 통계 집계 (메모이제이션) — 총 거래수, 총 거래량, 최고 수익률
@@ -511,8 +517,48 @@ export default function MyPage() {
               </InfoRow>
             </div>
           </div>
+
+          {/* 계정 초기화 — 보유 자산·거래 내역 삭제, 잔고 리셋 / Account Reset — delete holdings, transactions, reset balance */}
+          <div className="bg-bg-secondary rounded-2xl px-5 py-4">
+            <div className="flex items-center gap-2 mb-2">
+              <RotateCcw className="w-3.5 h-3.5 text-danger" />
+              <h2 className="text-[13px] font-bold text-danger uppercase tracking-wide">
+                {t('mypage.resetAccount')}
+              </h2>
+            </div>
+            <p className="text-[13px] text-text-tertiary leading-relaxed mb-3">
+              {t('mypage.resetAccountDesc')}
+            </p>
+            <button
+              onClick={() => setResetConfirmOpen(true)}
+              disabled={resetAccount.isPending}
+              className="w-full flex items-center justify-center gap-2 h-11 rounded-xl border border-danger/40 text-[14px] font-semibold text-danger hover:bg-danger/10 transition-colors disabled:opacity-50"
+            >
+              <RotateCcw className="w-4 h-4" />
+              {resetAccount.isPending ? t('mypage.resetting') : t('mypage.resetAccount')}
+            </button>
+          </div>
         </div>
       )}
+
+      {/* 계정 초기화 확인 모달 / Account reset confirmation modal */}
+      <ConfirmModal
+        isOpen={resetConfirmOpen}
+        onClose={() => setResetConfirmOpen(false)}
+        onConfirm={async () => {
+          try {
+            await resetAccount.mutateAsync();
+            setResetConfirmOpen(false);
+            useToastStore.getState().addToast(t('mypage.resetAccountSuccess'), 'success');
+          } catch {
+            useToastStore.getState().addToast(t('mypage.resetAccountError'), 'error');
+          }
+        }}
+        title={t('mypage.resetAccountConfirmTitle')}
+        message={t('mypage.resetAccountConfirmMessage')}
+        confirmVariant="danger"
+        loading={resetAccount.isPending}
+      />
 
       {/* Password Change Modal */}
       {isPasswordModalOpen && (

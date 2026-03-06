@@ -20,6 +20,7 @@ import { ConfigService } from '@nestjs/config';
 import { Request, Response } from 'express';
 import { ProxyService } from './proxy.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { AdminRolesGuard } from '../auth/admin-roles.guard';
 
 @ApiTags('Statistics')
 @Controller('api/statistics')
@@ -48,7 +49,7 @@ export class StatisticsProxyController {
   }
 
   @Get('overview')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AdminRolesGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '통계 개요 조회', description: '전체 통계 개요 데이터를 조회합니다.' })
   @ApiResponse({ status: 200, description: '통계 개요 조회 성공' })
@@ -63,7 +64,7 @@ export class StatisticsProxyController {
   }
 
   @Get('registrations')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AdminRolesGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '가입 통계 조회', description: '기간별 사용자 가입 통계를 조회합니다.' })
   @ApiQuery({ name: 'from', required: false, description: '시작 날짜' })
@@ -81,7 +82,7 @@ export class StatisticsProxyController {
   }
 
   @Get('registrations-approved')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AdminRolesGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '승인 완료 가입 통계 조회', description: '기간별 승인 완료된 가입 통계를 조회합니다.' })
   @ApiQuery({ name: 'period', required: false, description: '집계 주기' })
@@ -99,7 +100,7 @@ export class StatisticsProxyController {
   }
 
   @Get('logins')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AdminRolesGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '로그인 통계 조회', description: '기간별 로그인 통계를 조회합니다.' })
   @ApiQuery({ name: 'from', required: false, description: '시작 날짜' })
@@ -117,7 +118,7 @@ export class StatisticsProxyController {
   }
 
   @Get('page-views')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AdminRolesGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '페이지 뷰 통계 조회', description: '기간별 페이지 뷰 통계를 조회합니다.' })
   @ApiQuery({ name: 'from', required: false, description: '시작 날짜' })
@@ -135,7 +136,7 @@ export class StatisticsProxyController {
   }
 
   @Get('announcements')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AdminRolesGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '공지사항 통계 조회', description: '기간별 공지사항 통계를 조회합니다.' })
   @ApiQuery({ name: 'from', required: false, description: '시작 날짜' })
@@ -153,7 +154,7 @@ export class StatisticsProxyController {
   }
 
   @Get('overview-trend')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AdminRolesGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '통계 개요 트렌드 조회', description: '통계 개요의 시간별 트렌드 데이터를 조회합니다.' })
   @ApiResponse({ status: 200, description: '통계 개요 트렌드 조회 성공' })
@@ -168,7 +169,7 @@ export class StatisticsProxyController {
   }
 
   @Get('popular-announcements')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AdminRolesGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '인기 공지사항 조회', description: '가장 많이 조회된 인기 공지사항 목록을 조회합니다.' })
   @ApiResponse({ status: 200, description: '인기 공지사항 조회 성공' })
@@ -183,7 +184,7 @@ export class StatisticsProxyController {
   }
 
   @Get('users')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AdminRolesGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '사용자 통계 조회', description: '사용자 관련 통계 데이터를 조회합니다.' })
   @ApiResponse({ status: 200, description: '사용자 통계 조회 성공' })
@@ -199,7 +200,7 @@ export class StatisticsProxyController {
 
   // 좋아요 통계 프록시
   @Get('likes')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AdminRolesGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '좋아요 통계 조회', description: '기간별 좋아요 통계를 조회합니다.' })
   @ApiQuery({ name: 'from', required: false, description: '시작 날짜' })
@@ -218,7 +219,7 @@ export class StatisticsProxyController {
 
   // 채팅 통계 프록시 (Chat statistics proxy)
   @Get('chat')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AdminRolesGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '채팅 통계 조회', description: '기간별 채팅 통계를 조회합니다.' })
   @ApiQuery({ name: 'from', required: false, description: '시작 날짜' })

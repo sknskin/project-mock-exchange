@@ -31,6 +31,7 @@ export interface HoldingInfo {
   id: string;
   symbol: string;
   quantity: string;
+  reservedQuantity: string;
   avgCostBasis: string;
   totalCost: string;
   updatedAt: Date;
@@ -951,6 +952,7 @@ export class BalanceService {
     id: string;
     symbol: string;
     quantity: Decimal;
+    reservedQuantity?: Decimal;
     avgCostBasis: Decimal;
     totalCost: Decimal;
     updatedAt: Date;
@@ -959,9 +961,130 @@ export class BalanceService {
       id: holding.id,
       symbol: holding.symbol,
       quantity: new Decimal(holding.quantity.toString()).toFixed(8),
+      reservedQuantity: new Decimal((holding.reservedQuantity ?? 0).toString()).toFixed(8),
       avgCostBasis: new Decimal(holding.avgCostBasis.toString()).toFixed(8),
       totalCost: new Decimal(holding.totalCost.toString()).toFixed(8),
       updatedAt: holding.updatedAt,
     };
+  }
+
+  /**
+   * 사용자 계정을 초기화합니다.
+   * 모든 보유 자산과 거래 내역을 삭제하고, 현금 잔고를 초기 금액(기본 0)으로 리셋합니다.
+   *
+   * Reset user account.
+   * Deletes all holdings and transactions, resets cash balance to initial amount (default 0).
+   */
+  async resetAccount(userId: string): Promise<BalanceInfo> {
+    await this.ensureAccount(userId);
+
+    // 환경변수에서 초기 잔고 설정 (기본값: 0)
+    // Get initial balance from env (default: 0)
+    const initialBalance = new Decimal(
+      this.config.get<string>('INITIAL_BALANCE', '0'),
+    );
+
+    const updated = await this.prisma.$transaction(async (tx) => {
+      // FOR UPDATE 락으로 동시 리셋 방지 / Lock to prevent concurrent resets
+      const [locked] = await tx.$queryRaw<Array<{
+        userId: string; availableCash: string; reservedCash: string;
+      }>>`SELECT "user_id" AS "userId", "available_cash" AS "availableCash", "reserved_cash" AS "reservedCash" FROM "accounts" WHERE "user_id" = ${userId}::uuid FOR UPDATE`;
+
+      if (!locked) throw new NotFoundException(`Account not found for user ${userId}`);
+
+      // 보유 자산 전부 삭제 / Delete all holdings
+      await tx.holding.deleteMany({ where: { userId } });
+
+      // 거래 내역 전부 삭제 / Delete all transactions
+      await tx.transaction.deleteMany({ where: { userId } });
+
+      // 현금 잔고 초기화 / Reset cash balance
+      const updatedAccount = await tx.account.update({
+        where: { userId },
+        data: {
+          availableCash: initialBalance.toFixed(8),
+          reservedCash: new Decimal(0).toFixed(8),
+        },
+      });
+
+      // 리셋 트랜잭션 기록 (초기 잔고가 0보다 큰 경우에만)
+      // Record reset transaction (only if initial balance > 0)
+      if (initialBalance.gt(0)) {
+        await tx.transaction.create({
+          data: {
+            userId,
+            type: 'DEPOSIT',
+            cashDelta: initialBalance.toFixed(8),
+          },
+        });
+      }
+
+      return updatedAccount;
+    });
+
+    this.logger.log(
+      `Account reset for user ${userId.substring(0, 8)}... — balance set to ${initialBalance.toFixed(8)}`,
+    );
+
+    return this.toBalanceInfo(updated);
+  }
+
+  async reserveHoldings(userId: string, symbol: string, quantity: string): Promise<{ reserved: string; available: string }> {
+    const qty = new Decimal(quantity);
+
+    const result = await this.prisma.$transaction(async (tx) => {
+      const [holding] = await tx.$queryRaw<Array<{
+        id: string; quantity: string; reservedQuantity: string;
+      }>>`SELECT "id", "quantity"::text, "reserved_quantity"::text AS "reservedQuantity" FROM "holdings" WHERE "user_id" = ${userId}::uuid AND "symbol" = ${symbol} FOR UPDATE`;
+
+      if (!holding) {
+        throw new BadRequestException(`No holding found for symbol ${symbol}`);
+      }
+
+      const totalQty = new Decimal(holding.quantity);
+      const reserved = new Decimal(holding.reservedQuantity);
+      const available = totalQty.minus(reserved);
+
+      if (available.lt(qty)) {
+        throw new BadRequestException(
+          `Insufficient holdings: available ${available.toFixed(8)} ${symbol}, requested ${qty.toFixed(8)}`,
+        );
+      }
+
+      await tx.$executeRaw`UPDATE "holdings" SET "reserved_quantity" = "reserved_quantity" + ${qty.toFixed(8)}::decimal, "updated_at" = NOW() WHERE "id" = ${holding.id}::uuid`;
+
+      return {
+        reserved: reserved.plus(qty).toFixed(8),
+        available: available.minus(qty).toFixed(8),
+      };
+    });
+
+    return result;
+  }
+
+  async releaseHoldings(userId: string, symbol: string, quantity: string): Promise<{ reserved: string; released: string }> {
+    const qty = new Decimal(quantity);
+
+    const result = await this.prisma.$transaction(async (tx) => {
+      const [holding] = await tx.$queryRaw<Array<{
+        id: string; reservedQuantity: string;
+      }>>`SELECT "id", "reserved_quantity"::text AS "reservedQuantity" FROM "holdings" WHERE "user_id" = ${userId}::uuid AND "symbol" = ${symbol} FOR UPDATE`;
+
+      if (!holding) {
+        throw new BadRequestException(`No holding found for symbol ${symbol}`);
+      }
+
+      const reserved = new Decimal(holding.reservedQuantity);
+      const releaseQty = Decimal.min(qty, reserved);
+
+      await tx.$executeRaw`UPDATE "holdings" SET "reserved_quantity" = "reserved_quantity" - ${releaseQty.toFixed(8)}::decimal, "updated_at" = NOW() WHERE "id" = ${holding.id}::uuid`;
+
+      return {
+        reserved: reserved.minus(releaseQty).toFixed(8),
+        released: releaseQty.toFixed(8),
+      };
+    });
+
+    return result;
   }
 }

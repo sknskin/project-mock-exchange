@@ -69,15 +69,7 @@ jobs:
           done
 
       - name: Run tests with coverage
-        run: pnpm turbo run test -- --coverage --coverageReporters=text --coverageReporters=lcov
-        env:
-          JEST_COVERAGE_THRESHOLD: '{"global":{"branches":60,"functions":60,"lines":60,"statements":60}}'
-
-      - name: Check coverage threshold
-        run: |
-          echo "Checking test coverage meets minimum thresholds (60%)..."
-          # Turbo 테스트가 커버리지 기준 미달 시 자동 실패됩니다
-          # Turbo test will fail automatically if coverage thresholds are not met
+        run: pnpm turbo run test -- --coverage --coverageReporters=text --coverageReporters=lcov --coverageThreshold='{"global":{"branches":60,"functions":60,"lines":60,"statements":60}}'
 
   build:
     name: Build Check

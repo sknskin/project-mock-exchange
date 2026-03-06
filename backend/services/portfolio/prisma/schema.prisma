@@ -26,8 +26,9 @@ model Holding {
   id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   userId       String   @map("user_id") @db.Uuid
   symbol       String   @db.VarChar(20)
-  quantity     Decimal  @default(0) @db.Decimal(20, 8)
-  avgCostBasis Decimal  @default(0) @map("avg_cost_basis") @db.Decimal(20, 8)
+  quantity         Decimal  @default(0) @db.Decimal(20, 8)
+  reservedQuantity Decimal  @default(0) @map("reserved_quantity") @db.Decimal(20, 8)
+  avgCostBasis     Decimal  @default(0) @map("avg_cost_basis") @db.Decimal(20, 8)
   totalCost    Decimal  @default(0) @map("total_cost") @db.Decimal(20, 8)
   updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz()
 

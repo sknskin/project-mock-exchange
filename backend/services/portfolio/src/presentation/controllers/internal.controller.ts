@@ -13,7 +13,6 @@ import {
   Headers,
   Query,
   BadRequestException,
-  Logger,
   UseGuards,
 } from '@nestjs/common';
 import Decimal from 'decimal.js';
@@ -27,8 +26,6 @@ const SYMBOL_REGEX = /^[A-Z0-9]{2,10}([.-][A-Z]{1,4})?(-USD)?$/;
 @UseGuards(InternalAuthGuard)
 @Controller('portfolio/internal')
 export class InternalController {
-  private readonly logger = new Logger(InternalController.name);
-
   constructor(private readonly balanceService: BalanceService) {}
 
   @Post('reserve')
@@ -113,34 +110,15 @@ export class InternalController {
       throw new BadRequestException('Quantity must be positive');
     }
 
-    const holding = await this.balanceService.getHoldingBySymbol(userId, body.symbol);
-
-    if (!holding) {
-      throw new BadRequestException(
-        `No holding found for symbol ${body.symbol}`,
-      );
-    }
-
-    const availableQty = new Decimal(holding.quantity);
-    if (availableQty.lt(qty)) {
-      throw new BadRequestException(
-        `Insufficient holdings: available ${availableQty.toFixed(8)} ${body.symbol}, requested ${qty.toFixed(8)}`,
-      );
-    }
-
-    // TODO: Implement full holding reservation with a reservedQuantity column
-    // For now, we validate the holdings exist and the quantity is sufficient.
-    this.logger.warn(
-      `reserve-holdings: full holding reservation is a TODO — ` +
-        `validated ${qty.toFixed(8)} ${body.symbol} for user ${userId.substring(0, 8)}...`,
-    );
+    const result = await this.balanceService.reserveHoldings(userId, body.symbol, qty.toFixed(8));
 
     return {
       success: true,
       data: {
         symbol: body.symbol,
         requestedQuantity: qty.toFixed(8),
-        availableQuantity: availableQty.toFixed(8),
+        reservedQuantity: result.reserved,
+        availableQuantity: result.available,
       },
     };
   }
@@ -163,18 +141,14 @@ export class InternalController {
       throw new BadRequestException('Quantity must be positive');
     }
 
-    // TODO: Implement full holding release with a reservedQuantity column
-    // For now, we log and acknowledge — mirrors reserve-holdings TODO pattern.
-    this.logger.warn(
-      `release-holdings: full holding release is a TODO — ` +
-        `releasing ${qty.toFixed(8)} ${body.symbol} for user ${userId.substring(0, 8)}..., order ${body.orderId || 'unknown'}`,
-    );
+    const result = await this.balanceService.releaseHoldings(userId, body.symbol, qty.toFixed(8));
 
     return {
       success: true,
       data: {
         symbol: body.symbol,
-        releasedQuantity: qty.toFixed(8),
+        releasedQuantity: result.released,
+        remainingReserved: result.reserved,
       },
     };
   }

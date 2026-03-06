@@ -4,7 +4,7 @@ services:
   # ===========================================
 
   postgres:
-    image: postgres:16-alpine
+    image: postgres:16.8-alpine
     container_name: mex-postgres
     restart: unless-stopped
     ports:
@@ -35,7 +35,7 @@ services:
       - mex-network
 
   redis:
-    image: redis:7-alpine
+    image: redis:7.4-alpine
     container_name: mex-redis
     restart: unless-stopped
     ports:

@@ -134,9 +134,9 @@ export default function GlobalError({
           <p className="desc">{tt.desc}</p>
           <p className="persistent">{tt.persistent}</p>
           <div className="contact">
-            <a href="mailto:sknskin@naver.com">sknskin@naver.com</a>
+            <a href={`mailto:${process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'support@virtuex.com'}`}>{process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'support@virtuex.com'}</a>
             <div className="sep" />
-            <a href="tel:010-7455-4829">010-7455-4829</a>
+            <a href={`tel:${process.env.NEXT_PUBLIC_CONTACT_PHONE || ''}`}>{process.env.NEXT_PUBLIC_CONTACT_PHONE || ''}</a>
           </div>
           <div className="buttons">
             <button className="btn btn-primary" onClick={reset}>{tt.retry}</button>

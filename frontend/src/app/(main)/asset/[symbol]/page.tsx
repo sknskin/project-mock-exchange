@@ -478,6 +478,24 @@ export default function AssetDetailPage({
         confirmLabel={t('modal.loginConfirm')}
         cancelLabel={t('modal.cancel')}
       />
+
+      {/* 고정 매수/매도 바 — 화면 하단에 항상 표시 / Sticky buy/sell bar — always visible at bottom */}
+      <div className="fixed bottom-16 sm:bottom-0 left-0 right-0 z-40 bg-bg-primary/95 backdrop-blur-sm border-t border-border safe-bottom px-4 py-3">
+        <div className="max-w-screen-lg mx-auto flex gap-3">
+          <button
+            onClick={() => handleBuySell('BUY')}
+            className="flex-1 h-12 text-[15px] font-bold text-white bg-rise rounded-xl hover:bg-rise/90 transition-colors"
+          >
+            {t('detail.buy')}
+          </button>
+          <button
+            onClick={() => handleBuySell('SELL')}
+            className="flex-1 h-12 text-[15px] font-bold text-white bg-fall rounded-xl hover:bg-fall/90 transition-colors"
+          >
+            {t('detail.sell')}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

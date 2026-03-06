@@ -13,6 +13,7 @@ import AuthGuard from '@/components/layout/AuthGuard';
 import BalanceCard from '@/components/portfolio/BalanceCard';
 import HoldingCard from '@/components/portfolio/HoldingCard';
 import PortfolioAnalytics from '@/components/portfolio/PortfolioAnalytics';
+import PortfolioHistoryChart from '@/components/portfolio/PortfolioHistoryChart';
 import ExchangeRateBar from '@/components/market/ExchangeRateBar';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
@@ -233,6 +234,9 @@ export default function PortfolioPage() {
                   onDeposit={() => setDepositOpen(true)}
                   onWithdraw={() => setWithdrawOpen(true)}
                 />
+
+                {/* 포트폴리오 가치 히스토리 차트 / Portfolio value history chart */}
+                <PortfolioHistoryChart totalValue={portfolio.totalValue} />
 
                 {/* 보유 종목 시세 요약 — 평가금액 기준 내림차순 정렬 / Holdings Market Pulse — sorted by valuation descending */}
                 {portfolio.holdings.length > 0 && (

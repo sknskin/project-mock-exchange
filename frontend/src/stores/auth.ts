@@ -27,6 +27,8 @@ interface AuthState {
   logout: () => void;
 }
 
+// TODO: HttpOnly + Secure + SameSite 쿠키로 토큰 저장 전환 — XSS 완전 차단
+// TODO: Migrate token storage to HttpOnly + Secure + SameSite cookies for full XSS protection
 // sessionStorage에 저장할 상태 부분집합 / Subset of state persisted to sessionStorage
 type PersistedAuthState = Pick<AuthState, 'user' | 'accessToken' | 'isAuthenticated'>;
 

@@ -156,6 +156,19 @@ export class PortfolioController {
     return { success: true, data: transactions };
   }
 
+  /**
+   * 사용자 계정을 초기화합니다 (보유 자산, 거래 내역 삭제, 잔고 리셋).
+   *
+   * Reset user account (delete holdings, transactions, reset balance).
+   * POST /portfolio/reset
+   */
+  @Post('reset')
+  async resetAccount(@Headers('x-user-id') userId: string) {
+    this.validateUserId(userId);
+    const balance = await this.balanceService.resetAccount(userId);
+    return { success: true, data: balance };
+  }
+
   private validateUserId(userId: string): void {
     if (!userId) {
       throw new BadRequestException(

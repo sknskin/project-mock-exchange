@@ -1,4 +1,9 @@
-# NOTE: host.docker.internal은 macOS/Windows 전용. Linux에서는 Docker 내부 DNS 또는 --network=host 사용
+# NOTE: PROMETHEUS_HOST 환경변수로 타겟 호스트를 지정합니다.
+# macOS/Windows: host.docker.internal (기본값)
+# Linux: Docker 내부 DNS 또는 --network=host 사용
+# Set PROMETHEUS_HOST env var to configure target host.
+# macOS/Windows default: host.docker.internal
+# Linux: use Docker internal DNS or --network=host
 global:
   scrape_interval: 15s
   evaluation_interval: 15s
@@ -10,40 +15,40 @@ rule_files:
 scrape_configs:
   - job_name: 'api-gateway'
     static_configs:
-      - targets: ['host.docker.internal:3000']
+      - targets: ['${PROMETHEUS_HOST:-host.docker.internal}:3000']
     metrics_path: /metrics
 
   - job_name: 'market-data'
     static_configs:
-      - targets: ['host.docker.internal:3001']
+      - targets: ['${PROMETHEUS_HOST:-host.docker.internal}:3001']
     metrics_path: /metrics
 
   - job_name: 'order-engine'
     static_configs:
-      - targets: ['host.docker.internal:3002']
+      - targets: ['${PROMETHEUS_HOST:-host.docker.internal}:3002']
     metrics_path: /metrics
 
   - job_name: 'portfolio'
     static_configs:
-      - targets: ['host.docker.internal:3003']
+      - targets: ['${PROMETHEUS_HOST:-host.docker.internal}:3003']
     metrics_path: /metrics
 
   - job_name: 'notification'
     static_configs:
-      - targets: ['host.docker.internal:3004']
+      - targets: ['${PROMETHEUS_HOST:-host.docker.internal}:3004']
     metrics_path: /metrics
 
   - job_name: 'chat'
     static_configs:
-      - targets: ['host.docker.internal:3005']
+      - targets: ['${PROMETHEUS_HOST:-host.docker.internal}:3005']
     metrics_path: /metrics
 
   - job_name: 'ai-service'
     static_configs:
-      - targets: ['host.docker.internal:3006']
+      - targets: ['${PROMETHEUS_HOST:-host.docker.internal}:3006']
     metrics_path: /metrics
 
   - job_name: 'user-auth'
     static_configs:
-      - targets: ['host.docker.internal:3007']
+      - targets: ['${PROMETHEUS_HOST:-host.docker.internal}:3007']
     metrics_path: /metrics
