@@ -95,9 +95,9 @@ export default function Pagination({
     </span>
   );
 
+  // 레이아웃: absolute로 좌/우에 총건수·건씩보기 배치, 페이지 번호는 justify-center로 가운데 고정
+  // Layout: absolute positions for total/per-page on left/right, page numbers centered via justify-center
   return (
-    {/* 레이아웃: absolute로 좌/우에 총건수·건씩보기 배치, 페이지 번호는 justify-center로 가운데 고정 */}
-    {/* Layout: absolute positions for total/per-page on left/right, page numbers centered via justify-center */}
     <div className="relative flex items-center justify-center py-3">
       {/* 총 건수 — 좌측 고정 / Total count — fixed left */}
       <div className="absolute left-0">{totalLabel}</div>
