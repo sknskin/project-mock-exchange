@@ -83,7 +83,9 @@ export class UserController {
         name: true,
       },
       orderBy: { username: 'asc' },
-      take: 20,
+      // 채팅 초대 시 전체 사용자 목록이 보이도록 충분히 큰 제한값 설정
+      // Set large enough limit so all users are visible when inviting to chat
+      take: 200,
     });
 
     return { success: true, data: users };
