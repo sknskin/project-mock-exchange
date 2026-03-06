@@ -10,6 +10,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { useToastStore } from '@/stores/toast';
+import { useTranslation } from '@/hooks/useTranslation';
 
 // ===== 타입 정의 (Type Definitions) =====
 
@@ -145,15 +146,15 @@ export function useCommunityPost(id: string) {
 export function useCreatePost() {
   const queryClient = useQueryClient();
   const addToast = useToastStore((s) => s.addToast);
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: async (body: { title: string; content: string; category?: string }) => {
       const { data } = await api.post('/api/community/posts', body);
       return data;
     },
     onSuccess: () => {
-      // 게시글 목록 캐시 무효화하여 새 글 반영 / Invalidate posts list cache to reflect new post
       queryClient.invalidateQueries({ queryKey: ['community', 'posts'] });
-      addToast('게시글이 작성되었습니다.', 'success');
+      addToast(t('toast.postCreated'), 'success');
     },
   });
 }
@@ -167,16 +168,16 @@ export function useCreatePost() {
 export function useUpdatePost() {
   const queryClient = useQueryClient();
   const addToast = useToastStore((s) => s.addToast);
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: async ({ id, ...body }: { id: string; title?: string; content?: string; category?: string }) => {
       const { data } = await api.put(`/api/community/posts/${id}`, body);
       return data;
     },
     onSuccess: (_data, vars) => {
-      // 목록과 상세 캐시 모두 무효화 / Invalidate both list and detail cache
       queryClient.invalidateQueries({ queryKey: ['community', 'posts'] });
       queryClient.invalidateQueries({ queryKey: ['community', 'post', vars.id] });
-      addToast('게시글이 수정되었습니다.', 'success');
+      addToast(t('toast.postUpdated'), 'success');
     },
   });
 }
@@ -190,6 +191,7 @@ export function useUpdatePost() {
 export function useDeletePost() {
   const queryClient = useQueryClient();
   const addToast = useToastStore((s) => s.addToast);
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: async (id: string) => {
       const { data } = await api.delete(`/api/community/posts/${id}`);
@@ -197,7 +199,7 @@ export function useDeletePost() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['community', 'posts'] });
-      addToast('게시글이 삭제되었습니다.', 'success');
+      addToast(t('toast.postDeleted'), 'success');
     },
   });
 }
@@ -307,16 +309,13 @@ export function useLikeComment() {
 export function useUploadCommunityAttachment() {
   const queryClient = useQueryClient();
   const addToast = useToastStore((s) => s.addToast);
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: async ({ postId, file }: { postId: string; file: File }) => {
-      // FileReader를 사용하여 File → base64 문자열로 변환
-      // Convert File to base64 string using FileReader
       const base64 = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => {
           const result = reader.result as string;
-          // data:mime;base64, 접두사를 제거하고 순수 base64 데이터만 추출
-          // Strip data:mime;base64, prefix to extract pure base64 data
           resolve(result.split(',')[1]);
         };
         reader.onerror = reject;
@@ -332,7 +331,7 @@ export function useUploadCommunityAttachment() {
     },
     onSuccess: (_data, vars) => {
       queryClient.invalidateQueries({ queryKey: ['community', 'post', vars.postId] });
-      addToast('첨부파일이 업로드되었습니다.', 'success');
+      addToast(t('toast.attachmentUploaded'), 'success');
     },
   });
 }
@@ -346,16 +345,15 @@ export function useUploadCommunityAttachment() {
 export function useDeleteCommunityAttachment() {
   const queryClient = useQueryClient();
   const addToast = useToastStore((s) => s.addToast);
+  const { t } = useTranslation();
   return useMutation({
-    // postId는 mutationFn에서 미사용, onSuccess 캐시 무효화용
-    // postId unused in mutationFn, needed for onSuccess cache invalidation
     mutationFn: async ({ attachmentId }: { attachmentId: string; postId: string }) => {
       const { data } = await api.delete(`/api/community/attachments/${attachmentId}`);
       return data;
     },
     onSuccess: (_data, vars) => {
       queryClient.invalidateQueries({ queryKey: ['community', 'post', vars.postId] });
-      addToast('첨부파일이 삭제되었습니다.', 'success');
+      addToast(t('toast.attachmentDeleted'), 'success');
     },
   });
 }

@@ -169,6 +169,7 @@ export function useMarkRoomRead() {
  *          Pass { roomId, userIds, usernames, names? } to mutate
  */
 export function useInviteToRoom() {
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: async ({
       roomId,
@@ -188,6 +189,9 @@ export function useInviteToRoom() {
       });
       return data;
     },
+    onSuccess: () => {
+      useToastStore.getState().addToast(t('toast.chatInvited'), 'success');
+    },
   });
 }
 
@@ -199,6 +203,7 @@ export function useInviteToRoom() {
  */
 export function useLeaveRoom() {
   const qc = useQueryClient();
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: async (roomId: string) => {
       const { data } = await api.post(`/api/chat/rooms/${roomId}/leave`);
@@ -206,6 +211,7 @@ export function useLeaveRoom() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['chat-rooms'] });
+      useToastStore.getState().addToast(t('toast.chatLeft'), 'success');
     },
   });
 }
@@ -218,6 +224,7 @@ export function useLeaveRoom() {
  */
 export function useKickFromRoom() {
   const qc = useQueryClient();
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: async ({ roomId, targetUserId }: { roomId: string; targetUserId: string }) => {
       const { data } = await api.post(`/api/chat/rooms/${roomId}/kick`, { targetUserId });
@@ -225,6 +232,7 @@ export function useKickFromRoom() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['chat-rooms'] });
+      useToastStore.getState().addToast(t('toast.chatKicked'), 'success');
     },
   });
 }
@@ -237,6 +245,7 @@ export function useKickFromRoom() {
  */
 export function useRenameRoom() {
   const qc = useQueryClient();
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: async ({ roomId, name }: { roomId: string; name: string }) => {
       const { data } = await api.post(`/api/chat/rooms/${roomId}/rename`, { name });
@@ -244,6 +253,7 @@ export function useRenameRoom() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['chat-rooms'] });
+      useToastStore.getState().addToast(t('toast.chatRenamed'), 'success');
     },
   });
 }
@@ -256,6 +266,7 @@ export function useRenameRoom() {
  */
 export function useDeleteRoom() {
   const qc = useQueryClient();
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: async (roomId: string) => {
       const { data } = await api.delete(`/api/chat/rooms/${roomId}`);
@@ -263,6 +274,7 @@ export function useDeleteRoom() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['chat-rooms'] });
+      useToastStore.getState().addToast(t('toast.chatDeleted'), 'success');
     },
   });
 }

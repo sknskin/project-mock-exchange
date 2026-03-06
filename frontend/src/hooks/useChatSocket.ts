@@ -153,11 +153,31 @@ function bindListeners(socket: Socket, qc: QueryClient) {
   // 채팅 메시지 (Chat message)
   socket.on('chat:message', (data: {
     senderName?: string; senderUsername?: string; content?: string; roomId?: string; senderId?: string;
+    type?: string;
   }) => {
+    // 채팅방 삭제 알림 (Room deleted notification)
+    if (data.type === 'room-deleted') {
+      qc.invalidateQueries({ queryKey: ['chat-rooms'] });
+      const { locale, notificationPrefs: prefs } = useSettingsStore.getState();
+      if (!prefs.chat) return;
+      useLiveToastStore.getState().addToast({
+        category: 'chat-kicked',
+        title: t('liveToast.chatRoomDeleted', locale),
+        message: t('liveToast.chatRoomDeletedMsg', locale),
+      });
+      return;
+    }
+
     qc.invalidateQueries({ queryKey: ['chat-messages'] });
     qc.invalidateQueries({ queryKey: ['chat-rooms'] });
     const me = useAuthStore.getState().user;
     if (data.senderId && me?.id === data.senderId) return;
+
+    // 시스템 메시지 (초대/퇴장/강퇴) — 별도 토스트가 이미 존재하므로 스킵
+    // System messages (invite/leave/kick) — skip toast since separate events handle them
+    const SYSTEM_SENDER_ID = '00000000-0000-0000-0000-000000000000';
+    if (data.senderId === SYSTEM_SENDER_ID) return;
+
     const { locale, notificationPrefs: prefs } = useSettingsStore.getState();
     if (!prefs.chat) return;
     useLiveToastStore.getState().addToast({
