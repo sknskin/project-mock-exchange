@@ -101,7 +101,7 @@ export default function PhoneVerification({
           value={phone}
           disabled
         />
-        <p className="text-[13px] text-rise font-medium">{t('validation.phone.verified')}</p>
+        <p className="text-[13px] text-accent font-medium">{t('validation.phone.verified')}</p>
       </div>
     );
   }
@@ -123,7 +123,7 @@ export default function PhoneVerification({
           type="button"
           variant="secondary"
           size="md"
-          disabled={!isValidPhone || sending || (timer > 0 && codeSent)}
+          disabled={!isValidPhone || sending}
           onClick={handleSendCode}
           className="shrink-0 whitespace-nowrap"
         >
@@ -161,7 +161,7 @@ export default function PhoneVerification({
       )}
 
       {message && (
-        <p className={`text-[13px] font-medium ${messageType === 'error' ? 'text-danger' : 'text-rise'}`}>
+        <p className={`text-[13px] font-medium ${messageType === 'error' ? 'text-danger' : 'text-accent'}`}>
           {message}
         </p>
       )}

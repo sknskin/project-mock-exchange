@@ -61,17 +61,9 @@ export default function LoginPage() {
     } catch (err) {
       const axiosErr = err as AxiosError<{ message?: string }>;
       const msg = axiosErr.response?.data?.message;
-      if (msg === 'Account not yet approved') {
-        setError(t('auth.login.pendingApproval'));
-      } else if (msg === 'Account has been rejected') {
-        setError(t('auth.login.rejected'));
-      } else if (msg === 'Account is deactivated') {
-        setError(t('auth.login.deactivated'));
-      } else if (msg === 'Account is locked') {
-        setError(t('auth.login.locked'));
-      } else {
-        setError(t('auth.login.error'));
-      }
+      // 백엔드에서 이미 한국어 메시지를 반환하므로 그대로 표시
+      // Backend returns Korean messages, display them directly
+      setError(msg || t('auth.login.error'));
     } finally {
       setLoading(false);
     }

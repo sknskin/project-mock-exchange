@@ -17,7 +17,6 @@ import ValidationFeedback from '@/components/ui/ValidationFeedback';
 import PhoneVerification from '@/components/auth/PhoneVerification';
 import ResidentNumberInput from '@/components/auth/ResidentNumberInput';
 import AddressSearch from '@/components/auth/AddressSearch';
-import { useAuthStore } from '@/stores/auth';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useDuplicateCheck } from '@/hooks/useDuplicateCheck';
 import {
@@ -28,11 +27,9 @@ import {
   validateResidentNumber,
 } from '@/lib/validation';
 import api from '@/lib/api';
-import type { AuthResponse } from '@/types';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const login = useAuthStore((s) => s.login);
   const { t } = useTranslation();
 
   // 폼 필드 / Form fields
@@ -53,6 +50,7 @@ export default function RegisterPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const firstInputRef = useRef<HTMLInputElement>(null);
 
   // 첫번째 입력 필드 자동 포커스 / Auto-focus first input field
@@ -117,23 +115,17 @@ export default function RegisterPage() {
         zipCode,
       });
 
-      // 가입 후 자동 로그인 / Auto-login after registration
-      const { data: loginResp } = await api.post<AuthResponse>(
-        '/api/auth/login',
-        { identifier: email, password },
-      );
-      const payload = loginResp.data ?? loginResp;
-      login(payload.user, payload.accessToken);
+      // 가입 성공 → 승인 대기 안내 모달 표시 / Registration success → show approval pending modal
       setShowConfirmModal(false);
-      router.push('/dashboard');
+      setShowSuccessModal(true);
     } catch (err: unknown) {
       const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      setError(message || t('auth.register.error'));
+      setError(message ?? t('auth.register.error'));
       setShowConfirmModal(false);
     } finally {
       setLoading(false);
     }
-  }, [username, email, password, passwordConfirm, name, phone, rrnFront, rrnBack, address, addressDetail, zipCode, login, router, t]);
+  }, [username, email, password, passwordConfirm, name, phone, rrnFront, rrnBack, address, addressDetail, zipCode, t]);
 
   const getDuplicateMessage = (status: string): string | undefined => {
     switch (status) {
@@ -342,6 +334,16 @@ export default function RegisterPage() {
         message={t('modal.registerMessage')}
         confirmLabel={t('modal.registerConfirm')}
         loading={loading}
+      />
+
+      {/* 가입 완료 안내 모달 / Registration Success Modal */}
+      <ConfirmModal
+        isOpen={showSuccessModal}
+        onClose={() => { setShowSuccessModal(false); router.push('/login'); }}
+        onConfirm={() => { setShowSuccessModal(false); router.push('/login'); }}
+        title={t('modal.registerSuccessTitle')}
+        message={t('modal.registerSuccessMessage')}
+        confirmLabel={t('modal.confirm')}
       />
     </div>
   );
