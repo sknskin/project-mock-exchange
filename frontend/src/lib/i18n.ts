@@ -144,6 +144,16 @@ const translations = {
     'toast.passwordChanged': '비밀번호가 변경되었습니다',
     'toast.alertCreated': '가격 알림이 설정되었습니다',
     'toast.alertDeleted': '가격 알림이 삭제되었습니다',
+    'toast.postCreated': '게시글이 작성되었습니다',
+    'toast.postUpdated': '게시글이 수정되었습니다',
+    'toast.postDeleted': '게시글이 삭제되었습니다',
+    'toast.attachmentUploaded': '첨부파일이 업로드되었습니다',
+    'toast.attachmentDeleted': '첨부파일이 삭제되었습니다',
+    'toast.chatInvited': '사용자를 초대했습니다',
+    'toast.chatLeft': '채팅방에서 나갔습니다',
+    'toast.chatKicked': '사용자를 강퇴했습니다',
+    'toast.chatRenamed': '채팅방 이름이 변경되었습니다',
+    'toast.chatDeleted': '채팅방이 삭제되었습니다',
 
     // Live Toast
     'liveToast.close': '닫기',
@@ -163,6 +173,8 @@ const translations = {
     'liveToast.registrationRequest': '새 회원가입 요청',
     'liveToast.chatInvitedMsg': '채팅방에 초대되었습니다',
     'liveToast.chatKickedMsg': '채팅방에서 퇴장되었습니다',
+    'liveToast.chatRoomDeleted': '채팅방 삭제',
+    'liveToast.chatRoomDeletedMsg': '채팅방이 삭제되었습니다',
     'liveToast.registrationApprovedMsg': '가입이 승인되었습니다. 이제 모든 기능을 이용할 수 있습니다',
     'liveToast.registrationRejectedMsg': '가입 요청이 반려되었습니다',
 
@@ -323,6 +335,9 @@ const translations = {
     'auth.loginSms.attemptsLeft': '회 남음',
     'auth.loginSms.accountLocked': '인증 실패 횟수 초과로 계정이 잠겼습니다. 관리자에게 문의하세요.',
     'auth.loginSms.sessionExpired': '인증 세션이 만료되었습니다. 다시 로그인해주세요.',
+    'auth.loginSms.resend': '인증번호 재전송',
+    'auth.loginSms.resending': '재전송 중...',
+    'auth.loginSms.resendFailed': '인증번호 재전송에 실패했습니다.',
     'auth.sendCodeFailed': '인증번호 발송 실패',
 
     // Auth - Register
@@ -1453,8 +1468,8 @@ const translations = {
     'help.faq.g4.t1': '헤더 우측의 테마 아이콘을 클릭하면 즉시 전환됩니다',
     'help.faq.g4.t2': '테마 설정은 브라우저를 닫아도 유지됩니다',
     'help.faq.g4.t3': '로그인 후 사용 가능한 기능입니다 (기본값: 다크모드)',
-    'help.faq.g5.t1': '가상 모의투자 데이터(잔고, 보유종목, 주문내역)는 관리자에 의해 초기화될 수 있습니다',
-    'help.faq.g5.t2': '계정 정보와 채팅 기록은 별도 관리되며, 초기화 시 사전 공지됩니다',
+    'help.faq.g5.t1': '마이페이지에서 직접 계정 초기화가 가능합니다 (잔고, 보유종목, 주문내역 삭제 및 초기 잔고 복원)',
+    'help.faq.g5.t2': '계정 정보와 채팅 기록은 별도 관리되며, 초기화 대상에 포함되지 않습니다',
 
     // Notifications
     'notification.title': '알림',
@@ -2010,6 +2025,16 @@ const translations = {
     'toast.passwordChanged': 'Password changed',
     'toast.alertCreated': 'Price alert set',
     'toast.alertDeleted': 'Price alert removed',
+    'toast.postCreated': 'Post created',
+    'toast.postUpdated': 'Post updated',
+    'toast.postDeleted': 'Post deleted',
+    'toast.attachmentUploaded': 'Attachment uploaded',
+    'toast.attachmentDeleted': 'Attachment deleted',
+    'toast.chatInvited': 'Users invited',
+    'toast.chatLeft': 'Left the chat room',
+    'toast.chatKicked': 'User kicked',
+    'toast.chatRenamed': 'Chat room renamed',
+    'toast.chatDeleted': 'Chat room deleted',
 
     // Live Toast
     'liveToast.close': 'Close',
@@ -2029,6 +2054,8 @@ const translations = {
     'liveToast.registrationRequest': 'New registration request',
     'liveToast.chatInvitedMsg': 'You have been invited to a chat room',
     'liveToast.chatKickedMsg': 'You have been removed from a chat room',
+    'liveToast.chatRoomDeleted': 'Chat room deleted',
+    'liveToast.chatRoomDeletedMsg': 'The chat room has been deleted',
     'liveToast.registrationApprovedMsg': 'Your registration has been approved. You can now access all features',
     'liveToast.registrationRejectedMsg': 'Your registration request has been rejected',
 
@@ -2189,6 +2216,9 @@ const translations = {
     'auth.loginSms.attemptsLeft': 'attempts left',
     'auth.loginSms.accountLocked': 'Too many failed attempts. Your account has been locked. Please contact the administrator.',
     'auth.loginSms.sessionExpired': 'Session expired. Please log in again.',
+    'auth.loginSms.resend': 'Resend code',
+    'auth.loginSms.resending': 'Resending...',
+    'auth.loginSms.resendFailed': 'Failed to resend verification code.',
     'auth.sendCodeFailed': 'Failed to send verification code',
 
     // Auth - Register
@@ -3319,8 +3349,8 @@ const translations = {
     'help.faq.g4.t1': 'Click the theme icon in the header to switch instantly',
     'help.faq.g4.t2': 'Your theme preference persists across browser sessions',
     'help.faq.g4.t3': 'Login required to use this feature (Default: Dark mode)',
-    'help.faq.g5.t1': 'Virtual trading data (balance, holdings, orders) may be reset by administrators',
-    'help.faq.g5.t2': 'Account info and chat records are managed separately; resets are announced in advance',
+    'help.faq.g5.t1': 'You can reset your account directly from My Page (deletes balance, holdings, orders and restores initial balance)',
+    'help.faq.g5.t2': 'Account info and chat records are managed separately and are not affected by reset',
 
     // Notifications
     'notification.title': 'Notifications',
