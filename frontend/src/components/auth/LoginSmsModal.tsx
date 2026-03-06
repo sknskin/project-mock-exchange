@@ -42,6 +42,7 @@ export default function LoginSmsModal({
   const [loading, setLoading] = useState(false);
   const [timeLeft, setTimeLeft] = useState(180);
   const [locked, setLocked] = useState(false);
+  const [resending, setResending] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const isSubmittingRef = useRef(false);
@@ -115,6 +116,28 @@ export default function LoginSmsModal({
     return `${m}:${s.toString().padStart(2, '0')}`;
   }, []);
 
+  /**
+   * SMS 인증번호 재전송 — 기존 세션을 유지한 채 새 인증번호를 발송합니다.
+   * 타이머를 3분으로 초기화하고 입력 필드를 비운 뒤 포커스합니다.
+   *
+   * Resend SMS verification code — sends new code while keeping existing session.
+   * Resets timer to 3 minutes, clears input, and refocuses.
+   */
+  const handleResend = async () => {
+    setResending(true);
+    setError('');
+    try {
+      await api.post('/api/auth/login/resend-sms', { sessionId });
+      setTimeLeft(180);
+      setCode('');
+      inputRef.current?.focus();
+    } catch {
+      setError(t('auth.loginSms.resendFailed'));
+    } finally {
+      setResending(false);
+    }
+  };
+
   const handleVerify = async () => {
     if (!code || code.length !== 6 || expired || locked) return;
     if (isSubmittingRef.current) return;
@@ -131,11 +154,12 @@ export default function LoginSmsModal({
       if (resp.success) {
         onSuccess({ user: resp.data.user, accessToken: resp.data.accessToken });
       } else {
-        if (resp.attemptsLeft === 0) {
+        const attemptsLeft = resp.data?.attemptsLeft;
+        if (attemptsLeft === 0) {
           setLocked(true);
           setError(t('auth.loginSms.accountLocked'));
         } else {
-          setError(`${resp.message} (${resp.attemptsLeft}${t('auth.loginSms.attemptsLeft')})`);
+          setError(`${t('auth.loginSms.invalidCode')} (${attemptsLeft}${t('auth.loginSms.attemptsLeft')})`);
         }
         setCode('');
         inputRef.current?.focus();
@@ -240,7 +264,7 @@ export default function LoginSmsModal({
               </div>
             )}
 
-            <div className="pt-2">
+            <div className="pt-2 space-y-2">
               <Button
                 type="button"
                 size="lg"
@@ -250,6 +274,14 @@ export default function LoginSmsModal({
               >
                 {loading ? t('auth.loginSms.verifying') : t('auth.loginSms.verify')}
               </Button>
+              <button
+                type="button"
+                onClick={handleResend}
+                disabled={resending || locked}
+                className="w-full text-[13px] text-text-tertiary hover:text-accent transition-colors disabled:opacity-40 py-1"
+              >
+                {resending ? t('auth.loginSms.resending') : t('auth.loginSms.resend')}
+              </button>
             </div>
           </div>
         </div>

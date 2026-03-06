@@ -1,3 +1,10 @@
+/**
+ * @file 비밀번호 찾기 페이지
+ * @description 3단계 비밀번호 재설정 플로우: 아이디 입력 → SMS 인증 → 새 비밀번호 설정
+ *
+ * @file Forgot Password Page
+ * @description 3-step password reset flow: identifier input → SMS verification → new password
+ */
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -86,6 +93,29 @@ export default function ForgotPasswordPage() {
     }
   };
 
+  /**
+   * SMS 인증번호 재전송 — 비밀번호 재설정 세션의 인증번호를 재발송합니다.
+   * 타이머를 3분으로 초기화하고 입력 필드를 비운 뒤 포커스합니다.
+   *
+   * Resend SMS verification code — resends code for password reset session.
+   * Resets timer to 3 minutes, clears input, and refocuses.
+   */
+  const [resending, setResending] = useState(false);
+  const handleResend = async () => {
+    setResending(true);
+    setError('');
+    try {
+      await api.post('/api/auth/forgot-password/resend-sms', { sessionId });
+      setTimeLeft(180);
+      setCode('');
+      codeRef.current?.focus();
+    } catch {
+      setError(t('auth.loginSms.resendFailed'));
+    } finally {
+      setResending(false);
+    }
+  };
+
   // 2단계: SMS 인증 (Step 2: verify SMS)
   const handleSmsVerify = async () => {
     if (!code || code.length !== 6 || timeLeft <= 0) return;
@@ -96,10 +126,11 @@ export default function ForgotPasswordPage() {
       if (resp.success) {
         setStep('newPassword');
       } else {
-        if (resp.attemptsLeft === 0) {
+        const attemptsLeft = resp.data?.attemptsLeft;
+        if (attemptsLeft === 0) {
           setError(t('auth.forgot.tooManyAttempts'));
         } else {
-          setError(`${resp.message} (${resp.attemptsLeft}${t('auth.loginSms.attemptsLeft')})`);
+          setError(`${t('auth.loginSms.invalidCode')} (${attemptsLeft}${t('auth.loginSms.attemptsLeft')})`);
         }
         setCode('');
         codeRef.current?.focus();
@@ -235,10 +266,18 @@ export default function ForgotPasswordPage() {
               <p className="text-[13px] text-danger text-center">{t('auth.loginSms.expired')}</p>
             )}
             {error && <p className="text-[13px] text-danger text-center animate-shake">{error}</p>}
-            <div className="pt-3">
+            <div className="pt-3 space-y-2">
               <Button type="button" size="lg" fullWidth disabled={loading || code.length !== 6 || expired} onClick={handleSmsVerify}>
                 {loading ? t('auth.loginSms.verifying') : t('auth.loginSms.verify')}
               </Button>
+              <button
+                type="button"
+                onClick={handleResend}
+                disabled={resending}
+                className="w-full text-[13px] text-text-tertiary hover:text-accent transition-colors disabled:opacity-40 py-1"
+              >
+                {resending ? t('auth.loginSms.resending') : t('auth.loginSms.resend')}
+              </button>
             </div>
           </div>
         )}

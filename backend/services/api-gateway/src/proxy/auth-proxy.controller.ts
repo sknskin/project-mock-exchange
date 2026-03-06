@@ -68,6 +68,22 @@ export class AuthProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  // 로그인 SMS 재전송 — 분당 3회 제한으로 SMS 남용 방지
+  // Resend login SMS — 3/min rate limit prevents SMS abuse
+  @Post('login/resend-sms')
+  @Throttle({ default: { ttl: 60000, limit: 3 } })
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '로그인 SMS 재전송', description: '로그인 SMS 인증번호를 재전송합니다' })
+  @ApiResponse({ status: 200, description: 'SMS 재전송 성공' })
+  async resendLoginSms(@Body() body: unknown, @Res() res: Response) {
+    const result = await this.proxyService.forward('user-auth', {
+      method: 'POST',
+      url: '/auth/login/resend-sms',
+      data: body,
+    });
+    return res.status(result.status).json(result.data);
+  }
+
   @Post('login/verify-sms')
   @Throttle({ default: { ttl: 60000, limit: 5 } })
   @HttpCode(HttpStatus.OK)
@@ -189,6 +205,22 @@ export class AuthProxyController {
     const result = await this.proxyService.forward('user-auth', {
       method: 'POST',
       url: '/auth/forgot-password',
+      data: body,
+    });
+    return res.status(result.status).json(result.data);
+  }
+
+  // 비밀번호 찾기 SMS 재전송 — 분당 3회 제한으로 SMS 남용 방지
+  // Resend forgot-password SMS — 3/min rate limit prevents SMS abuse
+  @Post('forgot-password/resend-sms')
+  @Throttle({ default: { ttl: 60000, limit: 3 } })
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '비밀번호 찾기 SMS 재전송', description: '비밀번호 재설정 SMS 인증번호를 재전송합니다' })
+  @ApiResponse({ status: 200, description: 'SMS 재전송 성공' })
+  async resendPasswordResetSms(@Body() body: unknown, @Res() res: Response) {
+    const result = await this.proxyService.forward('user-auth', {
+      method: 'POST',
+      url: '/auth/forgot-password/resend-sms',
       data: body,
     });
     return res.status(result.status).json(result.data);

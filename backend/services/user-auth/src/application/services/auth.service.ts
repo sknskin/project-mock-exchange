@@ -195,6 +195,37 @@ export class AuthService {
     return { requireSmsVerification: true, sessionId, maskedPhone };
   }
 
+  /**
+   * 로그인 SMS 인증번호 재전송
+   * Redis에 저장된 로그인 세션을 조회하여 동일한 전화번호로 새 인증번호를 발송합니다.
+   * 세션 TTL을 갱신하여 만료 시간을 연장합니다.
+   *
+   * Resend login SMS verification code.
+   * Retrieves the login session from Redis and sends a new code to the same phone number.
+   * Renews session TTL to extend the expiry time.
+   *
+   * @param sessionId - Redis에 저장된 로그인 세션 ID / Login session ID stored in Redis
+   * @returns 마스킹된 전화번호 / Masked phone number
+   * @throws UnauthorizedException 세션이 만료된 경우 / If session has expired
+   */
+  async resendLoginSms(sessionId: string): Promise<{ maskedPhone: string }> {
+    const sessionKey = `login:session:${sessionId}`;
+    const raw = await this.redis.get(sessionKey);
+    if (!raw) {
+      throw new UnauthorizedException('세션이 만료되었습니다.');
+    }
+
+    const session = JSON.parse(raw) as { userId: string; phone: string; attemptsLeft: number };
+    await this.smsVerificationService.sendVerificationCode(session.phone);
+
+    // 세션 TTL 갱신 — 재전송 시 만료 시간 연장 / Renew session TTL — extend expiry on resend
+    await this.redis.expire(sessionKey, this.LOGIN_SESSION_TTL);
+
+    const maskedPhone = this.maskPhone(session.phone);
+    this.logger.log(`Login SMS resent for session: ${sessionId}`);
+    return { maskedPhone };
+  }
+
   async verifyLoginSms(
     sessionId: string,
     code: string,
@@ -390,6 +421,36 @@ export class AuthService {
       default:
         return 900;
     }
+  }
+
+  /**
+   * 비밀번호 찾기 SMS 인증번호 재전송
+   * Redis에 저장된 비밀번호 재설정 세션을 조회하여 동일한 전화번호로 새 인증번호를 발송합니다.
+   * 세션 TTL을 갱신하여 만료 시간을 연장합니다.
+   *
+   * Resend forgot-password SMS verification code.
+   * Retrieves the password reset session from Redis and sends a new code to the same phone number.
+   * Renews session TTL to extend the expiry time.
+   *
+   * @param sessionId - Redis에 저장된 비밀번호 재설정 세션 ID / Password reset session ID stored in Redis
+   * @returns 마스킹된 전화번호 / Masked phone number
+   * @throws UnauthorizedException 세션이 만료된 경우 / If session has expired
+   */
+  async resendPasswordResetSms(sessionId: string): Promise<{ maskedPhone: string }> {
+    const sessionKey = `reset:session:${sessionId}`;
+    const raw = await this.redis.get(sessionKey);
+    if (!raw) {
+      throw new UnauthorizedException('세션이 만료되었습니다.');
+    }
+
+    const session = JSON.parse(raw) as { userId: string; phone: string; attemptsLeft: number; verified: boolean };
+    await this.smsVerificationService.sendVerificationCode(session.phone);
+    // 세션 TTL 갱신 — 재전송 시 만료 시간 연장 / Renew session TTL — extend expiry on resend
+    await this.redis.expire(sessionKey, this.LOGIN_SESSION_TTL);
+
+    const maskedPhone = this.maskPhone(session.phone);
+    this.logger.log(`Password reset SMS resent for session: ${sessionId}`);
+    return { maskedPhone };
   }
 
   // ── 비밀번호 재설정 (Password Reset) ──

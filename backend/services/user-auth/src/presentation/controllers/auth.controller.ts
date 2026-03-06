@@ -94,6 +94,14 @@ export class AuthController {
     };
   }
 
+  // 로그인 SMS 재전송 / Resend login SMS verification code
+  @Post('login/resend-sms')
+  @HttpCode(HttpStatus.OK)
+  async resendLoginSms(@Body('sessionId') sessionId: string) {
+    const result = await this.authService.resendLoginSms(sessionId);
+    return { success: true, data: result };
+  }
+
   // 로그인 2단계: SMS 인증코드 검증 후 JWT + 리프레시 토큰 발급 / Login step 2: verify SMS code, then issue JWT + refresh token
   @Post('login/verify-sms')
   @HttpCode(HttpStatus.OK)
@@ -192,6 +200,13 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async forgotPassword(@Body() dto: ForgotPasswordDto) {
     const result = await this.authService.requestPasswordReset(dto.identifier);
+    return { success: true, data: result };
+  }
+
+  @Post('forgot-password/resend-sms')
+  @HttpCode(HttpStatus.OK)
+  async resendPasswordResetSms(@Body('sessionId') sessionId: string) {
+    const result = await this.authService.resendPasswordResetSms(sessionId);
     return { success: true, data: result };
   }
 
