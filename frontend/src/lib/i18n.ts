@@ -243,6 +243,8 @@ const translations = {
     'modal.registerTitle': '회원가입 확인',
     'modal.registerMessage': '입력하신 정보로 회원가입하시겠습니까?',
     'modal.registerConfirm': '가입하기',
+    'modal.registerSuccessTitle': '회원가입 완료',
+    'modal.registerSuccessMessage': '회원가입 신청이 완료되었습니다.\n승인을 기다려주세요.',
     'modal.loginRequired': '로그인이 필요합니다',
     'modal.loginRequiredMessage': '이 기능을 이용하려면 로그인이 필요합니다.\n로그인 하시겠습니까?',
     'modal.loginConfirm': '로그인',
@@ -817,6 +819,13 @@ const translations = {
     'mypage.accountStatus': '계정 상태',
     'mypage.accountActive': '활성',
     'mypage.accountInactive': '비활성',
+    'mypage.resetAccount': '계정 초기화',
+    'mypage.resetAccountDesc': '모든 보유 자산, 거래 내역이 삭제되고 잔고가 초기 금액으로 복원됩니다. 이 작업은 되돌릴 수 없습니다.',
+    'mypage.resetAccountConfirmTitle': '계정 초기화',
+    'mypage.resetAccountConfirmMessage': '정말로 계정을 초기화하시겠습니까?\n모든 보유 자산과 거래 내역이 삭제됩니다.\n이 작업은 되돌릴 수 없습니다.',
+    'mypage.resetAccountSuccess': '계정이 초기화되었습니다',
+    'mypage.resetAccountError': '계정 초기화에 실패했습니다',
+    'mypage.resetting': '초기화 중...',
 
     // Statistics
     'stats.title': '통계',
@@ -988,6 +997,10 @@ const translations = {
     'order.noHoldings': '보유 자산 없음',
     'order.holdingValue': '보유 가치',
     'order.error': '주문 처리 중 오류가 발생했습니다.',
+    'order.marketTooltip': '현재 시장 가격으로 즉시 체결되는 주문입니다.',
+    'order.limitTooltip': '지정한 가격 이하(매수) 또는 이상(매도)일 때 체결됩니다.',
+    'order.stopLossTooltip': '손실을 제한하기 위해 설정가 도달 시 자동으로 시장가 주문이 실행됩니다.',
+    'order.takeProfitTooltip': '목표 수익 달성 시 자동으로 시장가 주문이 실행됩니다.',
 
     // Portfolio
     'portfolio.deposit': '입금',
@@ -1082,6 +1095,10 @@ const translations = {
     'portfolio.analytics.totalSellVolume': '총 매도 금액',
     'portfolio.analytics.valueComposition': '포트폴리오 구성',
     'portfolio.analytics.valueCompositionDesc': '현금과 보유 종목의 비중을 한눈에 비교하세요',
+
+    // Portfolio History Chart — 포트폴리오 가치 히스토리 차트
+    'portfolio.historyChart.title': '포트폴리오 추이',
+    'portfolio.historyChart.placeholder': '* 플레이스홀더 데이터입니다. 실제 히스토리 추적 기능이 추가될 예정입니다.',
 
     // News
     'news.search': '키워드 검색',
@@ -1338,6 +1355,10 @@ const translations = {
     'help.adminSettings.initialFund.tip2': '변경 사항은 저장 버튼 클릭 시 즉시 적용됩니다',
     'help.adminSettings.operatingHours.tip1': '운영 시간 외에는 주문이 제한될 수 있습니다',
     'help.adminSettings.operatingHours.tip2': '시작/종료 시간을 설정하여 거래 시간을 관리합니다',
+    'help.adminSettings.riskLimits.tip1': '최대 손실 한도와 주문 금액 한도를 설정할 수 있습니다',
+    'help.adminSettings.riskLimits.tip2': '한도 초과 시 주문이 자동으로 거부됩니다',
+    'help.adminSettings.sessionSecurity.tip1': '비활동 시 자동 로그아웃 시간을 설정합니다',
+    'help.adminSettings.sessionSecurity.tip2': '로그인 시도 횟수 초과 시 계정이 잠금됩니다',
     // 관리자 서비스 상태
     'help.adminHealth.title': '서비스 상태 사용법',
     'help.adminHealth.desc': '각 마이크로서비스의 상태, 아키텍처, 리소스 사용량을 모니터링하세요.',
@@ -1348,6 +1369,8 @@ const translations = {
     'help.adminHealth.serviceStatus.tip2': '오류 발생 시 해당 서비스를 재시작하세요',
     'help.adminHealth.architecture.tip1': 'API Gateway를 통해 모든 요청이 라우팅됩니다',
     'help.adminHealth.architecture.tip2': '각 서비스는 독립적인 포트와 DB를 사용합니다',
+    'help.adminHealth.metrics.tip1': '응답 시간, 메모리, 업타임 등 주요 지표를 확인합니다',
+    'help.adminHealth.metrics.tip2': '비정상 수치 발견 시 서비스 재시작을 고려하세요',
     // 관리자 감사
     'help.adminAudit.title': '감사 보고서 사용법',
     'help.adminAudit.desc': '시스템 감사 보고서를 확인하고 다운로드하세요.',
@@ -1355,6 +1378,8 @@ const translations = {
     'help.adminAudit.viewDownload': '보기 버튼으로 PDF를 열거나, 다운로드 버튼으로 저장하세요.',
     'help.adminAudit.reportList.tip1': '각 보고서에는 작성 날짜와 파일명이 표시됩니다',
     'help.adminAudit.reportList.tip2': '최신 보고서가 상단에 표시됩니다',
+    'help.adminAudit.viewDownload.tip1': 'Markdown 형식의 보고서를 브라우저에서 바로 열람할 수 있습니다',
+    'help.adminAudit.viewDownload.tip2': '다운로드 버튼으로 로컬에 보고서를 저장하세요',
     // FAQ (커뮤니티)
     'help.faq.cm1.q': '자유게시판에서 글을 어떻게 작성하나요?',
     'help.faq.cm1.a': '자유게시판 탭에서 "글쓰기" 버튼을 클릭하고, 제목/내용/카테고리를 입력하여 작성합니다.',
@@ -2084,6 +2109,8 @@ const translations = {
     'modal.registerTitle': 'Confirm Sign Up',
     'modal.registerMessage': 'Would you like to sign up with the information you entered?',
     'modal.registerConfirm': 'Sign Up',
+    'modal.registerSuccessTitle': 'Registration Complete',
+    'modal.registerSuccessMessage': 'Your registration has been submitted.\nPlease wait for admin approval.',
     'modal.loginRequired': 'Login Required',
     'modal.loginRequiredMessage': 'You need to log in to use this feature.\nWould you like to log in?',
     'modal.loginConfirm': 'Login',
@@ -2658,6 +2685,13 @@ const translations = {
     'mypage.accountStatus': 'Account Status',
     'mypage.accountActive': 'Active',
     'mypage.accountInactive': 'Inactive',
+    'mypage.resetAccount': 'Reset Account',
+    'mypage.resetAccountDesc': 'All holdings and transactions will be deleted and your balance will be restored to the initial amount. This action cannot be undone.',
+    'mypage.resetAccountConfirmTitle': 'Reset Account',
+    'mypage.resetAccountConfirmMessage': 'Are you sure you want to reset your account?\nAll holdings and transactions will be deleted.\nThis action cannot be undone.',
+    'mypage.resetAccountSuccess': 'Account has been reset',
+    'mypage.resetAccountError': 'Failed to reset account',
+    'mypage.resetting': 'Resetting...',
 
     // Statistics
     'stats.title': 'Statistics',
@@ -2829,6 +2863,10 @@ const translations = {
     'order.noHoldings': 'No holdings',
     'order.holdingValue': 'Holding value',
     'order.error': 'An error occurred while processing the order.',
+    'order.marketTooltip': 'Executes immediately at the current market price.',
+    'order.limitTooltip': 'Executes when the price reaches your specified limit or better.',
+    'order.stopLossTooltip': 'Automatically triggers a market order when the price drops to your stop level, limiting losses.',
+    'order.takeProfitTooltip': 'Automatically triggers a market order when the price reaches your profit target.',
 
     // Portfolio
     'portfolio.deposit': 'Deposit',
@@ -2923,6 +2961,10 @@ const translations = {
     'portfolio.analytics.totalSellVolume': 'Total Sell Volume',
     'portfolio.analytics.valueComposition': 'Value Composition',
     'portfolio.analytics.valueCompositionDesc': 'Cash vs holdings as percentage of total value',
+
+    // Portfolio History Chart
+    'portfolio.historyChart.title': 'Portfolio History',
+    'portfolio.historyChart.placeholder': '* Placeholder data. Real historical data tracking will be added.',
 
     // News
     'news.search': 'Search keywords',
@@ -3179,6 +3221,10 @@ const translations = {
     'help.adminSettings.initialFund.tip2': 'Changes are applied immediately when you click Save',
     'help.adminSettings.operatingHours.tip1': 'Orders may be restricted outside operating hours',
     'help.adminSettings.operatingHours.tip2': 'Set start/end times to manage trading hours',
+    'help.adminSettings.riskLimits.tip1': 'Configure max loss limit and order amount limit',
+    'help.adminSettings.riskLimits.tip2': 'Orders exceeding limits are automatically rejected',
+    'help.adminSettings.sessionSecurity.tip1': 'Set auto-logout time for inactive sessions',
+    'help.adminSettings.sessionSecurity.tip2': 'Account is locked after exceeding login attempts',
     // Admin Health
     'help.adminHealth.title': 'How to Use Service Health',
     'help.adminHealth.desc': 'Monitor each microservice\'s status, architecture, and resource usage.',
@@ -3189,6 +3235,8 @@ const translations = {
     'help.adminHealth.serviceStatus.tip2': 'Restart the service if an error occurs',
     'help.adminHealth.architecture.tip1': 'All requests are routed through the API Gateway',
     'help.adminHealth.architecture.tip2': 'Each service uses independent ports and databases',
+    'help.adminHealth.metrics.tip1': 'Check key metrics like response time, memory, and uptime',
+    'help.adminHealth.metrics.tip2': 'Consider restarting services with abnormal metrics',
     // Admin Audit
     'help.adminAudit.title': 'How to Use Audit Reports',
     'help.adminAudit.desc': 'View and download system audit reports.',
@@ -3196,6 +3244,8 @@ const translations = {
     'help.adminAudit.viewDownload': 'Open PDFs with the View button or save with the Download button.',
     'help.adminAudit.reportList.tip1': 'Each report shows the creation date and filename',
     'help.adminAudit.reportList.tip2': 'The latest report is displayed at the top',
+    'help.adminAudit.viewDownload.tip1': 'View Markdown-formatted reports directly in the browser',
+    'help.adminAudit.viewDownload.tip2': 'Use the Download button to save reports locally',
     // FAQ (Community)
     'help.faq.cm1.q': 'How do I write a post on the bulletin board?',
     'help.faq.cm1.a': 'Click the "Write" button on the Bulletin Board tab, then enter a title, content, and category.',

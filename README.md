@@ -34,24 +34,24 @@
 +---v-----------v-+  +---------v-------+  +--------v--------+
 | User/Auth       |  | Market Data     |  | Order Engine     |
 | :3007           |  | :3001           |  | :3002            |
-| - 회원가입      |  | - Binance/Yahoo |  | - 이벤트 소싱    |
+| - 회원가입/SMS  |  | - Binance/Yahoo |  | - 이벤트 소싱    |
 | - 로그인/JWT    |  | - 가격 캐시     |  | - 매칭 엔진      |
-| - 관리자 기능   |  | - 캔들스틱      |  | - CQRS 읽기 모델 |
-| - 공지사항/좋아요|  | - 뉴스         |  | - 고급 주문      |
-| - 알림          |  +-----------------+  +---------+--------+
-| - 통계          |                                |
-| - 가격 알림     |                        +--------v--------+
-+---------+-------+                        | Portfolio        |
-          |                                | :3003            |
-  +-------v-------+   +---------------+   | - 잔고 관리      |
-  | Chat          |   | AI Service    |   | - 보유 자산      |
-  | :3005         |   | :3006         |   | - 관심종목       |
-  | - 1:1/그룹 채팅|   | - 시장 시그널  |   +-----------------+
-  | - 초대/퇴장   |   | - 포트폴리오   |
-  | - 읽음 확인   |   |   분석        |   +------------------+
-  +---------------+   +---------------+   | Notification     |
-                                          | :3004            |
-                                          | - 이메일 알림     |
+| - 2FA (SMS/TOTP)|  | - 캔들스틱      |  | - CQRS 읽기 모델 |
+| - 비밀번호 재설정|  | - 뉴스         |  | - 고급 주문      |
+| - 관리자 기능   |  +-----------------+  +---------+--------+
+| - 공지사항/좋아요|                               |
+| - 커뮤니티 게시판|                       +--------v--------+
+| - 알림/통계     |                       | Portfolio        |
+| - 가격 알림     |                       | :3003            |
++---------+-------+                       | - 잔고 관리      |
+          |                               | - 보유 자산      |
+  +-------v-------+   +---------------+   | - 관심종목       |
+  | Chat          |   | AI Service    |   +-----------------+
+  | :3005         |   | :3006         |
+  | - 1:1/그룹 채팅|   | - 시장 시그널  |   +------------------+
+  | - 초대/퇴장   |   | - 포트폴리오   |   | Notification     |
+  | - 읽음 확인   |   |   분석        |   | :3004            |
+  +---------------+   +---------------+   | - 이메일 알림     |
                                           | - 인앱 알림       |
                                           | - 가격 알림       |
                                           +------------------+
@@ -67,10 +67,11 @@ virtuex/
 │   │   └── event-store/          # PostgreSQL 이벤트 스토어 + AggregateRoot 베이스
 │   └── services/                 # 마이크로서비스
 │       ├── api-gateway/          # API Gateway (JWT 인증, 레이트 리미팅, 프록시)
-│       ├── user-auth/            # 사용자 인증, 권한 관리, 관리자 기능
+│       ├── user-auth/            # 사용자 인증, 권한 관리, 관리자 기능, 커뮤니티
 │       ├── market-data/          # Yahoo Finance 가격 데이터, 캔들스틱, 뉴스
 │       ├── order-engine/         # 주문 매칭 (이벤트 소싱 + CQRS)
 │       ├── portfolio/            # 잔고, 보유 자산, 관심종목, 거래 정산
+│       ├── notification/         # 이메일 알림, 인앱 알림, 가격 알림
 │       ├── chat/                 # 1:1/그룹 채팅, 초대, 퇴장, 읽음 확인
 │       └── ai-service/           # AI 시장 분석 시그널, 포트폴리오 분석
 ├── frontend/                     # Next.js 15 프론트엔드 (App Router)
@@ -106,18 +107,18 @@ cp .env.example .env
 docker compose up -d
 
 # 4. Prisma 클라이언트 생성 (각 서비스별)
-cd services/user-auth && npx prisma generate && cd ../..
-cd services/market-data && npx prisma generate && cd ../..
-cd services/order-engine && npx prisma generate && cd ../..
-cd services/portfolio && npx prisma generate && cd ../..
-cd services/chat && npx prisma generate && cd ../..
+cd backend/services/user-auth && npx prisma generate && cd ../../..
+cd backend/services/market-data && npx prisma generate && cd ../../..
+cd backend/services/order-engine && npx prisma generate && cd ../../..
+cd backend/services/portfolio && npx prisma generate && cd ../../..
+cd backend/services/chat && npx prisma generate && cd ../../..
 
 # 5. 데이터베이스 마이그레이션
-cd services/user-auth && npx prisma db push && cd ../..
-cd services/market-data && npx prisma db push && cd ../..
-cd services/order-engine && npx prisma db push && cd ../..
-cd services/portfolio && npx prisma db push && cd ../..
-cd services/chat && npx prisma db push && cd ../..
+cd backend/services/user-auth && npx prisma db push && cd ../../..
+cd backend/services/market-data && npx prisma db push && cd ../../..
+cd backend/services/order-engine && npx prisma db push && cd ../../..
+cd backend/services/portfolio && npx prisma db push && cd ../../..
+cd backend/services/chat && npx prisma db push && cd ../../..
 
 # 6. 전체 빌드
 pnpm turbo build
@@ -129,15 +130,28 @@ bash scripts/start-all.sh
 ### API 테스트 예시 (curl)
 
 ```bash
-# 회원가입
+# 회원가입 (SMS 인증 필수)
 curl -X POST http://localhost:3000/api/auth/register \
   -H "Content-Type: application/json" \
-  -d '{"email": "test@test.com", "password": "Password123!", "nickname": "trader1"}'
+  -d '{
+    "email": "test@test.com",
+    "username": "trader1",
+    "password": "Password123!",
+    "passwordConfirm": "Password123!",
+    "name": "테스터",
+    "phone": "01012345678",
+    "address": "서울시 강남구"
+  }'
 
-# 로그인 (accessToken 반환)
+# 로그인 (SMS 2FA 인증 필요)
 curl -X POST http://localhost:3000/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email": "test@test.com", "password": "Password123!"}'
+  -d '{"identifier": "trader1", "password": "Password123!"}'
+
+# SMS 2FA 인증 완료
+curl -X POST http://localhost:3000/api/auth/login/verify-sms \
+  -H "Content-Type: application/json" \
+  -d '{"sessionId": "{sessionId}", "code": "123456"}'
 
 # 실시간 가격 조회 (인증 불필요)
 curl http://localhost:3000/api/market/prices
@@ -171,22 +185,40 @@ curl http://localhost:3000/api/portfolio/valuation \
 ### 인증 (`/api/auth`)
 | 메서드 | 엔드포인트 | 인증 | 설명 |
 |--------|-----------|------|------|
-| POST | `/api/auth/register` | 불필요 | 회원가입 |
-| POST | `/api/auth/login` | 불필요 | 로그인, JWT 토큰 반환 |
+| POST | `/api/auth/register` | 불필요 | 회원가입 (SMS 인증 필수) |
+| POST | `/api/auth/login` | 불필요 | 로그인, SMS 2FA 인증 요청 |
+| POST | `/api/auth/login/verify-sms` | 불필요 | 로그인 SMS 2FA 인증 완료 |
 | POST | `/api/auth/refresh` | 쿠키 | 액세스 토큰 갱신 |
 | POST | `/api/auth/logout` | 쿠키 | 로그아웃, 토큰 폐기 |
 | GET | `/api/auth/me` | JWT | 현재 사용자 정보 조회 |
+| POST | `/api/auth/sms/send` | 불필요 | SMS 인증번호 발송 |
+| POST | `/api/auth/sms/verify` | 불필요 | SMS 인증번호 확인 |
+| POST | `/api/auth/forgot-password` | 불필요 | 비밀번호 재설정 요청 (전화번호로) |
+| POST | `/api/auth/forgot-password/verify-sms` | 불필요 | 비밀번호 재설정 SMS 인증 |
+| POST | `/api/auth/forgot-password/reset` | 불필요 | 새 비밀번호 설정 |
+| GET | `/api/auth/check-duplicate` | 불필요 | 중복 확인 (email/username/phone) |
+| POST | `/api/auth/totp/setup` | JWT | TOTP 2FA 설정 (QR코드) |
+| POST | `/api/auth/totp/enable` | JWT | TOTP 2FA 활성화 |
+| POST | `/api/auth/totp/disable` | JWT | TOTP 2FA 비활성화 |
+| POST | `/api/auth/totp/verify` | JWT | TOTP 코드 검증 |
+| GET | `/api/auth/totp/status` | JWT | TOTP 2FA 상태 조회 |
 
 ### 시장 데이터 (`/api/market`)
 | 메서드 | 엔드포인트 | 인증 | 설명 |
 |--------|-----------|------|------|
 | GET | `/api/market/assets` | 불필요 | 전체 자산 목록 |
 | GET | `/api/market/prices` | 불필요 | 전체 최신 가격 |
+| GET | `/api/market/prices/period-changes` | 불필요 | 기간별 가격 변동률 |
 | GET | `/api/market/prices/:symbol` | 불필요 | 특정 자산 가격 |
 | GET | `/api/market/prices/:symbol/history` | 불필요 | 가격 이력 |
 | GET | `/api/market/prices/:symbol/candlesticks` | 불필요 | 캔들스틱 데이터 |
-| GET | `/api/market/news` | 불필요 | 뉴스 목록 |
-| GET | `/api/market/indices` | 불필요 | 글로벌 시장 지수 (24개) |
+
+### 뉴스 (`/api/news`)
+| 메서드 | 엔드포인트 | 인증 | 설명 |
+|--------|-----------|------|------|
+| GET | `/api/news` | 불필요 | 뉴스 목록 |
+| GET | `/api/news/scrape-status` | JWT (ADMIN) | 스크래핑 상태 조회 |
+| POST | `/api/news/scrape` | JWT (ADMIN) | 뉴스 스크래핑 실행 |
 
 ### 주문 (`/api/orders`)
 | 메서드 | 엔드포인트 | 인증 | 설명 |
@@ -198,13 +230,13 @@ curl http://localhost:3000/api/portfolio/valuation \
 | DELETE | `/api/orders/:orderId` | JWT | 주문 취소 |
 | GET | `/api/orders/trades/history` | JWT | 체결 내역 |
 | GET | `/api/orders/book/:symbol` | 불필요 | 호가창 (오더북) |
-| POST | `/api/orders/check-triggers` | 불필요 | 조건부 주문 트리거 체크 |
 | GET | `/api/orders/stats/trading` | JWT | 거래 통계 (승률, 총 수익 등) |
 
 ### 포트폴리오 (`/api/portfolio`)
 | 메서드 | 엔드포인트 | 인증 | 설명 |
 |--------|-----------|------|------|
 | POST | `/api/portfolio/deposit` | JWT | 입금 |
+| POST | `/api/portfolio/withdraw` | JWT | 출금 |
 | GET | `/api/portfolio/balance` | JWT | 현금 잔고 조회 |
 | GET | `/api/portfolio/holdings` | JWT | 보유 자산 조회 |
 | GET | `/api/portfolio/summary` | JWT | 전체 포트폴리오 요약 |
@@ -220,41 +252,56 @@ curl http://localhost:3000/api/portfolio/valuation \
 |--------|-----------|------|------|
 | GET | `/api/admin/users` | JWT (ADMIN) | 전체 사용자 목록 |
 | GET | `/api/admin/users/:id` | JWT (ADMIN) | 사용자 상세 조회 |
-| PATCH | `/api/admin/users/:id/approve` | JWT (ADMIN) | 사용자 승인 |
-| PATCH | `/api/admin/users/:id/reject` | JWT (ADMIN) | 사용자 거부 |
+| POST | `/api/admin/users/:id/approve` | JWT (ADMIN) | 사용자 승인 |
+| POST | `/api/admin/users/:id/reject` | JWT (ADMIN) | 사용자 거부 |
+| POST | `/api/admin/users/:id/deactivate` | JWT (ADMIN) | 사용자 비활성화 |
+| POST | `/api/admin/users/:id/activate` | JWT (ADMIN) | 사용자 활성화 |
+| POST | `/api/admin/users/:id/unlock` | JWT (ADMIN) | 계정 잠금 해제 |
+| DELETE | `/api/admin/users/:id` | JWT (ADMIN) | 사용자 삭제 |
 | PATCH | `/api/admin/users/:id/role` | JWT (ADMIN) | 역할 변경 |
-| PATCH | `/api/admin/users/:id/toggle-active` | JWT (ADMIN) | 활성/비활성 전환 |
-| GET | `/api/admin/stats` | JWT (ADMIN) | 관리자 통계 |
-| GET | `/api/admin/users/:id` | JWT (ADMIN) | 사용자 상세 조회 |
 | GET | `/api/admin/settings` | JWT (ADMIN) | 시스템 설정 조회 |
-| PATCH | `/api/admin/settings` | JWT (ADMIN) | 시스템 설정 수정 |
-| GET | `/api/admin/health` | JWT (ADMIN) | 서비스 상태 조회 |
-| GET | `/api/admin/audit` | JWT (ADMIN) | 감사 보고서 목록 |
+| PUT | `/api/admin/settings` | JWT (ADMIN) | 시스템 설정 수정 |
 
 ### 프로필 (`/api/profile`)
 | 메서드 | 엔드포인트 | 인증 | 설명 |
 |--------|-----------|------|------|
 | GET | `/api/profile` | JWT | 내 프로필 조회 |
-| PATCH | `/api/profile` | JWT | 프로필 수정 (닉네임, 소개) |
-| PATCH | `/api/profile/password` | JWT | 비밀번호 변경 |
+| PUT | `/api/profile` | JWT | 프로필 수정 (닉네임, 소개, 주소) |
+| POST | `/api/profile/change-password` | JWT | 비밀번호 변경 |
 
 ### 공지사항 (`/api/announcements`)
 | 메서드 | 엔드포인트 | 인증 | 설명 |
 |--------|-----------|------|------|
 | GET | `/api/announcements` | 불필요 | 공지사항 목록 |
 | GET | `/api/announcements/:id` | 불필요 | 공지사항 상세 |
+| GET | `/api/announcements/:id/adjacent` | 불필요 | 이전/다음 공지 |
 | POST | `/api/announcements` | JWT (ADMIN) | 공지사항 작성 |
-| PATCH | `/api/announcements/:id` | JWT (ADMIN) | 공지사항 수정 |
+| PUT | `/api/announcements/:id` | JWT (ADMIN) | 공지사항 수정 |
 | DELETE | `/api/announcements/:id` | JWT (ADMIN) | 공지사항 삭제 |
+| POST | `/api/announcements/:id/pin` | JWT (ADMIN) | 고정/해제 |
 | POST | `/api/announcements/:id/like` | JWT | 좋아요 토글 |
 | POST | `/api/announcements/:id/view` | 불필요 | 조회수 증가 |
-| GET | `/api/announcements/:id/comments` | 불필요 | 댓글 목록 |
 | POST | `/api/announcements/:id/comments` | JWT | 댓글 작성 |
-| DELETE | `/api/announcements/comments/:id` | JWT | 댓글 삭제 |
-| POST | `/api/announcements/comments/:id/like` | JWT | 댓글 좋아요 토글 |
-| GET | `/api/announcements/:id/adjacent` | 불필요 | 이전/다음 공지 |
-| PATCH | `/api/announcements/:id/pin` | JWT (ADMIN) | 고정/해제 |
+| DELETE | `/api/announcements/comments/:commentId` | JWT | 댓글 삭제 |
+| POST | `/api/announcements/comments/:commentId/like` | JWT | 댓글 좋아요 토글 |
 | POST | `/api/announcements/:id/attachments` | JWT (ADMIN) | 첨부파일 업로드 |
+| DELETE | `/api/announcements/attachments/:attachmentId` | JWT (ADMIN) | 첨부파일 삭제 |
+
+### 커뮤니티 (`/api/community`)
+| 메서드 | 엔드포인트 | 인증 | 설명 |
+|--------|-----------|------|------|
+| GET | `/api/community/posts` | 불필요 | 게시글 목록 (검색, 페이지네이션) |
+| GET | `/api/community/posts/:id` | 불필요 | 게시글 상세 |
+| POST | `/api/community/posts` | JWT | 게시글 작성 (TipTap 에디터) |
+| PUT | `/api/community/posts/:id` | JWT | 게시글 수정 |
+| DELETE | `/api/community/posts/:id` | JWT | 게시글 삭제 |
+| POST | `/api/community/posts/:id/like` | JWT | 좋아요 토글 |
+| POST | `/api/community/posts/:id/view` | 불필요 | 조회수 증가 |
+| POST | `/api/community/posts/:id/comments` | JWT | 댓글 작성 |
+| DELETE | `/api/community/comments/:id` | JWT | 댓글 삭제 |
+| POST | `/api/community/comments/:id/like` | JWT | 댓글 좋아요 토글 |
+| POST | `/api/community/posts/:id/attachments` | JWT | 첨부파일 업로드 |
+| DELETE | `/api/community/attachments/:attachmentId` | JWT | 첨부파일 삭제 |
 
 ### 채팅 (`/api/chat`)
 | 메서드 | 엔드포인트 | 인증 | 설명 |
@@ -267,9 +314,9 @@ curl http://localhost:3000/api/portfolio/valuation \
 | POST | `/api/chat/rooms/:id/invite` | JWT | 채팅방 초대 |
 | POST | `/api/chat/rooms/:id/leave` | JWT | 채팅방 나가기 |
 | POST | `/api/chat/rooms/:id/kick` | JWT (ADMIN) | 사용자 강제 퇴장 |
-| PATCH | `/api/chat/rooms/:id/rename` | JWT | 채팅방 이름 변경 |
+| POST | `/api/chat/rooms/:id/rename` | JWT | 채팅방 이름 변경 |
 | DELETE | `/api/chat/rooms/:id` | JWT | 채팅방 삭제 |
-| DELETE | `/api/chat/messages/:id` | JWT | 메시지 삭제 |
+| DELETE | `/api/chat/rooms/:roomId/messages/:messageId` | JWT | 메시지 삭제 |
 | GET | `/api/chat/users/search` | JWT | 사용자 검색 (초대용) |
 
 ### 알림 (`/api/notifications`)
@@ -280,6 +327,12 @@ curl http://localhost:3000/api/portfolio/valuation \
 | POST | `/api/notifications/:id/read` | JWT | 알림 읽음 처리 |
 | POST | `/api/notifications/read-all` | JWT | 전체 읽음 처리 |
 | DELETE | `/api/notifications/:id` | JWT | 알림 삭제 |
+
+### 알림 설정 (`/api/user/notification-settings`)
+| 메서드 | 엔드포인트 | 인증 | 설명 |
+|--------|-----------|------|------|
+| GET | `/api/user/notification-settings` | JWT | 알림 설정 조회 |
+| PUT | `/api/user/notification-settings` | JWT | 알림 설정 수정 |
 
 ### 가격 알림 (`/api/price-alerts`)
 | 메서드 | 엔드포인트 | 인증 | 설명 |
@@ -292,15 +345,28 @@ curl http://localhost:3000/api/portfolio/valuation \
 | 메서드 | 엔드포인트 | 인증 | 설명 |
 |--------|-----------|------|------|
 | GET | `/api/statistics/overview` | JWT (ADMIN) | 통계 개요 (KPI) |
+| GET | `/api/statistics/overview-trend` | JWT (ADMIN) | 전일 대비 추이 |
 | GET | `/api/statistics/registrations` | JWT (ADMIN) | 가입자 추이 |
+| GET | `/api/statistics/registrations-approved` | JWT (ADMIN) | 승인된 가입자 추이 |
 | GET | `/api/statistics/logins` | JWT (ADMIN) | 로그인 추이 |
 | GET | `/api/statistics/page-views` | JWT (ADMIN) | 페이지뷰 추이 + TOP 페이지 |
 | GET | `/api/statistics/announcements` | JWT (ADMIN) | 공지사항/댓글 추이 |
 | GET | `/api/statistics/users` | JWT (ADMIN) | 사용자 분포 (역할/상태) |
 | GET | `/api/statistics/likes` | JWT (ADMIN) | 좋아요 통계 |
-| GET | `/api/statistics/overview-trend` | JWT (ADMIN) | 전일 대비 추이 |
 | GET | `/api/statistics/popular-announcements` | JWT (ADMIN) | 인기 공지 TOP 10 |
+| GET | `/api/statistics/chat` | JWT (ADMIN) | 채팅 통계 |
 | POST | `/api/statistics/page-view` | 불필요 | 페이지 방문 기록 |
+
+### 헬스 체크 (`/api/health`)
+| 메서드 | 엔드포인트 | 인증 | 설명 |
+|--------|-----------|------|------|
+| GET | `/api/health` | 불필요 | 전체 상태 |
+| GET | `/api/health/live` | 불필요 | 라이브니스 체크 |
+| GET | `/api/health/ready` | 불필요 | 레디니스 체크 |
+| GET | `/api/health/startup` | 불필요 | 시작 체크 |
+| GET | `/api/health/services` | 불필요 | 전체 서비스 상태 |
+| GET | `/api/health/:service` | 불필요 | 특정 서비스 상태 |
+| GET | `/api/health/:service/detail` | 불필요 | 특정 서비스 상세 상태 |
 
 ### WebSocket 실시간 스트리밍
 | 네임스페이스 | 이벤트 | 설명 |
@@ -340,7 +406,7 @@ curl http://localhost:3000/api/portfolio/valuation \
 | Notification | 3004 | 이메일 알림, 인앱 알림, 가격 알림 |
 | Chat | 3005 | 1:1/그룹 채팅, 초대, 퇴장, 읽음 확인 |
 | AI Service | 3006 | AI 시장 분석 시그널, 포트폴리오 분석 |
-| User/Auth | 3007 | 회원가입, 로그인, JWT, 관리자, 공지사항, 알림, 통계, 가격 알림 |
+| User/Auth | 3007 | 회원가입, 로그인, JWT, 관리자, 공지사항, 커뮤니티, 알림, 통계, 가격 알림 |
 
 ## 지원 자산 (20개)
 
@@ -412,6 +478,8 @@ cat logs/rotate.log
 - **기술적 지표**: SMA, RSI, 볼린저 밴드 차트 오버레이
 - **조건부 주문**: STOP-LOSS/TAKE-PROFIT 트리거 기반 자동 체결
 - **AI 규칙 기반 분석**: 시장 시그널 및 포트폴리오 분석 (HHI 지수 기반 분산도)
+- **SMS 2FA 인증**: 로그인 시 SMS 인증번호 2단계 인증
+- **관리자 승인 워크플로우**: 회원가입 → 대기 → 관리자 승인 → 로그인 가능
 
 ## 개발 단계
 
@@ -434,10 +502,14 @@ cat logs/rotate.log
   - Order Book 깊이 차트 시각화
   - 포트폴리오 분석 (자산배분 파이차트, P&L 분석, CSV 내보내기)
   - 리더보드 고도화 (기간/정렬 필터, 메달 뱃지, 내 순위)
-  - 커뮤니티 페이지 (전략 공유, 트레이더 프로필)
+  - 커뮤니티 자유게시판 (TipTap 에디터, 첨부파일, 좋아요, 댓글)
   - Admin 패널 확장 (시스템 설정, 서비스 헬스 모니터링, 감사 보고서, 사용자 상세)
   - 접근성 개선 (포커스 트랩, ARIA, 키보드 내비게이션)
   - 마이페이지 거래 통계
+  - SMS 2FA 로그인 인증
+  - 비밀번호 재설정 (SMS 인증)
+  - 다음 우편번호 주소 검색 (회원가입/프로필 수정)
+  - 관리자 승인 워크플로우
 - [x] **Phase 4**: AI 통합 (시장 분석 시그널, 포트폴리오 AI 분석)
 - [ ] **Phase 5**: 프로덕션 강화 (K8s, 관측성, 부하 테스트)
 

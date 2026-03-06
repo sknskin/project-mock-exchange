@@ -2,14 +2,14 @@
 
 ## 프로젝트 소개
 
-VirtuEx(VirtuEx)는 실시간 모의 주식/암호화폐 거래 플랫폼입니다. NestJS 기반 마이크로서비스 백엔드와 Next.js 15 프론트엔드로 구성되어 있으며, PostgreSQL, Redis, Kafka를 인프라로 사용합니다.
+VirtuEx는 실시간 모의 주식/암호화폐 거래 플랫폼입니다. NestJS 기반 마이크로서비스 백엔드와 Next.js 15 프론트엔드로 구성되어 있으며, PostgreSQL, Redis, Kafka를 인프라로 사용합니다.
 
 ---
 
 ## 사전 요구사항
 
 - **Docker Desktop** (실행 중이어야 함)
-- **Node.js** 18+ (`node -v`로 확인)
+- **Node.js** 20+ (`node -v`로 확인)
 - **pnpm** (`npm install -g pnpm`)
 
 > **주의**: 로컬에 PostgreSQL이 5432 포트로 실행 중이면 Docker 컨테이너와 포트 충돌이 발생합니다.
@@ -53,7 +53,7 @@ bash scripts/start-all.sh
 ### 1. 환경변수 설정
 
 ```bash
-cd /Users/dohee/Documents/workspace/project/project-virtuex
+cd /Users/dohee/Documents/workspace/project/virtuex
 
 # .env 파일이 없으면 예제에서 복사
 cp .env.example .env
@@ -65,6 +65,7 @@ cp .env.example .env
 |---|---|---|
 | `DATABASE_URL` | `postgresql://postgres:postgres@localhost:5432/mockexchange` | PostgreSQL 연결 문자열 |
 | `REDIS_URL` | `redis://localhost:6379` | Redis 연결 문자열 |
+| `REDIS_PASSWORD` | `redis` | Redis 비밀번호 |
 | `KAFKA_BROKERS` | `localhost:9092` | Kafka 브로커 주소 |
 | `JWT_SECRET` | `dev-jwt-secret-...` | JWT 서명 비밀키 (프로덕션에서는 반드시 변경) |
 | `JWT_ACCESS_EXPIRY` | `15m` | Access Token 만료 시간 |
@@ -91,7 +92,7 @@ docker ps
 | 컨테이너 | 용도 | 포트 |
 |---|---|---|
 | `mex-postgres` | 데이터 영속화 (사용자, 주문, 포트폴리오 등) | 5432 |
-| `mex-redis` | 캐시, 실시간 PubSub, 분산 락, 레이트 리미팅 | 6379 |
+| `mex-redis` | 캐시, 실시간 PubSub, SMS 인증코드 저장, 세션 관리, 레이트 리미팅 | 6379 |
 | `mex-kafka` | 서비스 간 비동기 이벤트 메시징 | 9092 |
 
 > 모든 컨테이너가 `healthy` 상태가 될 때까지 약 15~30초 소요됩니다.
@@ -109,6 +110,9 @@ npx turbo build
 - `npx turbo build`: Turborepo를 통해 모든 서비스와 프론트엔드를 병렬 빌드
 
 > 최초 빌드는 2~3분 소요될 수 있습니다. 이후에는 캐시로 빠르게 완료됩니다.
+
+> **참고**: 빌드 후 `dist/` 디렉토리가 비어있는 경우 `tsconfig.tsbuildinfo` 캐시가 원인일 수 있습니다.
+> `rm -f backend/services/*/tsconfig.tsbuildinfo && npx turbo build --force`로 해결하세요.
 
 ---
 
@@ -128,6 +132,16 @@ cd backend/services/chat && npx prisma db push && cd ../../..
 
 > `prisma db push`는 Prisma 스키마를 기반으로 데이터베이스 테이블을 생성/동기화합니다.
 > 스키마가 변경되지 않은 경우 다시 실행해도 안전합니다.
+
+각 서비스별 데이터베이스:
+
+| 서비스 | 데이터베이스 |
+|---|---|
+| User/Auth | `mex_auth` |
+| Market Data | `mex_market` |
+| Order Engine | `mex_orders` |
+| Portfolio | `mex_portfolio` |
+| Chat | `mex_chat` |
 
 ---
 
@@ -171,7 +185,7 @@ docker exec mex-kafka /opt/kafka/bin/kafka-topics.sh \
 **각각 별도 터미널**에서 실행합니다. 모든 터미널에서 먼저 환경변수를 로드합니다:
 
 ```bash
-cd /Users/dohee/Documents/workspace/project/project-virtuex
+cd /Users/dohee/Documents/workspace/project/virtuex
 export $(grep -v '^#' .env | grep -v '^$' | xargs)
 ```
 
@@ -179,7 +193,7 @@ export $(grep -v '^#' .env | grep -v '^$' | xargs)
 ```bash
 node backend/services/user-auth/dist/main.js
 ```
-사용자 등록, 로그인, JWT 발급 및 갱신을 처리합니다.
+사용자 등록, SMS 인증, 로그인(2FA), JWT 발급, 비밀번호 재설정, 관리자 기능, 공지사항, 커뮤니티 게시판을 처리합니다.
 
 #### 터미널 2 - Market Data (3001)
 ```bash
@@ -223,7 +237,7 @@ node backend/services/api-gateway/dist/main.js
 ```
 프론트엔드의 모든 요청을 받아 각 서비스로 라우팅하고, WebSocket 연결을 관리합니다.
 
-> **확인**: `curl http://localhost:3000/health/live` → `{"status":"ok"}`
+> **확인**: `curl http://localhost:3000/api/health/live` → `{"status":"ok"}`
 
 ---
 
@@ -244,23 +258,28 @@ Next.js 15 App Router 기반의 프론트엔드가 포트 4000에서 시작됩�
 | URL | 설명 |
 |---|---|
 | http://localhost:4000 | 랜딩 페이지 (프로젝트 소개) |
+| http://localhost:4000/login | 로그인 (SMS 2FA 인증) |
+| http://localhost:4000/register | 회원가입 (SMS 인증, 다음 우편번호 주소검색) |
+| http://localhost:4000/forgot-password | 비밀번호 재설정 (SMS 인증) |
 | http://localhost:4000/dashboard | 마켓 대시보드 (실시간 가격, 관심종목 탭) |
-| http://localhost:4000/login | 로그인 |
-| http://localhost:4000/register | 회원가입 |
+| http://localhost:4000/asset/BTC-USD | 종목 상세 (차트, 주문, 호가, 깊이 차트) |
 | http://localhost:4000/portfolio | 포트폴리오 (보유자산/잔고/분석) |
 | http://localhost:4000/orders | 주문 내역 (분석/CSV 내보내기) |
 | http://localhost:4000/leaderboard | 리더보드 (기간/정렬 필터, 메달 뱃지) |
-| http://localhost:4000/asset/BTC-USD | 종목 상세 (차트, 주문, 호가, 깊이 차트) |
 | http://localhost:4000/news | 뉴스 목록 |
 | http://localhost:4000/announcements | 공지사항 목록 |
-| http://localhost:4000/announcements/:id | 공지사항 상세 (조회수, 좋아요) |
-| http://localhost:4000/community | 커뮤니티 (전략 공유, 트레이더) |
+| http://localhost:4000/announcements/:id | 공지사항 상세 (조회수, 좋아요, 댓글) |
+| http://localhost:4000/announcements/new | 공지사항 작성 (ADMIN) |
+| http://localhost:4000/announcements/:id/edit | 공지사항 수정 (ADMIN) |
+| http://localhost:4000/community | 커뮤니티 자유게시판 (TipTap 에디터) |
+| http://localhost:4000/community/new | 게시글 작성 |
+| http://localhost:4000/community/:id | 게시글 상세 (좋아요, 댓글) |
 | http://localhost:4000/mypage | 마이페이지 (프로필, 거래 통계, 설정) |
+| http://localhost:4000/mypage/edit | 프로필 수정 (주소, 비밀번호 변경) |
 | http://localhost:4000/help | 도움말 |
 | http://localhost:4000/admin/users | 관리자 - 사용자 관리 (ADMIN 전용) |
 | http://localhost:4000/admin/users/:id | 관리자 - 사용자 상세 (ADMIN 전용) |
-| http://localhost:4000/admin/stats | 관리자 - 통계 (ADMIN 전용) |
-| http://localhost:4000/admin/announcements | 관리자 - 공지사항 관리 (ADMIN 전용) |
+| http://localhost:4000/admin/stats | 관리자 - 통계 대시보드 (ADMIN 전용) |
 | http://localhost:4000/admin/settings | 관리자 - 시스템 설정 (ADMIN 전용) |
 | http://localhost:4000/admin/health | 관리자 - 서비스 상태 (ADMIN 전용) |
 | http://localhost:4000/admin/audit | 관리자 - 감사 보고서 (ADMIN 전용) |
@@ -350,12 +369,12 @@ crontab -l
 │ (Next.js)   │◀────│   (3000)     │
 │   :4000     │ WS  └──────┬───────┘
 └─────────────┘            │ HTTP Proxy
-                    ┌──────┼──────────────┐
-                    │      │              │
-              ┌─────▼──┐ ┌─▼────────┐ ┌──▼─────────┐
-              │User Auth│ │Market    │ │Order       │
-              │ (3007)  │ │Data(3001)│ │Engine(3002)│
-              └─────────┘ └──────────┘ └──────┬─────┘
+                    ┌──────┼──────────────┬──────────────┐
+                    │      │              │              │
+              ┌─────▼──┐ ┌─▼────────┐ ┌──▼─────────┐ ┌─▼──────────┐
+              │User Auth│ │Market    │ │Order       │ │Notification │
+              │ (3007)  │ │Data(3001)│ │Engine(3002)│ │  (3004)     │
+              └─────────┘ └──────────┘ └──────┬─────┘ └────────────┘
                                               │ Kafka
                                         ┌─────▼──────┐
                                         │ Portfolio   │
@@ -377,7 +396,7 @@ crontab -l
 | Notification | 3004 | 알림 |
 | Chat | 3005 | 채팅 |
 | AI Service | 3006 | AI |
-| User Auth | 3007 | 인증 |
+| User Auth | 3007 | 인증/관리자/커뮤니티 |
 | PostgreSQL | 5432 | DB (Docker) |
 | Redis | 6379 | 캐시 (Docker) |
 | Kafka | 9092 | 메시지 브로커 (Docker) |
@@ -414,6 +433,14 @@ pnpm install
 npx turbo build --force
 ```
 
+### 빌드 후 dist/ 디렉토리가 비어있는 경우
+
+```bash
+# tsconfig.tsbuildinfo 캐시가 원인일 수 있음
+rm -f backend/services/*/tsconfig.tsbuildinfo
+npx turbo build --force
+```
+
 ### DB 초기화 (데이터 완전 삭제)
 
 ```bash
@@ -429,4 +456,15 @@ docker compose up -d postgres redis kafka
 # 생성된 토픽 목록 확인
 docker exec mex-kafka /opt/kafka/bin/kafka-topics.sh \
   --bootstrap-server localhost:9092 --list
+```
+
+### Redis 접속 (SMS 인증코드 확인 등)
+
+```bash
+# Redis CLI 접속
+docker exec -it mex-redis redis-cli -a redis
+
+# SMS 인증코드 확인
+KEYS sms:*
+GET sms:verify:01012345678
 ```
