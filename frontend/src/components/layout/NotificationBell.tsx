@@ -253,8 +253,12 @@ export default function NotificationBell() {
               {(() => {
                 const msg = modalNotification.message;
                 // 200자 이하 짧은 메시지는 문장 단위 줄바꿈 / Split short messages by sentence
+                // 정규식: 한국어 문장 끝(다. 요. 등) 또는 !/?  뒤의 공백에서만 줄바꿈
+                // 날짜 마침표(2026. 3. 6.)에서는 줄바꿈하지 않음 (숫자 뒤 마침표는 매칭하지 않음)
+                // Regex: only splits on whitespace after Korean sentence endings (다. 요. etc.) or !/?
+                // Does NOT split on date periods (2026. 3. 6.) — digits before periods are not matched
                 const text = msg.length <= 200
-                  ? msg.replace(/(?<=[.!?다요죠음습])\s+/g, '\n')
+                  ? msg.replace(/(?<=[!?]|[다요죠음습]\.)\s+/g, '\n')
                   : msg;
                 return text.split('\n').filter(Boolean);
               })().map((line, i) => (
