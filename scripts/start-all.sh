@@ -94,6 +94,11 @@ NC='\033[0m'          # 색상 리셋 / Reset color
 # Arrays to track background service PIDs and their names
 PIDS=()
 NAMES=()
+# 이미 종료 보고된 PID를 추적하는 배열 (중복 로그 방지)
+# Track already-reported dead PIDs (prevent duplicate logs)
+REPORTED_DEAD=()
+# 시작 로그 파일 경로 / Startup log file path
+STARTUP_LOG="$ROOT_DIR/logs/start-all.log"
 
 # ─────────────────────────────────────────────────
 # cleanup: Ctrl+C(SIGINT) 또는 SIGTERM 수신 시 모든 백그라운드 서비스를 종료하는 함수
@@ -109,6 +114,7 @@ cleanup() {
     if kill -0 "${PIDS[$i]}" 2>/dev/null; then
       kill "${PIDS[$i]}" 2>/dev/null
       echo -e "  ${RED}✗${NC} ${NAMES[$i]} (PID ${PIDS[$i]}) 종료 / stopped"
+      log_startup "[STOP] ${NAMES[$i]} (PID ${PIDS[$i]}) 종료됨 / stopped (Ctrl+C)"
     fi
   done
 
@@ -140,6 +146,18 @@ trap cleanup SIGINT SIGTERM
 #   $1 = 서비스 이름 / service name (e.g. "user-auth")
 #   $2 = 실행 명령어 / command to run (e.g. "node backend/services/user-auth/dist/main.js")
 # ─────────────────────────────────────────────────
+# ─────────────────────────────────────────────────
+# log_startup: 시작/종료 이벤트를 start-all.log에 타임스탬프와 함께 기록
+# log_startup: Write startup/shutdown events to start-all.log with timestamp
+#   $1 = 로그 메시지 / log message
+# ─────────────────────────────────────────────────
+log_startup() {
+  local timestamp
+  timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+  mkdir -p "$ROOT_DIR/logs"
+  echo "[$timestamp] $1" >> "$STARTUP_LOG"
+}
+
 start_service() {
   local name=$1
   local cmd=$2
@@ -158,6 +176,7 @@ start_service() {
   PIDS+=($pid)
   NAMES+=("$name")
   echo -e "  ${GREEN}✓${NC} $name (PID $pid)"
+  log_startup "[START] $name (PID $pid) 시작됨 / started"
 }
 
 # ─────────────────────────────────────────────────
@@ -173,8 +192,8 @@ wait_for_port() {
   local max_wait=$3
   local waited=0
 
-  # lsof로 해당 포트가 LISTEN 상태인지 1초마다 확인
-  # Check every second if the port is in LISTEN state using lsof
+  # 먼저 포트가 열릴 때까지 대기, 그 후 HTTP /health 엔드포인트로 readiness 확인
+  # First wait for port to open, then verify with HTTP /health endpoint
   while ! lsof -i :$port -sTCP:LISTEN >/dev/null 2>&1; do
     sleep 1
     waited=$((waited + 1))
@@ -183,7 +202,23 @@ wait_for_port() {
       return 1
     fi
   done
-  echo -e "  ${GREEN}✓${NC} $name (포트/port $port) 준비 완료 / ready"
+
+  # HTTP readiness probe — /health 엔드포인트 200 응답 확인
+  # HTTP readiness probe — verify /health endpoint returns 200
+  local health_waited=0
+  local health_max=10
+  while [ $health_waited -lt $health_max ]; do
+    if curl -sf "http://localhost:$port/health" >/dev/null 2>&1; then
+      echo -e "  ${GREEN}✓${NC} $name (포트/port $port) 준비 완료 / ready"
+      return 0
+    fi
+    sleep 1
+    health_waited=$((health_waited + 1))
+  done
+
+  # health 체크 실패해도 포트는 열려있으므로 경고만 출력
+  # If health check fails but port is open, warn and continue
+  echo -e "  ${YELLOW}⚠${NC} $name (포트/port $port) 포트 열림, health 체크 미응답 / port open but health check unresponsive"
   return 0
 }
 
@@ -362,6 +397,10 @@ set -e
 # Start backend (4 services) → API Gateway → Frontend in order
 # Wait for each service's port to become available before proceeding
 echo ""
+# 시작 로그 초기화 (새 실행 시 구분선 추가)
+# Initialize startup log (add separator for new run)
+log_startup "========== VirtuEx 서비스 시작 / Service Startup =========="
+
 echo -e "${YELLOW}[7/7] 서비스 시작... / Starting services...${NC}"
 
 # 백엔드 마이크로서비스 7개를 동시에 백그라운드 실행
@@ -417,6 +456,7 @@ npx next dev --port 4000 2>&1 \
 FRONTEND_PID=$!
 PIDS+=($FRONTEND_PID)
 NAMES+=("frontend")
+log_startup "[START] frontend (PID $FRONTEND_PID) 시작됨 / started"
 
 echo ""
 echo "  프론트엔드 준비 대기 중... / Waiting for frontend..."
@@ -427,6 +467,7 @@ echo -e "${CYAN}=========================================${NC}"
 echo -e "${CYAN}  준비 완료! / Ready!${NC}"
 echo -e "${CYAN}=========================================${NC}"
 echo ""
+log_startup "[READY] 모든 서비스 준비 완료 / All services ready"
 echo -e "  ${GREEN}브라우저에서 열기 / Open in browser:${NC}  http://localhost:4000"
 echo ""
 echo -e "  로그 확인 / Logs:  tail -f logs/frontend.log"
@@ -446,11 +487,23 @@ echo ""
 while true; do
   sleep 60
 
-  # 서비스 생존 체크: PID가 유효한지 확인
-  # Health check: verify each PID is still running
+  # 서비스 생존 체크: PID가 유효한지 확인 (이미 보고된 PID는 건너뜀)
+  # Health check: verify each PID is still running (skip already-reported PIDs)
   for i in "${!PIDS[@]}"; do
     if ! kill -0 "${PIDS[$i]}" 2>/dev/null; then
-      echo -e "  ${RED}✗ ${NAMES[$i]} (PID ${PIDS[$i]}) 가 종료되었습니다 / has stopped. logs/${NAMES[$i]}.log 확인${NC}"
+      # 이미 보고된 PID인지 확인 / Check if already reported
+      already_reported=false
+      for dead_pid in "${REPORTED_DEAD[@]}"; do
+        if [ "$dead_pid" = "${PIDS[$i]}" ]; then
+          already_reported=true
+          break
+        fi
+      done
+      if [ "$already_reported" = false ]; then
+        echo -e "  ${RED}✗ ${NAMES[$i]} (PID ${PIDS[$i]}) 가 종료되었습니다 / has stopped. logs/${NAMES[$i]}.log 확인${NC}"
+        log_startup "[DEAD] ${NAMES[$i]} (PID ${PIDS[$i]}) 예기치 않게 종료됨 / unexpectedly stopped"
+        REPORTED_DEAD+=("${PIDS[$i]}")
+      fi
     fi
   done
 done
