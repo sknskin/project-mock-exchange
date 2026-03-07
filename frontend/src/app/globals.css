@@ -425,6 +425,10 @@ nextjs-portal,
   .marquee-pause-on-hover:hover .animate-marquee-index {
     animation-play-state: paused;
   }
+  /* 호버 시 휠 스크롤 힌트 커서 / Wheel scroll hint cursor on hover */
+  .marquee-pause-on-hover:hover {
+    cursor: ew-resize;
+  }
 
   /* 가격 변동 플래시: 상승=빨간 배경, 하락=파란 배경 → 1초 후 사라짐 */
   /* Price tick flash: rise=red bg, fall=blue bg → fades out over 1s */

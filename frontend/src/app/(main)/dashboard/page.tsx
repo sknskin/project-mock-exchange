@@ -201,10 +201,12 @@ export default function DashboardPage() {
         </button>
       </div>
 
-      {/* 시장 요약 영역 — 시장 지수, 티커, 환율 바 / Market summary — index, ticker, exchange rate bar */}
+      {/* 시장 지수 마키 — Yahoo Finance 실제 데이터 / Market index marquee — real Yahoo Finance data */}
+      <MarketIndexSummary />
+
+      {/* 시장 요약 영역 — 티커, 환율 바 / Market summary — ticker, exchange rate bar */}
       {!pricesLoading && displayAssets.length > 0 && (
         <>
-          <MarketIndexSummary assets={displayAssets} />
           <MarketTicker assets={displayAssets} />
           <ExchangeRateBar />
         </>
