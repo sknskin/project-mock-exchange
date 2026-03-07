@@ -8,6 +8,9 @@
 @import 'tailwindcss';
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css');
 
+/* CDN 폰트 FOIT 방지: preconnect hint를 layout.tsx <head>에서 처리 */
+/* CDN font FOIT prevention: preconnect hint handled in layout.tsx <head> */
+
 @font-face {
   font-family: 'Pretendard Variable';
   font-display: swap;
@@ -22,7 +25,7 @@
   --color-text-primary: #ECECEC;
   --color-text-secondary: #8B95A1;
   --color-text-tertiary: #6B7683;
-  --color-text-quaternary: #6B7683;
+  --color-text-quaternary: #808A98;
   --color-border: rgba(255, 255, 255, 0.08);
   --color-rise: #F04452;
   --color-fall: #3182F6;
@@ -30,6 +33,9 @@
   --color-success: #00BFA5;
   --color-warning: #FF8A00;
   --color-danger: #F04452;
+
+  /* 헤더 네비게이션 전환 브레이크포인트 / Header nav breakpoint */
+  --breakpoint-nav: 1120px;
 }
 
 /* Next.js 개발 인디케이터 숨김 (Next 15) */
@@ -66,7 +72,7 @@ nextjs-portal,
     --color-text-primary: #191F28;
     --color-text-secondary: #4E5968;
     --color-text-tertiary: #8B95A1;
-    --color-text-quaternary: #B0B8C1;
+    --color-text-quaternary: #8899A8;
     --color-border: rgba(0, 0, 0, 0.08);
   }
 
@@ -321,6 +327,83 @@ nextjs-portal,
   .animate-marquee img {
     -webkit-user-drag: none;
     user-select: none;
+  }
+
+  /* ── 버튼 질감 (Button texture) ──
+   * 색상 유지 + 미세 그라디언트/그림자/눌림 효과로 입체감 부여
+   * Adds depth via subtle gradient/shadow/press effect while preserving colors
+   */
+
+  /* 채움형 버튼 (Primary, Danger, Buy, Sell) — 상단 하이라이트 + 하단 그림자 */
+  /* Filled buttons — top highlight + bottom shadow */
+  .btn-filled {
+    background-image: linear-gradient(to bottom, rgba(255,255,255,0.10), transparent 60%);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.12),
+      0 1px 3px rgba(0,0,0,0.25),
+      0 0 0 1px rgba(255,255,255,0.04);
+  }
+  .btn-filled:hover:not(:disabled) {
+    background-image: linear-gradient(to bottom, rgba(255,255,255,0.14), transparent 60%);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.15),
+      0 2px 6px rgba(0,0,0,0.3),
+      0 0 0 1px rgba(255,255,255,0.06);
+  }
+  .btn-filled:active:not(:disabled) {
+    background-image: linear-gradient(to bottom, transparent, rgba(0,0,0,0.06));
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+    transform: translateY(1px);
+  }
+
+  /* 외곽선형 버튼 (Secondary) — 미세 보더 + 부드러운 그림자 */
+  /* Outline buttons — subtle border + soft shadow */
+  .btn-outline {
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.04),
+      0 1px 2px rgba(0,0,0,0.18);
+  }
+  .btn-outline:hover:not(:disabled) {
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.06),
+      0 2px 4px rgba(0,0,0,0.22);
+  }
+  .btn-outline:active:not(:disabled) {
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.15);
+    transform: translateY(1px);
+  }
+
+  /* 고스트 버튼 — 눌림 효과만 */
+  /* Ghost buttons — press effect only */
+  .btn-ghost:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+
+  /* 라이트 모드 오버라이드 / Light mode overrides */
+  html.light .btn-filled {
+    background-image: linear-gradient(to bottom, rgba(255,255,255,0.18), transparent 60%);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.25),
+      0 1px 3px rgba(0,0,0,0.12),
+      0 0 0 1px rgba(0,0,0,0.04);
+  }
+  html.light .btn-filled:hover:not(:disabled) {
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.3),
+      0 2px 6px rgba(0,0,0,0.15),
+      0 0 0 1px rgba(0,0,0,0.06);
+  }
+  html.light .btn-filled:active:not(:disabled) {
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+  }
+  html.light .btn-outline {
+    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+  }
+  html.light .btn-outline:hover:not(:disabled) {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  html.light .btn-outline:active:not(:disabled) {
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.08);
   }
 
   /* 라이트 모드에서 흰색 아이콘 반전 / Invert white icons in light mode */

@@ -29,16 +29,16 @@ export default function Button({
   ...props
 }: ButtonProps) {
   // 공통 기본 스타일 / Common base styles
-  const base = 'inline-flex items-center justify-center font-bold transition-colors disabled:opacity-35 disabled:cursor-not-allowed';
+  const base = 'inline-flex items-center justify-center font-bold transition-all duration-150 disabled:opacity-35 disabled:cursor-not-allowed';
 
   // 변형별 색상/배경 스타일 매핑 / Variant-specific color/background style mapping
   const variants = {
-    primary: 'bg-accent text-white rounded-lg hover:bg-accent/85',
-    secondary: 'bg-bg-secondary text-text-primary rounded-lg hover:bg-bg-tertiary',
-    danger: 'bg-danger text-white rounded-lg hover:bg-danger/85',
-    buy: 'bg-rise text-white rounded-lg hover:bg-rise/85',
-    sell: 'bg-fall text-white rounded-lg hover:bg-fall/85',
-    ghost: 'bg-transparent text-text-tertiary rounded-lg hover:text-text-secondary hover:bg-bg-secondary',
+    primary: 'bg-accent text-white rounded-lg hover:bg-accent/85 btn-filled',
+    secondary: 'bg-bg-secondary text-text-primary rounded-lg hover:bg-bg-tertiary btn-outline',
+    danger: 'bg-danger text-white rounded-lg hover:bg-danger/85 btn-filled',
+    buy: 'bg-rise text-white rounded-lg hover:bg-rise/85 btn-filled',
+    sell: 'bg-fall text-white rounded-lg hover:bg-fall/85 btn-filled',
+    ghost: 'bg-transparent text-text-tertiary rounded-lg hover:text-text-secondary hover:bg-bg-secondary btn-ghost',
   };
 
   // 크기별 높이/패딩/폰트 매핑 / Size-specific height/padding/font mapping
