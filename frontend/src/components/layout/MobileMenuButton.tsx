@@ -15,7 +15,7 @@ export default function MobileMenuButton() {
   return (
     <button
       onClick={() => window.dispatchEvent(new CustomEvent('open-mobile-menu'))}
-      className="lg:hidden p-1.5 -ml-1.5 text-text-tertiary hover:text-text-primary transition-colors rounded-lg hover:bg-bg-secondary/60"
+      className="nav:hidden p-1.5 -ml-1.5 text-text-tertiary hover:text-text-primary transition-colors rounded-lg hover:bg-bg-secondary/60"
       aria-label={t('common.openMenu')}
     >
       <Menu className="w-5 h-5" />
