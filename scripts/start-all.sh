@@ -9,13 +9,13 @@
 #   프로젝트 루트 디렉토리에서 실행합니다.
 #   Run this script from the project root directory.
 #
-#   cd /Users/dohee/Documents/workspace/project/project-virtuex
+#   cd /Users/dohee/Documents/workspace/project/virtuex
 #   bash scripts/start-all.sh
 #
 #   또는 어디서든 절대 경로로 실행 가능:
 #   Or run from anywhere with an absolute path:
 #
-#   bash /Users/dohee/Documents/workspace/project/project-virtuex/scripts/start-all.sh
+#   bash /Users/dohee/Documents/workspace/project/virtuex/scripts/start-all.sh
 #
 # [사전 요구사항 / Prerequisites]
 #   - Node.js (v20+)

@@ -1,3 +1,10 @@
+/**
+ * @file 커뮤니티 에러 바운더리
+ * @description 커뮤니티 페이지에서 발생하는 런타임 에러를 처리하는 에러 바운더리
+ *
+ * @file Community Error Boundary
+ * @description Error boundary handling runtime errors in community pages
+ */
 'use client';
 
 export default function CommunityError({

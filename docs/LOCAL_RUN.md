@@ -282,7 +282,7 @@ Next.js 15 App Router 기반의 프론트엔드가 포트 4000에서 시작됩�
 | http://localhost:4000/admin/stats | 관리자 - 통계 대시보드 (ADMIN 전용) |
 | http://localhost:4000/admin/settings | 관리자 - 시스템 설정 (ADMIN 전용) |
 | http://localhost:4000/admin/health | 관리자 - 서비스 상태 (ADMIN 전용) |
-| http://localhost:4000/admin/audit | 관리자 - 감사 보고서 (ADMIN 전용) |
+| http://localhost:4000/admin/audit | 관리자 - 감사 보고서 자동 감지 (ADMIN 전용) |
 | http://localhost:3000/api-docs | Swagger API 문서 |
 
 ---
