@@ -37,7 +37,7 @@ export default function PriceAlertModal({ isOpen, onClose, symbol, currentPrice 
   const { data: alerts } = usePriceAlerts(symbol);
   const createAlert = useCreatePriceAlert();
   const deleteAlert = useDeletePriceAlert();
-  const { data: rateData } = useExchangeRate();
+  const { query: { data: rateData } } = useExchangeRate();
   const currencyMode = useCurrencyDisplay((s) => s.display);
   const rate = rateData?.rate;
 

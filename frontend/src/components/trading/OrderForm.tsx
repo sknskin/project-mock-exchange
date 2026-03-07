@@ -67,7 +67,7 @@ export default function OrderForm({
   onSuccess,
 }: OrderFormProps) {
   const { t } = useTranslation();
-  const { data: rateData } = useExchangeRate();
+  const { query: { data: rateData } } = useExchangeRate();
   const currencyMode = useCurrencyDisplay((s) => s.display);
   const rate = rateData?.rate;
   const [orderType, setOrderType] = useState<OrderFormType>('MARKET');

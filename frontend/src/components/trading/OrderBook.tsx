@@ -244,7 +244,7 @@ function DepthChart({ asks, bids, fp }: DepthChartProps) {
 
 export default function OrderBook({ orderBook, symbol = '' }: OrderBookProps) {
   const { t } = useTranslation();
-  const { data: rateData } = useExchangeRate();
+  const { query: { data: rateData } } = useExchangeRate();
   const { display: currencyMode } = useCurrencyDisplay();
   const rate = rateData?.rate;
   const fp = (price: number) => formatPriceDisplay(price, symbol, currencyMode, rate);

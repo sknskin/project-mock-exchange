@@ -35,7 +35,7 @@ function getSymbolColor(symbol: string): string {
 
 export default function HoldingCard({ holding }: HoldingCardProps) {
   const { t } = useTranslation();
-  const { data: rateData } = useExchangeRate();
+  const { query: { data: rateData } } = useExchangeRate();
   const { display } = useCurrencyDisplay();
   const rate = rateData?.rate;
   const fmt = (v: number) => formatCurrencyDisplay(v, display, rate);

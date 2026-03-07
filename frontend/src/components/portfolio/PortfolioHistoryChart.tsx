@@ -67,7 +67,7 @@ function generatePlaceholderData(
 export default function PortfolioHistoryChart({ totalValue }: PortfolioHistoryChartProps) {
   const { t } = useTranslation();
   const { display: currencyMode } = useCurrencyDisplay();
-  const { data: rateData } = useExchangeRate();
+  const { query: { data: rateData } } = useExchangeRate();
   const rate = rateData?.rate ?? 0;
 
   // 선택된 기간 / Selected period

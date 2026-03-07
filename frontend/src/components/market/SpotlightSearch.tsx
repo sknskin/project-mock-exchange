@@ -28,7 +28,7 @@ export default function SpotlightSearch({ isOpen, onClose, assets, onLoginRequir
   const router = useRouter();
   const { t } = useTranslation();
   const { display } = useCurrencyDisplay();
-  const { data: rateData } = useExchangeRate();
+  const { query: { data: rateData } } = useExchangeRate();
   const rate = rateData?.rate;
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [query, setQuery] = useState('');

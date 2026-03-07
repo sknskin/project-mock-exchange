@@ -21,7 +21,7 @@ interface TransactionListProps {
 
 export default function TransactionList({ orders }: TransactionListProps) {
   const { t } = useTranslation();
-  const { data: rateData } = useExchangeRate();
+  const { query: { data: rateData } } = useExchangeRate();
   const { display: currencyMode } = useCurrencyDisplay();
   const rate = rateData?.rate;
   const fmtPrice = (v: number, symbol: string) => formatPriceDisplay(v, symbol, currencyMode, rate);

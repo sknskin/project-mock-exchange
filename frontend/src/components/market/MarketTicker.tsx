@@ -23,7 +23,7 @@ interface MarketTickerProps {
 export default function MarketTicker({ assets }: MarketTickerProps) {
   const { t } = useTranslation();
   const { display } = useCurrencyDisplay();
-  const { data: rateData } = useExchangeRate();
+  const { query: { data: rateData } } = useExchangeRate();
   const rate = rateData?.rate;
 
   // 거래대금(price * volume) 기준 상위 5개 추출 / Extract top 5 by turnover (price * volume)

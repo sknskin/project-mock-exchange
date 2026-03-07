@@ -44,7 +44,7 @@ function AssetListItem({ asset, rank, isWatchlisted, onToggleWatchlist }: AssetL
   const isExtreme = Math.abs(asset.changePercent) >= 5;
 
   const { display } = useCurrencyDisplay();
-  const { data: rateData } = useExchangeRate();
+  const { query: { data: rateData } } = useExchangeRate();
   const rate = rateData?.rate;
 
   const prevPriceRef = useRef(asset.currentPrice);

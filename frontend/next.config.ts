@@ -35,7 +35,7 @@ const nextConfig: NextConfig = {
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           { key: 'X-DNS-Prefetch-Control', value: 'on' },
           { key: 'Strict-Transport-Security', value: 'max-age=31536000; includeSubDomains' },
-          { key: 'Content-Security-Policy', value: `default-src 'self'; script-src ${scriptSrc} https://t1.daumcdn.net https://*.daumcdn.net; frame-src 'self' https://postcode.map.daum.net http://postcode.map.daum.net https://*.daum.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' data: blob: https://cdn.simpleicons.org; connect-src 'self' ws: wss: http://localhost:* https://api.frankfurter.app; font-src 'self' data: https://cdn.jsdelivr.net;` },
+          { key: 'Content-Security-Policy', value: `default-src 'self'; script-src ${scriptSrc} https://t1.daumcdn.net https://*.daumcdn.net; frame-src 'self' https://postcode.map.daum.net http://postcode.map.daum.net https://*.daum.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' data: blob: https://cdn.simpleicons.org; connect-src 'self' ws: wss: http://localhost:* https://api.exchangerate.fun https://api.frankfurter.app; font-src 'self' data: https://cdn.jsdelivr.net;` },
         ],
       },
     ];

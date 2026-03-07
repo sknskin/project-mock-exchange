@@ -55,7 +55,7 @@ const CHART_COLORS = [
 
 export default function PortfolioAnalytics({ portfolio }: PortfolioAnalyticsProps) {
   const { t } = useTranslation();
-  const { data: rateData } = useExchangeRate();
+  const { query: { data: rateData } } = useExchangeRate();
   const { display: currencyMode } = useCurrencyDisplay();
   const rate = rateData?.rate;
   const fmt = (v: number) => formatCurrencyDisplay(v, currencyMode, rate);

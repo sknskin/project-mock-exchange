@@ -12,7 +12,8 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/format';
 
 export default function ExchangeRateBar() {
-  const { data, refetch, isFetching } = useExchangeRate();
+  const { query, manualRefetch } = useExchangeRate();
+  const { data, isFetching } = query;
   const { display, toggle } = useCurrencyDisplay();
   const { t } = useTranslation();
   if (!data) {
@@ -63,7 +64,7 @@ export default function ExchangeRateBar() {
         <div className="flex items-center gap-2">
           <span className="tabular-nums text-[11px] sm:text-[12px]">{timeStr}</span>
           <button
-            onClick={() => refetch()}
+            onClick={() => manualRefetch()}
             disabled={isFetching}
             className="p-1 hover:text-accent transition-colors disabled:opacity-40"
           >
