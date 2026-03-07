@@ -58,23 +58,25 @@ export default function MessageBubble({ message, isMine, showSender, locale, use
     <>
       <div className={cn('group flex mb-1.5', isMine ? 'justify-end' : 'justify-start')}>
         <div className={cn('max-w-[75%] flex flex-col', isMine ? 'items-end' : 'items-start')}>
+          {/* 발신자 이름 + 역할 뱃지 — 색상은 회원관리 라벨 기준: SYSTEM=보라, ADMIN=액센트 */}
+          {/* Sender name + role badge — colors match user management labels: SYSTEM=purple, ADMIN=accent */}
           {showSender && !isMine && (
             <span className="text-[11px] text-text-tertiary mb-0.5 px-1 flex items-center gap-1">
-              {isSystemUser && <Shield className="w-3 h-3 text-accent" />}
-              {isAdminUser && <Shield className="w-3 h-3 text-blue-400" />}
+              {isSystemUser && <Shield className="w-3 h-3 text-purple-400" />}
+              {isAdminUser && <Shield className="w-3 h-3 text-accent" />}
               <span className={cn(
-                isSystemUser ? 'font-semibold text-accent' : '',
-                isAdminUser ? 'font-semibold text-blue-400' : '',
+                isSystemUser ? 'font-semibold text-purple-400' : '',
+                isAdminUser ? 'font-semibold text-accent' : '',
               )}>
                 {message.senderName || message.senderUsername}
               </span>
               {isSystemUser && (
-                <span className="text-[9px] px-1 py-px rounded bg-accent/15 text-accent font-bold uppercase">
+                <span className="text-[9px] px-1 py-px rounded bg-purple-500/15 text-purple-400 font-bold uppercase">
                   system
                 </span>
               )}
               {isAdminUser && (
-                <span className="text-[9px] px-1 py-px rounded bg-blue-400/15 text-blue-400 font-bold uppercase">
+                <span className="text-[9px] px-1 py-px rounded bg-accent/15 text-accent font-bold uppercase">
                   admin
                 </span>
               )}
@@ -85,12 +87,14 @@ export default function MessageBubble({ message, isMine, showSender, locale, use
               <div
                 className={cn(
                   'px-3 py-2 rounded-2xl text-[13px] leading-relaxed break-words whitespace-pre-wrap',
+                  // 버블 배경색: 본인=액센트, 시스템=보라, 관리자=액센트(연한), 일반=기본
+                  // Bubble bg: self=accent, system=purple, admin=accent(light), other=default
                   isMine
                     ? 'bg-accent text-white rounded-br-md'
                     : isSystemUser
-                      ? 'bg-accent/10 text-text-primary border border-accent/20 rounded-bl-md'
+                      ? 'bg-purple-500/10 text-text-primary border border-purple-500/20 rounded-bl-md'
                       : isAdminUser
-                        ? 'bg-blue-400/8 text-text-primary border border-blue-400/15 rounded-bl-md'
+                        ? 'bg-accent/8 text-text-primary border border-accent/15 rounded-bl-md'
                         : 'bg-bg-secondary text-text-primary rounded-bl-md',
                 )}
               >
