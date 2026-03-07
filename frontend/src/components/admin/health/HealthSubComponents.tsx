@@ -608,6 +608,7 @@ export function QuickActionsCard({ serviceKey, t }: {
         >
           <FileText className="w-3.5 h-3.5" />
           {t('admin.health.viewLogs')}
+          <span className="text-[10px] ml-1 opacity-70">({t('admin.health.restartDisabled')})</span>
         </button>
         <button
           className="flex items-center gap-2 px-4 py-2 rounded-xl border border-red-500/20 bg-red-500/5 text-[12px] font-semibold text-red-400/60 cursor-not-allowed opacity-60"

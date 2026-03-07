@@ -7,7 +7,7 @@
  */
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { RefreshCw, ExternalLink, Newspaper, Search, Calendar } from 'lucide-react';
 import { useNews, useScrapeStatus, useTriggerScrape } from '@/hooks/useNews';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -112,10 +112,21 @@ export default function NewsPage() {
     ? Math.ceil(filteredItems.length / pageSize)
     : (data?.totalPages ?? 0);
 
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const refreshTimer = useRef<ReturnType<typeof setTimeout>>(null);
+
+  useEffect(() => {
+    return () => { if (refreshTimer.current) clearTimeout(refreshTimer.current); };
+  }, []);
+
   const handleRefresh = () => {
-    if (!triggerScrape.isPending) {
-      triggerScrape.mutate(activeTab);
-    }
+    if (isRefreshing) return;
+    setIsRefreshing(true);
+    triggerScrape.mutate(activeTab, {
+      onSettled: () => {
+        refreshTimer.current = setTimeout(() => setIsRefreshing(false), 1000);
+      },
+    });
   };
 
   const formatDate = (dateStr: string) => {
@@ -146,55 +157,54 @@ export default function NewsPage() {
   return (
     <div>
       {/* Header */}
-      <div className="py-6 flex items-center gap-2.5 h-[88px]">
-        <Newspaper className="w-5 h-5 text-accent" />
-        <h1 className="text-[20px] font-extrabold text-text-primary">
-          {t('news.title')}
-        </h1>
-      </div>
-
-      {/* Tab bar */}
-      <div className="flex items-center justify-between border-b border-border mb-5">
-        <div className="flex">
-          {tabs.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => handleTabChange(tab.key)}
-              className={cn(
-                'relative px-4 py-2.5 text-[13px] sm:text-[14px] font-semibold transition-colors',
-                activeTab === tab.key
-                  ? 'text-accent'
-                  : 'text-text-tertiary hover:text-text-primary',
-              )}
-            >
-              {tab.label}
-              {activeTab === tab.key && (
-                <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-accent rounded-t" />
-              )}
-            </button>
-          ))}
+      <div className="py-6 flex items-center justify-between h-[88px]">
+        <div className="flex items-center gap-2.5">
+          <Newspaper className="w-5 h-5 text-accent" />
+          <h1 className="text-[20px] font-extrabold text-text-primary">
+            {t('news.title')}
+          </h1>
         </div>
-
-        <div className="flex items-center gap-2 text-[12px] text-text-quaternary pb-1">
+        <div className="flex items-center gap-2">
           {currentScrapeStatus && (
-            <span className="hidden sm:inline">
+            <span className="hidden sm:inline text-[11px] text-text-quaternary tabular-nums">
               {t('news.lastScraped')}: {formatTimeAgo(currentScrapeStatus.scrapedAt)}
             </span>
           )}
           <button
             onClick={handleRefresh}
-            disabled={triggerScrape.isPending}
-            className="p-1.5 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-secondary transition-colors disabled:opacity-50"
-            title={t('news.lastScraped')}
+            disabled={isRefreshing}
+            className={cn(
+              'flex items-center justify-center gap-2 h-10 min-w-[120px] px-4 rounded-xl text-[13px] font-semibold transition-all duration-150 border btn-outline',
+              isRefreshing
+                ? 'border-border text-text-quaternary cursor-not-allowed'
+                : 'border-accent/30 text-accent hover:bg-accent/10',
+            )}
           >
-            <RefreshCw
-              className={cn(
-                'w-3.5 h-3.5',
-                triggerScrape.isPending && 'animate-spin',
-              )}
-            />
+            <RefreshCw className={cn('w-4 h-4 shrink-0', isRefreshing && 'animate-spin')} />
+            {t('portfolio.refresh')}
           </button>
         </div>
+      </div>
+
+      {/* Tab bar */}
+      <div className="flex border-b border-border mb-5">
+        {tabs.map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => handleTabChange(tab.key)}
+            className={cn(
+              'relative px-4 py-2.5 text-[13px] sm:text-[14px] font-semibold transition-colors',
+              activeTab === tab.key
+                ? 'text-accent'
+                : 'text-text-tertiary hover:text-text-primary',
+            )}
+          >
+            {tab.label}
+            {activeTab === tab.key && (
+              <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-accent rounded-t" />
+            )}
+          </button>
+        ))}
       </div>
 
       {/* Search + Date filter */}
