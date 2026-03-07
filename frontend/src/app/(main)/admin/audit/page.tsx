@@ -1,15 +1,15 @@
 /**
  * @file 관리자 감사 보고서 페이지
- * @description 시스템 감사 보고서 PDF를 확인하는 관리자 전용 페이지
+ * @description 시스템 감사 보고서 PDF를 확인하는 관리자 전용 페이지. manifest.json에서 목록 자동 로드.
  *
  * @file Admin Audit Report Page
- * @description Admin-only page for viewing system audit report PDFs
+ * @description Admin-only page for viewing system audit report PDFs. Auto-loads list from manifest.json.
  */
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { FileText, Eye, Calendar, Download } from 'lucide-react';
+import { FileText, Eye, Calendar, Download, Loader2 } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuthStore } from '@/stores/auth';
 
@@ -21,62 +21,21 @@ interface ReportItem {
   date: string;
 }
 
-// 정적 보고서 목록 — public/docs/report/ 경로의 PDF 파일들 / Static report list — PDF files in public/docs/report/
-const REPORTS: ReportItem[] = [
-  {
-    name: 'audit-report-8.pdf',
-    path: '/docs/report/audit-report-8.pdf',
-    label: 'VirtuEx 시스템 감사 보고서 (8차)',
-    date: '2026-03-04',
-  },
-  {
-    name: 'audit-report-7.pdf',
-    path: '/docs/report/audit-report-7.pdf',
-    label: 'VirtuEx 시스템 감사 보고서 (7차)',
-    date: '2026-03-03',
-  },
-  {
-    name: 'audit-report-6.pdf',
-    path: '/docs/report/audit-report-6.pdf',
-    label: 'VirtuEx 시스템 감사 보고서 (6차)',
-    date: '2026-03-02',
-  },
-  {
-    name: 'audit-report-5.pdf',
-    path: '/docs/report/audit-report-5.pdf',
-    label: 'VirtuEx 시스템 감사 보고서 (5차)',
-    date: '2026-03-02',
-  },
-  {
-    name: 'audit-report-4.pdf',
-    path: '/docs/report/audit-report-4.pdf',
-    label: 'VirtuEx 시스템 감사 보고서 (4차)',
-    date: '2026-03-02',
-  },
-  {
-    name: 'audit-report-3.pdf',
-    path: '/docs/report/audit-report-3.pdf',
-    label: 'VirtuEx 시스템 감사 보고서 (3차)',
-    date: '2026-03-02',
-  },
-  {
-    name: 'audit-report-2.pdf',
-    path: '/docs/report/audit-report-2.pdf',
-    label: 'VirtuEx 시스템 감사 보고서 (2차)',
-    date: '2026-03-01',
-  },
-  {
-    name: 'audit-report-1.pdf',
-    path: '/docs/report/audit-report-1.pdf',
-    label: 'VirtuEx 시스템 감사 보고서 (1차)',
-    date: '2026-03-01',
-  },
-];
-
 export default function AdminAuditPage() {
   const router = useRouter();
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
+  const [reports, setReports] = useState<ReportItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // manifest.json에서 보고서 목록 로드 / Load report list from manifest.json
+  useEffect(() => {
+    fetch('/docs/report/manifest.json')
+      .then((res) => res.json())
+      .then((data: ReportItem[]) => setReports(data))
+      .catch(() => setReports([]))
+      .finally(() => setLoading(false));
+  }, []);
 
   // Non-admin redirect
   useEffect(() => {
@@ -118,12 +77,16 @@ export default function AdminAuditPage() {
 
       {/* Report list */}
       <div className="space-y-3">
-        {REPORTS.length === 0 ? (
+        {loading ? (
+          <div className="flex items-center justify-center py-12 text-text-quaternary">
+            <Loader2 className="w-5 h-5 animate-spin" />
+          </div>
+        ) : reports.length === 0 ? (
           <div className="text-center py-12 text-text-quaternary text-[14px]">
             {t('admin.audit.noReports')}
           </div>
         ) : (
-          REPORTS.map((report) => (
+          reports.map((report) => (
             <div
               key={report.name}
               className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-bg-secondary rounded-2xl px-4 py-3.5 sm:px-5 sm:py-4"
