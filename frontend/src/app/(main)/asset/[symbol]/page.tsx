@@ -23,7 +23,7 @@ import OrderBookComponent from '@/components/trading/OrderBook';
 import OrderSheet from '@/components/trading/OrderSheet';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import Tabs from '@/components/ui/Tabs';
-import { ChartSkeleton } from '@/components/ui/Skeleton';
+import { ChartSkeleton, OrderBookSkeleton, TradesSkeleton } from '@/components/ui/Skeleton';
 import { cn, isKRW, formatPriceDisplay, formatAmountDisplay, formatPercent, formatQuantity, formatTime, formatVolumeDisplay } from '@/lib/format';
 import { ArrowLeft, Star, Bell } from 'lucide-react';
 import { useWatchlist, useAddWatchlist, useRemoveWatchlist } from '@/hooks/useWatchlist';
@@ -59,7 +59,7 @@ export default function AssetDetailPage({
   const { t } = useTranslation();
   const { isAuthenticated } = useAuthStore();
   const { data: asset } = useAssetPrice(symbol);
-  const { data: rateData } = useExchangeRate();
+  const { query: { data: rateData } } = useExchangeRate();
   const currencyMode = useCurrencyDisplay((s) => s.display);
   const rate = rateData?.rate;
 
@@ -395,22 +395,14 @@ export default function AssetDetailPage({
 
         <div className="mt-3">
           {activeTab === 'orderbook' && orderbookLoading && (
-            <div className="space-y-2 py-2">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="h-6 rounded bg-bg-secondary animate-pulse" />
-              ))}
-            </div>
+            <OrderBookSkeleton />
           )}
           {activeTab === 'orderbook' && !orderbookLoading && orderBook && (
             <OrderBookComponent orderBook={orderBook} symbol={symbol} />
           )}
 
           {activeTab === 'trades' && tradesLoading && (
-            <div className="space-y-2 py-2">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="h-6 rounded bg-bg-secondary animate-pulse" />
-              ))}
-            </div>
+            <TradesSkeleton />
           )}
           {activeTab === 'trades' && !tradesLoading && (
             <div>

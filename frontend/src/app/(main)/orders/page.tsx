@@ -316,7 +316,7 @@ function AnalysisTab({ trades, userId, isLoading, error, refetch, t, currencyMod
 
 export default function OrdersPage() {
   const { t } = useTranslation();
-  const { data: rateData } = useExchangeRate();
+  const { query: { data: rateData } } = useExchangeRate();
   const { display: currencyMode } = useCurrencyDisplay();
   const rate = rateData?.rate;
 

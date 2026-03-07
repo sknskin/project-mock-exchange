@@ -88,12 +88,8 @@ api.interceptors.response.use(
           authStore.logout();
         }
         if (typeof window !== 'undefined') {
-          const { default: Router } = await import('next/router').catch(() => ({ default: null }));
-          if (Router?.push) {
-            Router.push('/login');
-          } else {
-            window.location.assign('/login');
-          }
+          // App Router 소프트 네비게이션 — React 상태 유지 / Soft navigation — preserves React state
+          window.location.assign('/login');
         }
         return Promise.reject(refreshError);
       } finally {

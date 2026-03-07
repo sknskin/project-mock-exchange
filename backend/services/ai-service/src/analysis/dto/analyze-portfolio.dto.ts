@@ -1,8 +1,9 @@
 import { Type } from 'class-transformer';
-import { IsArray, ValidateNested, IsString, IsNumber, Matches, Min, ArrayMaxSize } from 'class-validator';
+import { IsArray, ValidateNested, IsString, IsNumber, MaxLength, Matches, Min, ArrayMaxSize } from 'class-validator';
 
 export class HoldingItemDto {
   @IsString()
+  @MaxLength(20)
   @Matches(/^[A-Z0-9]{1,10}([.-][A-Z]{1,4})?(-USD)?$/, { message: 'Invalid symbol format' })
   symbol: string;
 
@@ -13,7 +14,7 @@ export class HoldingItemDto {
 
 export class AnalyzePortfolioDto {
   @IsArray()
-  @ArrayMaxSize(200)
+  @ArrayMaxSize(100)
   @ValidateNested({ each: true })
   @Type(() => HoldingItemDto)
   holdings: HoldingItemDto[];

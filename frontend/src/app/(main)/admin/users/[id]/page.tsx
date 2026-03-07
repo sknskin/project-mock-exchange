@@ -7,7 +7,7 @@
  */
 'use client';
 
-import { use, useState, useCallback } from 'react';
+import { use, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Info, ShoppingCart } from 'lucide-react';
@@ -23,6 +23,7 @@ import {
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuthStore } from '@/stores/auth';
 import ConfirmModal from '@/components/ui/ConfirmModal';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { cn } from '@/lib/format';
 
 type ModalType = 'approve' | 'reject' | 'deactivate' | 'activate' | 'delete' | 'changeRole' | null;
@@ -122,6 +123,9 @@ export default function AdminUserDetailPage({
   const [selectedRole, setSelectedRole] = useState('');
   const [activeTab, setActiveTabRaw] = useState<TabKey>('info');
   const setActiveTab = useCallback((v: TabKey) => { setActiveTabRaw(v); window.scrollTo({ top: 0, behavior: 'smooth' }); }, []);
+  const noteModalRef = useRef<HTMLDivElement>(null);
+  // 승인/반려 메모 모달 포커스 트랩 / Focus trap for approve/reject note modal
+  useFocusTrap(noteModalRef, activeModal === 'approve' || activeModal === 'reject');
 
   // Redirect non-admin users
   if (currentUser && currentUser.role !== 'ADMIN' && currentUser.role !== 'SYSTEM') {
@@ -497,7 +501,7 @@ export default function AdminUserDetailPage({
 
       {/* 메모 모달 — 승인/반려 시 사유 입력용 (선택적 textarea) / Note modal — for approve/reject with optional reason textarea */}
       {hasNoteField && (
-        <>
+        <div ref={noteModalRef} role="dialog" aria-modal="true">
           <div
             className="fixed inset-0 z-[60] bg-black/60"
             onClick={closeModal}
@@ -537,7 +541,7 @@ export default function AdminUserDetailPage({
               </div>
             </div>
           </div>
-        </>
+        </div>
       )}
     </div>
   );

@@ -522,8 +522,8 @@ export class BalanceService {
 
       // FOR UPDATE 락으로 동시 체결 시 Holding 덮어쓰기 방지
       const [existingHolding] = await tx.$queryRaw<Array<{
-        id: string; userId: string; symbol: string; quantity: string; avgCostBasis: string; totalCost: string;
-      } | undefined>>`SELECT "id", "user_id" AS "userId", "symbol", "quantity"::text, "avg_cost_basis"::text AS "avgCostBasis", "total_cost"::text AS "totalCost" FROM "holdings" WHERE "user_id" = ${userId}::uuid AND "symbol" = ${symbol} FOR UPDATE`;
+        id: string; userId: string; symbol: string; quantity: string; reservedQuantity: string; avgCostBasis: string; totalCost: string;
+      } | undefined>>`SELECT "id", "user_id" AS "userId", "symbol", "quantity"::text, "reserved_quantity"::text AS "reservedQuantity", "avg_cost_basis"::text AS "avgCostBasis", "total_cost"::text AS "totalCost" FROM "holdings" WHERE "user_id" = ${userId}::uuid AND "symbol" = ${symbol} FOR UPDATE`;
 
       if (!existingHolding) {
         throw new BadRequestException(
@@ -561,6 +561,13 @@ export class BalanceService {
         ? newTotalCost.div(newQty)
         : new Decimal(0);
 
+      // 매도 체결 시 예약 수량도 함께 차감 (reserved_quantity <= quantity 제약 보장)
+      // Also reduce reserved quantity on sell settlement (ensures reserved_quantity <= quantity constraint)
+      const existingReserved = new Decimal(existingHolding.reservedQuantity.toString());
+      const newReserved = Decimal.max(existingReserved.minus(qty), new Decimal(0));
+
+      // Prisma ORM update + raw SQL로 reserved_quantity 동시 갱신
+      // Use Prisma ORM update for standard fields + raw SQL for reserved_quantity
       const updatedHolding = await tx.holding.update({
         where: { userId_symbol: { userId, symbol } },
         data: {
@@ -569,6 +576,10 @@ export class BalanceService {
           totalCost: newTotalCost.toFixed(8),
         },
       });
+
+      // reserved_quantity는 raw SQL로 갱신 (Prisma 클라이언트 호환성 보장)
+      // Update reserved_quantity via raw SQL for Prisma client compatibility
+      await tx.$executeRaw`UPDATE "holdings" SET "reserved_quantity" = ${newReserved.toFixed(8)}::decimal WHERE "user_id" = ${userId}::uuid AND "symbol" = ${symbol}`;
 
       // 실현 손익 = 매도 대금 - 매도 비용(비례) / Realized P&L = proceeds - proportional cost
       const realizedPnl = totalProceeds.minus(costReduction);
@@ -1029,6 +1040,13 @@ export class BalanceService {
     return this.toBalanceInfo(updated);
   }
 
+  /**
+   * 매도 주문을 위해 보유 자산을 예약합니다.
+   * DB의 reserved_quantity 컬럼을 사용하여 동시 매도 주문 시 초과 예약을 방지합니다.
+   *
+   * Reserve holdings for a sell order.
+   * Uses the DB reserved_quantity column to prevent over-reservation on concurrent sell orders.
+   */
   async reserveHoldings(userId: string, symbol: string, quantity: string): Promise<{ reserved: string; available: string }> {
     const qty = new Decimal(quantity);
 
@@ -1059,9 +1077,20 @@ export class BalanceService {
       };
     });
 
+    this.logger.log(
+      `Reserved holdings for user ${userId.substring(0, 8)}...: ${qty.toFixed(8)} ${symbol} (reserved: ${result.reserved}, available: ${result.available})`,
+    );
+
     return result;
   }
 
+  /**
+   * 매도 주문 취소 시 예약된 보유 자산을 해제합니다.
+   * 요청 수량이 현재 예약 수량보다 크면 예약된 만큼만 해제합니다.
+   *
+   * Release reserved holdings when a sell order is cancelled.
+   * If requested quantity exceeds current reserved, only the reserved amount is released.
+   */
   async releaseHoldings(userId: string, symbol: string, quantity: string): Promise<{ reserved: string; released: string }> {
     const qty = new Decimal(quantity);
 
@@ -1084,6 +1113,10 @@ export class BalanceService {
         released: releaseQty.toFixed(8),
       };
     });
+
+    this.logger.log(
+      `Released holdings for user ${userId.substring(0, 8)}...: ${result.released} ${symbol} (remaining reserved: ${result.reserved})`,
+    );
 
     return result;
   }

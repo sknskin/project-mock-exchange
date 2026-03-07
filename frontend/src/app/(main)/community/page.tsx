@@ -389,7 +389,7 @@ export default function CommunityPage() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const { data: leaderboardData, isLoading } = useLeaderboard();
   const [followedUsers, setFollowedUsers] = useState<Set<string>>(new Set());
-  const { data: rateData } = useExchangeRate();
+  const { query: { data: rateData } } = useExchangeRate();
   const { display: currencyMode } = useCurrencyDisplay();
   const rate = rateData?.rate;
   const fmt = (v: number) => formatCurrencyDisplay(v, currencyMode, rate);

@@ -35,14 +35,16 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+        {/* CDN 폰트 FOIT 방지: preconnect로 DNS/TLS 사전 연결 / Prevent FOIT with preconnect */}
+        <link rel="preconnect" href="https://cdn.jsdelivr.net" crossOrigin="anonymous" />
         {/*
-          SSR Hydration Flicker 방지: React 렌더링 전에 localStorage에서 인증 상태를 읽어
+          SSR Hydration Flicker 방지: React 렌더링 전에 sessionStorage에서 인증 상태를 읽어
           CSS data 속성을 설정합니다. auth-show/auth-hide CSS 클래스가 즉시 동작합니다.
-          보안: 이 스크립트는 빌드 타임 고정 문자열이며, localStorage 읽기 + dataset 설정만 수행합니다.
+          보안: 이 스크립트는 빌드 타임 고정 문자열이며, sessionStorage 읽기 + dataset 설정만 수행합니다.
 
-          Prevents SSR hydration flicker: reads auth state from localStorage before React renders
+          Prevents SSR hydration flicker: reads auth state from sessionStorage before React renders
           and sets CSS data attributes. auth-show/auth-hide CSS classes work immediately.
-          Security: this is a build-time fixed string that only reads localStorage + sets dataset.
+          Security: this is a build-time fixed string that only reads sessionStorage + sets dataset.
         */}
         <Script
           id="auth-prehydrate"
