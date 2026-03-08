@@ -47,6 +47,19 @@ export class PortfolioProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  @Post('reset')
+  @ApiOperation({ summary: '계정 초기화', description: '보유 자산, 거래 내역 삭제 및 잔고를 초기 상태로 리셋합니다' })
+  @ApiResponse({ status: 201, description: '초기화 성공' })
+  async resetAccount(@Req() req: Request, @Res() res: Response) {
+    const userId = (req as Record<string, any>).user?.id;
+    const result = await this.proxyService.forward('portfolio', {
+      method: 'POST',
+      url: '/portfolio/reset',
+      headers: { 'x-user-id': userId },
+    });
+    return res.status(result.status).json(result.data);
+  }
+
   @Post('withdraw')
   @ApiOperation({ summary: '자금 출금', description: '포트폴리오에서 가상 자금을 출금합니다' })
   @ApiResponse({ status: 201, description: '출금 성공' })
