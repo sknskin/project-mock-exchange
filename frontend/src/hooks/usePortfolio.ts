@@ -181,6 +181,35 @@ export function useWithdraw() {
  *
  * @returns mutate 함수 호출 시 계정 초기화 실행 / Triggers account reset when mutate is called
  */
+// ===== 거래 내역 조회 훅 (Transaction History Hook) =====
+
+export interface Transaction {
+  id: string;
+  type: 'DEPOSIT' | 'WITHDRAWAL' | 'BUY' | 'SELL' | 'RESERVE' | 'RELEASE';
+  symbol?: string;
+  quantity?: number;
+  price?: number;
+  cashDelta: number;
+  realizedPnL?: number;
+  createdAt: string;
+}
+
+/**
+ * 거래 내역을 조회하는 훅
+ * Hook that fetches transaction history
+ */
+export function useTransactions(limit = 200) {
+  return useQuery<Transaction[]>({
+    queryKey: ['portfolio', 'transactions', limit],
+    queryFn: async () => {
+      const { data } = await api.get(`/api/portfolio/transactions?limit=${limit}&offset=0`);
+      const raw = unwrapResponse<{ transactions?: Transaction[]; items?: Transaction[] } | Transaction[]>(data);
+      if (Array.isArray(raw)) return raw;
+      return raw.transactions ?? raw.items ?? [];
+    },
+  });
+}
+
 export function useResetAccount() {
   const queryClient = useQueryClient();
 
@@ -193,6 +222,8 @@ export function useResetAccount() {
       // 계정 초기화 → 포트폴리오 및 관련 캐시 전체 갱신
       // Account reset → refresh all portfolio and related caches
       queryClient.invalidateQueries({ queryKey: ['portfolio'] });
+      queryClient.invalidateQueries({ queryKey: ['trades'] });
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
     },
   });
 }

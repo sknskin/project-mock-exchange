@@ -1,11 +1,9 @@
 /**
  * @file 포트폴리오 가치 히스토리 차트
- * @description SVG 기반 라인 차트로 포트폴리오 총 가치의 시간별 변동을 표시합니다.
- * 현재 플레이스홀더 데이터를 사용하며, 향후 실제 히스토리 데이터 연동 예정입니다.
+ * @description 실제 거래 내역(입출금, 매매) 기반으로 포트폴리오 장부 가치의 시간별 변동을 SVG 차트로 표시합니다.
  *
  * @file Portfolio Value History Chart
- * @description Displays portfolio total value over time using an SVG-based line chart.
- * Currently uses placeholder data; real historical data tracking will be added later.
+ * @description Displays portfolio book value over time based on actual transactions (deposits, trades) using an SVG chart.
  */
 'use client';
 
@@ -13,55 +11,102 @@ import { useState, useMemo } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
+import { useTransactions } from '@/hooks/usePortfolio';
 import { cn, formatCurrencyDisplay } from '@/lib/format';
 
-// 기간 선택 탭 타입 / Period selector tab type
 type Period = '1W' | '1M' | '3M' | '1Y';
 
 interface PortfolioHistoryChartProps {
-  /** 현재 포트폴리오 총 가치 (KRW) / Current total portfolio value (KRW) */
   totalValue: number;
 }
 
+const PERIOD_DAYS: Record<Period, number> = {
+  '1W': 7,
+  '1M': 30,
+  '3M': 90,
+  '1Y': 365,
+};
+
 /**
- * 플레이스홀더 데이터 생성 — 현재 총 가치를 기반으로 과거 시뮬레이션 데이터를 만듭니다.
- * Generate placeholder data — creates simulated historical data based on current total value.
+ * 거래 내역에서 포트폴리오 장부 가치 시계열 데이터를 생성합니다.
+ * 장부 가치 = 누적 입금 - 누적 출금 + 누적 실현 손익
+ * 마지막 포인트는 현재 시가 평가액(totalValue)을 사용하여 미실현 손익도 반영합니다.
  *
- * @param totalValue - 현재 포트폴리오 총 가치 / Current portfolio total value
- * @param period - 선택된 기간 / Selected period
- * @returns 날짜와 값의 배열 / Array of date-value pairs
+ * Builds portfolio book value time-series from transaction history.
+ * Book value = cumulative deposits - cumulative withdrawals + cumulative realized P&L
+ * Last point uses current totalValue (includes unrealized P&L).
  */
-function generatePlaceholderData(
-  totalValue: number,
+function buildHistoryFromTransactions(
+  transactions: { type: string; cashDelta: number; realizedPnL?: number; createdAt: string }[],
   period: Period,
+  currentTotalValue: number,
 ): { date: Date; value: number }[] {
+  if (!transactions || transactions.length === 0) return [];
+
   const now = new Date();
-  const points: { date: Date; value: number }[] = [];
+  const cutoff = new Date(now);
+  cutoff.setDate(cutoff.getDate() - PERIOD_DAYS[period]);
 
-  // 기간별 데이터 포인트 수와 간격(일) / Data point count and interval(days) per period
-  const config: Record<Period, { count: number; intervalDays: number }> = {
-    '1W': { count: 7, intervalDays: 1 },
-    '1M': { count: 30, intervalDays: 1 },
-    '3M': { count: 13, intervalDays: 7 },
-    '1Y': { count: 12, intervalDays: 30 },
-  };
+  // 시간순 정렬 (오래된 순)
+  const sorted = [...transactions].sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+  );
 
-  const { count, intervalDays } = config[period];
-  // 시작 값은 현재 값의 85~95% 범위에서 설정 / Start value set between 85-95% of current value
-  const startValue = totalValue * (0.85 + Math.random() * 0.1);
-  const diff = totalValue - startValue;
+  // 전체 거래에서 장부 가치 재구성
+  // 장부 가치 변동 요인:
+  //   DEPOSIT: +cashDelta (입금)
+  //   WITHDRAWAL: +cashDelta (음수, 출금)
+  //   SELL: +realizedPnL (실현 손익만 장부 가치 변동)
+  //   BUY/RESERVE/RELEASE: 장부 가치 변동 없음 (자산 형태만 변환)
+  let bookValue = 0;
+  const allPoints: { date: Date; value: number }[] = [];
 
-  for (let i = 0; i <= count; i++) {
-    const date = new Date(now);
-    date.setDate(date.getDate() - (count - i) * intervalDays);
-    // 선형 성장 + 작은 무작위 변동 / Linear growth + small random fluctuation
-    const progress = i / count;
-    const noise = (Math.sin(i * 1.5) * 0.02 + (Math.random() - 0.5) * 0.01) * totalValue;
-    const value = startValue + diff * progress + noise;
-    points.push({ date, value: Math.max(0, value) });
+  for (const tx of sorted) {
+    const txDate = new Date(tx.createdAt);
+
+    if (tx.type === 'DEPOSIT' || tx.type === 'WITHDRAWAL') {
+      bookValue += tx.cashDelta;
+    } else if (tx.type === 'SELL' && tx.realizedPnL) {
+      bookValue += tx.realizedPnL;
+    }
+
+    allPoints.push({ date: txDate, value: bookValue });
   }
 
-  return points;
+  if (allPoints.length === 0) return [];
+
+  // 기간 필터: cutoff 이전의 마지막 값을 시작점으로 사용
+  let startValue = 0;
+  const periodPoints: { date: Date; value: number }[] = [];
+
+  for (const pt of allPoints) {
+    if (pt.date < cutoff) {
+      startValue = pt.value;
+    } else {
+      periodPoints.push(pt);
+    }
+  }
+
+  // 시작점 추가 (기간 시작 시점의 장부 가치)
+  if (startValue > 0 || periodPoints.length === 0) {
+    periodPoints.unshift({ date: cutoff, value: startValue });
+  }
+
+  // 마지막 포인트를 현재 시가 평가액으로 설정 (미실현 손익 반영)
+  periodPoints.push({ date: now, value: currentTotalValue });
+
+  // 일별로 그룹핑하여 데이터 포인트 수를 적정 수준으로 유지
+  const dayMap = new Map<string, { date: Date; value: number }>();
+  for (const pt of periodPoints) {
+    const key = pt.date.toISOString().slice(0, 10);
+    dayMap.set(key, pt); // 같은 날이면 마지막 값 사용
+  }
+
+  const result = Array.from(dayMap.values()).sort(
+    (a, b) => a.date.getTime() - b.date.getTime(),
+  );
+
+  return result.length >= 2 ? result : [];
 }
 
 export default function PortfolioHistoryChart({ totalValue }: PortfolioHistoryChartProps) {
@@ -69,53 +114,47 @@ export default function PortfolioHistoryChart({ totalValue }: PortfolioHistoryCh
   const { display: currencyMode } = useCurrencyDisplay();
   const { query: { data: rateData } } = useExchangeRate();
   const rate = rateData?.rate ?? 0;
+  const { data: transactions, isLoading: txLoading } = useTransactions();
 
-  // 선택된 기간 / Selected period
   const [period, setPeriod] = useState<Period>('1M');
-
   const periods: Period[] = ['1W', '1M', '3M', '1Y'];
 
-  // 플레이스홀더 데이터 생성 (기간/총가치 변경 시 재계산) / Generate placeholder data (recalculated on period/value change)
   const data = useMemo(
-    () => generatePlaceholderData(totalValue, period),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [totalValue, period],
+    () => buildHistoryFromTransactions(transactions ?? [], period, totalValue),
+    [transactions, period, totalValue],
   );
 
-  // SVG 차트 치수 / SVG chart dimensions
+  // SVG 차트 치수
   const width = 600;
   const height = 200;
   const paddingX = 0;
   const paddingY = 16;
 
-  // 값 범위 계산 / Calculate value range
   const values = data.map((d) => d.value);
   const minVal = Math.min(...values);
   const maxVal = Math.max(...values);
   const range = maxVal - minVal || 1;
 
-  // 데이터 포인트를 SVG 좌표로 변환 / Convert data points to SVG coordinates
   const points = data.map((d, i) => {
     const x = paddingX + (i / (data.length - 1)) * (width - paddingX * 2);
     const y = paddingY + (1 - (d.value - minVal) / range) * (height - paddingY * 2);
     return { x, y, ...d };
   });
 
-  // SVG path 문자열 생성 / Build SVG path string
   const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+  const areaPath = points.length > 0
+    ? `${linePath} L ${points[points.length - 1].x} ${height} L ${points[0].x} ${height} Z`
+    : '';
 
-  // 그라데이션 영역 path / Gradient area path
-  const areaPath = `${linePath} L ${points[points.length - 1].x} ${height} L ${points[0].x} ${height} Z`;
-
-  // 전체 기간 변동률 / Overall period change percentage
   const startVal = data[0]?.value ?? 0;
   const endVal = data[data.length - 1]?.value ?? 0;
   const changePercent = startVal > 0 ? ((endVal - startVal) / startVal) * 100 : 0;
   const isPositive = changePercent >= 0;
 
+  const hasData = data.length >= 2;
+
   return (
     <div className="py-4 border-b border-border/60">
-      {/* 섹션 제목 + 기간 셀렉터 / Section header + period selector */}
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-[14px] font-bold text-text-secondary">
           {t('portfolio.historyChart.title')}
@@ -138,76 +177,77 @@ export default function PortfolioHistoryChart({ totalValue }: PortfolioHistoryCh
         </div>
       </div>
 
-      {/* 변동률 표시 / Change percentage display */}
-      <div className="flex items-baseline gap-2 mb-2">
-        <span className="text-[22px] font-bold text-text-primary tabular-nums">
-          {formatCurrencyDisplay(endVal, currencyMode, rate)}
-        </span>
-        <span
-          className={cn(
-            'text-[13px] font-semibold tabular-nums',
-            isPositive ? 'text-rise' : 'text-fall',
-          )}
-        >
-          {isPositive ? '+' : ''}
-          {changePercent.toFixed(2)}%
-        </span>
-      </div>
+      {txLoading ? (
+        <div className="w-full h-[200px] rounded-xl bg-bg-secondary animate-pulse" />
+      ) : !hasData ? (
+        <div className="w-full rounded-xl bg-bg-secondary p-8 text-center">
+          <p className="text-[13px] text-text-quaternary">
+            {t('portfolio.historyChart.noData')}
+          </p>
+        </div>
+      ) : (
+        <>
+          <div className="flex items-baseline gap-2 mb-2">
+            <span className="text-[22px] font-bold text-text-primary tabular-nums">
+              {formatCurrencyDisplay(endVal, currencyMode, rate)}
+            </span>
+            <span
+              className={cn(
+                'text-[13px] font-semibold tabular-nums',
+                isPositive ? 'text-rise' : 'text-fall',
+              )}
+            >
+              {isPositive ? '+' : ''}
+              {changePercent.toFixed(2)}%
+            </span>
+          </div>
 
-      {/* SVG 라인 차트 / SVG line chart */}
-      <div className="w-full overflow-hidden rounded-xl bg-bg-secondary p-3">
-        <svg
-          viewBox={`0 0 ${width} ${height}`}
-          className="w-full h-auto"
-          preserveAspectRatio="none"
-        >
-          <defs>
-            {/* 그라데이션 채우기 / Gradient fill */}
-            <linearGradient id="portfolioGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop
-                offset="0%"
-                stopColor={isPositive ? 'rgb(34,197,94)' : 'rgb(239,68,68)'}
-                stopOpacity="0.25"
+          <div className="w-full overflow-hidden rounded-xl bg-bg-secondary p-3">
+            <svg
+              viewBox={`0 0 ${width} ${height}`}
+              className="w-full h-auto"
+              preserveAspectRatio="none"
+            >
+              <defs>
+                <linearGradient id="portfolioGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop
+                    offset="0%"
+                    stopColor={isPositive ? 'rgb(34,197,94)' : 'rgb(239,68,68)'}
+                    stopOpacity="0.25"
+                  />
+                  <stop
+                    offset="100%"
+                    stopColor={isPositive ? 'rgb(34,197,94)' : 'rgb(239,68,68)'}
+                    stopOpacity="0.02"
+                  />
+                </linearGradient>
+              </defs>
+
+              <path d={areaPath} fill="url(#portfolioGradient)" />
+
+              <path
+                d={linePath}
+                fill="none"
+                stroke={isPositive ? 'rgb(34,197,94)' : 'rgb(239,68,68)'}
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
               />
-              <stop
-                offset="100%"
-                stopColor={isPositive ? 'rgb(34,197,94)' : 'rgb(239,68,68)'}
-                stopOpacity="0.02"
-              />
-            </linearGradient>
-          </defs>
 
-          {/* 영역 채우기 / Area fill */}
-          <path d={areaPath} fill="url(#portfolioGradient)" />
-
-          {/* 라인 / Line */}
-          <path
-            d={linePath}
-            fill="none"
-            stroke={isPositive ? 'rgb(34,197,94)' : 'rgb(239,68,68)'}
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-
-          {/* 마지막 포인트 표시 / Last point indicator */}
-          {points.length > 0 && (
-            <circle
-              cx={points[points.length - 1].x}
-              cy={points[points.length - 1].y}
-              r="3.5"
-              fill={isPositive ? 'rgb(34,197,94)' : 'rgb(239,68,68)'}
-              stroke="white"
-              strokeWidth="1.5"
-            />
-          )}
-        </svg>
-      </div>
-
-      {/* 플레이스홀더 안내 / Placeholder notice */}
-      <p className="text-[11px] text-text-quaternary mt-2 text-center">
-        {t('portfolio.historyChart.placeholder')}
-      </p>
+              {points.length > 0 && (
+                <circle
+                  cx={points[points.length - 1].x}
+                  cy={points[points.length - 1].y}
+                  r="3.5"
+                  fill={isPositive ? 'rgb(34,197,94)' : 'rgb(239,68,68)'}
+                  stroke="white"
+                  strokeWidth="1.5"
+                />
+              )}
+            </svg>
+          </div>
+        </>
+      )}
     </div>
   );
 }
