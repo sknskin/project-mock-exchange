@@ -12,6 +12,7 @@ import { MessageCircle } from 'lucide-react';
 import { useChatStore } from '@/stores/chat';
 import { useChatRooms } from '@/hooks/useChat';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useSettingsStore } from '@/stores/settings';
 import { cn } from '@/lib/format';
 
 export default function ChatButton() {
@@ -21,10 +22,13 @@ export default function ChatButton() {
   const isOpen = useChatStore((s) => s.isOpen);
   const isPinned = useChatStore((s) => s.isPinned);
   const { data: rooms } = useChatRooms();
+  const chatBadgeEnabled = useSettingsStore((s) => s.notificationPrefs.chatBadge);
   const btnRef = useRef<HTMLButtonElement>(null);
 
-  // 모든 채팅방의 총 읽지 않은 메시지 수 계산 / Calculate total unread messages across all rooms
-  const totalUnread = rooms?.reduce((sum, r) => sum + r.unreadCount, 0) ?? 0;
+  // 뱃지 설정이 꺼져있으면 0으로 표시 / Show 0 if badge preference is disabled
+  const totalUnread = chatBadgeEnabled
+    ? (rooms?.reduce((sum, r) => sum + r.unreadCount, 0) ?? 0)
+    : 0;
 
   const handleClick = useCallback(() => {
     if (!isOpen && btnRef.current && !isPinned) {

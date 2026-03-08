@@ -778,9 +778,17 @@ const translations = {
     'mypage.notificationPrefs': '알림 설정',
     'mypage.notif.trade': '거래 체결 알림',
     'mypage.notif.priceAlert': '가격 알림',
-    'mypage.notif.chat': '채팅 알림',
+    'mypage.notif.chat': '채팅 토스트 알림',
+    'mypage.notif.chatBadge': '채팅 뱃지 알림',
     'mypage.notif.announcement': '공지사항 알림',
     'mypage.notif.registration': '가입 승인/반려 알림',
+    'mypage.notif.disableConfirmTitle': '알림 비활성화',
+    'mypage.notif.disableConfirmMessage.trade': '거래 체결 알림을 끄면 매수/매도 체결 시 알림을 받지 못합니다. 비활성화하시겠습니까?',
+    'mypage.notif.disableConfirmMessage.priceAlert': '가격 알림을 끄면 설정한 목표가 도달 시 알림을 받지 못합니다. 비활성화하시겠습니까?',
+    'mypage.notif.disableConfirmMessage.chat': '채팅 토스트 알림을 끄면 새 메시지 수신 시 화면 팝업 알림을 받지 못합니다. 비활성화하시겠습니까?',
+    'mypage.notif.disableConfirmMessage.chatBadge': '채팅 뱃지 알림을 끄면 채팅 아이콘에 읽지 않은 메시지 수가 표시되지 않습니다. 비활성화하시겠습니까?',
+    'mypage.notif.disableConfirmMessage.announcement': '공지사항 알림을 끄면 중요 공지를 놓칠 수 있습니다. 비활성화하시겠습니까?',
+    'mypage.notif.disableConfirmMessage.registration': '가입 승인/반려 알림을 끄면 가입 처리 결과를 바로 확인하기 어렵습니다. 비활성화하시겠습니까?',
     'mypage.changePassword': '비밀번호 변경',
     'mypage.currentPassword': '현재 비밀번호',
     'mypage.newPassword': '새 비밀번호',
@@ -1113,7 +1121,7 @@ const translations = {
 
     // Portfolio History Chart — 포트폴리오 가치 히스토리 차트
     'portfolio.historyChart.title': '포트폴리오 추이',
-    'portfolio.historyChart.placeholder': '* 플레이스홀더 데이터입니다. 실제 히스토리 추적 기능이 추가될 예정입니다.',
+    'portfolio.historyChart.noData': '선택 기간에 거래 내역이 없습니다.',
 
     // News
     'news.search': '키워드 검색',
@@ -2659,9 +2667,17 @@ const translations = {
     'mypage.notificationPrefs': 'Notification Preferences',
     'mypage.notif.trade': 'Trade execution',
     'mypage.notif.priceAlert': 'Price alerts',
-    'mypage.notif.chat': 'Chat messages',
+    'mypage.notif.chat': 'Chat toast alerts',
+    'mypage.notif.chatBadge': 'Chat badge alerts',
     'mypage.notif.announcement': 'Announcements',
     'mypage.notif.registration': 'Registration updates',
+    'mypage.notif.disableConfirmTitle': 'Disable Notification',
+    'mypage.notif.disableConfirmMessage.trade': 'You won\'t be notified when your trades are executed. Disable this notification?',
+    'mypage.notif.disableConfirmMessage.priceAlert': 'You won\'t receive alerts when prices hit your targets. Disable this notification?',
+    'mypage.notif.disableConfirmMessage.chat': 'You won\'t see popup toasts for new chat messages. Disable this notification?',
+    'mypage.notif.disableConfirmMessage.chatBadge': 'The unread message count badge on the chat icon will be hidden. Disable this notification?',
+    'mypage.notif.disableConfirmMessage.announcement': 'You may miss important announcements. Disable this notification?',
+    'mypage.notif.disableConfirmMessage.registration': 'You won\'t be notified about registration approval results. Disable this notification?',
     'mypage.changePassword': 'Change Password',
     'mypage.currentPassword': 'Current Password',
     'mypage.newPassword': 'New Password',
@@ -2994,7 +3010,7 @@ const translations = {
 
     // Portfolio History Chart
     'portfolio.historyChart.title': 'Portfolio History',
-    'portfolio.historyChart.placeholder': '* Placeholder data. Real historical data tracking will be added.',
+    'portfolio.historyChart.noData': 'No transactions in selected period.',
 
     // News
     'news.search': 'Search keywords',

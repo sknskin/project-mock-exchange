@@ -66,40 +66,59 @@ function NotifToggle({ label, prefKey }: { label: string; prefKey: keyof Notific
   const { t } = useTranslation();
   const value = useSettingsStore((s) => s.notificationPrefs[prefKey]);
   const setPref = useSettingsStore((s) => s.setNotificationPref);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
-  const handleToggle = async () => {
-    const newValue = !value;
-    // 낙관적 업데이트 — 서버 응답 전에 즉시 UI 반영 / Optimistic update — reflect in UI before server response
+  const applyToggle = async (newValue: boolean) => {
     setPref(prefKey, newValue);
-
     try {
       await api.put('/api/user/notification-settings', {
         [`notif.${prefKey}`]: newValue.toString(),
       });
     } catch {
-      // 서버 요청 실패 시 이전 값으로 롤백 / Rollback to previous value on server error
-      setPref(prefKey, value);
+      setPref(prefKey, !newValue);
       useToastStore.getState().addToast(t('mypage.notificationSaveFailed'), 'error');
     }
   };
 
+  const handleToggle = () => {
+    if (value) {
+      // 활성→비활성: 확인 모달 표시 / Active→Inactive: show confirm modal
+      setConfirmOpen(true);
+    } else {
+      // 비활성→활성: 바로 적용 / Inactive→Active: apply immediately
+      applyToggle(true);
+    }
+  };
+
   return (
-    <div className="flex items-center justify-between py-2.5">
-      <span className="text-[14px] text-text-primary">{label}</span>
-      <button
-        onClick={handleToggle}
-        aria-label={label}
-        className={cn(
-          'relative w-10 h-[22px] rounded-full transition-colors',
-          value ? 'bg-accent' : 'bg-bg-tertiary',
-        )}
-      >
-        <span className={cn(
-          'absolute top-[3px] w-4 h-4 rounded-full bg-white shadow transition-transform',
-          value ? 'left-[22px]' : 'left-[3px]',
-        )} />
-      </button>
-    </div>
+    <>
+      <div className="flex items-center justify-between py-2.5">
+        <span className="text-[14px] text-text-primary">{label}</span>
+        <button
+          onClick={handleToggle}
+          aria-label={label}
+          className={cn(
+            'relative w-10 h-[22px] rounded-full transition-colors',
+            value ? 'bg-accent' : 'bg-bg-tertiary',
+          )}
+        >
+          <span className={cn(
+            'absolute top-[3px] w-4 h-4 rounded-full bg-white shadow transition-transform',
+            value ? 'left-[22px]' : 'left-[3px]',
+          )} />
+        </button>
+      </div>
+      <ConfirmModal
+        isOpen={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={async () => {
+          setConfirmOpen(false);
+          await applyToggle(false);
+        }}
+        title={t('mypage.notif.disableConfirmTitle')}
+        message={t(`mypage.notif.disableConfirmMessage.${prefKey}` as Parameters<typeof t>[0])}
+      />
+    </>
   );
 }
 
@@ -325,6 +344,7 @@ export default function MyPage() {
               <NotifToggle label={t('mypage.notif.trade')} prefKey="trade" />
               <NotifToggle label={t('mypage.notif.priceAlert')} prefKey="priceAlert" />
               <NotifToggle label={t('mypage.notif.chat')} prefKey="chat" />
+              <NotifToggle label={t('mypage.notif.chatBadge')} prefKey="chatBadge" />
               <NotifToggle label={t('mypage.notif.announcement')} prefKey="announcement" />
               <NotifToggle label={t('mypage.notif.registration')} prefKey="registration" />
             </div>

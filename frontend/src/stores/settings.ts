@@ -18,8 +18,10 @@ export interface NotificationPrefs {
   trade: boolean;
   /** 가격 알림 / Price alert notifications */
   priceAlert: boolean;
-  /** 채팅 알림 / Chat notifications */
+  /** 채팅 토스트 알림 / Chat toast notifications */
   chat: boolean;
+  /** 채팅 뱃지 알림 / Chat badge notifications */
+  chatBadge: boolean;
   /** 공지사항 알림 / Announcement notifications */
   announcement: boolean;
   /** 가입 승인 알림 / Registration approval notifications */
@@ -30,6 +32,7 @@ const defaultNotificationPrefs: NotificationPrefs = {
   trade: true,
   priceAlert: true,
   chat: true,
+  chatBadge: true,
   announcement: true,
   registration: true,
 };
