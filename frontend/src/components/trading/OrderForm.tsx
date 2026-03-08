@@ -256,8 +256,8 @@ export default function OrderForm({
               key={pct}
               type="button"
               onClick={() => {
-                if (isBuy && portfolio && safeCurrentPrice > 0) {
-                  const maxQty = portfolio.cashBalance / safeCurrentPrice;
+                if (isBuy && portfolio && displayCurrentPrice > 0) {
+                  const maxQty = portfolio.cashBalance / displayCurrentPrice;
                   setQuantity((maxQty * pct / 100).toFixed(8).replace(/\.?0+$/, ''));
                 } else if (!isBuy && holdingQty > 0) {
                   setQuantity((holdingQty * pct / 100).toFixed(8).replace(/\.?0+$/, ''));
