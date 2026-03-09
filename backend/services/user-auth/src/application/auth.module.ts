@@ -26,6 +26,7 @@ import { UserController } from '../presentation/controllers/user.controller';
 import { PriceAlertController } from '../presentation/controllers/price-alert.controller';
 import { SettingsController } from '../presentation/controllers/settings.controller';
 import { CommunityController } from '../presentation/controllers/community.controller';
+import { StrategyController } from '../presentation/controllers/strategy.controller';
 import { FollowController } from '../presentation/controllers/follow.controller';
 import { JwtStrategy } from '../infrastructure/config/jwt.strategy';
 import { UserRepository } from '../infrastructure/persistence/prisma/user.repository';
@@ -57,6 +58,7 @@ import { USER_REPOSITORY } from '../domain/repositories/user.repository.interfac
     PriceAlertController,
     SettingsController,
     CommunityController,
+    StrategyController,
     FollowController,
   ],
   providers: [

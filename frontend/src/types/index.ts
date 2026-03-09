@@ -586,6 +586,38 @@ export interface AppNotification {
   createdAt: string;
 }
 
+// 커뮤니티 전략 (Community Strategy)
+export interface CommunityStrategy {
+  id: string;
+  authorId: string;
+  authorName: string;
+  symbol: string;
+  title: string;
+  description: string;
+  performance?: number;
+  viewCount: number;
+  createdAt: string;
+  updatedAt: string;
+  likeCount: number;
+  commentCount: number;
+  liked: boolean;
+}
+
+// 전략 댓글 (Strategy Comment)
+export interface StrategyComment {
+  id: string;
+  content: string;
+  authorId: string;
+  authorName: string;
+  strategyId: string;
+  /** null이면 최상위 댓글, 값이 있으면 대댓글 / null = top-level comment, non-null = reply */
+  parentId?: string;
+  createdAt: string;
+  /** 대댓글 목록 (재귀 구조)
+   * Nested replies (recursive structure) */
+  replies?: StrategyComment[];
+}
+
 // 가격 알림 (Price Alerts)
 export interface PriceAlert {
   id: string;

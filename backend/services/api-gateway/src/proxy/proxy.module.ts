@@ -23,6 +23,7 @@ import { AiProxyController } from './ai-proxy.controller';
 import { SettingsProxyController } from './settings-proxy.controller';
 import { UserSettingsProxyController } from './user-settings-proxy.controller';
 import { CommunityProxyController } from './community-proxy.controller';
+import { StrategyProxyController } from './strategy-proxy.controller';
 import { FollowProxyController } from './follow-proxy.controller';
 import { CopyTradeProxyController } from './copy-trade-proxy.controller';
 import { ProxyService } from './proxy.service';
@@ -54,6 +55,7 @@ import { GatewayModule } from '../gateway/gateway.module';
     SettingsProxyController,
     UserSettingsProxyController,
     CommunityProxyController,
+    StrategyProxyController,
     FollowProxyController,
     CopyTradeProxyController,
   ],

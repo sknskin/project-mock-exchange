@@ -1,14 +1,15 @@
 /**
  * @file 커뮤니티 페이지
- * @description 자유게시판(실제 API), 전략 공유, 트레이더 랭킹을 보여주는 소셜/커뮤니티 페이지
+ * @description 자유게시판(실제 API), 전략 공유(실제 API), 트레이더 랭킹을 보여주는 소셜/커뮤니티 페이지
  *
  * @file Community Page
- * @description Community page with real discussion board, strategy sharing, and trader rankings
+ * @description Community page with real discussion board, real strategy sharing, and trader rankings
  */
 'use client';
 
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 import Pagination from '@/components/ui/Pagination';
 import LoginRequiredModal from '@/components/ui/LoginRequiredModal';
 import { useLeaderboard } from '@/hooks/useLeaderboard';
@@ -18,7 +19,8 @@ import { cn, formatPercent, formatCurrencyDisplay } from '@/lib/format';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
 import { useCommunityPosts } from '@/hooks/useCommunity';
-import { useFollowing, useFollowTrader, useUnfollowTrader } from '@/hooks/useFollow';
+import { useFollowing, useFollowTrader, useUnfollowTrader, useBatchFollowCounts } from '@/hooks/useFollow';
+import { useStrategies, useLikeStrategy } from '@/hooks/useStrategy';
 import ActivityFeed from '@/components/trading/ActivityFeed';
 import CopyTradeModal from '@/components/trading/CopyTradeModal';
 import {
@@ -41,167 +43,42 @@ import {
   Copy,
 } from 'lucide-react';
 import type { TranslationKey } from '@/lib/i18n';
-import type { LeaderboardEntry } from '@/types';
+import type { LeaderboardEntry, CommunityStrategy } from '@/types';
 
 /* ───────── 상수 / Constants ───────── */
 
 const SYMBOLS = ['BTC', 'ETH', 'AAPL', 'TSLA', 'SOL', 'NVDA', 'AMZN', 'DOGE', 'XRP', 'GOOG'];
 
-const STRATEGY_TITLES_KO: Record<string, string[]> = {
-  BTC: ['BTC 단기 매매 전략', 'BTC 눌림목 매수 전략', 'BTC 추세 추종 전략'],
-  ETH: ['ETH 스윙 트레이딩', 'ETH DCA 전략', 'ETH 저점 매수 전략'],
-  AAPL: ['AAPL 실적 발표 전략', 'AAPL 배당 투자 전략'],
-  TSLA: ['TSLA 변동성 매매', 'TSLA 모멘텀 전략'],
-  SOL: ['SOL 에어드롭 전략', 'SOL 단기 스캘핑'],
-  NVDA: ['NVDA AI 테마 매매', 'NVDA 실적 시즌 전략'],
-  AMZN: ['AMZN 장기 보유 전략', 'AMZN 박스권 매매'],
-  DOGE: ['DOGE 밈코인 트레이딩', 'DOGE 이벤트 매매'],
-  XRP: ['XRP 급등 대응 전략', 'XRP 장기 투자'],
-  GOOG: ['GOOG 가치 투자 전략', 'GOOG 분할 매수'],
-};
-
-const STRATEGY_TITLES_EN: Record<string, string[]> = {
-  BTC: ['BTC Short-term Trading', 'BTC Pullback Buy Strategy', 'BTC Trend Following'],
-  ETH: ['ETH Swing Trading', 'ETH DCA Strategy', 'ETH Dip Buying'],
-  AAPL: ['AAPL Earnings Play', 'AAPL Dividend Strategy'],
-  TSLA: ['TSLA Volatility Trade', 'TSLA Momentum Strategy'],
-  SOL: ['SOL Airdrop Strategy', 'SOL Short Scalping'],
-  NVDA: ['NVDA AI Theme Trading', 'NVDA Earnings Season'],
-  AMZN: ['AMZN Long Hold Strategy', 'AMZN Range Trading'],
-  DOGE: ['DOGE Meme Trading', 'DOGE Event Trading'],
-  XRP: ['XRP Surge Response', 'XRP Long Investment'],
-  GOOG: ['GOOG Value Investing', 'GOOG Dollar Cost Averaging'],
-};
-
-const DESCRIPTIONS_KO = [
-  '현재가 기준 10% 하락 시 매수, 15% 상승 시 매도',
-  'RSI 30 이하 진입, 70 이상 청산',
-  '20일 이동평균선 돌파 시 매수',
-  '볼린저 밴드 하단 터치 시 분할 매수',
-  'MACD 골든크로스 시 진입',
-  '주봉 기준 3주 연속 양봉 시 추격 매수',
-  '전고점 돌파 시 매수, 손절 -5%',
-  '월급날 정기 매수 (DCA)',
-  '거래량 급증 시 단기 매매',
-  '지지선 부근 반등 매수',
-];
-
-const DESCRIPTIONS_EN = [
-  'Buy at 10% dip from current price, sell at 15% gain',
-  'Enter when RSI below 30, exit above 70',
-  'Buy on 20-day MA breakout',
-  'Scale in at lower Bollinger Band touch',
-  'Enter on MACD golden cross',
-  'Chase buy on 3 consecutive weekly green candles',
-  'Buy on previous high breakout, stop-loss -5%',
-  'Regular DCA on payday',
-  'Short-term trade on volume surge',
-  'Buy on bounce near support level',
-];
-
-/**
- * 시드 기반 의사 난수 — 서버/클라이언트 동일한 결과를 위해 Math.random 대신 사용
- * Seed-based pseudo-random — used instead of Math.random for SSR/hydration consistency
- */
-
-function seededRandom(seed: number): number {
-  const x = Math.sin(seed) * 10000;
-  return x - Math.floor(x);
-}
-
-// 문자열을 숫자로 변환하는 해시 함수 (시드 생성용) / String-to-number hash function (for seed generation)
-function hashString(str: string): number {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0;
-  }
-  return Math.abs(hash);
-}
-
-/* ───────── 모의 전략 데이터 생성 / Mock Strategy Data Generator ───────── */
-
-interface MockStrategy {
-  id: string;
-  username: string;
-  symbol: string;
-  title: string;
-  description: string;
-  performance: number;
-  likes: number;
-  comments: number;
-  hoursAgo: number;
-}
-
-function generateMockStrategies(
-  leaderboard: LeaderboardEntry[],
-  locale: 'ko' | 'en',
-): MockStrategy[] {
-  const strategies: MockStrategy[] = [];
-  const titles = locale === 'ko' ? STRATEGY_TITLES_KO : STRATEGY_TITLES_EN;
-  const descriptions = locale === 'ko' ? DESCRIPTIONS_KO : DESCRIPTIONS_EN;
-
-  const users = leaderboard.slice(0, 10);
-
-  for (let i = 0; i < Math.min(10, users.length); i++) {
-    const user = users[i];
-    const seed = hashString(user.id + i.toString());
-    const symbolIndex = Math.floor(seededRandom(seed) * SYMBOLS.length);
-    const symbol = SYMBOLS[symbolIndex];
-    const titleOptions = titles[symbol] || titles['BTC'];
-    const titleIndex = Math.floor(seededRandom(seed + 1) * titleOptions.length);
-    const descIndex = Math.floor(seededRandom(seed + 2) * descriptions.length);
-    const performance = parseFloat(((seededRandom(seed + 3) * 40) - 10).toFixed(1));
-    const likes = Math.floor(seededRandom(seed + 4) * 120) + 5;
-    const comments = Math.floor(seededRandom(seed + 5) * 30) + 1;
-    const hoursAgo = Math.floor(seededRandom(seed + 6) * 48) + 1;
-
-    strategies.push({
-      id: `strategy-${i}`,
-      username: user.name || user.username || `User${i + 1}`,
-      symbol,
-      title: titleOptions[titleIndex],
-      description: descriptions[descIndex],
-      performance,
-      likes,
-      comments,
-      hoursAgo,
-    });
-  }
-
-  return strategies;
-}
-
 /* ───────── 전략 카드 컴포넌트 / Strategy Card Component ───────── */
 
-/** 전략 카드 — 모의 전략의 종목/수익률/좋아요/댓글 표시
- * Strategy card — displays mock strategy symbol, return, likes, comments */
+/** 전략 카드 — 실제 전략의 종목/수익률/좋아요/댓글 표시
+ * Strategy card — displays real strategy symbol, return, likes, comments */
 function StrategyCard({
   strategy,
   locale,
   onClick,
+  onLike,
 }: {
-  strategy: MockStrategy;
+  strategy: CommunityStrategy;
   locale: 'ko' | 'en';
   onClick: () => void;
+  onLike: () => void;
 }) {
-  const [liked, setLiked] = useState(false);
-  const likeCount = liked ? strategy.likes + 1 : strategy.likes;
-
   return (
     <div
       onClick={onClick}
       className="bg-bg-secondary/60 border border-border/60 rounded-xl p-4 hover:border-accent/30 transition-all cursor-pointer"
     >
-      {/* Top: user + symbol */}
+      {/* Top: 작성자 + 종목 / author + symbol */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2 min-w-0">
           <div className="w-8 h-8 rounded-full bg-accent/15 border border-accent/30 flex items-center justify-center shrink-0">
             <span className="text-[12px] font-bold text-accent">
-              {strategy.username.charAt(0).toUpperCase()}
+              {strategy.authorName.charAt(0).toUpperCase()}
             </span>
           </div>
           <span className="text-[13px] font-semibold text-text-primary truncate">
-            {strategy.username}
+            {strategy.authorName}
           </span>
         </div>
         <span className="px-2 py-0.5 text-[11px] font-semibold rounded-md bg-accent/10 text-accent shrink-0">
@@ -209,7 +86,7 @@ function StrategyCard({
         </span>
       </div>
 
-      {/* Strategy info */}
+      {/* 전략 정보 / Strategy info */}
       <div className="mb-3">
         <h3 className="text-[14px] font-bold text-text-primary mb-1 line-clamp-1">
           {strategy.title}
@@ -219,39 +96,40 @@ function StrategyCard({
         </p>
       </div>
 
-      {/* Divider */}
+      {/* 구분선 / Divider */}
       <div className="border-t border-border/50 my-3" />
 
-      {/* Bottom: performance + stats */}
+      {/* 하단: 수익률 + 통계 / Bottom: performance + stats */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <span
-            className={cn(
-              'flex items-center gap-1 text-[13px] font-bold tabular-nums',
-              strategy.performance >= 0 ? 'text-rise' : 'text-fall',
-            )}
-          >
-            <TrendingUp className="w-3.5 h-3.5" />
-            {strategy.performance >= 0 ? '+' : ''}
-            {strategy.performance}%
-          </span>
+          {strategy.performance != null && (
+            <span
+              className={cn(
+                'flex items-center gap-1 text-[13px] font-bold tabular-nums',
+                strategy.performance >= 0 ? 'text-rise' : 'text-fall',
+              )}
+            >
+              <TrendingUp className="w-3.5 h-3.5" />
+              {strategy.performance >= 0 ? '+' : ''}
+              {strategy.performance}%
+            </span>
+          )}
           <button
-            onClick={(e) => { e.stopPropagation(); setLiked(!liked); }}
+            onClick={(e) => { e.stopPropagation(); onLike(); }}
             className="flex items-center gap-1 text-[12px] text-text-quaternary hover:text-rise transition-colors"
           >
             <Heart
-              className={cn('w-3.5 h-3.5', liked && 'fill-rise text-rise')}
+              className={cn('w-3.5 h-3.5', strategy.liked && 'fill-rise text-rise')}
             />
-            <span className="tabular-nums">{likeCount}</span>
+            <span className="tabular-nums">{strategy.likeCount}</span>
           </button>
           <span className="flex items-center gap-1 text-[12px] text-text-quaternary">
             <MessageCircle className="w-3.5 h-3.5" />
-            <span className="tabular-nums">{strategy.comments}</span>
+            <span className="tabular-nums">{strategy.commentCount}</span>
           </span>
         </div>
         <span className="text-[11px] text-text-quaternary">
-          {strategy.hoursAgo}
-          {locale === 'ko' ? '시간 전' : 'h ago'}
+          {timeAgo(strategy.createdAt, locale)}
         </span>
       </div>
     </div>
@@ -265,6 +143,7 @@ function StrategyCard({
 function TraderCard({
   entry,
   isFollowed,
+  followerCount,
   onToggleFollow,
   onCopyTrade,
   t,
@@ -272,21 +151,17 @@ function TraderCard({
 }: {
   entry: LeaderboardEntry;
   isFollowed: boolean;
+  followerCount: number;
   onToggleFollow: () => void;
   onCopyTrade: () => void;
   t: (key: TranslationKey) => string;
   fmt: (v: number) => string;
 }) {
-  const mockFollowers = useMemo(() => {
-    const seed = hashString(entry.id);
-    return Math.floor(seededRandom(seed + 100) * 300) + 10;
-  }, [entry.id]);
-
   const displayName = entry.name || entry.username || '-';
 
   return (
     <div className="bg-bg-secondary/60 border border-border/60 rounded-xl p-4 hover:border-accent/30 transition-all">
-      {/* Avatar + Name */}
+      {/* 아바타 + 이름 / Avatar + Name */}
       <div className="flex items-center gap-3 mb-3">
         <div className="w-10 h-10 rounded-full bg-accent/15 border border-accent/30 flex items-center justify-center shrink-0">
           <span className="text-[14px] font-bold text-accent">
@@ -304,7 +179,7 @@ function TraderCard({
         </div>
       </div>
 
-      {/* Stats */}
+      {/* 통계 / Stats */}
       <div className="space-y-2 mb-3">
         <div className="flex items-center justify-between">
           <span className="text-[12px] text-text-tertiary">{t('community.returnRate')}</span>
@@ -325,10 +200,10 @@ function TraderCard({
         </div>
       </div>
 
-      {/* Divider */}
+      {/* 구분선 / Divider */}
       <div className="border-t border-border/50 my-3" />
 
-      {/* Follow button + Copy Trade button + followers */}
+      {/* 팔로우 버튼 + 카피 트레이딩 + 팔로워 수 / Follow button + Copy Trade button + followers */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <button
@@ -363,7 +238,7 @@ function TraderCard({
           </button>
         </div>
         <span className="text-[11px] text-text-quaternary">
-          {t('community.followers')} {mockFollowers + (isFollowed ? 1 : 0)}
+          {t('community.followers')} {followerCount + (isFollowed ? 1 : 0)}
         </span>
       </div>
     </div>
@@ -408,12 +283,31 @@ function stripHtml(html: string): string {
   return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
 }
 
+/** Suspense 래퍼 — useSearchParams 사용을 위해 필요
+ * Suspense wrapper — required for useSearchParams usage in Next.js 15 */
+export default function CommunityPageWrapper() {
+  return (
+    <Suspense fallback={<div className="py-24 text-center text-text-quaternary animate-pulse">Loading...</div>}>
+      <CommunityPage />
+    </Suspense>
+  );
+}
+
 /** 커뮤니티 페이지 컴포넌트 — 자유게시판/전략 공유/트레이더 랭킹 탭
  * Community page component — discussions, strategies, and trader rankings tabs */
-export default function CommunityPage() {
+function CommunityPage() {
   const { t, locale } = useTranslation();
   const router = useRouter();
-  const [tab, setTabRaw] = useState<'discussions' | 'strategies' | 'traders' | 'feed'>('discussions');
+  const searchParams = useSearchParams();
+
+  // URL 파라미터에서 초기 탭 결정 / Determine initial tab from URL param
+  const initialTab = (() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam === 'strategies' || tabParam === 'traders' || tabParam === 'feed') return tabParam;
+    return 'discussions' as const;
+  })();
+
+  const [tab, setTabRaw] = useState<'discussions' | 'strategies' | 'traders' | 'feed'>(initialTab);
   const setTab = useCallback((v: typeof tab) => { setTabRaw(v); window.scrollTo({ top: 0, behavior: 'smooth' }); }, []);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const { data: leaderboardData, isLoading } = useLeaderboard();
@@ -468,11 +362,14 @@ export default function CommunityPage() {
     searchQuery || undefined,
   );
 
-  // 모의 전략 데이터 생성 / Generate mock strategies from leaderboard
-  const strategies = useMemo(() => {
-    if (!leaderboardData || leaderboardData.length === 0) return [];
-    return generateMockStrategies(leaderboardData, locale);
-  }, [leaderboardData, locale]);
+  // 전략 상태 / Strategy state
+  const [strategyPage, setStrategyPage] = useState(1);
+  const [strategySymbol, setStrategySymbol] = useState('ALL');
+  const { data: strategiesData, isLoading: strategiesLoading } = useStrategies(
+    strategyPage,
+    strategySymbol !== 'ALL' ? strategySymbol : undefined,
+  );
+  const likeStrategy = useLikeStrategy();
 
   // 활성 트레이더 (자산 > 0) / Active traders with assets > 0
   const activeTraders = useMemo(() => {
@@ -481,6 +378,10 @@ export default function CommunityPage() {
       .filter((e) => e.totalValue > 0)
       .map((entry, i) => ({ ...entry, rank: i + 1 }));
   }, [leaderboardData]);
+
+  // 트레이더 팔로워 수 일괄 조회 / Batch fetch follower counts for traders
+  const traderUserIds = useMemo(() => activeTraders.map((e) => e.id), [activeTraders]);
+  const { data: batchFollowCounts } = useBatchFollowCounts(traderUserIds);
 
   /** 전략 글쓰기 자격 확인 — 수익률 5% 이상 또는 자산 상위 20%
    * Check strategy write eligibility — return rate >= 5% or top 20% assets */
@@ -534,15 +435,25 @@ export default function CommunityPage() {
     router.push(`/community/${postId}`);
   }, [isAuthenticated, router, showLoginModal, t]);
 
-  /** 전략 카드 클릭 핸들러 — 비로그인 시 로그인 모달 표시
-   * Strategy card click handler — shows login modal for non-authenticated users */
-  const handleStrategyClick = useCallback(() => {
+  /** 전략 카드 클릭 핸들러 — 비로그인 시 로그인 모달, 로그인 시 상세 페이지로 이동
+   * Strategy card click handler — login modal for non-auth, navigate to detail for auth */
+  const handleStrategyClick = useCallback((strategyId: string) => {
     if (!isAuthenticated) {
       showLoginModal(t('community.strategyLoginRequired'));
       return;
     }
-    // 전략 상세 페이지가 아직 없으므로 모의 데이터로 동작 / No detail page yet (mock data)
-  }, [isAuthenticated, showLoginModal, t]);
+    router.push(`/community/strategy/${strategyId}`);
+  }, [isAuthenticated, router, showLoginModal, t]);
+
+  /** 전략 좋아요 토글 — 비로그인 시 로그인 모달
+   * Toggle strategy like — login modal for non-auth */
+  const handleStrategyLike = useCallback((strategyId: string) => {
+    if (!isAuthenticated) {
+      showLoginModal(t('community.strategyLoginRequired'));
+      return;
+    }
+    likeStrategy.mutate(strategyId);
+  }, [isAuthenticated, likeStrategy, showLoginModal, t]);
 
   /** 글쓰기 버튼 클릭 핸들러 — 비로그인 시 로그인 모달 표시
    * Write button click handler — shows login modal for non-authenticated users */
@@ -580,16 +491,6 @@ export default function CommunityPage() {
             traderName={copyTradeTarget.name}
             returnRate={copyTradeTarget.pnlPercent}
           />
-        )}
-
-        {/* 개발 중 안내 배너 — 전략/트레이더 탭에만 표시 */}
-        {(tab === 'strategies' || tab === 'traders') && (
-          <div className="flex items-center gap-2 px-3 py-2 mb-4 rounded-lg bg-warning/10">
-            <AlertTriangle className="w-3.5 h-3.5 text-warning shrink-0" />
-            <span className="text-[12px] text-warning">
-              {t('community.mockNotice')}
-            </span>
-          </div>
         )}
 
         {/* 탭 네비게이션 / Tab navigation */}
@@ -755,9 +656,35 @@ export default function CommunityPage() {
         {/* 전략 공유 탭 / Strategies Tab */}
         {tab === 'strategies' && (
           <div>
-            {/* 전략 글쓰기 버튼 + 제한 안내 / Strategy write button + restriction notice */}
+            {/* 종목 필터 + 전략 글쓰기 버튼 / Symbol filter + Strategy write button */}
             <div className="flex items-center justify-between gap-3 mb-4">
-              <div className="flex-1" />
+              <div className="flex flex-wrap gap-1.5">
+                <button
+                  onClick={() => { setStrategySymbol('ALL'); setStrategyPage(1); }}
+                  className={cn(
+                    'px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors',
+                    strategySymbol === 'ALL'
+                      ? 'bg-accent text-white'
+                      : 'bg-bg-tertiary text-text-quaternary hover:text-text-secondary',
+                  )}
+                >
+                  {t('strategy.allSymbols')}
+                </button>
+                {SYMBOLS.map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => { setStrategySymbol(s); setStrategyPage(1); }}
+                    className={cn(
+                      'px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors',
+                      strategySymbol === s
+                        ? 'bg-accent text-white'
+                        : 'bg-bg-tertiary text-text-quaternary hover:text-text-secondary',
+                    )}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
               <button
                 onClick={() => {
                   if (!isAuthenticated) {
@@ -767,8 +694,7 @@ export default function CommunityPage() {
                   // 자격 미충족 시 비활성 상태 — 클릭해도 동작하지 않음
                   // If criteria not met, button is disabled — click does nothing
                   if (!canWriteStrategy) return;
-                  // 전략 글쓰기 페이지로 이동 (현재 모의 데이터이므로 미구현)
-                  // Navigate to strategy write page (not yet implemented for mock data)
+                  router.push('/community/strategy/new');
                 }}
                 disabled={isAuthenticated && !canWriteStrategy}
                 className={cn(
@@ -784,7 +710,7 @@ export default function CommunityPage() {
               </button>
             </div>
 
-            {isLoading ? (
+            {strategiesLoading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {Array.from({ length: 6 }).map((_, i) => (
                   <div
@@ -802,21 +728,33 @@ export default function CommunityPage() {
                   </div>
                 ))}
               </div>
-            ) : strategies.length > 0 ? (
+            ) : (strategiesData?.data && strategiesData.data.length > 0) ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {strategies.map((strategy) => (
+                {strategiesData.data.map((strategy) => (
                   <StrategyCard
                     key={strategy.id}
                     strategy={strategy}
                     locale={locale}
-                    onClick={handleStrategyClick}
+                    onClick={() => handleStrategyClick(strategy.id)}
+                    onLike={() => handleStrategyLike(strategy.id)}
                   />
                 ))}
               </div>
             ) : (
               <div className="py-24 text-center text-text-quaternary text-[14px]">
-                {t('community.noStrategies')}
+                {t('strategy.empty')}
               </div>
+            )}
+
+            {/* 전략 페이지네이션 / Strategy Pagination */}
+            {strategiesData && strategiesData.totalPages > 1 && (
+              <Pagination
+                page={strategyPage}
+                totalPages={strategiesData.totalPages}
+                total={strategiesData.total}
+                limit={strategiesData.limit}
+                onPageChange={setStrategyPage}
+              />
             )}
 
             {/* 전략 글쓰기 제한 안내 / Strategy write restriction notice */}
@@ -860,6 +798,7 @@ export default function CommunityPage() {
                     key={entry.id}
                     entry={entry}
                     isFollowed={followedUserIds.has(entry.id)}
+                    followerCount={batchFollowCounts?.[entry.id] ?? 0}
                     onToggleFollow={() => toggleFollow(entry.id)}
                     onCopyTrade={() => {
                       if (!isAuthenticated) { showLoginModal(); return; }

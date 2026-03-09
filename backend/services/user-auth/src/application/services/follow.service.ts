@@ -183,6 +183,41 @@ export class FollowService {
     return updated;
   }
 
+  // 여러 사용자의 팔로잉/팔로워 수 일괄 조회 (트레이더 탭용)
+  // Get follow counts for multiple users in batch (for trader tab)
+  async getBatchFollowCounts(userIds: string[]): Promise<Record<string, { followingCount: number; followerCount: number }>> {
+    if (!userIds.length) return {};
+
+    // 팔로잉 수 집계 — groupBy로 한 번에 조회
+    // Aggregate following counts — single query with groupBy
+    const followingCounts = await this.prisma.traderFollow.groupBy({
+      by: ['followerId'],
+      where: { followerId: { in: userIds } },
+      _count: { followerId: true },
+    });
+
+    // 팔로워 수 집계 — groupBy로 한 번에 조회
+    // Aggregate follower counts — single query with groupBy
+    const followerCounts = await this.prisma.traderFollow.groupBy({
+      by: ['followeeId'],
+      where: { followeeId: { in: userIds } },
+      _count: { followeeId: true },
+    });
+
+    const followingMap = new Map(followingCounts.map((r) => [r.followerId, r._count.followerId]));
+    const followerMap = new Map(followerCounts.map((r) => [r.followeeId, r._count.followeeId]));
+
+    const result: Record<string, { followingCount: number; followerCount: number }> = {};
+    for (const id of userIds) {
+      result[id] = {
+        followingCount: followingMap.get(id) || 0,
+        followerCount: followerMap.get(id) || 0,
+      };
+    }
+
+    return result;
+  }
+
   // 특정 사용자의 팔로워 ID 목록 (알림 팬아웃용)
   // Get follower IDs for a user (for notification fan-out)
   async getFollowerIds(userId: string): Promise<string[]> {

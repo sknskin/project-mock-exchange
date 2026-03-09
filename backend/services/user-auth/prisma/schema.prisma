@@ -58,6 +58,7 @@ model User {
   priceAlerts        PriceAlert[]
   following          TraderFollow[] @relation("Following")
   followers          TraderFollow[] @relation("Followers")
+  strategies         CommunityStrategy[] @relation("UserStrategies")
 
   @@index([isActive, approvalStatus])
   @@index([role])
@@ -331,6 +332,55 @@ model TraderFollow {
   @@index([followerId])
   @@index([followeeId])
   @@map("trader_follows")
+}
+
+model CommunityStrategy {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  authorId     String   @map("author_id") @db.Uuid
+  authorName   String   @map("author_name") @db.VarChar(100)
+  symbol       String   @db.VarChar(20)
+  title        String   @db.VarChar(200)
+  description  String   @db.Text
+  performance  Decimal? @db.Decimal(10, 2)
+  viewCount    Int      @default(0) @map("view_count")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
+  author   User @relation("UserStrategies", fields: [authorId], references: [id], onDelete: Cascade)
+  likes    CommunityStrategyLike[]
+  comments CommunityStrategyComment[]
+
+  @@index([authorId])
+  @@index([symbol])
+  @@index([createdAt(sort: Desc)])
+  @@map("community_strategies")
+}
+
+model CommunityStrategyLike {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  strategyId String   @map("strategy_id") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  strategy CommunityStrategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, strategyId])
+  @@map("community_strategy_likes")
+}
+
+model CommunityStrategyComment {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  content    String   @db.Text
+  authorId   String   @map("author_id") @db.Uuid
+  authorName String   @map("author_name") @db.VarChar(100)
+  strategyId String   @map("strategy_id") @db.Uuid
+  parentId   String?  @map("parent_id") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  strategy CommunityStrategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+
+  @@index([strategyId, createdAt])
+  @@map("community_strategy_comments")
 }
 
 model CommunityCommentLike {

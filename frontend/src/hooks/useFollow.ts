@@ -152,6 +152,26 @@ export function useUnfollowTrader() {
 }
 
 /**
+ * 여러 사용자의 팔로워 수를 한번에 조회하는 훅
+ * Hook that fetches follower counts for multiple users in a single batch request
+ *
+ * @param userIds - 대상 사용자 ID 배열 / Array of target user IDs
+ * @returns Record<userId, followerCount> / TanStack Query result
+ */
+export function useBatchFollowCounts(userIds: string[]) {
+  return useQuery<Record<string, number>>({
+    queryKey: ['follow', 'batch-counts', userIds.sort().join(',')],
+    queryFn: async () => {
+      if (userIds.length === 0) return {};
+      const { data } = await api.post('/api/follow/batch-counts', { userIds });
+      return data.data ?? data;
+    },
+    // userIds가 비어있으면 쿼리 비활성화 / Disable query when userIds is empty
+    enabled: userIds.length > 0,
+  });
+}
+
+/**
  * 팔로우 알림 모드 변경 뮤테이션 훅
  * Mutation hook for updating follow notification mode
  *

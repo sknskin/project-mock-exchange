@@ -190,6 +190,28 @@ export class FollowProxyController {
   }
 
   /**
+   * 여러 사용자의 팔로잉/팔로워 수 일괄 조회
+   * Get follow counts for multiple users in batch
+   */
+  @Post('batch-counts')
+  @ApiOperation({ summary: '팔로우 수 일괄 조회', description: '여러 사용자의 팔로잉/팔로워 수를 일괄 조회합니다' })
+  @ApiResponse({ status: 200, description: '팔로우 수 일괄 반환 성공' })
+  async getBatchFollowCounts(
+    @Body() body: unknown,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    const user = req.user as { id: string };
+    const result = await this.proxyService.forward('user-auth', {
+      method: 'POST',
+      url: '/follow/batch-counts',
+      data: body,
+      headers: { 'x-user-id': user.id },
+    });
+    return res.status(result.status).json(result.data);
+  }
+
+  /**
    * 알림 모드 변경
    * Update notification mode
    */
