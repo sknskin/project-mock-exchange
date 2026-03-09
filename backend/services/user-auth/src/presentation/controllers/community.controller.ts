@@ -96,6 +96,7 @@ export class CommunityController {
       title: post.title,
       content: post.content,
       category: post.category,
+      visibility: post.visibility,
       authorId: post.authorId,
       authorName: post.authorName,
       viewCount: post.viewCount,
@@ -176,6 +177,7 @@ export class CommunityController {
         title: post.title,
         content: post.content,
         category: post.category,
+        visibility: post.visibility,
         authorId: post.authorId,
         authorName: post.authorName,
         viewCount: post.viewCount,
@@ -210,6 +212,7 @@ export class CommunityController {
         title: dto.title,
         content: dto.content,
         category: dto.category || 'FREE',
+        visibility: dto.visibility || 'PUBLIC',
         authorId: userId,
         authorName: decodedName,
       },
@@ -244,6 +247,7 @@ export class CommunityController {
     if (dto.title !== undefined) updateData.title = dto.title;
     if (dto.content !== undefined) updateData.content = dto.content;
     if (dto.category !== undefined) updateData.category = dto.category;
+    if (dto.visibility !== undefined) updateData.visibility = dto.visibility;
 
     const updated = await this.prisma.communityPost.update({
       where: { id },

@@ -56,6 +56,8 @@ model User {
   announcementLikes  AnnouncementLike[]
   commentLikes       CommentLike[]
   priceAlerts        PriceAlert[]
+  following          TraderFollow[] @relation("Following")
+  followers          TraderFollow[] @relation("Followers")
 
   @@index([isActive, approvalStatus])
   @@index([role])
@@ -252,6 +254,7 @@ model CommunityPost {
   title      String    @db.VarChar(200)
   content    String    @db.Text
   category   String    @default("FREE") @db.VarChar(50)
+  visibility String    @default("PUBLIC") @db.VarChar(20)
   authorId   String    @map("author_id") @db.Uuid
   authorName String    @map("author_name") @db.VarChar(100)
   viewCount  Int       @default(0) @map("view_count")
@@ -312,6 +315,22 @@ model CommunityPostLike {
   @@unique([userId, postId])
   @@index([postId])
   @@map("community_post_likes")
+}
+
+model TraderFollow {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  followerId String   @map("follower_id") @db.Uuid
+  followeeId String   @map("followee_id") @db.Uuid
+  notifyMode String   @default("ALL") @map("notify_mode") @db.VarChar(20)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  follower User @relation("Following", fields: [followerId], references: [id], onDelete: Cascade)
+  followee User @relation("Followers", fields: [followeeId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followeeId])
+  @@index([followerId])
+  @@index([followeeId])
+  @@map("trader_follows")
 }
 
 model CommunityCommentLike {

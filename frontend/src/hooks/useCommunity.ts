@@ -32,6 +32,8 @@ export interface CommunityPost {
   title: string;
   content: string;
   category: string;
+  /** 공개 범위: 'PUBLIC' | 'MEMBERS_ONLY' / Visibility: 'PUBLIC' | 'MEMBERS_ONLY' */
+  visibility?: string;
   authorId: string;
   authorName: string;
   viewCount: number;
@@ -153,7 +155,7 @@ export function useCreatePost() {
   const addToast = useToastStore((s) => s.addToast);
   const { t } = useTranslation();
   return useMutation({
-    mutationFn: async (body: { title: string; content: string; category?: string }) => {
+    mutationFn: async (body: { title: string; content: string; category?: string; visibility?: string }) => {
       const { data } = await api.post('/api/community/posts', body);
       return data;
     },
@@ -175,7 +177,7 @@ export function useUpdatePost() {
   const addToast = useToastStore((s) => s.addToast);
   const { t } = useTranslation();
   return useMutation({
-    mutationFn: async ({ id, ...body }: { id: string; title?: string; content?: string; category?: string }) => {
+    mutationFn: async ({ id, ...body }: { id: string; title?: string; content?: string; category?: string; visibility?: string }) => {
       const { data } = await api.put(`/api/community/posts/${id}`, body);
       return data;
     },
