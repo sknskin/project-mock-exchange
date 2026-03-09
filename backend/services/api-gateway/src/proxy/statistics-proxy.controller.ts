@@ -35,7 +35,7 @@ export class StatisticsProxyController {
   // Public endpoint for page view tracking
   @Post('page-view')
   @UseGuards(ThrottlerGuard)
-  @Throttle({ default: { ttl: 60000, limit: 30 } })
+  @Throttle({ default: { ttl: 60000, limit: 100 } })
   @ApiOperation({ summary: '페이지 뷰 기록', description: '페이지 방문을 기록합니다. 인증 불필요.' })
   @ApiResponse({ status: 201, description: '페이지 뷰 기록 성공' })
   async trackPageView(@Body() body: unknown, @Res() res: Response) {
