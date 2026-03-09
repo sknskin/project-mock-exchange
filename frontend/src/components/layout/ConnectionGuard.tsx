@@ -14,6 +14,8 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 const HEALTH_ENDPOINT = `${API_URL}/api/health`;
 const CHECK_INTERVAL = 30_000;
 
+/** localStorage에서 저장된 테마 가져오기
+ * Get stored theme from localStorage */
 function getStoredTheme(): 'dark' | 'light' {
   try {
     const raw = localStorage.getItem('virtuex-settings');
@@ -31,6 +33,8 @@ export default function ConnectionGuard({ children }: { children: React.ReactNod
   const [retrying, setRetrying] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  /** 백엔드 헬스 엔드포인트에 연결 상태 확인
+   * Check connection status via backend health endpoint */
   const checkHealth = useCallback(async () => {
     try {
       const controller = new AbortController();
@@ -63,6 +67,8 @@ export default function ConnectionGuard({ children }: { children: React.ReactNod
     };
   }, [checkHealth]);
 
+  /** 수동 재연결 시도
+   * Manual reconnection attempt */
   const handleRetry = useCallback(async () => {
     setRetrying(true);
     await checkHealth();

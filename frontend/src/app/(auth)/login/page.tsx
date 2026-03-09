@@ -20,6 +20,8 @@ import VirtuExLogo from '@/components/ui/VirtuExLogo';
 import api from '@/lib/api';
 import type { AxiosError } from 'axios';
 
+/** 로그인 페이지 컴포넌트 — 이메일/아이디 + 비밀번호 + SMS 2FA 처리
+ * Login page component — email/username + password + SMS 2FA flow */
 export default function LoginPage() {
   const router = useRouter();
   const login = useAuthStore((s) => s.login);
@@ -40,6 +42,8 @@ export default function LoginPage() {
     firstInputRef.current?.focus();
   }, []);
 
+  /** 로그인 폼 제출 — 자격증명 검증 후 SMS 인증 모달 표시
+   * Submit login form — validate credentials then show SMS modal */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -69,12 +73,16 @@ export default function LoginPage() {
     }
   };
 
+  /** SMS 인증 성공 시 로그인 완료 및 대시보드 이동
+   * Complete login and redirect to dashboard on SMS success */
   const handleSmsSuccess = (data: { user: { id: string; email: string; name: string; role: string }; accessToken: string }) => {
     setSmsModalOpen(false);
     login(data.user as User, data.accessToken);
     router.push('/dashboard');
   };
 
+  /** SMS 모달 닫기 및 세션 초기화
+   * Close SMS modal and reset session state */
   const handleSmsClose = () => {
     setSmsModalOpen(false);
     setSessionId('');

@@ -21,6 +21,8 @@ interface ReportItem {
   date: string;
 }
 
+/** 관리자 감사 보고서 페이지 컴포넌트 — PDF 보고서 목록 조회/다운로드/열기
+ * Admin audit report page component — view, download, and open PDF reports */
 export default function AdminAuditPage() {
   const router = useRouter();
   const { t } = useTranslation();

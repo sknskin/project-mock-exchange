@@ -178,6 +178,8 @@ function TableSkeleton({ limit }: { limit: number }) {
   );
 }
 
+/** 관리자 회원관리 페이지 컴포넌트 — 회원 목록 조회/검색/필터/페이지네이션
+ * Admin user management page component — user list with search, filter, and pagination */
 export default function AdminUsersPage() {
   const router = useRouter();
   const { t } = useTranslation();
@@ -198,6 +200,8 @@ export default function AdminUsersPage() {
   }, [searchInput]);
 
   // Reset page when status changes
+  /** 상태 필터 변경 시 첫 페이지로 리셋
+   * Reset to first page when status filter changes */
   const handleStatusChange = (newStatus: string) => {
     setStatus(newStatus);
     setPage(1);

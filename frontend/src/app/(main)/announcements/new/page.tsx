@@ -17,6 +17,8 @@ import { useAuthStore } from '@/stores/auth';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import { cn } from '@/lib/format';
 
+/** 공지사항 작성 페이지 컴포넌트 — 제목/내용/고정/첨부파일 입력 후 생성
+ * New announcement page component — create with title, content, pin, and attachments */
 export default function NewAnnouncementPage() {
   const router = useRouter();
   const { t } = useTranslation();
@@ -49,16 +51,22 @@ export default function NewAnnouncementPage() {
     e.target.value = '';
   };
 
+  /** 첨부 파일 목록에서 특정 파일 제거
+   * Remove a specific file from attachments list */
   const handleRemoveFile = (index: number) => {
     setFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
+  /** 바이트를 읽기 쉬운 파일 크기로 변환
+   * Convert bytes to human-readable file size */
   const formatFileSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
+  /** 폼 제출 시 확인 모달 표시
+   * Show confirm modal on form submit */
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !content.trim()) return;

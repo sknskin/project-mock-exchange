@@ -23,7 +23,8 @@ import { InternalAuthGuard } from '../../common/guards/internal-auth.guard';
 export class WatchlistController {
   constructor(private readonly watchlistService: WatchlistService) {}
 
-  // 관심종목 목록 조회 / Get watchlist symbols
+  /** 관심종목 목록 조회
+   * Get watchlist symbols */
   @Get()
   async getWatchlist(@Headers('x-user-id') userId: string) {
     this.validateUserId(userId);
@@ -31,7 +32,8 @@ export class WatchlistController {
     return { success: true, data: symbols };
   }
 
-  // 관심종목 추가 / Add symbol to watchlist
+  /** 관심종목 추가
+   * Add symbol to watchlist */
   @Post(':symbol')
   async addSymbol(
     @Headers('x-user-id') userId: string,
@@ -42,7 +44,8 @@ export class WatchlistController {
     return { success: true };
   }
 
-  // 관심종목 삭제 / Remove symbol from watchlist
+  /** 관심종목 삭제
+   * Remove symbol from watchlist */
   @Delete(':symbol')
   async removeSymbol(
     @Headers('x-user-id') userId: string,

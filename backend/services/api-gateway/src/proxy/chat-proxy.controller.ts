@@ -41,6 +41,8 @@ export class ChatProxyController {
     private readonly chatGateway: ChatGateway,
   ) {}
 
+  /** 사용자 검색을 user-auth로 프록시
+   * Proxy user search to user-auth */
   // 사용자 검색 (user-auth로 프록시) (User search (proxied to user-auth))
   @Get('users/search')
   @ApiOperation({ summary: '사용자 검색', description: '채팅을 위한 사용자 검색' })
@@ -56,6 +58,8 @@ export class ChatProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 채팅방 목록 조회를 chat 서비스로 프록시
+   * Proxy room list to chat service */
   // 채팅방 목록 (Room list)
   @Get('rooms')
   @ApiOperation({ summary: '채팅방 목록 조회', description: '현재 사용자의 채팅방 목록을 조회합니다' })
@@ -75,6 +79,8 @@ export class ChatProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 채팅방 생성을 chat 서비스로 프록시하고 참여자 소켓 참가 처리
+   * Proxy room creation to chat service and join participant sockets */
   // 채팅방 생성 (Create room)
   @Post('rooms')
   @ApiOperation({ summary: '채팅방 생성', description: '새로운 채팅방을 생성합니다' })
@@ -131,6 +137,8 @@ export class ChatProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 채팅방 메시지 조회를 chat 서비스로 프록시
+   * Proxy message retrieval to chat service */
   // 메시지 조회 (Get messages)
   @Get('rooms/:id/messages')
   @ApiOperation({ summary: '메시지 조회', description: '채팅방의 메시지 목록을 조회합니다' })
@@ -153,6 +161,8 @@ export class ChatProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 메시지 전송을 chat 서비스로 프록시하고 WebSocket 브로드캐스트
+   * Proxy message send to chat service and broadcast via WebSocket */
   // 메시지 전송 (Send message)
   @Post('rooms/:id/messages')
   @ApiOperation({ summary: '메시지 전송', description: '채팅방에 메시지를 전송합니다' })
@@ -182,6 +192,8 @@ export class ChatProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 사용자 초대를 chat 서비스로 프록시하고 초대된 사용자 소켓 참가
+   * Proxy user invite to chat service and join invited user sockets */
   // 사용자 초대 (Invite users)
   @Post('rooms/:id/invite')
   @ApiOperation({ summary: '사용자 초대', description: '채팅방에 사용자를 초대합니다' })
@@ -225,6 +237,8 @@ export class ChatProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 사용자 강퇴를 chat 서비스로 프록시 (관리자 전용)
+   * Proxy user kick to chat service (admin only) */
   // 사용자 강퇴 (관리자 전용) (Kick user (admin only))
   @Post('rooms/:id/kick')
   @ApiOperation({ summary: '사용자 강퇴', description: '채팅방에서 사용자를 강퇴합니다 (관리자 전용)' })
@@ -262,6 +276,8 @@ export class ChatProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 채팅방 퇴장을 chat 서비스로 프록시하고 시스템 메시지 브로드캐스트
+   * Proxy room leave to chat service and broadcast system message */
   // 채팅방 퇴장 (Leave room)
   @Post('rooms/:id/leave')
   @ApiOperation({ summary: '채팅방 퇴장', description: '채팅방에서 퇴장합니다' })
@@ -291,6 +307,8 @@ export class ChatProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 채팅방 이름 변경을 chat 서비스로 프록시
+   * Proxy room rename to chat service */
   // 채팅방 이름 수정 (Rename room)
   @Post('rooms/:id/rename')
   @ApiOperation({ summary: '채팅방 이름 수정', description: '채팅방의 이름을 변경합니다' })
@@ -311,6 +329,8 @@ export class ChatProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 채팅방 삭제를 chat 서비스로 프록시 (관리자 전용)
+   * Proxy room deletion to chat service (admin only) */
   // 채팅방 삭제 (관리자 전용) (Delete room (admin only))
   @Delete('rooms/:id')
   @ApiOperation({ summary: '채팅방 삭제', description: '채팅방을 삭제합니다 (관리자 전용)' })
@@ -340,6 +360,8 @@ export class ChatProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 메시지 삭제를 chat 서비스로 프록시하고 WebSocket 브로드캐스트
+   * Proxy message deletion to chat service and broadcast via WebSocket */
   // 메시지 삭제 (Delete message)
   @Delete('rooms/:roomId/messages/:messageId')
   @ApiOperation({ summary: '메시지 삭제', description: '채팅 메시지를 삭제합니다' })
@@ -376,6 +398,8 @@ export class ChatProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 읽음 처리를 chat 서비스로 프록시하고 읽음 확인 브로드캐스트
+   * Proxy read receipt to chat service and broadcast read status */
   // 읽음 처리 (Mark as read)
   @Post('rooms/:id/read')
   @ApiOperation({ summary: '읽음 처리', description: '채팅방의 메시지를 읽음으로 표시합니다' })

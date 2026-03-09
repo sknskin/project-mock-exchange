@@ -7,7 +7,7 @@
  */
 'use client';
 
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Tabs from '@/components/ui/Tabs';
@@ -23,13 +23,17 @@ import type { TranslationKey } from '@/lib/i18n';
 
 // 주문 폼 Props / Order Form Props
 interface OrderFormProps {
-  /** 종목 심볼 / Asset symbol */
+  /** 종목 심볼
+   * Asset symbol */
   symbol: string;
-  /** 현재 가격 (USD) / Current price (USD) */
+  /** 현재 가격 (USD)
+   * Current price (USD) */
   currentPrice: number;
-  /** 매수/매도 방향 / Buy/Sell side */
+  /** 매수/매도 방향
+   * Buy/Sell side */
   side: 'BUY' | 'SELL';
-  /** 주문 성공 콜백 / Order success callback */
+  /** 주문 성공 콜백
+   * Order success callback */
   onSuccess?: () => void;
 }
 
@@ -60,6 +64,8 @@ function toUsdPrice(inputPrice: number, symbol: string, currencyMode: 'krw' | 'o
   return inputPrice;
 }
 
+/** 주문 폼 — 시장가/지정가/손절/익절 매수·매도 주문 입력
+ * Order form — market/limit/stop-loss/take-profit buy/sell input */
 export default function OrderForm({
   symbol,
   currentPrice,
@@ -136,6 +142,8 @@ export default function OrderForm({
   const fp = (p: number) => formatPriceDisplay(p, symbol, currencyMode, rate);
   const currencyLabel = isKRW(symbol) ? 'KRW' : currencyMode === 'krw' ? 'KRW' : 'USD';
 
+  /** 수량 유효성 검사
+   * Validate order quantity */
   const validateQuantity = () => {
     if (quantity && parsedQty <= 0) {
       setQuantityError(t('order.quantityPlaceholder'));
@@ -146,6 +154,8 @@ export default function OrderForm({
     }
   };
 
+  /** 가격 유효성 검사
+   * Validate order price */
   const validatePrice = () => {
     if (price && parseFloat(price) <= 0) {
       setPriceError(t('order.pricePlaceholder'));
@@ -154,6 +164,8 @@ export default function OrderForm({
     }
   };
 
+  /** 주문 확인 모달 열기
+   * Open order confirmation modal */
   const handleRequestSubmit = () => {
     if (!quantity || parsedQty <= 0) return;
     if (isConditional && (!triggerPrice || parseFloat(triggerPrice) <= 0)) return;
@@ -161,6 +173,8 @@ export default function OrderForm({
     setConfirmOpen(true);
   };
 
+  /** 주문 최종 제출 처리
+   * Handle final order submission */
   const handleConfirmSubmit = async () => {
     setConfirmOpen(false);
 

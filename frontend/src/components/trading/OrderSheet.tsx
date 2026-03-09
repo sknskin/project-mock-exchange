@@ -16,18 +16,25 @@ import { X } from 'lucide-react';
 
 // 주문 모달 Props / Order Sheet Props
 interface OrderSheetProps {
-  /** 모달 열림 여부 / Whether modal is open */
+  /** 모달 열림 여부
+   * Whether modal is open */
   isOpen: boolean;
-  /** 모달 닫기 콜백 / Modal close callback */
+  /** 모달 닫기 콜백
+   * Modal close callback */
   onClose: () => void;
-  /** 종목 심볼 / Asset symbol */
+  /** 종목 심볼
+   * Asset symbol */
   symbol: string;
-  /** 현재 가격 / Current price */
+  /** 현재 가격
+   * Current price */
   currentPrice: number;
-  /** 초기 매수/매도 방향 / Initial buy/sell side */
+  /** 초기 매수/매도 방향
+   * Initial buy/sell side */
   initialSide: 'BUY' | 'SELL';
 }
 
+/** 주문 모달 — 매수/매도 토글과 주문 폼을 중앙 모달로 표시
+ * Order modal — center modal with buy/sell toggle and order form */
 export default function OrderSheet({
   isOpen,
   onClose,

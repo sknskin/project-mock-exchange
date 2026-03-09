@@ -11,7 +11,8 @@ import { cn } from '@/lib/format';
 
 // 스켈레톤 Props / Skeleton Props
 interface SkeletonProps {
-  /** 추가 CSS 클래스 (크기, 모양 등) / Additional CSS classes (size, shape, etc.) */
+  /** 추가 CSS 클래스 (크기, 모양 등)
+   * Additional CSS classes (size, shape, etc.) */
   className?: string;
 }
 

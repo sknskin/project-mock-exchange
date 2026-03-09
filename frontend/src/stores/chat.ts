@@ -53,17 +53,23 @@ function savePanelLayout(position: ChatPosition | null, size: ChatSize) {
 
 // 채팅 상태 인터페이스 / Chat state interface
 interface ChatState {
-  /** 패널 열림 여부 / Whether panel is open */
+  /** 패널 열림 여부
+   * Whether panel is open */
   isOpen: boolean;
-  /** 사이드바 고정 여부 / Whether pinned to sidebar */
+  /** 사이드바 고정 여부
+   * Whether pinned to sidebar */
   isPinned: boolean;
-  /** 현재 활성 채팅방 ID / Currently active room ID */
+  /** 현재 활성 채팅방 ID
+   * Currently active room ID */
   activeRoomId: string | null;
-  /** 현재 뷰 (방목록/채팅/생성) / Current view (room list/chat/create) */
+  /** 현재 뷰 (방목록/채팅/생성)
+   * Current view (room list/chat/create) */
   view: ChatView;
-  /** 플로팅 패널 위치 / Floating panel position */
+  /** 플로팅 패널 위치
+   * Floating panel position */
   position: ChatPosition | null;
-  /** 플로팅 패널 크기 / Floating panel size */
+  /** 플로팅 패널 크기
+   * Floating panel size */
   size: ChatSize;
   openChat: () => void;
   closeChat: () => void;
@@ -73,7 +79,8 @@ interface ChatState {
   setView: (view: ChatView) => void;
   setPosition: (pos: ChatPosition) => void;
   setSize: (size: ChatSize) => void;
-  /** 고정/해제 토글 — 고정 시 position null, 해제 시 복원 / Toggle pin — null position when pinned, restore when unpinned */
+  /** 고정/해제 토글 — 고정 시 position null, 해제 시 복원
+   * Toggle pin — null position when pinned, restore when unpinned */
   togglePin: () => void;
   unpin: () => void;
 }

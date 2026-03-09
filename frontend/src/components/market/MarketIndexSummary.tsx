@@ -23,6 +23,8 @@ interface RealIndex {
 
 /* ─── 값 포맷 / Value formatting ─── */
 
+/** 인덱스 유형별 값 포맷팅 (환율/금리/VIX/일반)
+ * Format index value by type (FX/yield/VIX/general) */
 function formatIndexValue(idx: RealIndex): string {
   const s = idx.symbol;
   // 환율
@@ -43,6 +45,8 @@ function formatIndexValue(idx: RealIndex): string {
 
 /* ─── 미니 스파크라인 / Mini Sparkline ─── */
 
+/** 소형 스파크라인 차트 (Canvas)
+ * Mini sparkline chart rendered on Canvas */
 function MiniSparkline({ data, isRise }: { data: number[]; isRise: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -89,6 +93,8 @@ function MiniSparkline({ data, isRise }: { data: number[]; isRise: boolean }) {
 
 /* ─── 메인 컴포넌트 / Main Component ─── */
 
+/** 마켓 인덱스 마키 — 글로벌 시장 지수를 자동 스크롤로 표시
+ * Market index marquee — auto-scrolling global market indices */
 export default function MarketIndexSummary() {
   const locale = useSettingsStore((s) => s.locale);
   const [indices, setIndices] = useState<RealIndex[]>([]);
@@ -115,6 +121,8 @@ export default function MarketIndexSummary() {
 
   // ─── 휠 스크롤 로직 / Wheel scroll logic ─── //
 
+  /** CSS 애니메이션 → 수동 모드 전환
+   * Switch from CSS animation to manual mode */
   const enterManualMode = useCallback(() => {
     const track = trackRef.current;
     if (!track || posRef.current !== null) return;
@@ -125,6 +133,8 @@ export default function MarketIndexSummary() {
     track.style.transform = `translate3d(${posRef.current}px, 0, 0)`;
   }, []);
 
+  /** 관성 스크롤 애니메이션 (감속)
+   * Inertia scroll animation (deceleration) */
   const animateInertia = useCallback(() => {
     const track = trackRef.current;
     if (!track || posRef.current === null) return;
@@ -141,6 +151,8 @@ export default function MarketIndexSummary() {
     }
   }, []);
 
+  /** 마우스 휠로 수동 스크롤 처리
+   * Handle manual scroll via mouse wheel */
   const handleWheel = useCallback((e: WheelEvent) => {
     const track = trackRef.current;
     if (!track) return;
@@ -161,6 +173,8 @@ export default function MarketIndexSummary() {
     rafRef.current = requestAnimationFrame(animateInertia);
   }, [enterManualMode, animateInertia]);
 
+  /** 마우스 이탈 시 CSS 애니메이션 복원
+   * Restore CSS animation on mouse leave */
   const handleMouseLeave = useCallback(() => {
     const track = trackRef.current;
     if (!track || posRef.current === null) return;

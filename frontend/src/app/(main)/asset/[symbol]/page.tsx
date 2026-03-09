@@ -48,6 +48,8 @@ const detailTabKeys: { key: string; i18nKey: TranslationKey }[] = [
   { key: 'trades', i18nKey: 'detail.trades' },
 ];
 
+/** 종목 상세 페이지 컴포넌트 — 차트, 호가창, 주문 폼, 가격 알림
+ * Asset detail page component — chart, order book, order form, and price alerts */
 export default function AssetDetailPage({
   params,
 }: {
@@ -95,6 +97,8 @@ export default function AssetDetailPage({
   const removeWatchlist = useRemoveWatchlist();
   const isWatchlisted = watchlistSymbols?.includes(symbol) ?? false;
 
+  /** 관심종목 추가/제거 토글 — 미인증 시 로그인 모달 표시
+   * Toggle watchlist add/remove — show login modal if unauthenticated */
   const handleToggleWatchlist = useCallback(() => {
     if (!isAuthenticated) {
       setLoginModalOpen(true);
@@ -132,6 +136,8 @@ export default function AssetDetailPage({
   const isRise = changePercent > 0;
   const isFall = changePercent < 0;
 
+  /** 매수/매도 버튼 클릭 — 미인증 시 로그인 모달, 인증 시 주문 시트 표시
+   * Buy/Sell click — login modal if unauthenticated, order sheet if authenticated */
   const handleBuySell = (side: 'BUY' | 'SELL') => {
     if (!isAuthenticated) {
       setLoginModalOpen(true);
@@ -141,6 +147,8 @@ export default function AssetDetailPage({
     setOrderSheetOpen(true);
   };
 
+  /** 로그인 모달 확인 — 로그인 페이지로 이동
+   * Login modal confirm — redirect to login page */
   const handleLoginConfirm = () => {
     setLoginModalOpen(false);
     router.push('/login');

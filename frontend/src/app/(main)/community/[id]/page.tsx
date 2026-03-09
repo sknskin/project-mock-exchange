@@ -9,6 +9,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import DOMPurify from 'isomorphic-dompurify';
 import api from '@/lib/api';
 import AuthGuard from '@/components/layout/AuthGuard';
 import ConfirmModal from '@/components/ui/ConfirmModal';
@@ -32,7 +33,6 @@ import {
   Eye,
   Clock,
   Trash2,
-  PenSquare,
   Send,
   ThumbsUp,
   Paperclip,
@@ -151,7 +151,7 @@ function AttachmentSection({
   attachments,
   postId,
   canDelete,
-  locale,
+  locale: _locale,
   t,
 }: {
   attachments: CommunityAttachment[];
@@ -202,6 +202,8 @@ function AttachmentSection({
   );
 }
 
+/** 커뮤니티 게시글 상세 페이지 컴포넌트 — 본문, 좋아요, 댓글, 첨부파일
+ * Community post detail page component — content, likes, comments, and attachments */
 export default function CommunityPostDetailPage() {
   const { t, locale } = useTranslation();
   const router = useRouter();
@@ -219,6 +221,14 @@ export default function CommunityPostDetailPage() {
    * 조회수 증가 — 세션당 사용자별 1회, 30분 쿨다운으로 어뷰징 방지
    * View count increment — once per session per user, 30-min cooldown to prevent abuse
    */
+  // 동적 페이지 타이틀 — SEO 및 브라우저 탭 제목 개선 / Dynamic page title for SEO and browser tab
+  useEffect(() => {
+    if (post?.title) {
+      document.title = `${post.title} | VirtuEx`;
+    }
+    return () => { document.title = 'VirtuEx'; };
+  }, [post?.title]);
+
   const viewTracked = useRef(false);
   useEffect(() => {
     if (!id || viewTracked.current) return;
@@ -242,12 +252,21 @@ export default function CommunityPostDetailPage() {
   const commentCount = post?._count?.comments ?? post?.commentCount ?? 0;
   const catLabel = CATEGORIES[post?.category ?? 'FREE']?.[locale] ?? post?.category;
 
+  /** 게시글 삭제 후 커뮤니티 목록으로 이동
+   * Delete post and navigate to community list */
   const handleDelete = async () => {
     setShowDeleteModal(false);
-    await deletePost.mutateAsync(id);
-    router.push('/community');
+    try {
+      await deletePost.mutateAsync(id);
+      router.push('/community');
+    } catch {
+      // 삭제 실패 시 사용자에게 알림 / Notify user on delete failure
+      alert(locale === 'ko' ? '게시글 삭제에 실패했습니다.' : 'Failed to delete post.');
+    }
   };
 
+  /** 새 댓글 등록
+   * Submit new comment */
   const handleComment = async () => {
     if (!commentText.trim()) return;
     await createComment.mutateAsync({ postId: id, content: commentText.trim() });
@@ -332,7 +351,7 @@ export default function CommunityPostDetailPage() {
                   onClick={() => setShowDeleteModal(true)}
                   className="px-3 py-1.5 rounded-lg text-[12px] font-semibold text-danger border border-danger/30 hover:bg-danger/10 transition-colors"
                 >
-                  {locale === 'ko' ? '삭제' : 'Delete'}
+                  {t('common.delete')}
                 </button>
               </div>
             )}
@@ -341,7 +360,7 @@ export default function CommunityPostDetailPage() {
           {/* Content — render as HTML from TipTap */}
           <div
             className="prose prose-sm prose-invert max-w-none text-[14px] text-text-secondary leading-relaxed min-h-[100px]"
-            dangerouslySetInnerHTML={{ __html: post.content }}
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content, { ALLOWED_TAGS: ['p','br','strong','em','u','s','h1','h2','h3','h4','ul','ol','li','blockquote','img','a','code','pre','span','div','hr'], ALLOWED_ATTR: ['href','src','alt','class','target','rel','width','height'], FORBID_ATTR: ['onerror','onload','onclick','onmouseover'], ALLOW_DATA_ATTR: false }) }}
           />
 
           {/* Attachments */}
@@ -392,7 +411,11 @@ export default function CommunityPostDetailPage() {
                 disabled={!commentText.trim() || createComment.isPending}
                 className="px-4 py-2.5 rounded-xl bg-accent text-white text-[13px] font-semibold hover:bg-accent/90 transition-colors disabled:opacity-50"
               >
-                <Send className="w-4 h-4" />
+                {createComment.isPending ? (
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
               </button>
             </div>
           )}

@@ -30,10 +30,10 @@ const texts = {
 };
 
 export default function GlobalError({
-  error,
+  _error,
   reset,
 }: {
-  error: Error & { digest?: string };
+  _error: Error & { digest?: string };
   reset: () => void;
 }) {
   const [locale, setLocale] = useState<Locale>('ko');
@@ -44,7 +44,7 @@ export default function GlobalError({
       const settings = JSON.parse(localStorage.getItem('virtuex-settings') || '{}');
       if (settings.state?.locale) setLocale(settings.state.locale);
       if (settings.state?.theme) setTheme(settings.state.theme);
-    } catch {}
+    } catch { /* ignore parse errors */ }
   }, []);
 
   const tt = texts[locale];

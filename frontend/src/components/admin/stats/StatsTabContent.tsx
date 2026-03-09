@@ -34,7 +34,6 @@ import {
   CalendarCheck, Info,
 } from 'lucide-react';
 import Skeleton from '@/components/ui/Skeleton';
-import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/format';
 import type { TranslationKey } from '@/lib/i18n';
 import {
@@ -61,6 +60,8 @@ interface OverviewTabProps {
   t: (key: TranslationKey) => string;
 }
 
+/** 개요 탭 — KPI 요약, 트렌드 차트, 가입/로그인/조회수 시계열
+ * Overview tab — KPI summary, trend charts, registration/login/pageview time-series */
 export function OverviewTab({
   overview, overviewLoading, trend, registrations, registrationsLoading,
   logins, pageViews, trading, announcementChartData, buySellData, t,
@@ -239,6 +240,8 @@ interface UsersTabProps {
   t: (key: TranslationKey) => string;
 }
 
+/** 회원 탭 — 가입 현황, 상태별 분포, 최근 가입자 목록
+ * Users tab — registration trends, status distribution, recent registrations */
 export function UsersTab({
   overview, trend, registrations, registrationsApproved,
   roleData, statusData, t,
@@ -351,6 +354,8 @@ interface ActivityTabProps {
   t: (key: TranslationKey) => string;
 }
 
+/** 활동 탭 — 로그인/페이지뷰 시계열 차트
+ * Activity tab — login/pageview time-series charts */
 export function ActivityTab({
   overview, trend, logins, pageViews, topPagesData, hourlyData, t,
 }: ActivityTabProps) {
@@ -442,6 +447,8 @@ interface TradingTabProps {
   t: (key: TranslationKey) => string;
 }
 
+/** 거래 탭 — 주문 통계, 매수/매도 비율, 거래량 차트
+ * Trading tab — order stats, buy/sell ratio, volume charts */
 export function TradingTab({ trading, buySellData, t }: TradingTabProps) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -549,6 +556,8 @@ interface ContentTabProps {
   t: (key: TranslationKey) => string;
 }
 
+/** 콘텐츠 탭 — 공지사항 통계, 인기 게시물
+ * Content tab — announcement stats, popular posts */
 export function ContentTab({
   announcements, announcementChartData, likeStats, likeChartData,
   popularAnnouncements, participationRate, t,
@@ -662,6 +671,8 @@ interface ChatTabProps {
   t: (key: TranslationKey) => string;
 }
 
+/** 채팅 탭 — 채팅방/메시지 통계, 활동 차트
+ * Chat tab — room/message stats, activity charts */
 export function ChatTab({ chatStats, t }: ChatTabProps) {
   return (
     <div className="space-y-6">
@@ -762,6 +773,8 @@ interface AuditTabProps {
   t: (key: TranslationKey) => string;
 }
 
+/** 감사 탭 — 감사 로그 페이지 바로가기
+ * Audit tab — link to audit log page */
 export function AuditTab({ t }: AuditTabProps) {
   return (
     <div className="space-y-4">

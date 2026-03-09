@@ -14,9 +14,11 @@ type CurrencyDisplay = 'original' | 'krw';
 
 // Zustand 스토어 상태 인터페이스 / Zustand store state interface
 interface CurrencyDisplayState {
-  /** 현재 통화 표시 모드 / Current currency display mode */
+  /** 현재 통화 표시 모드
+   * Current currency display mode */
   display: CurrencyDisplay;
-  /** 'original' ↔ 'krw' 토글 함수 / Toggle function between 'original' and 'krw' */
+  /** 'original' ↔ 'krw' 토글 함수
+   * Toggle function between 'original' and 'krw' */
   toggle: () => void;
 }
 

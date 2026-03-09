@@ -11,9 +11,11 @@ import { useState, useRef, useCallback, useEffect, useId } from 'react';
 
 // 인라인 툴팁 Props / Inline Tooltip Props
 interface InlineTooltipProps {
-  /** 툴팁에 표시할 설명 텍스트 / Explanation text displayed in tooltip */
+  /** 툴팁에 표시할 설명 텍스트
+   * Explanation text displayed in tooltip */
   text: string;
-  /** 접근성 라벨 (선택) / Accessibility label (optional) */
+  /** 접근성 라벨 (선택)
+   * Accessibility label (optional) */
   ariaLabel?: string;
 }
 

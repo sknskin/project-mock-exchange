@@ -50,6 +50,8 @@ export class AuthService {
     this.LOGIN_MAX_ATTEMPTS = this.configService.get<number>('LOGIN_MAX_ATTEMPTS', 5);
   }
 
+  /** 회원가입 처리 — 중복 확인, SMS 인증 확인, 주민번호 암호화 후 사용자 생성
+   * Register user — check duplicates, verify SMS, encrypt RRN, create user */
   async register(params: {
     email: string;
     username: string;
@@ -138,6 +140,8 @@ export class AuthService {
     return this.toUserDto(created);
   }
 
+  /** 로그인 1단계 — 비밀번호 검증 후 SMS 인증 세션 생성
+   * Login step 1 — verify password, then create SMS verification session */
   async login(
     identifier: string,
     password: string,
@@ -226,6 +230,8 @@ export class AuthService {
     return { maskedPhone };
   }
 
+  /** 로그인 2단계 — SMS 인증코드 검증 후 JWT 발급
+   * Login step 2 — verify SMS code and issue JWT tokens */
   async verifyLoginSms(
     sessionId: string,
     code: string,
@@ -291,6 +297,8 @@ export class AuthService {
     return { success: true, user: this.toUserDto(user), tokens, refreshToken };
   }
 
+  /** 계정 잠금 처리 — 인증 시도 초과 시 호출
+   * Lock user account — called when verification attempts exceeded */
   private async lockUser(userId: string, reason: string): Promise<void> {
     await this.prisma.user.update({
       where: { id: userId },
@@ -299,11 +307,15 @@ export class AuthService {
     this.logger.warn(`Account locked: ${userId} - ${reason}`);
   }
 
+  /** 전화번호 마스킹 (예: 010****1234)
+   * Mask phone number (e.g., 010****1234) */
   private maskPhone(phone: string): string {
     if (phone.length < 8) return phone;
     return phone.slice(0, 3) + '****' + phone.slice(-4);
   }
 
+  /** 리프레시 토큰으로 액세스 토큰 갱신 (토큰 로테이션 적용)
+   * Refresh access token using refresh token (with token rotation) */
   async refreshTokens(
     oldRefreshToken: string,
   ): Promise<{ tokens: AuthTokensDto; refreshToken: string }> {
@@ -354,17 +366,23 @@ export class AuthService {
     return { tokens, refreshToken };
   }
 
+  /** 로그아웃 — DB에서 리프레시 토큰 삭제
+   * Logout — delete refresh token from DB */
   async logout(refreshToken: string): Promise<void> {
     const tokenHash = this.hashToken(refreshToken);
     await this.prisma.refreshToken.deleteMany({ where: { tokenHash } });
   }
 
+  /** JWT 페이로드로 사용자 유효성 검증
+   * Validate user from JWT payload */
   async validateUser(payload: JwtPayload): Promise<UserDto | null> {
     const user = await this.userRepository.findById(payload.sub);
     if (!user || !user.isActive) return null;
     return this.toUserDto(user);
   }
 
+  /** JWT 액세스 토큰 생성
+   * Generate JWT access token */
   private async generateTokens(user: UserEntity): Promise<AuthTokensDto> {
     const payload: JwtPayload = {
       sub: user.id,
@@ -383,6 +401,8 @@ export class AuthService {
     };
   }
 
+  /** 리프레시 토큰 생성 및 DB 저장
+   * Create refresh token and store in DB */
   private async createRefreshToken(userId: string): Promise<string> {
     const token = randomBytes(40).toString('hex');
     const tokenHash = this.hashToken(token);
@@ -400,10 +420,14 @@ export class AuthService {
     return token;
   }
 
+  /** 토큰 SHA-256 해싱 — DB 저장용
+   * Hash token with SHA-256 for DB storage */
   private hashToken(token: string): string {
     return createHash('sha256').update(token).digest('hex');
   }
 
+  /** 만료 시간 문자열을 초 단위로 변환 (예: '15m' → 900)
+   * Parse expiry string to seconds (e.g., '15m' → 900) */
   private parseExpiry(expiry: string): number {
     const match = expiry.match(/^(\d+)([smhd])$/);
     if (!match) return 900; // 기본값 15분 (default 15min)
@@ -455,6 +479,8 @@ export class AuthService {
 
   // ── 비밀번호 재설정 (Password Reset) ──
 
+  /** 비밀번호 재설정 요청 — SMS 인증 세션 생성
+   * Request password reset — create SMS verification session */
   async requestPasswordReset(identifier: string): Promise<{ sessionId: string; maskedPhone: string }> {
     let user = await this.userRepository.findByEmail(identifier);
     if (!user) {
@@ -490,6 +516,8 @@ export class AuthService {
     return { sessionId, maskedPhone };
   }
 
+  /** 비밀번호 재설정 SMS 인증코드 검증
+   * Verify password reset SMS verification code */
   async verifyPasswordResetSms(
     sessionId: string,
     code: string,
@@ -538,6 +566,8 @@ export class AuthService {
     return { success: true };
   }
 
+  /** 비밀번호 재설정 — SMS 인증 완료 후 새 비밀번호 저장
+   * Reset password — save new password after SMS verification */
   async resetPassword(sessionId: string, newPassword: string, confirmPassword: string): Promise<void> {
     if (newPassword !== confirmPassword) {
       throw new BadRequestException('비밀번호가 일치하지 않습니다.');
@@ -567,6 +597,8 @@ export class AuthService {
     this.logger.log(`Password reset completed for user: ${session.userId}`);
   }
 
+  /** 필드별 중복 확인 (이메일/아이디/전화번호)
+   * Check field duplication (email/username/phone) */
   async checkDuplicate(field: string, value: string): Promise<boolean> {
     if (!value) return false;
     switch (field) {
@@ -581,6 +613,8 @@ export class AuthService {
     }
   }
 
+  /** UserEntity를 UserDto로 변환
+   * Convert UserEntity to UserDto */
   private toUserDto(user: UserEntity): UserDto {
     return {
       id: user.id,

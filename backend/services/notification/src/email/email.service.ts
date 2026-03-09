@@ -47,6 +47,8 @@ export class EmailService {
     }
   }
 
+  /** 이메일을 전송하고 성공 여부를 반환합니다
+   * Send an email and return success status */
   async send(options: SendEmailOptions): Promise<boolean> {
     const from = this.configService.get<string>(
       'SMTP_FROM',

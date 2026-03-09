@@ -17,6 +17,8 @@ import { InternalAuthGuard } from '../../common/guards/internal-auth.guard';
 export class UserController {
   constructor(private readonly prisma: PrismaService) {}
 
+  /** 사용자 활성화/승인 상태 조회
+   * Get user active/approval status */
   @Public()
   @Get(':id/status')
   async getStatus(@Param('id') id: string) {
@@ -30,6 +32,8 @@ export class UserController {
     return { isActive: user.isActive, approvalStatus: user.approvalStatus };
   }
 
+  /** ID 배열로 사용자 일괄 조회 (최대 100건)
+   * Batch lookup users by ID array (max 100) */
   @Public()
   @Post('by-ids')
   async getByIds(@Body() body: { ids: string[] }) {
@@ -48,7 +52,8 @@ export class UserController {
     return { success: true, data: users };
   }
 
-  // 사용자 검색 — 채팅 초대 등에 사용, 활성/승인된 사용자만 반환 / User search — used for chat invites, returns only active/approved users
+  /** 사용자 검색 — 채팅 초대 등에 사용, 활성/승인된 사용자만 반환
+   * User search — used for chat invites, returns only active/approved users */
   @Public()
   @Get('search')
   async search(

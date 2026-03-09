@@ -18,6 +18,8 @@ import { cn } from '@/lib/format';
 import Tooltip from '@/components/ui/Tooltip';
 import type { ChatUserSearchResult } from '@/types';
 
+/** 채팅방 생성 모달 — 사용자 검색/선택 후 DM 또는 그룹 채팅방 생성
+ * Create room modal — search/select users then create DM or group chat */
 export default function CreateRoomModal() {
   const { t } = useTranslation();
   const { backToList, openRoom, togglePin, isPinned, closeChat } = useChatStore();
@@ -44,6 +46,8 @@ export default function CreateRoomModal() {
 
   const isGroup = selectedUsers.length > 1;
 
+  /** 사용자 선택/해제 토글
+   * Toggle user selection */
   const toggleUser = (u: ChatUserSearchResult) => {
     setSelectedUsers((prev) =>
       prev.some((s) => s.id === u.id)
@@ -52,6 +56,8 @@ export default function CreateRoomModal() {
     );
   };
 
+  /** 채팅방 생성 요청 처리
+   * Handle room creation request */
   const handleCreate = async () => {
     if (selectedUsers.length === 0) return;
 

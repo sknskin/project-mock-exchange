@@ -84,6 +84,8 @@ function buildDefaultToggles(): Record<string, boolean> {
 
 /* ---------- Component ---------- */
 
+/** 캔들스틱 차트 — lightweight-charts 기반 OHLC + 보조지표 렌더링
+ * Candlestick chart — renders OHLC + indicators using lightweight-charts */
 export default function CandlestickChart({
   data,
   chartType,
@@ -159,10 +161,14 @@ export default function CandlestickChart({
     const links = chartContainerRef.current.querySelectorAll('a');
     links.forEach((a) => (a.style.display = 'none'));
 
+    let resizeTimer: ReturnType<typeof setTimeout> | null = null;
     const handleResize = () => {
-      if (chartContainerRef.current) {
-        chart.applyOptions({ width: chartContainerRef.current.clientWidth });
-      }
+      if (resizeTimer) clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (chartContainerRef.current) {
+          chart.applyOptions({ width: chartContainerRef.current.clientWidth });
+        }
+      }, 100);
     };
 
     window.addEventListener('resize', handleResize);

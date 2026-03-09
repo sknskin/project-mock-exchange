@@ -7,9 +7,11 @@
  */
 // 유효성 검증 규칙 결과 / Validation rule result
 export interface ValidationRule {
-  /** 번역 키 (UI 표시용) / Translation key (for UI display) */
+  /** 번역 키 (UI 표시용)
+   * Translation key (for UI display) */
   key: string;
-  /** 규칙 통과 여부 / Whether rule passed */
+  /** 규칙 통과 여부
+   * Whether rule passed */
   passed: boolean;
 }
 

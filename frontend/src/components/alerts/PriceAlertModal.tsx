@@ -20,16 +20,22 @@ import { cn, isKRW, formatPriceDisplay } from '@/lib/format';
 
 // 가격 알림 모달 Props / Price Alert Modal Props
 interface PriceAlertModalProps {
-  /** 모달 열림 여부 / Whether modal is open */
+  /** 모달 열림 여부
+   * Whether modal is open */
   isOpen: boolean;
-  /** 모달 닫기 콜백 / Modal close callback */
+  /** 모달 닫기 콜백
+   * Modal close callback */
   onClose: () => void;
-  /** 종목 심볼 / Asset symbol */
+  /** 종목 심볼
+   * Asset symbol */
   symbol: string;
-  /** 현재 가격 (USD 기준) / Current price (USD-based) */
+  /** 현재 가격 (USD 기준)
+   * Current price (USD-based) */
   currentPrice: number;
 }
 
+/** 가격 알림 모달 — 가격 조건 알림 생성 및 활성/발동 알림 관리
+ * Price alert modal — create conditional alerts and manage active/triggered alerts */
 export default function PriceAlertModal({ isOpen, onClose, symbol, currentPrice }: PriceAlertModalProps) {
   const { t } = useTranslation();
   const modalRef = useRef<HTMLDivElement>(null);
@@ -97,6 +103,8 @@ export default function PriceAlertModal({ isOpen, onClose, symbol, currentPrice 
 
   if (!isOpen) return null;
 
+  /** 가격 알림 생성 요청 처리
+   * Handle price alert creation */
   const handleCreate = () => {
     const displayedPrice = parseFloat(targetPrice);
     if (!displayedPrice || displayedPrice <= 0) return;
@@ -122,6 +130,8 @@ export default function PriceAlertModal({ isOpen, onClose, symbol, currentPrice 
     });
   };
 
+  /** 알림 목록용 가격 포맷팅
+   * Format price for alert list display */
   const formatAlertPrice = (basePrice: string | number) => {
     return formatPriceDisplay(Number(basePrice), symbol, currencyMode, rate);
   };

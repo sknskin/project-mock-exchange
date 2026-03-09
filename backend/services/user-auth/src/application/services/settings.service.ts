@@ -7,6 +7,8 @@ export class SettingsService {
 
   constructor(private readonly prisma: PrismaService) {}
 
+  /** 전체 시스템 설정을 키-값 객체로 조회
+   * Get all system settings as key-value object */
   async getAll(): Promise<Record<string, string>> {
     const settings = await this.prisma.systemSetting.findMany();
     const result: Record<string, string> = {};
@@ -16,6 +18,8 @@ export class SettingsService {
     return result;
   }
 
+  /** 시스템 설정 일괄 upsert (트랜잭션)
+   * Bulk upsert system settings in a transaction */
   async bulkUpdate(data: Record<string, string>): Promise<Record<string, string>> {
     const entries = Object.entries(data);
 

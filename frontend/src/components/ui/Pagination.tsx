@@ -13,17 +13,23 @@ import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-r
 
 // 페이지네이션 Props / Pagination Props
 interface PaginationProps {
-  /** 현재 페이지 번호 / Current page number */
+  /** 현재 페이지 번호
+   * Current page number */
   page: number;
-  /** 전체 페이지 수 / Total number of pages */
+  /** 전체 페이지 수
+   * Total number of pages */
   totalPages: number;
-  /** 전체 항목 수 / Total item count */
+  /** 전체 항목 수
+   * Total item count */
   total: number;
-  /** 페이지당 항목 수 / Items per page */
+  /** 페이지당 항목 수
+   * Items per page */
   limit: number;
-  /** 페이지 변경 콜백 / Page change callback */
+  /** 페이지 변경 콜백
+   * Page change callback */
   onPageChange: (page: number) => void;
-  /** 페이지당 항목 수 변경 콜백 (선택) / Per-page change callback (optional) */
+  /** 페이지당 항목 수 변경 콜백 (선택)
+   * Per-page change callback (optional) */
   onLimitChange?: (limit: number) => void;
 }
 
@@ -37,6 +43,8 @@ export default function Pagination({
 }: PaginationProps) {
   const { t } = useTranslation();
 
+  /** 페이지 변경 후 상단 스크롤
+   * Change page and scroll to top */
   const handlePageChange = (p: number) => {
     onPageChange(p);
     window.scrollTo({ top: 0, behavior: 'smooth' });

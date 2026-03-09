@@ -25,6 +25,8 @@ export class AuthProxyController {
     private readonly chatGateway: ChatGateway,
   ) {}
 
+  /** 회원가입 요청을 user-auth 서비스로 프록시
+   * Proxy registration request to user-auth service */
   // 회원가입 — 하루 3회 제한으로 자동화된 대량 등록 방지 / Register — 3/day rate limit prevents automated mass registration
   @Post('register')
   @Throttle({ default: { ttl: 86400000, limit: 3 } })
@@ -51,6 +53,8 @@ export class AuthProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 로그인 요청을 user-auth 서비스로 프록시
+   * Proxy login request to user-auth service */
   // 로그인 — 1분 5회 제한으로 무차별 대입 방지 / Login — 5/min rate limit prevents brute-force attacks
   @Post('login')
   @Throttle({ default: { ttl: 60000, limit: 5 } })
@@ -68,6 +72,8 @@ export class AuthProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 로그인 SMS 재전송을 user-auth로 프록시
+   * Proxy login SMS resend to user-auth */
   // 로그인 SMS 재전송 — 분당 3회 제한으로 SMS 남용 방지
   // Resend login SMS — 3/min rate limit prevents SMS abuse
   @Post('login/resend-sms')
@@ -84,6 +90,8 @@ export class AuthProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 로그인 SMS 인증번호 검증을 user-auth로 프록시
+   * Proxy login SMS verification to user-auth */
   @Post('login/verify-sms')
   @Throttle({ default: { ttl: 60000, limit: 5 } })
   @HttpCode(HttpStatus.OK)
@@ -110,6 +118,8 @@ export class AuthProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 토큰 갱신 요청을 user-auth로 프록시
+   * Proxy token refresh request to user-auth */
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '토큰 갱신', description: 'Refresh token으로 새 access token을 발급합니다' })
@@ -133,6 +143,8 @@ export class AuthProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 로그아웃 요청을 user-auth로 프록시하고 쿠키 제거
+   * Proxy logout to user-auth and clear cookies */
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '로그아웃', description: 'Refresh token을 무효화하고 쿠키를 제거합니다' })
@@ -150,6 +162,8 @@ export class AuthProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 현재 로그인한 사용자 정보 조회를 user-auth로 프록시
+   * Proxy current user info request to user-auth */
   @Get('me')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -167,6 +181,8 @@ export class AuthProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** SMS 인증번호 발송을 user-auth로 프록시
+   * Proxy SMS code send request to user-auth */
   @Post('sms/send')
   @Throttle({ default: { ttl: 60000, limit: 5 } })
   @HttpCode(HttpStatus.OK)
@@ -182,6 +198,8 @@ export class AuthProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** SMS 인증번호 확인을 user-auth로 프록시
+   * Proxy SMS code verification to user-auth */
   @Post('sms/verify')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'SMS 인증번호 확인', description: '발송된 인증번호를 검증합니다' })
@@ -196,6 +214,8 @@ export class AuthProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 비밀번호 찾기 요청을 user-auth로 프록시
+   * Proxy forgot-password request to user-auth */
   @Post('forgot-password')
   @Throttle({ default: { ttl: 60000, limit: 5 } })
   @HttpCode(HttpStatus.OK)
@@ -210,6 +230,8 @@ export class AuthProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 비밀번호 찾기 SMS 재전송을 user-auth로 프록시
+   * Proxy forgot-password SMS resend to user-auth */
   // 비밀번호 찾기 SMS 재전송 — 분당 3회 제한으로 SMS 남용 방지
   // Resend forgot-password SMS — 3/min rate limit prevents SMS abuse
   @Post('forgot-password/resend-sms')
@@ -226,6 +248,8 @@ export class AuthProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 비밀번호 찾기 SMS 인증번호 검증을 user-auth로 프록시
+   * Proxy forgot-password SMS verification to user-auth */
   @Post('forgot-password/verify-sms')
   @Throttle({ default: { ttl: 60000, limit: 5 } })
   @HttpCode(HttpStatus.OK)
@@ -240,6 +264,8 @@ export class AuthProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 비밀번호 재설정 요청을 user-auth로 프록시
+   * Proxy password reset request to user-auth */
   @Post('forgot-password/reset')
   @Throttle({ default: { ttl: 60000, limit: 5 } })
   @HttpCode(HttpStatus.OK)
@@ -254,6 +280,8 @@ export class AuthProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 이메일/아이디 중복 확인을 user-auth로 프록시
+   * Proxy email/username duplicate check to user-auth */
   @Get('check-duplicate')
   @Throttle({ default: { ttl: 60000, limit: 5 } })
   @ApiOperation({ summary: '중복 확인', description: '이메일 또는 아이디의 중복 여부를 확인합니다' })
@@ -275,6 +303,8 @@ export class AuthProxyController {
 
   // ── TOTP 2FA (시간 기반 일회용 비밀번호 2단계 인증) / Time-based One-Time Password 2-Factor Authentication ──
 
+  /** TOTP 2FA 시크릿 키 생성을 user-auth로 프록시
+   * Proxy TOTP 2FA setup to user-auth */
   @Post('totp/setup')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -289,6 +319,8 @@ export class AuthProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** TOTP 2FA 활성화를 user-auth로 프록시
+   * Proxy TOTP 2FA enable to user-auth */
   @Post('totp/enable')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -304,6 +336,8 @@ export class AuthProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** TOTP 2FA 비활성화를 user-auth로 프록시
+   * Proxy TOTP 2FA disable to user-auth */
   @Post('totp/disable')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -319,6 +353,8 @@ export class AuthProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** TOTP 코드 검증을 user-auth로 프록시
+   * Proxy TOTP code verification to user-auth */
   @Post('totp/verify')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -334,6 +370,8 @@ export class AuthProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** TOTP 2FA 활성화 상태 조회를 user-auth로 프록시
+   * Proxy TOTP 2FA status check to user-auth */
   @Get('totp/status')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

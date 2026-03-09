@@ -28,6 +28,8 @@ import { cn } from '@/lib/format';
 import { Search } from 'lucide-react';
 import type { Asset, AssetInfo, PriceUpdate } from '@/types';
 
+/** 마켓 대시보드 페이지 컴포넌트 — 실시간 시세, 종목 목록, AI 분석
+ * Market dashboard page component — real-time prices, asset list, and AI insights */
 export default function DashboardPage() {
   const router = useRouter();
 

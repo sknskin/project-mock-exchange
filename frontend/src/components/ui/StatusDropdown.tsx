@@ -1,3 +1,10 @@
+/**
+ * @file 상태 드롭다운 컴포넌트
+ * @description 색상 점(dot)과 라벨로 상태를 선택할 수 있는 커스텀 드롭다운
+ *
+ * @file Status Dropdown Component
+ * @description Custom dropdown for selecting status with colored dot and label
+ */
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -17,6 +24,8 @@ interface StatusDropdownProps {
   disabled?: boolean;
 }
 
+/** 상태 선택 드롭다운
+ * Status selection dropdown */
 export default function StatusDropdown({ value, options, onChange, disabled }: StatusDropdownProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);

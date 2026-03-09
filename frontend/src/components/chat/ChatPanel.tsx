@@ -25,6 +25,8 @@ const MIN_H = 400;
 // 드래그 모드: 이동 또는 8방향 리사이즈 / Drag mode: move or 8-directional resize
 type DragMode = 'move' | 'resize-se' | 'resize-sw' | 'resize-ne' | 'resize-nw' | 'resize-e' | 'resize-w' | 'resize-s' | 'resize-n';
 
+/** 플로팅 채팅 패널 — 드래그 이동 + 8방향 리사이즈 지원
+ * Floating chat panel — drag-move + 8-directional resize */
 export default function ChatPanel() {
   const { isOpen, isPinned, view, activeRoomId, position, size, closeChat, backToList, setPosition, setSize } = useChatStore();
   const leaveRoom = useLeaveRoom();

@@ -27,6 +27,8 @@ export class SmsVerificationService {
     this.MAX_ATTEMPTS = this.configService.get<number>('SMS_MAX_ATTEMPTS', 5);
   }
 
+  /** 6자리 인증번호 생성 및 Redis 저장 후 SMS 발송 (모의)
+   * Generate 6-digit code, store in Redis, and send SMS (mock) */
   async sendVerificationCode(phone: string): Promise<void> {
     const code = randomInt(100000, 999999).toString();
     const key = `sms:verify:${phone}`;
@@ -42,6 +44,8 @@ export class SmsVerificationService {
     }
   }
 
+  /** 인증번호 검증 — 성공 시 인증 완료 상태 저장
+   * Verify code — mark phone as verified on success */
   async verifyCode(phone: string, code: string): Promise<boolean> {
     const attemptsKey = `sms:attempts:${phone}`;
     const attempts = await this.redis.get(attemptsKey);
@@ -72,6 +76,8 @@ export class SmsVerificationService {
     return true;
   }
 
+  /** 전화번호 인증 완료 여부 확인
+   * Check if phone number is verified */
   async isPhoneVerified(phone: string): Promise<boolean> {
     const result = await this.redis.get(`sms:verified:${phone}`);
     return result === '1';

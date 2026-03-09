@@ -8,7 +8,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { RefreshCw, ExternalLink, Newspaper, Search, Calendar } from 'lucide-react';
+import { RefreshCw, ExternalLink, Newspaper, Search } from 'lucide-react';
 import { useNews, useScrapeStatus, useTriggerScrape } from '@/hooks/useNews';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/stores/settings';

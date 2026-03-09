@@ -7,7 +7,7 @@
  */
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import AuthGuard from '@/components/layout/AuthGuard';
 import BalanceCard from '@/components/portfolio/BalanceCard';
@@ -310,7 +310,7 @@ export default function PortfolioPage() {
                     {portfolio.holdings.length > 0 && (
                       <button
                         onClick={() => {
-                          const rate = rateData?.rate;
+                          const _rate = rateData?.rate;
                           exportToCSV(
                             portfolio.holdings.map((h) => ({
                               symbol: h.symbol,

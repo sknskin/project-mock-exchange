@@ -42,6 +42,8 @@ interface ContextMenu {
   roomType: 'DM' | 'GROUP';
 }
 
+/** 채팅방 목록 — DM/그룹 방 표시 및 컨텍스트 메뉴 제공
+ * Room list — displays DM/group rooms with context menu */
 export default function RoomList() {
   const { t, locale } = useTranslation();
   const { closeChat, openRoom, setView, togglePin, isPinned, backToList } = useChatStore();
@@ -77,17 +79,23 @@ export default function RoomList() {
     }
   }, [renamingRoomId]);
 
+  /** 우클릭 컨텍스트 메뉴 표시
+   * Show right-click context menu */
   const handleContextMenu = useCallback((e: React.MouseEvent, room: ChatRoom) => {
     e.preventDefault();
     setContextMenu({ x: e.clientX, y: e.clientY, roomId: room.id, roomType: room.type });
   }, []);
 
+  /** 채팅방 이름 변경 모드 진입
+   * Enter room rename mode */
   const handleRename = useCallback((roomId: string, currentName: string) => {
     setContextMenu(null);
     setRenamingRoomId(roomId);
     setRenameValue(currentName);
   }, []);
 
+  /** 채팅방 이름 변경 제출
+   * Submit room rename */
   const handleRenameSubmit = useCallback(async (roomId: string) => {
     const trimmed = renameValue.trim();
     if (trimmed) {
@@ -97,6 +105,8 @@ export default function RoomList() {
     setRenameValue('');
   }, [renameValue, renameRoom]);
 
+  /** 채팅방 퇴장 처리
+   * Handle leaving a chat room */
   const handleLeave = useCallback(async (roomId: string) => {
     setContextMenu(null);
     if (!confirm(t('chat.leaveConfirm'))) return;

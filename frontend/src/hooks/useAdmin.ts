@@ -74,7 +74,8 @@ export function useAdminUserDetail(id: string) {
   });
 }
 
-/** 사용자 가입 승인 뮤테이션 훅 / User approval mutation hook */
+/** 사용자 가입 승인 뮤테이션 훅
+ * User approval mutation hook */
 export function useApproveUser() {
   const qc = useQueryClient();
   const { t } = useTranslation();
@@ -92,7 +93,8 @@ export function useApproveUser() {
   });
 }
 
-/** 사용자 가입 반려 뮤테이션 훅 / User rejection mutation hook */
+/** 사용자 가입 반려 뮤테이션 훅
+ * User rejection mutation hook */
 export function useRejectUser() {
   const qc = useQueryClient();
   const { t } = useTranslation();
@@ -109,7 +111,8 @@ export function useRejectUser() {
   });
 }
 
-/** 사용자 비활성화 뮤테이션 훅 / User deactivation mutation hook */
+/** 사용자 비활성화 뮤테이션 훅
+ * User deactivation mutation hook */
 export function useDeactivateUser() {
   const qc = useQueryClient();
   const { t } = useTranslation();
@@ -126,7 +129,8 @@ export function useDeactivateUser() {
   });
 }
 
-/** 사용자 활성화 뮤테이션 훅 / User activation mutation hook */
+/** 사용자 활성화 뮤테이션 훅
+ * User activation mutation hook */
 export function useActivateUser() {
   const qc = useQueryClient();
   const { t } = useTranslation();
@@ -143,7 +147,8 @@ export function useActivateUser() {
   });
 }
 
-/** 사용자 삭제 뮤테이션 훅 / User deletion mutation hook */
+/** 사용자 삭제 뮤테이션 훅
+ * User deletion mutation hook */
 export function useDeleteUser() {
   const qc = useQueryClient();
   const { t } = useTranslation();
@@ -218,7 +223,8 @@ export function useAnnouncementDetail(id: string) {
   });
 }
 
-/** 공지사항 작성 뮤테이션 훅 / Announcement creation mutation hook */
+/** 공지사항 작성 뮤테이션 훅
+ * Announcement creation mutation hook */
 export function useCreateAnnouncement() {
   const qc = useQueryClient();
   const { t } = useTranslation();
@@ -234,7 +240,8 @@ export function useCreateAnnouncement() {
   });
 }
 
-/** 공지사항 수정 뮤테이션 훅 / Announcement update mutation hook */
+/** 공지사항 수정 뮤테이션 훅
+ * Announcement update mutation hook */
 export function useUpdateAnnouncement() {
   const qc = useQueryClient();
   const { t } = useTranslation();
@@ -251,7 +258,8 @@ export function useUpdateAnnouncement() {
   });
 }
 
-/** 공지사항 고정/고정해제 토글 뮤테이션 훅 / Announcement pin/unpin toggle mutation hook */
+/** 공지사항 고정/고정해제 토글 뮤테이션 훅
+ * Announcement pin/unpin toggle mutation hook */
 export function useTogglePin() {
   const qc = useQueryClient();
   return useMutation({
@@ -295,7 +303,8 @@ export function useUploadAttachment() {
   });
 }
 
-/** 공지사항 첨부파일 삭제 뮤테이션 훅 / Announcement attachment deletion mutation hook */
+/** 공지사항 첨부파일 삭제 뮤테이션 훅
+ * Announcement attachment deletion mutation hook */
 export function useDeleteAttachment() {
   const qc = useQueryClient();
   return useMutation({
@@ -307,7 +316,8 @@ export function useDeleteAttachment() {
   });
 }
 
-/** 공지사항 삭제 뮤테이션 훅 / Announcement deletion mutation hook */
+/** 공지사항 삭제 뮤테이션 훅
+ * Announcement deletion mutation hook */
 export function useDeleteAnnouncement() {
   const qc = useQueryClient();
   const { t } = useTranslation();
@@ -337,7 +347,8 @@ export function useAddComment() {
     }: {
       announcementId: string;
       content: string;
-      /** 대댓글일 경우 부모 댓글 ID / Parent comment ID for replies */
+      /** 대댓글일 경우 부모 댓글 ID
+       * Parent comment ID for replies */
       parentId?: string;
     }) => {
       const { data } = await api.post(`/api/announcements/${announcementId}/comments`, {
@@ -350,7 +361,8 @@ export function useAddComment() {
   });
 }
 
-/** 공지사항 댓글 삭제 뮤테이션 훅 / Announcement comment deletion mutation hook */
+/** 공지사항 댓글 삭제 뮤테이션 훅
+ * Announcement comment deletion mutation hook */
 export function useDeleteComment() {
   const qc = useQueryClient();
   return useMutation({
@@ -362,7 +374,8 @@ export function useDeleteComment() {
   });
 }
 
-/** 공지사항 좋아요 토글 뮤테이션 훅 / Announcement like toggle mutation hook */
+/** 공지사항 좋아요 토글 뮤테이션 훅
+ * Announcement like toggle mutation hook */
 export function useToggleAnnouncementLike() {
   const qc = useQueryClient();
   return useMutation({
@@ -377,7 +390,8 @@ export function useToggleAnnouncementLike() {
   });
 }
 
-/** 공지사항 댓글 좋아요 토글 뮤테이션 훅 / Announcement comment like toggle mutation hook */
+/** 공지사항 댓글 좋아요 토글 뮤테이션 훅
+ * Announcement comment like toggle mutation hook */
 export function useToggleCommentLike() {
   const qc = useQueryClient();
   return useMutation({
@@ -424,7 +438,8 @@ export function useAdjacentAnnouncements(id: string) {
 
 // ===== 프로필 (Profile) =====
 
-/** 현재 사용자 프로필 조회 훅 / Hook for fetching current user profile */
+/** 현재 사용자 프로필 조회 훅
+ * Hook for fetching current user profile */
 export function useProfile() {
   return useQuery({
     queryKey: ['profile'],
@@ -435,7 +450,8 @@ export function useProfile() {
   });
 }
 
-/** 프로필 수정 뮤테이션 훅 / Profile update mutation hook */
+/** 프로필 수정 뮤테이션 훅
+ * Profile update mutation hook */
 export function useUpdateProfile() {
   const qc = useQueryClient();
   const { t } = useTranslation();
@@ -451,7 +467,8 @@ export function useUpdateProfile() {
   });
 }
 
-/** 비밀번호 변경 뮤테이션 훅 / Password change mutation hook */
+/** 비밀번호 변경 뮤테이션 훅
+ * Password change mutation hook */
 export function useChangePassword() {
   const { t } = useTranslation();
   return useMutation({
@@ -518,7 +535,8 @@ export function useUnreadCount() {
   });
 }
 
-/** 개별 알림 읽음 처리 뮤테이션 훅 / Single notification mark-as-read mutation hook */
+/** 개별 알림 읽음 처리 뮤테이션 훅
+ * Single notification mark-as-read mutation hook */
 export function useMarkAsRead() {
   const qc = useQueryClient();
   return useMutation({
@@ -532,7 +550,8 @@ export function useMarkAsRead() {
   });
 }
 
-/** 모든 알림 읽음 처리 뮤테이션 훅 / Mark all notifications as read mutation hook */
+/** 모든 알림 읽음 처리 뮤테이션 훅
+ * Mark all notifications as read mutation hook */
 export function useMarkAllAsRead() {
   const qc = useQueryClient();
   return useMutation({
@@ -546,7 +565,8 @@ export function useMarkAllAsRead() {
   });
 }
 
-/** 알림 삭제 뮤테이션 훅 / Notification deletion mutation hook */
+/** 알림 삭제 뮤테이션 훅
+ * Notification deletion mutation hook */
 export function useDeleteNotification() {
   const queryClient = useQueryClient();
 
@@ -566,7 +586,8 @@ export function useDeleteNotification() {
 // 모든 통계 훅은 관리자 대시보드에서 사용됩니다.
 // All statistics hooks are used in the admin dashboard.
 
-/** 전체 통계 개요 조회 훅 (사용자 수, 주문 수 등) / Overview statistics hook (user count, order count, etc.) */
+/** 전체 통계 개요 조회 훅 (사용자 수, 주문 수 등)
+ * Overview statistics hook (user count, order count, etc.) */
 export function useStatOverview() {
   return useQuery({
     queryKey: ['stat-overview'],
@@ -596,7 +617,8 @@ export function useStatRegistrations(period: string, days: number) {
   });
 }
 
-/** 승인된 가입 통계 (타임라인) 조회 훅 / Approved registration statistics (timeline) hook */
+/** 승인된 가입 통계 (타임라인) 조회 훅
+ * Approved registration statistics (timeline) hook */
 export function useStatRegistrationsApproved(period: string, days: number) {
   return useQuery({
     queryKey: ['stat-registrations-approved', period, days],
@@ -609,7 +631,8 @@ export function useStatRegistrationsApproved(period: string, days: number) {
   });
 }
 
-/** 로그인 통계 (타임라인) 조회 훅 / Login statistics (timeline) hook */
+/** 로그인 통계 (타임라인) 조회 훅
+ * Login statistics (timeline) hook */
 export function useStatLogins(period: string, days: number) {
   return useQuery({
     queryKey: ['stat-logins', period, days],
@@ -622,7 +645,8 @@ export function useStatLogins(period: string, days: number) {
   });
 }
 
-/** 페이지 뷰 통계 조회 훅 (타임라인 + 인기 페이지) / Page view statistics hook (timeline + top pages) */
+/** 페이지 뷰 통계 조회 훅 (타임라인 + 인기 페이지)
+ * Page view statistics hook (timeline + top pages) */
 export function useStatPageViews(period: string, days: number) {
   return useQuery({
     queryKey: ['stat-page-views', period, days],
@@ -635,7 +659,8 @@ export function useStatPageViews(period: string, days: number) {
   });
 }
 
-/** 공지사항/댓글 통계 조회 훅 / Announcement/comment statistics hook */
+/** 공지사항/댓글 통계 조회 훅
+ * Announcement/comment statistics hook */
 export function useStatAnnouncements(days: number) {
   return useQuery({
     queryKey: ['stat-announcements', days],
@@ -653,7 +678,8 @@ export function useStatAnnouncements(days: number) {
   });
 }
 
-/** 사용자 통계 조회 훅 (역할별, 상태별 분류) / User statistics hook (by role, by status) */
+/** 사용자 통계 조회 훅 (역할별, 상태별 분류)
+ * User statistics hook (by role, by status) */
 export function useStatUsers() {
   return useQuery({
     queryKey: ['stat-users'],
@@ -667,7 +693,8 @@ export function useStatUsers() {
   });
 }
 
-/** 통계 개요 추이 조회 훅 (전일 대비 변화량 등) / Overview trend statistics hook (change vs. previous day, etc.) */
+/** 통계 개요 추이 조회 훅 (전일 대비 변화량 등)
+ * Overview trend statistics hook (change vs. previous day, etc.) */
 export function useStatOverviewTrend() {
   return useQuery({
     queryKey: ['stat-overview-trend'],
@@ -678,7 +705,8 @@ export function useStatOverviewTrend() {
   });
 }
 
-/** 거래 통계 조회 훅 (거래량, 체결 수 등) / Trading statistics hook (volume, trade count, etc.) */
+/** 거래 통계 조회 훅 (거래량, 체결 수 등)
+ * Trading statistics hook (volume, trade count, etc.) */
 export function useStatTrading(days: number) {
   return useQuery({
     queryKey: ['stat-trading', days],
@@ -691,7 +719,8 @@ export function useStatTrading(days: number) {
   });
 }
 
-/** 인기 공지사항 조회 훅 (조회수/좋아요 기준) / Popular announcements hook (by views/likes) */
+/** 인기 공지사항 조회 훅 (조회수/좋아요 기준)
+ * Popular announcements hook (by views/likes) */
 export function useStatPopularAnnouncements() {
   return useQuery({
     queryKey: ['stat-popular-announcements'],
@@ -702,7 +731,8 @@ export function useStatPopularAnnouncements() {
   });
 }
 
-/** 좋아요 통계 조회 훅 (공지/댓글별 좋아요 추이) / Like statistics hook (announcement/comment like trends) */
+/** 좋아요 통계 조회 훅 (공지/댓글별 좋아요 추이)
+ * Like statistics hook (announcement/comment like trends) */
 export function useStatLikes(days: number) {
   return useQuery({
     queryKey: ['stat-likes', days],
@@ -719,7 +749,8 @@ export function useStatLikes(days: number) {
   });
 }
 
-/** 채팅 통계 조회 훅 (방 수, 메시지 수, 일별 추이 등) / Chat statistics hook (room count, message count, daily trends, etc.) */
+/** 채팅 통계 조회 훅 (방 수, 메시지 수, 일별 추이 등)
+ * Chat statistics hook (room count, message count, daily trends, etc.) */
 export function useStatChat(days: number) {
   return useQuery({
     queryKey: ['stat-chat', days],

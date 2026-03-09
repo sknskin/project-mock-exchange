@@ -11,7 +11,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import type { Order, PlaceOrderRequest } from '@/types';
 
-/** 체결 내역 인터페이스 / Trade history record interface */
+/** 체결 내역 인터페이스
+ * Trade history record interface */
 export interface TradeHistory {
   tradeId: string;
   buyOrderId: string;

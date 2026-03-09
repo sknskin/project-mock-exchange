@@ -15,17 +15,23 @@ import { useTranslation } from '@/hooks/useTranslation';
 
 // 주소 검색 Props / Address Search Props
 interface AddressSearchProps {
-  /** 선택된 주소 / Selected address */
+  /** 선택된 주소
+   * Selected address */
   address: string;
-  /** 상세 주소 / Detail address */
+  /** 상세 주소
+   * Detail address */
   addressDetail: string;
-  /** 우편번호 / Zip code */
+  /** 우편번호
+   * Zip code */
   zipCode: string;
-  /** 주소 선택 콜백 / Address selection callback */
+  /** 주소 선택 콜백
+   * Address selection callback */
   onAddressChange: (address: string, zipCode: string) => void;
-  /** 상세 주소 변경 콜백 / Detail address change callback */
+  /** 상세 주소 변경 콜백
+   * Detail address change callback */
   onAddressDetailChange: (detail: string) => void;
-  /** 상세 주소 에러 / Detail address error */
+  /** 상세 주소 에러
+   * Detail address error */
   addressDetailError?: string;
 }
 
@@ -58,6 +64,8 @@ export default function AddressSearch({
   const [showEmbed, setShowEmbed] = useState(false);
   const embedRef = useRef<HTMLDivElement>(null);
 
+  /** 다음 우편번호 API 스크립트 동적 로드
+   * Dynamically load Daum Postcode API script */
   const loadScript = useCallback((): Promise<void> => {
     return new Promise((resolve) => {
       if (window.daum?.Postcode) {
@@ -71,6 +79,8 @@ export default function AddressSearch({
     });
   }, []);
 
+  /** 주소 검색 시작: 스크립트 로드 후 임베드 모달 표시
+   * Start address search: load script then show embed modal */
   const handleSearch = useCallback(async () => {
     await loadScript();
     setShowEmbed(true);

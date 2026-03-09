@@ -50,6 +50,8 @@ export class BinancePriceService implements OnModuleInit, OnModuleDestroy {
     return entry.tick;
   }
 
+  /** Binance WebSocket Combined Stream에 연결합니다
+   * Connect to Binance WebSocket Combined Stream */
   private connect() {
     if (BINANCE_SYMBOL_MAP.size === 0) {
       this.logger.warn('No Binance symbols configured, skipping connection');
@@ -100,6 +102,8 @@ export class BinancePriceService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  /** Binance 24시간 티커 메시지를 파싱하여 캐시에 저장합니다
+   * Parse Binance 24hr ticker message and store in cache */
   private handleTickerMessage(data: Record<string, unknown>) {
     // Binance 24시간 티커 데이터 (Binance 24hr ticker payload):
     // s: 심볼(symbol), c: 최종가(last price), b: 최우선 매수호가(best bid), a: 최우선 매도호가(best ask)
@@ -128,6 +132,8 @@ export class BinancePriceService implements OnModuleInit, OnModuleDestroy {
     this.cache.set(binanceSymbol, { tick, receivedAt: Date.now() });
   }
 
+  /** 지수 백오프로 WebSocket 재연결을 예약합니다
+   * Schedule WebSocket reconnection with exponential backoff */
   private scheduleReconnect() {
     if (this.isShuttingDown) return;
     if (this.reconnectTimeout) return;
@@ -147,6 +153,8 @@ export class BinancePriceService implements OnModuleInit, OnModuleDestroy {
     );
   }
 
+  /** WebSocket 연결을 종료하고 리소스를 정리합니다
+   * Close WebSocket connection and clean up resources */
   private disconnect() {
     if (this.reconnectTimeout) {
       clearTimeout(this.reconnectTimeout);

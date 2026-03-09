@@ -39,7 +39,7 @@ function InfoRow({ label, children }: { label: string; children: React.ReactNode
 }
 
 // ===== Trade History Tab Content =====
-function TradeHistoryTab({ userId, t }: { userId: string; t: ReturnType<typeof useTranslation>['t'] }) {
+function TradeHistoryTab({ userId: _userId, t }: { userId: string; t: ReturnType<typeof useTranslation>['t'] }) {
   return (
     <div className="mt-4">
       {/* Backend required notice */}
@@ -99,6 +99,8 @@ function TradeHistoryTab({ userId, t }: { userId: string; t: ReturnType<typeof u
   );
 }
 
+/** 관리자 회원 상세 페이지 컴포넌트 — 회원 정보 조회 및 승인/반려/역할 변경 관리
+ * Admin user detail page component — view user info and manage approval/rejection/role changes */
 export default function AdminUserDetailPage({
   params,
 }: {
@@ -151,17 +153,23 @@ export default function AdminUserDetailPage({
   // 단순 확인 모달: 비활성화, 활성화, 삭제, 역할변경 / Simple confirm modals: deactivate, activate, delete, changeRole
   const isSimpleModal = activeModal === 'deactivate' || activeModal === 'activate' || activeModal === 'delete' || activeModal === 'changeRole';
 
+  /** 관리 액션 모달 열기 및 메모 초기화
+   * Open management action modal and reset note */
   const openModal = (type: ModalType) => {
     setNote('');
     setActiveModal(type);
   };
 
+  /** 모달 닫기 및 상태 초기화
+   * Close modal and reset state */
   const closeModal = () => {
     setActiveModal(null);
     setNote('');
     setSelectedRole('');
   };
 
+  /** 모달 확인 — 모달 타입에 따라 적절한 관리 액션 실행
+   * Confirm modal — execute appropriate management action based on modal type */
   const handleConfirm = async () => {
     if (!user) return;
     try {
@@ -194,6 +202,8 @@ export default function AdminUserDetailPage({
     deleteUser.isPending ||
     updateRole.isPending;
 
+  /** 날짜 문자열을 한국어 날짜/시간 형식으로 변환
+   * Format date string to Korean locale datetime */
   const formatDateValue = (value: string | null | undefined): string => {
     if (!value) return '-';
     return new Date(value).toLocaleString('ko-KR', {
@@ -205,6 +215,8 @@ export default function AdminUserDetailPage({
     });
   };
 
+  /** 현재 모달 타입에 따른 제목 반환
+   * Return modal title based on current modal type */
   const getModalTitle = (): string => {
     if (activeModal === 'approve') return t('admin.users.approve');
     if (activeModal === 'reject') return t('admin.users.reject');
@@ -215,6 +227,8 @@ export default function AdminUserDetailPage({
     return '';
   };
 
+  /** 현재 모달 타입에 따른 확인 메시지 반환
+   * Return confirmation message based on current modal type */
   const getModalMessage = (): string => {
     if (activeModal === 'approve') return t('admin.users.approveConfirm');
     if (activeModal === 'reject') return t('admin.users.rejectConfirm');
@@ -225,6 +239,8 @@ export default function AdminUserDetailPage({
     return '';
   };
 
+  /** 현재 모달 타입에 따른 확인 버튼 텍스트 반환
+   * Return confirm button label based on current modal type */
   const getModalConfirmLabel = (): string => {
     if (activeModal === 'approve') return t('admin.users.approve');
     if (activeModal === 'reject') return t('admin.users.reject');

@@ -8,7 +8,7 @@
 'use client';
 
 import { useSettingsStore } from '@/stores/settings';
-import { t, type TranslationKey, type Locale } from '@/lib/i18n';
+import { t, type TranslationKey } from '@/lib/i18n';
 
 /**
  * 현재 설정된 언어(locale)에 따라 번역 함수(t)를 제공하는 훅

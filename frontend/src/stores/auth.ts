@@ -11,19 +11,26 @@ import type { User } from '@/types';
 
 // 인증 상태 인터페이스 / Auth state interface
 interface AuthState {
-  /** 현재 로그인한 사용자 / Currently logged-in user */
+  /** 현재 로그인한 사용자
+   * Currently logged-in user */
   user: User | null;
-  /** JWT 액세스 토큰 / JWT access token */
+  /** JWT 액세스 토큰
+   * JWT access token */
   accessToken: string | null;
-  /** 인증 여부 / Whether authenticated */
+  /** 인증 여부
+   * Whether authenticated */
   isAuthenticated: boolean;
-  /** 사용자 정보 갱신 / Update user info */
+  /** 사용자 정보 갱신
+   * Update user info */
   setUser: (user: User) => void;
-  /** 토큰 갱신 / Update token */
+  /** 토큰 갱신
+   * Update token */
   setToken: (token: string) => void;
-  /** 로그인 처리 (사용자 + 토큰 동시 설정) / Login (sets user + token at once) */
+  /** 로그인 처리 (사용자 + 토큰 동시 설정)
+   * Login (sets user + token at once) */
   login: (user: User, token: string) => void;
-  /** 로그아웃 처리 (모든 상태 초기화) / Logout (resets all state) */
+  /** 로그아웃 처리 (모든 상태 초기화)
+   * Logout (resets all state) */
   logout: () => void;
 }
 

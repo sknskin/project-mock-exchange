@@ -15,12 +15,16 @@ import { InternalAuthGuard } from '../../common/guards/internal-auth.guard';
 export class SettingsController {
   constructor(private readonly settingsService: SettingsService) {}
 
+  /** 전체 시스템 설정 조회
+   * Get all system settings */
   @Get()
   async getAll() {
     const settings = await this.settingsService.getAll();
     return { success: true, data: settings };
   }
 
+  /** 시스템 설정 일괄 수정
+   * Bulk update system settings */
   @Put()
   async bulkUpdate(@Body() body: Record<string, string>) {
     const settings = await this.settingsService.bulkUpdate(body);

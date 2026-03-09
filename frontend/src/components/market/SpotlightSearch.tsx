@@ -14,7 +14,6 @@ import { cn, formatPriceDisplay, formatPercent } from '@/lib/format';
 import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useAuthStore } from '@/stores/auth';
 import type { Asset } from '@/types';
 
 interface SpotlightSearchProps {
@@ -24,13 +23,14 @@ interface SpotlightSearchProps {
   onLoginRequired?: () => void;
 }
 
-export default function SpotlightSearch({ isOpen, onClose, assets, onLoginRequired }: SpotlightSearchProps) {
+/** 스포트라이트 검색 모달 — macOS Spotlight 스타일 종목 검색
+ * Spotlight search modal — macOS Spotlight-style asset search */
+export default function SpotlightSearch({ isOpen, onClose, assets, onLoginRequired: _onLoginRequired }: SpotlightSearchProps) {
   const router = useRouter();
   const { t } = useTranslation();
   const { display } = useCurrencyDisplay();
   const { query: { data: rateData } } = useExchangeRate();
   const rate = rateData?.rate;
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -89,6 +89,8 @@ export default function SpotlightSearch({ isOpen, onClose, assets, onLoginRequir
   }, [isOpen, displayList, selectedIndex, onClose]);
 
   // 선택 시 상세 이동 / Navigate to detail on select
+  /** 종목 선택 시 상세 페이지로 이동
+   * Navigate to asset detail on selection */
   const handleSelect = (asset: Asset) => {
     onClose();
     router.push(`/asset/${asset.symbol}`);

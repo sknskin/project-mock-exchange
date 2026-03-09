@@ -11,11 +11,14 @@ import { cn } from '@/lib/format';
 
 // 버튼 Props — 네이티브 button 속성 확장 / Button Props — extends native button attributes
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  /** 스타일 변형 / Style variant */
+  /** 스타일 변형
+   * Style variant */
   variant?: 'primary' | 'secondary' | 'danger' | 'buy' | 'sell' | 'ghost';
-  /** 크기 / Size */
+  /** 크기
+   * Size */
   size?: 'sm' | 'md' | 'lg';
-  /** 전체 너비 확장 여부 / Whether to expand to full width */
+  /** 전체 너비 확장 여부
+   * Whether to expand to full width */
   fullWidth?: boolean;
 }
 

@@ -11,12 +11,10 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Activity, RefreshCw, CheckCircle2, XCircle, Loader2,
-  Server, Database, Cpu, Clock, Globe, Zap, Code, Link2, Layers, Info,
-  BarChart3, Monitor, HardDrive, FileText, RotateCcw, ArrowRight, ArrowLeft,
-  Shield,
+  Server, Database, Clock, Globe, Zap, Code, Link2, Layers, Info,
+  BarChart3, Shield,
 } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
-import type { TranslationKey } from '@/lib/i18n';
 import { useAuthStore } from '@/stores/auth';
 import { cn } from '@/lib/format';
 
@@ -152,7 +150,7 @@ const SERVICE_LOG_LEVELS: Record<string, 'debug' | 'info' | 'warn'> = {
 };
 
 // 서비스별 DB 스키마 정보 (DB schema info per service)
-const SERVICE_DB_SCHEMAS: Record<string, string[]> = {
+const _SERVICE_DB_SCHEMAS: Record<string, string[]> = {
   'user-auth': ['User', 'Session', 'PageView', 'Announcement', 'SystemSetting'],
   'market-data': ['Asset', 'Candle', 'News', 'PriceHistory'],
   'order-engine': ['Order', 'OrderEvent', 'TradeExecution'],
@@ -183,6 +181,8 @@ interface ServiceDetail {
 
 // 응답 시간 이력 최대 횟수 (Max response time history entries)
 const MAX_HISTORY = 5;
+/** 관리자 서비스 헬스 모니터링 페이지 컴포넌트 — 개요 + 개별 서비스 상세 탭
+ * Admin service health monitoring page component — overview + individual service detail tabs */
 export default function AdminHealthPage() {
   const router = useRouter();
   const { t } = useTranslation();
@@ -190,6 +190,8 @@ export default function AdminHealthPage() {
   const token = useAuthStore((s) => s.accessToken);
 
   const [activeTab, setActiveTabRaw] = useState<string>('overview');
+  /** 탭 전환 시 상단으로 스크롤
+   * Switch tab and scroll to top */
   const setActiveTab = useCallback((tab: string) => {
     setActiveTabRaw(tab);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -208,6 +210,7 @@ export default function AdminHealthPage() {
 
   // 포트 정보 API에서 가져오기 (Fetch port info from API)
   useEffect(() => {
+    // eslint-disable-next-line no-undef
     fetch('/api/health/services', { signal: AbortSignal.timeout(5000) })
       .then((r) => r.json())
       .then((data) => {
@@ -238,6 +241,7 @@ export default function AdminHealthPage() {
         const start = Date.now();
         try {
           const url = svc.key === 'api-gateway' ? '/api/health' : `/api/health/${svc.key}`;
+          // eslint-disable-next-line no-undef
           const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
           const elapsed = Date.now() - start;
           return {
@@ -283,7 +287,7 @@ export default function AdminHealthPage() {
     setDetailLoading(true);
     try {
       const res = await fetch(`/api/health/${serviceKey}/detail`, {
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(10000), // eslint-disable-line no-undef
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (res.ok) {
@@ -324,6 +328,8 @@ export default function AdminHealthPage() {
   const dbCount = Object.values(SERVICE_DETAIL_META).filter((m) => m.db).length;
   const totalEndpoints = Object.values(SERVICE_DETAIL_META).reduce((sum, m) => sum + m.endpoints.length, 0);
 
+  /** Date 객체를 HH:MM:SS 형식으로 포맷
+   * Format Date object as HH:MM:SS */
   const formatTime = (date?: Date) => {
     if (!date) return '-';
     return date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });

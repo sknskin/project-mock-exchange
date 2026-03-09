@@ -53,6 +53,8 @@ const CHART_COLORS = [
   '#EC4899', '#06B6D4', '#F59E0B', '#6366F1', '#10B981',
 ];
 
+/** 포트폴리오 분석 — 자산 배분, 손익, 위험 지표 등 종합 분석 대시보드
+ * Portfolio analytics — comprehensive dashboard with allocation, P&L, risk metrics */
 export default function PortfolioAnalytics({ portfolio }: PortfolioAnalyticsProps) {
   const { t } = useTranslation();
   const { query: { data: rateData } } = useExchangeRate();

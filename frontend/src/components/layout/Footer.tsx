@@ -54,6 +54,8 @@ export default function Footer() {
   const showPinned = isPinned && isOpen;
   const [toasts, setToasts] = useState<Toast[]>([]);
 
+  /** 텍스트를 클립보드에 복사하고 커서 위치에 토스트 표시
+   * Copy text to clipboard and show toast at cursor position */
   const copyToClipboard = useCallback(async (text: string, e: React.MouseEvent) => {
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     try {

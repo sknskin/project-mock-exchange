@@ -24,12 +24,16 @@ export class HealthController {
     private prisma: PrismaService,
   ) {}
 
+  /** 라이브니스 프로브 — 프로세스 생존 확인
+   * Liveness probe — check process is alive */
   @Get('live')
   @HealthCheck()
   live() {
     return this.health.check([]);
   }
 
+  /** 레디니스 프로브 — DB 연결 포함 준비 상태 확인
+   * Readiness probe — check readiness including DB connection */
   @Get('ready')
   @HealthCheck()
   ready() {
@@ -38,6 +42,8 @@ export class HealthController {
     ]);
   }
 
+  /** 스타트업 프로브 — 서비스 시작 완료 확인
+   * Startup probe — check service initialization complete */
   @Get('startup')
   @HealthCheck()
   startup() {

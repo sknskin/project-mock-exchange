@@ -22,7 +22,8 @@ import api from '@/lib/api';
  */
 type DuplicateStatus = 'idle' | 'checking' | 'available' | 'taken' | 'error';
 
-/** 디바운스 대기 시간 (ms) — 타이핑 중 불필요한 API 호출 방지 / Debounce delay (ms) — prevents unnecessary API calls during typing */
+/** 디바운스 대기 시간 (ms) — 타이핑 중 불필요한 API 호출 방지
+ * Debounce delay (ms) — prevents unnecessary API calls during typing */
 const DEBOUNCE_MS = 500;
 
 /**

@@ -17,19 +17,26 @@ const ROW_HEIGHT = 56;
 
 // 자산 목록 Props / Asset List Props
 interface AssetListProps {
-  /** 전체 자산 데이터 배열 / Full asset data array */
+  /** 전체 자산 데이터 배열
+   * Full asset data array */
   assets: Asset[];
-  /** 현재 선택된 기간 (realtime, 1d, 1w 등) / Currently selected period (realtime, 1d, 1w, etc.) */
+  /** 현재 선택된 기간 (realtime, 1d, 1w 등)
+   * Currently selected period (realtime, 1d, 1w, etc.) */
   period: string;
-  /** 기간 변경 콜백 / Period change callback */
+  /** 기간 변경 콜백
+   * Period change callback */
   onPeriodChange: (period: string) => void;
-  /** 메인 탭 (realtime, popular, trending, watchlist) / Main tab (realtime, popular, trending, watchlist) */
+  /** 메인 탭 (realtime, popular, trending, watchlist)
+   * Main tab (realtime, popular, trending, watchlist) */
   mainTab?: string;
-  /** 로그인 필요 시 콜백 / Callback when login is required */
+  /** 로그인 필요 시 콜백
+   * Callback when login is required */
   onLoginRequired?: () => void;
-  /** 관심종목 심볼 목록 / Watchlist symbol list */
+  /** 관심종목 심볼 목록
+   * Watchlist symbol list */
   watchlistSymbols?: string[];
-  /** 관심종목 토글 콜백 / Watchlist toggle callback */
+  /** 관심종목 토글 콜백
+   * Watchlist toggle callback */
   onToggleWatchlist?: (symbol: string) => void;
 }
 
@@ -37,7 +44,9 @@ const PAGE_SIZE = 50;
 
 type SortKey = 'volume' | 'change_desc' | 'change_asc';
 
-export default function AssetList({ assets, period, onPeriodChange, mainTab = 'realtime', onLoginRequired, watchlistSymbols, onToggleWatchlist }: AssetListProps) {
+/** 자산 목록 — 카테고리/정렬/기간 필터가 적용된 종목 리스트
+ * Asset list — filterable by category, sort, and period */
+export default function AssetList({ assets, period, onPeriodChange, mainTab = 'realtime', onLoginRequired: _onLoginRequired, watchlistSymbols, onToggleWatchlist }: AssetListProps) {
   const { t } = useTranslation();
   const [category, setCategory] = useState('all');
   const [sort, setSort] = useState<SortKey>('volume');
@@ -159,7 +168,7 @@ export default function AssetList({ assets, period, onPeriodChange, mainTab = 'r
           el.style.transform = `translateY(${delta}px)`;
           el.style.zIndex = '1';
           // 리플로우 강제 / force reflow
-          el.offsetHeight;
+          void el.offsetHeight;
           el.style.transition = 'transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
           el.style.transform = 'translateY(0)';
           el.style.zIndex = '';

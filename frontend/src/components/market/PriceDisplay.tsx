@@ -11,14 +11,19 @@ import { cn, formatPrice, formatPercent } from '@/lib/format';
 
 // 가격 표시 Props / Price Display Props
 interface PriceDisplayProps {
-  /** 표시할 가격 / Price to display */
+  /** 표시할 가격
+   * Price to display */
   price: number;
-  /** 등락률 (%) / Change rate (%) */
+  /** 등락률 (%)
+   * Change rate (%) */
   changePercent: number;
-  /** 텍스트 크기 / Text size */
+  /** 텍스트 크기
+   * Text size */
   size?: 'sm' | 'md' | 'lg';
 }
 
+/** 가격 표시 — 현재가와 등락률을 색상 구분하여 렌더링
+ * Price display — renders current price and change rate with color coding */
 export default function PriceDisplay({
   price,
   changePercent,

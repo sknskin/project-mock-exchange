@@ -35,16 +35,22 @@ export class PriceCacheService implements OnModuleDestroy {
     await this.redis.quit();
   }
 
+  /** 단일 가격 틱을 Redis에 캐싱합니다 (TTL 10초)
+   * Cache a single price tick in Redis (10s TTL) */
   async setPrice(tick: PriceTick): Promise<void> {
     const key = `market:price:${tick.symbol}`;
     await this.redis.set(key, JSON.stringify(tick), 'EX', 10);
   }
 
+  /** Redis에서 특정 심볼의 캐시된 가격을 조회합니다
+   * Get cached price for a symbol from Redis */
   async getPrice(symbol: string): Promise<PriceTick | null> {
     const data = await this.redis.get(`market:price:${symbol}`);
     return data ? JSON.parse(data) : null;
   }
 
+  /** 여러 심볼의 캐시된 가격을 MGET으로 일괄 조회합니다
+   * Batch get cached prices for multiple symbols via MGET */
   async getAllPrices(symbols: string[]): Promise<Map<string, PriceTick>> {
     const result = new Map<string, PriceTick>();
     if (symbols.length === 0) return result;
@@ -61,6 +67,8 @@ export class PriceCacheService implements OnModuleDestroy {
     return result;
   }
 
+  /** Redis PubSub으로 가격 업데이트를 발행합니다
+   * Publish price update via Redis PubSub */
   async publishPrice(tick: PriceTick): Promise<void> {
     await this.redis.publish(
       `prices:${tick.symbol}`,

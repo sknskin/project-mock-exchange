@@ -17,6 +17,8 @@ import { AdminRolesGuard } from '../auth/admin-roles.guard';
 export class SettingsProxyController {
   constructor(private readonly proxyService: ProxyService) {}
 
+  /** 관리자 설정 전체 조회를 user-auth로 프록시
+   * Proxy admin settings retrieval to user-auth */
   @Get()
   async getAll(@Req() req: Request, @Res() res: Response) {
     const result = await this.proxyService.forward('user-auth', {
@@ -27,6 +29,8 @@ export class SettingsProxyController {
     res.status(result.status).json(result.data);
   }
 
+  /** 관리자 설정 일괄 수정을 user-auth로 프록시
+   * Proxy admin settings bulk update to user-auth */
   @Put()
   async bulkUpdate(@Req() req: Request, @Res() res: Response, @Body() body: Record<string, string>) {
     const result = await this.proxyService.forward('user-auth', {

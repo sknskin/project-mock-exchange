@@ -85,6 +85,8 @@ function ScreenFrame({ children }: { children: React.ReactNode }) {
 }
 
 /* ─── 대시보드 기능별 일러스트레이션 — 각 기능을 손그림 와이어프레임으로 설명 / Dashboard feature illustrations — explains each feature via hand-drawn wireframes ─── */
+/** 대시보드 차트 일러스트 — 실시간 가격 차트 와이어프레임
+ * Dashboard chart illustration — real-time price chart wireframe */
 function DashboardChartIllust() {
   return (
     <ScreenFrame>
@@ -364,7 +366,7 @@ function DashboardMarketInfoIllust() {
   );
 }
 
-/* ─── Asset Detail illustrations ─── */
+/* ─── 자산 상세 기능별 일러스트레이션 / Asset Detail feature illustrations ─── */
 function AssetDetailBuySellIllust() {
   return (
     <ScreenFrame>
@@ -615,7 +617,7 @@ function AssetDetailOrderbookIllust() {
   );
 }
 
-/* ─── Portfolio illustrations ─── */
+/* ─── 포트폴리오 기능별 일러스트레이션 / Portfolio feature illustrations ─── */
 function PortfolioBalanceIllust() {
   return (
     <ScreenFrame>
@@ -800,7 +802,7 @@ function PortfolioHistoryIllust() {
   );
 }
 
-/* ─── Orders illustrations ─── */
+/* ─── 주문 기능별 일러스트레이션 / Orders feature illustrations ─── */
 function OrdersStepIllust({ step }: { step: number }) {
   const highlights: Record<number, React.ReactNode> = {
     1: (
@@ -1022,7 +1024,7 @@ function OrdersCalcIllust() {
   );
 }
 
-/* ─── Leaderboard illustrations ─── */
+/* ─── 리더보드 기능별 일러스트레이션 / Leaderboard feature illustrations ─── */
 function LeaderboardRankIllust() {
   return (
     <ScreenFrame>
@@ -1115,7 +1117,7 @@ function LeaderboardScoringIllust() {
   );
 }
 
-/* ─── Announcements illustrations ─── */
+/* ─── 공지사항 기능별 일러스트레이션 / Announcements feature illustrations ─── */
 function AnnouncementsViewIllust() {
   return (
     <ScreenFrame>
@@ -1230,7 +1232,7 @@ function AnnouncementsWriteIllust() {
   );
 }
 
-/* ─── News illustrations ─── */
+/* ─── 뉴스 기능별 일러스트레이션 / News feature illustrations ─── */
 function NewsCategoryIllust() {
   return (
     <ScreenFrame>
@@ -1301,7 +1303,7 @@ function NewsRefreshIllust() {
   );
 }
 
-/* ─── Chat illustrations ─── */
+/* ─── 채팅 기능별 일러스트레이션 / Chat feature illustrations ─── */
 function ChatDmIllust() {
   return (
     <ScreenFrame>
@@ -1505,7 +1507,7 @@ function ChatResizeIllust() {
   );
 }
 
-/* ─── Admin illustrations ─── */
+/* ─── 관리자 통계/사용자 기능별 일러스트레이션 / Admin stats/users feature illustrations ─── */
 function AdminStatsOverviewIllust() {
   return (
     <ScreenFrame>
@@ -1735,7 +1737,7 @@ function AdminUsersStatusFilterIllust() {
   );
 }
 
-/* ─── Notifications illustrations ─── */
+/* ─── 알림 기능별 일러스트레이션 / Notifications feature illustrations ─── */
 function NotificationsBellIllust() {
   return (
     <ScreenFrame>
@@ -1877,7 +1879,7 @@ function NotificationsRealtimeIllust() {
   );
 }
 
-/* ─── Community illustrations ─── */
+/* ─── 커뮤니티 기능별 일러스트레이션 / Community feature illustrations ─── */
 function CommunityTabsIllust() {
   return (
     <ScreenFrame>
@@ -1953,7 +1955,7 @@ function CommunityTradersIllust() {
   );
 }
 
-/* ─── Mypage illustrations ─── */
+/* ─── 마이페이지 기능별 일러스트레이션 / Mypage feature illustrations ─── */
 function MypageProfileIllust() {
   return (
     <ScreenFrame>
@@ -2046,7 +2048,7 @@ function MypageNotificationSettingsIllust() {
   );
 }
 
-/* ─── Admin Settings illustrations ─── */
+/* ─── 관리자 설정 기능별 일러스트레이션 / Admin Settings feature illustrations ─── */
 function AdminSettingsGridIllust() {
   return (
     <ScreenFrame>
@@ -2096,7 +2098,7 @@ function AdminSettingsEditIllust() {
   );
 }
 
-/* ─── Admin Health illustrations ─── */
+/* ─── 관리자 서비스 헬스 일러스트레이션 / Admin Health feature illustrations ─── */
 function AdminHealthStatusIllust() {
   return (
     <ScreenFrame>
@@ -2155,7 +2157,7 @@ function AdminHealthArchIllust() {
   );
 }
 
-/* ─── Admin Audit illustrations ─── */
+/* ─── 관리자 감사 로그 일러스트레이션 / Admin Audit feature illustrations ─── */
 function AdminAuditListIllust() {
   return (
     <ScreenFrame>
@@ -2181,7 +2183,7 @@ function AdminAuditListIllust() {
   );
 }
 
-/* ─── Admin Settings — Risk limits illustration ─── */
+/* ─── 관리자 설정 — 위험 한도 일러스트레이션 / Admin Settings — Risk limits illustration ─── */
 function AdminSettingsRiskIllust() {
   return (
     <ScreenFrame>
@@ -2204,7 +2206,7 @@ function AdminSettingsRiskIllust() {
   );
 }
 
-/* ─── Admin Settings — Session security illustration ─── */
+/* ─── 관리자 설정 — 세션 보안 일러스트레이션 / Admin Settings — Session security illustration ─── */
 function AdminSettingsSessionIllust() {
   return (
     <ScreenFrame>
@@ -2228,7 +2230,7 @@ function AdminSettingsSessionIllust() {
   );
 }
 
-/* ─── Admin Health — Metrics illustration ─── */
+/* ─── 관리자 헬스 — 메트릭 일러스트레이션 / Admin Health — Metrics illustration ─── */
 function AdminHealthMetricsIllust() {
   return (
     <ScreenFrame>
@@ -2253,7 +2255,7 @@ function AdminHealthMetricsIllust() {
   );
 }
 
-/* ─── Admin Audit — View/Download illustration ─── */
+/* ─── 관리자 감사 — 조회/다운로드 일러스트레이션 / Admin Audit — View/Download illustration ─── */
 function AdminAuditViewIllust() {
   return (
     <ScreenFrame>
@@ -2279,7 +2281,7 @@ function AdminAuditViewIllust() {
   );
 }
 
-/* ─── Illustration mapping ─── */
+/* ─── 일러스트레이션 매핑 — 섹션별 인덱스로 컴포넌트 참조 / Illustration mapping — component references by section and index ─── */
 export const illustrationMap: Record<string, Record<number, () => React.ReactNode>> = {
   dashboard: {
     0: () => <DashboardChartIllust />,
@@ -2394,7 +2396,7 @@ export const illustrationMap: Record<string, Record<number, () => React.ReactNod
   },
 };
 
-/* ─── Tip descriptions per illustration ─── */
+/* ─── 일러스트레이션별 팁 설명 i18n 키 / Tip description i18n keys per illustration ─── */
 export const tipMap: Record<string, Record<number, TranslationKey[]>> = {
   dashboard: {
     0: ['help.dashboard.chart.tip1', 'help.dashboard.chart.tip2', 'help.dashboard.chart.tip3'],
@@ -2509,7 +2511,7 @@ export const tipMap: Record<string, Record<number, TranslationKey[]>> = {
   },
 };
 
-/* ─── FAQ Illustration map (reuses existing feature illustrations) ─── */
+/* ─── FAQ 일러스트레이션 매핑 — 기존 기능 일러스트 재사용 / FAQ illustration map — reuses existing feature illustrations ─── */
 export const faqIllustrationMap: Record<string, Record<string, () => React.ReactNode>> = {
   dashboard: {
     d1: () => <DashboardChartIllust />,
@@ -2600,7 +2602,7 @@ export const faqIllustrationMap: Record<string, Record<string, () => React.React
   },
 };
 
-/* ─── FAQ Tip descriptions ─── */
+/* ─── FAQ 팁 설명 i18n 키 / FAQ tip description i18n keys ─── */
 export const faqTipMap: Record<string, Record<string, string[]>> = {
   dashboard: {
     d1: ['help.faq.d1.t1', 'help.faq.d1.t2', 'help.faq.d1.t3'],

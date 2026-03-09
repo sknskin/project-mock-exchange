@@ -36,6 +36,8 @@ export class AdminProxyController {
     private readonly chatGateway: ChatGateway,
   ) {}
 
+  /** 사용자 목록 조회를 user-auth 관리자 API로 프록시
+   * Proxy user list to user-auth admin API */
   @Get('users')
   @ApiOperation({ summary: '사용자 목록 조회', description: '관리자 권한으로 전체 사용자 목록을 페이징, 필터링, 검색 조건과 함께 조회합니다' })
   @ApiQuery({ name: 'page', required: false, description: '페이지 번호' })
@@ -56,6 +58,8 @@ export class AdminProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 사용자 상세 조회를 user-auth 관리자 API로 프록시
+   * Proxy user detail to user-auth admin API */
   @Get('users/:id')
   @ApiOperation({ summary: '사용자 상세 조회', description: '관리자 권한으로 특정 사용자의 상세 정보를 조회합니다' })
   @ApiParam({ name: 'id', description: '사용자 ID' })
@@ -76,6 +80,8 @@ export class AdminProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 가입 승인을 user-auth로 프록시하고 WebSocket 알림 전송
+   * Proxy registration approval to user-auth and notify via WebSocket */
   @Post('users/:id/approve')
   @ApiOperation({ summary: '가입 승인', description: '관리자가 대기 중인 사용자의 가입 요청을 승인합니다' })
   @ApiParam({ name: 'id', description: '사용자 ID' })
@@ -106,6 +112,8 @@ export class AdminProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 가입 거절을 user-auth로 프록시하고 WebSocket 알림 전송
+   * Proxy registration rejection to user-auth and notify via WebSocket */
   @Post('users/:id/reject')
   @ApiOperation({ summary: '가입 거절', description: '관리자가 대기 중인 사용자의 가입 요청을 거절합니다' })
   @ApiParam({ name: 'id', description: '사용자 ID' })
@@ -137,6 +145,8 @@ export class AdminProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 사용자 비활성화를 user-auth 관리자 API로 프록시
+   * Proxy user deactivation to user-auth admin API */
   @Post('users/:id/deactivate')
   @ApiOperation({ summary: '사용자 비활성화', description: '관리자가 특정 사용자 계정을 비활성화합니다' })
   @ApiParam({ name: 'id', description: '사용자 ID' })
@@ -158,6 +168,8 @@ export class AdminProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 사용자 활성화를 user-auth 관리자 API로 프록시
+   * Proxy user activation to user-auth admin API */
   @Post('users/:id/activate')
   @ApiOperation({ summary: '사용자 활성화', description: '관리자가 비활성화된 사용자 계정을 다시 활성화합니다' })
   @ApiParam({ name: 'id', description: '사용자 ID' })
@@ -179,6 +191,8 @@ export class AdminProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 계정 잠금 해제를 user-auth 관리자 API로 프록시
+   * Proxy account unlock to user-auth admin API */
   @Post('users/:id/unlock')
   @ApiOperation({ summary: '계정 잠금 해제', description: '관리자가 잠긴 사용자 계정의 잠금을 해제합니다' })
   @ApiParam({ name: 'id', description: '사용자 ID' })
@@ -199,6 +213,8 @@ export class AdminProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 사용자 삭제를 user-auth 관리자 API로 프록시
+   * Proxy user deletion to user-auth admin API */
   @Delete('users/:id')
   @ApiOperation({ summary: '사용자 삭제', description: '관리자가 특정 사용자 계정을 영구 삭제합니다' })
   @ApiParam({ name: 'id', description: '사용자 ID' })
@@ -219,6 +235,8 @@ export class AdminProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 사용자 역할 변경을 user-auth 관리자 API로 프록시
+   * Proxy user role update to user-auth admin API */
   @Patch('users/:id/role')
   @ApiOperation({ summary: '사용자 역할 변경', description: '관리자가 특정 사용자의 역할(권한)을 변경합니다' })
   @ApiParam({ name: 'id', description: '사용자 ID' })

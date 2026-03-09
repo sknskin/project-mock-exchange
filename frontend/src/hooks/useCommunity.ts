@@ -14,7 +14,8 @@ import { useTranslation } from '@/hooks/useTranslation';
 
 // ===== 타입 정의 (Type Definitions) =====
 
-/** 첨부파일 정보 / Attachment information */
+/** 첨부파일 정보
+ * Attachment information */
 export interface CommunityAttachment {
   id: string;
   fileName: string;
@@ -24,7 +25,8 @@ export interface CommunityAttachment {
   createdAt: string;
 }
 
-/** 게시글 정보 / Post information */
+/** 게시글 정보
+ * Post information */
 export interface CommunityPost {
   id: string;
   title: string;
@@ -40,7 +42,8 @@ export interface CommunityPost {
   likeCount?: number;
   commentCount?: number;
   attachmentCount?: number;
-  /** 현재 사용자의 좋아요 여부 / Whether current user has liked this post */
+  /** 현재 사용자의 좋아요 여부
+   * Whether current user has liked this post */
   liked?: boolean;
   comments?: CommunityComment[];
   attachments?: CommunityAttachment[];
@@ -62,11 +65,13 @@ export interface CommunityComment {
   likeCount?: number;
   liked?: boolean;
   _count?: { likes: number };
-  /** 대댓글 목록 (재귀 구조) / Nested replies (recursive structure) */
+  /** 대댓글 목록 (재귀 구조)
+   * Nested replies (recursive structure) */
   replies?: CommunityComment[];
 }
 
-/** 게시글 목록 페이지네이션 응답 / Paginated posts list response */
+/** 게시글 목록 페이지네이션 응답
+ * Paginated posts list response */
 interface PostsResponse {
   data: CommunityPost[];
   total: number;

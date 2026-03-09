@@ -44,6 +44,8 @@ export class EmailController {
     private readonly configService: ConfigService,
   ) {}
 
+  /** 내부 서비스 토큰 검증 후 이메일을 전송합니다
+   * Send email after verifying internal service token */
   @Post('send')
   async send(
     @Body() dto: SendEmailDto,

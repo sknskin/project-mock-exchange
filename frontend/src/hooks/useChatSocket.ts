@@ -27,9 +27,11 @@ const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:3000';
  * Uses refCount to manage references; disconnects when the last consumer unmounts.
  */
 let sharedSocket: Socket | null = null;
-/** 현재 연결에 사용 중인 토큰 — 토큰 변경 감지에 사용 / Token for current connection — used for change detection */
+/** 현재 연결에 사용 중인 토큰 — 토큰 변경 감지에 사용
+ * Token for current connection — used for change detection */
 let activeToken: string | null = null;
-/** 활성 구독자 수 / Active subscriber count */
+/** 활성 구독자 수
+ * Active subscriber count */
 let refCount = 0;
 
 /* ── 타이핑 상태 관리 / Typing state management ──
@@ -438,17 +440,20 @@ export function useChatSocket() {
     };
   }, [token, qc]);
 
-  /** 채팅방에 입장 (서버에 join 이벤트 전송) / Join a chat room (emit join event to server) */
+  /** 채팅방에 입장 (서버에 join 이벤트 전송)
+   * Join a chat room (emit join event to server) */
   const joinRoom = useCallback((roomId: string) => {
     sharedSocket?.emit('chat:join-room', { roomId });
   }, []);
 
-  /** 채팅방에서 퇴장 (서버에 leave 이벤트 전송) / Leave a chat room (emit leave event to server) */
+  /** 채팅방에서 퇴장 (서버에 leave 이벤트 전송)
+   * Leave a chat room (emit leave event to server) */
   const leaveRoom = useCallback((roomId: string) => {
     sharedSocket?.emit('chat:leave-room', { roomId });
   }, []);
 
-  /** 타이핑 인디케이터 이벤트 전송 / Emit typing indicator event */
+  /** 타이핑 인디케이터 이벤트 전송
+   * Emit typing indicator event */
   const emitTyping = useCallback((roomId: string) => {
     sharedSocket?.emit('chat:typing', { roomId });
   }, []);

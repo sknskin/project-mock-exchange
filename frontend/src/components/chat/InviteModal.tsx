@@ -19,14 +19,19 @@ import type { ChatUserSearchResult } from '@/types';
 
 // 초대 모달 Props / Invite Modal Props
 interface InviteModalProps {
-  /** 초대할 채팅방 ID / Chat room ID to invite to */
+  /** 초대할 채팅방 ID
+   * Chat room ID to invite to */
   roomId: string;
-  /** 이미 참여 중인 사용자 ID 목록 (검색 결과에서 제외) / Existing participant IDs (excluded from search) */
+  /** 이미 참여 중인 사용자 ID 목록 (검색 결과에서 제외)
+   * Existing participant IDs (excluded from search) */
   existingParticipantIds: string[];
-  /** 모달 닫기 콜백 / Modal close callback */
+  /** 모달 닫기 콜백
+   * Modal close callback */
   onClose: () => void;
 }
 
+/** 채팅방 초대 모달 — 기존 방에 새 참여자 검색/선택/초대
+ * Invite modal — search, select, and invite new participants to an existing room */
 export default function InviteModal({ roomId, existingParticipantIds, onClose }: InviteModalProps) {
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
@@ -65,6 +70,8 @@ export default function InviteModal({ roomId, existingParticipantIds, onClose }:
 
   const allSelected = filteredResults.length > 0 && filteredResults.every((u) => selectedUsers.some((s) => s.id === u.id));
 
+  /** 사용자 선택/해제 토글
+   * Toggle user selection */
   const toggleUser = (u: ChatUserSearchResult) => {
     setSelectedUsers((prev) =>
       prev.some((s) => s.id === u.id)
@@ -73,6 +80,8 @@ export default function InviteModal({ roomId, existingParticipantIds, onClose }:
     );
   };
 
+  /** 전체 선택/해제 토글
+   * Toggle select/deselect all */
   const handleSelectAll = () => {
     if (allSelected) {
       const filteredIds = new Set(filteredResults.map((u) => u.id));
@@ -86,6 +95,8 @@ export default function InviteModal({ roomId, existingParticipantIds, onClose }:
     }
   };
 
+  /** 선택된 사용자 초대 요청 처리
+   * Handle invite request for selected users */
   const handleInvite = async () => {
     if (selectedUsers.length === 0) return;
     const usernames: Record<string, string> = {};

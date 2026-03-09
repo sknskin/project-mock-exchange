@@ -40,6 +40,8 @@ export class AdminController {
     }
   }
 
+  /** 사용자 목록 조회 (페이지네이션, 검색, 필터)
+   * List users with pagination, search, and filters */
   @Get('users')
   async listUsers(
     @CurrentUser() user: UserDto,
@@ -64,6 +66,8 @@ export class AdminController {
     return { success: true, data: result };
   }
 
+  /** 사용자 상세 정보 조회
+   * Get user detail information */
   @Get('users/:id')
   async getUserDetail(
     @CurrentUser() user: UserDto,
@@ -74,6 +78,8 @@ export class AdminController {
     return { success: true, data: result };
   }
 
+  /** 사용자 가입 승인
+   * Approve user registration */
   @Post('users/:id/approve')
   async approveUser(
     @CurrentUser() user: UserDto,
@@ -85,6 +91,8 @@ export class AdminController {
     return { success: true, data: result };
   }
 
+  /** 사용자 가입 반려
+   * Reject user registration */
   @Post('users/:id/reject')
   async rejectUser(
     @CurrentUser() user: UserDto,
@@ -96,6 +104,8 @@ export class AdminController {
     return { success: true, data: result };
   }
 
+  /** 사용자 비활성화
+   * Deactivate user account */
   @Post('users/:id/deactivate')
   async deactivateUser(
     @CurrentUser() user: UserDto,
@@ -106,6 +116,8 @@ export class AdminController {
     return { success: true, data: result };
   }
 
+  /** 사용자 활성화
+   * Activate user account */
   @Post('users/:id/activate')
   async activateUser(
     @CurrentUser() user: UserDto,
@@ -116,6 +128,8 @@ export class AdminController {
     return { success: true, data: result };
   }
 
+  /** 사용자 삭제
+   * Delete user account */
   @Delete('users/:id')
   async deleteUser(
     @CurrentUser() user: UserDto,
@@ -126,6 +140,8 @@ export class AdminController {
     return { success: true, message: 'User deleted' };
   }
 
+  /** 잠긴 사용자 계정 해제
+   * Unlock locked user account */
   @Post('users/:id/unlock')
   async unlockUser(
     @CurrentUser() user: UserDto,
@@ -136,6 +152,8 @@ export class AdminController {
     return { success: true, data: result };
   }
 
+  /** 사용자 역할 변경
+   * Update user role */
   @Patch('users/:id/role')
   async updateRole(
     @CurrentUser() user: UserDto,

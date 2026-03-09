@@ -16,6 +16,8 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 export class AiProxyController {
   constructor(private readonly proxyService: ProxyService) {}
 
+  /** AI 매매 시그널 조회를 ai-service로 프록시
+   * Proxy AI trading signals to ai-service */
   @Get('signals')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -32,6 +34,8 @@ export class AiProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 포트폴리오 AI 분석 요청을 ai-service로 프록시
+   * Proxy portfolio AI analysis to ai-service */
   @Post('portfolio-analysis')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

@@ -24,6 +24,8 @@ type ModalState = {
   type: 'markdown' | 'iframe';
 };
 
+/** 랜딩 홈 페이지 컴포넌트 — Hero, 기술 스택, 프로젝트 개요, 문서 링크 표시
+ * Landing home page component — displays hero, tech stack, project overview, and doc links */
 export default function LandingPage() {
   const { t } = useTranslation();
   const [modal, setModal] = useState<ModalState>({
@@ -33,12 +35,16 @@ export default function LandingPage() {
     type: 'markdown',
   });
 
+  /** 마크다운 문서를 불러와 모달로 표시
+   * Fetch markdown doc and display in modal */
   const openMarkdownModal = useCallback(async (title: string, docPath: string) => {
     const res = await fetch(docPath);
     const text = await res.text();
     setModal({ isOpen: true, title, content: text, type: 'markdown' });
   }, []);
 
+  /** Swagger API 문서를 새 탭에서 열기
+   * Open Swagger API docs in a new tab */
   const openSwaggerNewTab = useCallback(() => {
     window.open(`${process.env.NEXT_PUBLIC_API_URL || ''}/api-docs`, '_blank');
   }, []);
@@ -124,7 +130,6 @@ export default function LandingPage() {
                 className="flex flex-col items-center gap-2 px-5 shrink-0"
               >
                 <div className="w-10 h-10 rounded-xl bg-bg-secondary/80 flex items-center justify-center p-2">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={tech.icon}
                     alt={`${tech.name} logo`}

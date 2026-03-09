@@ -109,6 +109,8 @@ function buildHistoryFromTransactions(
   return result.length >= 2 ? result : [];
 }
 
+/** 포트폴리오 가치 히스토리 차트 — 거래 내역 기반 시계열 SVG 차트
+ * Portfolio value history chart — time-series SVG chart based on transactions */
 export default function PortfolioHistoryChart({ totalValue }: PortfolioHistoryChartProps) {
   const { t } = useTranslation();
   const { display: currencyMode } = useCurrencyDisplay();

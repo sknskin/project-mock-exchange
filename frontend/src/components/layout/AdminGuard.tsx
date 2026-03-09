@@ -18,7 +18,7 @@ const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffec
 export default function AdminGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { isAuthenticated, user } = useAuthStore();
-  const { t } = useTranslation();
+  const { t: _t } = useTranslation();
 
   // 클라이언트 마운트 상태 추적 / Track client mount state
   const [mounted, setMounted] = useState(false);

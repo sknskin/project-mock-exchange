@@ -11,10 +11,12 @@ export interface User {
   email: string;
   username: string;
   name: string;
-  /** 역할: USER, ADMIN, SYSTEM / Role: USER, ADMIN, SYSTEM */
+  /** 역할: USER, ADMIN, SYSTEM
+   * Role: USER, ADMIN, SYSTEM */
   role: string;
   isActive: boolean;
-  /** 승인 상태: PENDING, APPROVED, REJECTED / Approval status */
+  /** 승인 상태: PENDING, APPROVED, REJECTED
+   * Approval status */
   approvalStatus: string;
   phone?: string;
   createdAt: string;
@@ -26,7 +28,8 @@ export interface AuthResponse {
   data: {
     user: User;
     accessToken: string;
-    /** 토큰 만료 시간 (초) / Token expiration (seconds) */
+    /** 토큰 만료 시간 (초)
+     * Token expiration (seconds) */
     expiresIn: number;
   };
 }
@@ -42,7 +45,8 @@ export interface AssetInfo {
   symbol: string;
   name: string;
   assetType: 'CRYPTO' | 'STOCK';
-  /** 기준가 (문자열) / Base price (string) */
+  /** 기준가 (문자열)
+   * Base price (string) */
   basePrice: string;
   isActive: boolean;
 }
@@ -69,7 +73,8 @@ export interface Asset {
 
 // 캔들스틱(OHLCV) 데이터 / Candlestick (OHLCV) data
 export interface Candlestick {
-  /** Unix 타임스탬프 (초) / Unix timestamp (seconds) */
+  /** Unix 타임스탬프 (초)
+   * Unix timestamp (seconds) */
   time: number;
   open: number;
   high: number;
@@ -82,17 +87,21 @@ export interface Candlestick {
 export interface OrderBookEntry {
   price: number;
   quantity: number;
-  /** 누적 수량 / Cumulative quantity */
+  /** 누적 수량
+   * Cumulative quantity */
   total: number;
 }
 
 // 호가창 데이터 / Order book data
 export interface OrderBook {
-  /** 매도 호가 (낮은 가격순) / Ask orders (ascending price) */
+  /** 매도 호가 (낮은 가격순)
+   * Ask orders (ascending price) */
   asks: OrderBookEntry[];
-  /** 매수 호가 (높은 가격순) / Bid orders (descending price) */
+  /** 매수 호가 (높은 가격순)
+   * Bid orders (descending price) */
   bids: OrderBookEntry[];
-  /** 매수/매도 스프레드 / Bid-ask spread */
+  /** 매수/매도 스프레드
+   * Bid-ask spread */
   spread?: number;
 }
 
@@ -105,17 +114,23 @@ export interface Order {
   type: 'MARKET' | 'LIMIT';
   status: 'PENDING' | 'FILLED' | 'PARTIALLY_FILLED' | 'CANCELLED';
   quantity: number;
-  /** 지정가 (시장가 시 null) / Limit price (null for market orders) */
+  /** 지정가 (시장가 시 null)
+   * Limit price (null for market orders) */
   price: number | null;
-  /** 체결 수량 / Filled quantity */
+  /** 체결 수량
+   * Filled quantity */
   filledQuantity: number;
-  /** 체결 가격 / Filled price */
+  /** 체결 가격
+   * Filled price */
   filledPrice: number | null;
-  /** 트리거 가격 (조건부 주문) / Trigger price (conditional order) */
+  /** 트리거 가격 (조건부 주문)
+   * Trigger price (conditional order) */
   triggerPrice?: number | null;
-  /** 트리거 유형: 손절/익절 / Trigger type: stop-loss/take-profit */
+  /** 트리거 유형: 손절/익절
+   * Trigger type: stop-loss/take-profit */
   triggerType?: 'STOP_LOSS' | 'TAKE_PROFIT' | null;
-  /** 트리거 발동 여부 / Whether triggered */
+  /** 트리거 발동 여부
+   * Whether triggered */
   triggered?: boolean;
   createdAt: string;
   updatedAt: string;
@@ -127,7 +142,8 @@ export interface PlaceOrderRequest {
   side: 'BUY' | 'SELL';
   type: 'MARKET' | 'LIMIT';
   quantity: number;
-  /** 지정가 (LIMIT 주문 시) / Limit price (for LIMIT orders) */
+  /** 지정가 (LIMIT 주문 시)
+   * Limit price (for LIMIT orders) */
   price?: number;
   triggerPrice?: number;
   triggerType?: 'STOP_LOSS' | 'TAKE_PROFIT';
@@ -135,29 +151,41 @@ export interface PlaceOrderRequest {
 
 // 포트폴리오 데이터 / Portfolio data
 export interface Portfolio {
-  /** 총 자산 가치 (현금 + 투자) / Total asset value (cash + investments) */
+  /** 총 자산 가치 (현금 + 투자)
+   * Total asset value (cash + investments) */
   totalValue: number;
-  /** 현금 잔고 / Cash balance */
+  /** 현금 잔고
+   * Cash balance */
   cashBalance: number;
-  /** 투자 금액 (시가) / Invested value (market) */
+  /** 투자 금액 (시가)
+   * Invested value (market) */
   investedValue: number;
-  /** 총 매입 비용 / Total cost basis */
+  /** 총 매입 비용
+   * Total cost basis */
   totalCost: number;
-  /** 총 시장 가치 / Total market value */
+  /** 총 시장 가치
+   * Total market value */
   totalMarketValue: number;
-  /** 총 손익 / Total profit/loss */
+  /** 총 손익
+   * Total profit/loss */
   totalPnl: number;
-  /** 총 손익률 (%) / Total P&L percentage */
+  /** 총 손익률 (%)
+   * Total P&L percentage */
   totalPnlPercent: number;
-  /** 투자 수익률 (%) / Invested return percentage */
+  /** 투자 수익률 (%)
+   * Invested return percentage */
   investedReturnPercent: number;
-  /** 실현 손익 / Realized P&L */
+  /** 실현 손익
+   * Realized P&L */
   realizedPnl: number;
-  /** 미실현 손익 / Unrealized P&L */
+  /** 미실현 손익
+   * Unrealized P&L */
   unrealizedPnl: number;
-  /** 순 입금액 / Net deposit */
+  /** 순 입금액
+   * Net deposit */
   netDeposit: number;
-  /** 보유 종목 목록 / Holdings list */
+  /** 보유 종목 목록
+   * Holdings list */
   holdings: Holding[];
 }
 
@@ -166,14 +194,18 @@ export interface Holding {
   symbol: string;
   name: string;
   quantity: number;
-  /** 평균 매입가 / Average purchase price */
+  /** 평균 매입가
+   * Average purchase price */
   averagePrice: number;
   currentPrice: number;
-  /** 현재 평가금액 / Current market value */
+  /** 현재 평가금액
+   * Current market value */
   value: number;
-  /** 손익 금액 / P&L amount */
+  /** 손익 금액
+   * P&L amount */
   pnl: number;
-  /** 손익률 (%) / P&L percentage */
+  /** 손익률 (%)
+   * P&L percentage */
   pnlPercent: number;
 }
 
@@ -181,7 +213,8 @@ export interface Holding {
 export interface LeaderboardEntry {
   rank: number;
   id: string;
-  /** 현재 사용자 여부 / Whether this is the current user */
+  /** 현재 사용자 여부
+   * Whether this is the current user */
   isMe: boolean;
   username: string;
   name?: string;
@@ -206,7 +239,8 @@ export interface PriceUpdate {
   changePercent: number;
   changeAmount: number;
   volume: number;
-  /** Unix 타임스탬프 (ms) / Unix timestamp (ms) */
+  /** Unix 타임스탬프 (ms)
+   * Unix timestamp (ms) */
   timestamp: number;
 }
 

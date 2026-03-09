@@ -22,6 +22,8 @@ import { InviteUserDto } from './dto/invite-user.dto';
 export class ChatService {
   constructor(private readonly prisma: PrismaService) {}
 
+  /** 사용자가 참여 중인 채팅방 목록을 안읽음 수와 함께 조회합니다
+   * Get user's rooms with unread counts */
   async getRooms(userId: string) {
     const rooms = await this.prisma.room.findMany({
       where: {
@@ -194,6 +196,8 @@ export class ChatService {
     };
   }
 
+  /** 채팅방의 메시지를 커서 기반 페이징으로 조회합니다
+   * Get room messages with cursor-based pagination */
   async getMessages(roomId: string, userId: string, cursor?: string, limit = 30) {
     // 사용자가 참여자인지 확인 (Verify user is participant)
     await this.verifyParticipant(roomId, userId);
@@ -249,6 +253,8 @@ export class ChatService {
     };
   }
 
+  /** 채팅방에 메시지를 전송하고 방의 updatedAt을 갱신합니다
+   * Send a message to a room and update room's updatedAt */
   async sendMessage(roomId: string, userId: string, username: string, dto: SendMessageDto, name?: string, role?: string) {
     await this.verifyParticipant(roomId, userId);
 
@@ -290,6 +296,8 @@ export class ChatService {
     };
   }
 
+  /** 채팅방에 사용자를 초대합니다 (퇴장한 사용자는 재활성화)
+   * Invite users to a room (reactivate if previously left) */
   async inviteUsers(roomId: string, userId: string, dto: InviteUserDto, usernames: Record<string, string>, names?: Record<string, string>) {
     const room = await this.prisma.room.findUnique({ where: { id: roomId } });
     if (!room) throw new NotFoundException('Room not found');
@@ -345,6 +353,8 @@ export class ChatService {
     return { invited: invitedAll, systemMessage };
   }
 
+  /** 채팅방에서 퇴장하고 시스템 메시지를 남깁니다
+   * Leave a room and post a system message */
   async leaveRoom(roomId: string, userId: string) {
     const participant = await this.prisma.participant.findFirst({
       where: { roomId, userId, leftAt: null },
@@ -368,6 +378,8 @@ export class ChatService {
     return { success: true, systemMessage };
   }
 
+  /** 채팅방에서 사용자를 강퇴합니다 (방장만 가능)
+   * Kick a user from a room (creator only) */
   async kickUser(roomId: string, targetUserId: string, requesterId?: string) {
     // 방 생성자만 강퇴 가능 (Only room creator can kick users)
     if (requesterId) {
@@ -400,6 +412,8 @@ export class ChatService {
     return { success: true, kickedUserId: targetUserId, systemMessage };
   }
 
+  /** 채팅방의 안 읽은 메시지를 읽음 처리합니다 (최대 500건)
+   * Mark unread messages as read (max 500) */
   async markAsRead(roomId: string, userId: string) {
     await this.verifyParticipant(roomId, userId);
 
@@ -430,6 +444,8 @@ export class ChatService {
     return { read: unreadMessages.length };
   }
 
+  /** 그룹 채팅방의 이름을 변경합니다
+   * Rename a group chat room */
   async renameRoom(roomId: string, userId: string, name: string) {
     const room = await this.prisma.room.findUnique({ where: { id: roomId } });
     if (!room) throw new NotFoundException('Room not found');
@@ -445,6 +461,8 @@ export class ChatService {
     return { id: updated.id, name: updated.name };
   }
 
+  /** 메시지를 삭제합니다 (본인, ADMIN, SYSTEM만 가능)
+   * Delete a message (owner, ADMIN, or SYSTEM only) */
   async deleteMessage(roomId: string, messageId: string, userId: string, role?: string) {
     const message = await this.prisma.message.findUnique({
       where: { id: messageId },
@@ -477,6 +495,8 @@ export class ChatService {
     return { success: true, deletedMessageId: messageId };
   }
 
+  /** 채팅방과 관련 데이터를 모두 삭제합니다 (관리자만 가능)
+   * Delete a room and all related data (admin only) */
   async deleteRoom(roomId: string, _userId: string, role?: string) {
     const room = await this.prisma.room.findUnique({ where: { id: roomId } });
     if (!room) throw new NotFoundException('Room not found');
@@ -498,6 +518,8 @@ export class ChatService {
     return { success: true, deletedRoomId: roomId };
   }
 
+  /** 채팅방의 활성 참여자 목록을 조회합니다
+   * Get active participants in a room */
   async getRoomParticipants(roomId: string) {
     return this.prisma.participant.findMany({
       where: { roomId, leftAt: null },
@@ -505,7 +527,8 @@ export class ChatService {
     });
   }
 
-  // 채팅 통계 (Chat Statistics)
+  /** 채팅 통계를 조회합니다 (방 수, 메시지 수, 일별 추이 등)
+   * Get chat statistics (room count, message count, daily trends, etc.) */
   async getStatistics(days: number) {
     const since = new Date();
     since.setDate(since.getDate() - days);

@@ -47,6 +47,8 @@ export class PriceProducerService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  /** 가격 업데이트를 Kafka 토픽으로 발행합니다
+   * Publish a price update to Kafka topic */
   async publishPriceUpdate(tick: PriceTick): Promise<void> {
     if (!this.connected) return;
 

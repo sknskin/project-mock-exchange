@@ -69,7 +69,8 @@ const STAT_TABS = [
   { key: 'audit', labelKey: 'admin.stats.orderAudit' as const, icon: ClipboardList },
 ];
 
-// ===== Main page =====
+/** 관리자 통계 대시보드 페이지 컴포넌트 — 7개 탭으로 서비스 통계 시각화
+ * Admin statistics dashboard page component — visualize service stats across 7 tabs */
 export default function AdminStatsPage() {
   const router = useRouter();
   const { t } = useTranslation();

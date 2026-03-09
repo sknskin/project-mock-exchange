@@ -12,14 +12,19 @@ import { useTranslation } from '@/hooks/useTranslation';
 
 // 검색바 Props / Search Bar Props
 interface SearchBarProps {
-  /** 검색어 / Search query */
+  /** 검색어
+   * Search query */
   value: string;
-  /** 검색어 변경 콜백 / Search query change callback */
+  /** 검색어 변경 콜백
+   * Search query change callback */
   onChange: (value: string) => void;
-  /** 플레이스홀더 텍스트 / Placeholder text */
+  /** 플레이스홀더 텍스트
+   * Placeholder text */
   placeholder?: string;
 }
 
+/** 종목 검색 입력 바
+ * Asset search input bar */
 export default function SearchBar({
   value,
   onChange,

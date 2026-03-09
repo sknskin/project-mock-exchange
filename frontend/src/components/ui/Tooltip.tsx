@@ -11,11 +11,14 @@ import { useState, useRef, useCallback, type ReactNode } from 'react';
 
 // 툴팁 Props / Tooltip Props
 interface TooltipProps {
-  /** 툴팁에 표시할 텍스트 / Text displayed in tooltip */
+  /** 툴팁에 표시할 텍스트
+   * Text displayed in tooltip */
   label: string;
-  /** 표시 지연 시간(ms), 기본 1000ms / Display delay in ms, default 1000ms */
+  /** 표시 지연 시간(ms), 기본 1000ms
+   * Display delay in ms, default 1000ms */
   delay?: number;
-  /** 툴팁을 감쌀 자식 요소 / Child element to wrap with tooltip */
+  /** 툴팁을 감쌀 자식 요소
+   * Child element to wrap with tooltip */
   children: ReactNode;
 }
 

@@ -15,29 +15,41 @@ import { Plus, Minus } from 'lucide-react';
 
 // 잔고 카드 Props / Balance Card Props
 interface BalanceCardProps {
-  /** 총 자산 가치 / Total asset value */
+  /** 총 자산 가치
+   * Total asset value */
   totalValue: number;
-  /** 총 손익 / Total profit/loss */
+  /** 총 손익
+   * Total profit/loss */
   totalPnl: number;
-  /** 총 손익률 (%) / Total P&L percentage (%) */
+  /** 총 손익률 (%)
+   * Total P&L percentage (%) */
   totalPnlPercent: number;
-  /** 현금 잔고 / Cash balance */
+  /** 현금 잔고
+   * Cash balance */
   cashBalance: number;
-  /** 실현 손익 / Realized P&L */
+  /** 실현 손익
+   * Realized P&L */
   realizedPnl?: number;
-  /** 미실현 손익 / Unrealized P&L */
+  /** 미실현 손익
+   * Unrealized P&L */
   unrealizedPnl?: number;
-  /** 총 매입 비용 / Total cost basis */
+  /** 총 매입 비용
+   * Total cost basis */
   totalCost?: number;
-  /** 총 시장 가치 / Total market value */
+  /** 총 시장 가치
+   * Total market value */
   totalMarketValue?: number;
-  /** 투자 수익률 (%) / Invested return percentage */
+  /** 투자 수익률 (%)
+   * Invested return percentage */
   investedReturnPercent?: number;
-  /** 순 입금액 / Net deposit */
+  /** 순 입금액
+   * Net deposit */
   netDeposit?: number;
-  /** 입금 콜백 / Deposit callback */
+  /** 입금 콜백
+   * Deposit callback */
   onDeposit?: () => void;
-  /** 출금 콜백 / Withdraw callback */
+  /** 출금 콜백
+   * Withdraw callback */
   onWithdraw?: () => void;
 }
 
@@ -79,6 +91,8 @@ function DonutChart({ cashPercent, investedPercent }: { cashPercent: number; inv
   );
 }
 
+/** 잔고 카드 — 총 자산, 손익, 현금/투자 비중을 시각적으로 표시
+ * Balance card — displays total assets, P&L, and cash/investment ratio */
 export default function BalanceCard({
   totalValue,
   totalPnl,

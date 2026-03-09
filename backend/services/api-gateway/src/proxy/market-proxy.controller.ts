@@ -15,6 +15,8 @@ import { ProxyService } from './proxy.service';
 export class MarketProxyController {
   constructor(private readonly proxyService: ProxyService) {}
 
+  /** 거래 가능 자산 목록 조회를 market-data로 프록시
+   * Proxy asset list to market-data service */
   @Get('assets')
   @ApiOperation({ summary: '자산 목록 조회', description: '거래 가능한 전체 자산(종목) 목록을 반환합니다' })
   @ApiResponse({ status: 200, description: '자산 목록 반환' })
@@ -26,6 +28,8 @@ export class MarketProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 전체 자산 현재가 조회를 market-data로 프록시
+   * Proxy all asset prices to market-data service */
   @Get('prices')
   @ApiOperation({ summary: '전체 시세 조회', description: '모든 자산의 현재 시세를 반환합니다' })
   @ApiResponse({ status: 200, description: '시세 목록 반환' })
@@ -37,6 +41,8 @@ export class MarketProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 기간별 가격 변동률 조회를 market-data로 프록시
+   * Proxy period price changes to market-data service */
   @Get('prices/period-changes')
   @ApiOperation({ summary: '기간별 등락률 조회', description: '지정 기간 동안의 가격 변동률을 반환합니다' })
   @ApiQuery({ name: 'period', description: '기간 (1d, 1w, 1m, 3m, 6m, 1y)' })
@@ -50,6 +56,8 @@ export class MarketProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 개별 종목 현재가 조회를 market-data로 프록시
+   * Proxy single asset price to market-data service */
   @Get('prices/:symbol')
   @ApiOperation({ summary: '개별 종목 시세 조회', description: '특정 자산의 현재 시세를 반환합니다' })
   @ApiParam({ name: 'symbol', description: '자산 심볼 (예: BTC-USD)' })
@@ -63,6 +71,8 @@ export class MarketProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 종목 가격 이력 조회를 market-data로 프록시
+   * Proxy price history to market-data service */
   @Get('prices/:symbol/history')
   @ApiOperation({ summary: '가격 이력 조회', description: '특정 자산의 가격 이력(틱 데이터)을 반환합니다' })
   @ApiParam({ name: 'symbol', description: '자산 심볼 (예: BTC-USD)' })
@@ -81,6 +91,8 @@ export class MarketProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** OHLCV 캔들스틱 데이터 조회를 market-data로 프록시
+   * Proxy OHLCV candlestick data to market-data service */
   @Get('prices/:symbol/candlesticks')
   @ApiOperation({ summary: '캔들스틱 조회', description: '특정 자산의 OHLCV 캔들스틱 데이터를 반환합니다' })
   @ApiParam({ name: 'symbol', description: '자산 심볼 (예: BTC-USD)' })

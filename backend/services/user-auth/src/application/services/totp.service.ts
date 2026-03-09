@@ -36,6 +36,8 @@ export class TotpService {
     this.encryptionKey = createHash('sha256').update(totpKey).digest();
   }
 
+  /** TOTP 초기 설정 — 비밀키 생성 및 임시 저장
+   * TOTP initial setup — generate and temporarily store secret */
   async setup(userId: string): Promise<{ secret: string; uri: string }> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
@@ -67,6 +69,8 @@ export class TotpService {
     return { secret, uri };
   }
 
+  /** TOTP 코드 검증 (브루트포스 방지 포함)
+   * Verify TOTP code with brute force protection */
   async verify(userId: string, code: string): Promise<boolean> {
     // Brute force protection
     const attemptsKey = `totp:attempts:${userId}`;
@@ -107,6 +111,8 @@ export class TotpService {
     return false;
   }
 
+  /** TOTP 활성화 — 코드 검증 후 활성화
+   * Enable TOTP — activate after code verification */
   async enable(userId: string, code: string): Promise<void> {
     const valid = await this.verify(userId, code);
     if (!valid) throw new BadRequestException('Invalid TOTP code');
@@ -119,6 +125,8 @@ export class TotpService {
     this.logger.log(`TOTP enabled for user: ${userId.substring(0, 8)}...`);
   }
 
+  /** TOTP 비활성화 — 코드 검증 후 비밀키 삭제
+   * Disable TOTP — delete secret after code verification */
   async disable(userId: string, code: string): Promise<void> {
     const valid = await this.verify(userId, code);
     if (!valid) throw new BadRequestException('Invalid TOTP code');
@@ -131,6 +139,8 @@ export class TotpService {
     this.logger.log(`TOTP disabled for user: ${userId.substring(0, 8)}...`);
   }
 
+  /** TOTP 활성화 상태 확인
+   * Check if TOTP is enabled */
   async isEnabled(userId: string): Promise<boolean> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
@@ -139,6 +149,8 @@ export class TotpService {
     return user?.totpEnabled ?? false;
   }
 
+  /** AES-256-CBC 암호화
+   * Encrypt with AES-256-CBC */
   private encrypt(text: string): string {
     const iv = randomBytes(16);
     const cipher = createCipheriv('aes-256-cbc', this.encryptionKey, iv);
@@ -147,6 +159,8 @@ export class TotpService {
     return iv.toString('hex') + ':' + encrypted;
   }
 
+  /** AES-256-CBC 복호화
+   * Decrypt with AES-256-CBC */
   private decrypt(data: string): string {
     const [ivHex, encrypted] = data.split(':');
     const iv = Buffer.from(ivHex, 'hex');

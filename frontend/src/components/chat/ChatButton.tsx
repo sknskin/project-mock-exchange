@@ -15,6 +15,8 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/stores/settings';
 import { cn } from '@/lib/format';
 
+/** 채팅 토글 버튼 — 읽지 않은 메시지 수 배지 포함
+ * Chat toggle button — includes unread message count badge */
 export default function ChatButton() {
   const { t } = useTranslation();
   const toggleChat = useChatStore((s) => s.toggleChat);
@@ -30,6 +32,8 @@ export default function ChatButton() {
     ? (rooms?.reduce((sum, r) => sum + r.unreadCount, 0) ?? 0)
     : 0;
 
+  /** 채팅 패널 토글 — 열릴 때 버튼 아래에 위치 설정
+   * Toggle chat panel — position below button on open */
   const handleClick = useCallback(() => {
     if (!isOpen && btnRef.current && !isPinned) {
       const rect = btnRef.current.getBoundingClientRect();

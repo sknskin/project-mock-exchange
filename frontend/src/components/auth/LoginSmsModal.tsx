@@ -17,15 +17,20 @@ import type { AxiosError } from 'axios';
 
 // SMS 인증 모달 Props / Login SMS Modal Props
 interface LoginSmsModalProps {
-  /** 모달 열림 여부 / Whether modal is open */
+  /** 모달 열림 여부
+   * Whether modal is open */
   isOpen: boolean;
-  /** 인증 세션 ID / Verification session ID */
+  /** 인증 세션 ID
+   * Verification session ID */
   sessionId: string;
-  /** 마스킹된 전화번호 (예: 010-****-1234) / Masked phone number */
+  /** 마스킹된 전화번호 (예: 010-****-1234)
+   * Masked phone number */
   maskedPhone: string;
-  /** 인증 성공 콜백 / Verification success callback */
+  /** 인증 성공 콜백
+   * Verification success callback */
   onSuccess: (data: { user: { id: string; email: string; name: string; role: string }; accessToken: string }) => void;
-  /** 모달 닫기 콜백 / Modal close callback */
+  /** 모달 닫기 콜백
+   * Modal close callback */
   onClose: () => void;
 }
 
@@ -110,6 +115,8 @@ export default function LoginSmsModal({
 
   const expired = timeLeft <= 0;
 
+  /** 초를 분:초 형식으로 변환
+   * Format seconds to m:ss */
   const formatTime = useCallback((seconds: number) => {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
@@ -138,6 +145,8 @@ export default function LoginSmsModal({
     }
   };
 
+  /** SMS 인증번호 검증 — 서버에 코드 전송 후 결과 처리
+   * Verify SMS code — send to server and handle result */
   const handleVerify = async () => {
     if (!code || code.length !== 6 || expired || locked) return;
     if (isSubmittingRef.current) return;

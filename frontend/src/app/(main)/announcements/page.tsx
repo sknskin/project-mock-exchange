@@ -16,6 +16,8 @@ import { useAuthStore } from '@/stores/auth';
 import Pagination from '@/components/ui/Pagination';
 import { cn } from '@/lib/format';
 
+/** 공지사항 목록 페이지 컴포넌트 — 공지사항 검색/목록/페이지네이션
+ * Announcements list page component — search, list, and pagination */
 export default function AnnouncementsPage() {
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
@@ -52,6 +54,8 @@ export default function AnnouncementsPage() {
     }
   };
 
+  /** 역할 코드를 번역된 라벨로 변환
+   * Convert role code to translated label */
   const getRoleLabel = (role: string) => {
     switch (role) {
       case 'SYSTEM':

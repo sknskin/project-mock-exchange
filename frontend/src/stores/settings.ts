@@ -14,17 +14,23 @@ export type Theme = 'dark' | 'light';
 
 // 알림 설정 인터페이스 / Notification preferences interface
 export interface NotificationPrefs {
-  /** 거래 알림 / Trade notifications */
+  /** 거래 알림
+   * Trade notifications */
   trade: boolean;
-  /** 가격 알림 / Price alert notifications */
+  /** 가격 알림
+   * Price alert notifications */
   priceAlert: boolean;
-  /** 채팅 토스트 알림 / Chat toast notifications */
+  /** 채팅 토스트 알림
+   * Chat toast notifications */
   chat: boolean;
-  /** 채팅 뱃지 알림 / Chat badge notifications */
+  /** 채팅 뱃지 알림
+   * Chat badge notifications */
   chatBadge: boolean;
-  /** 공지사항 알림 / Announcement notifications */
+  /** 공지사항 알림
+   * Announcement notifications */
   announcement: boolean;
-  /** 가입 승인 알림 / Registration approval notifications */
+  /** 가입 승인 알림
+   * Registration approval notifications */
   registration: boolean;
 }
 
@@ -39,19 +45,25 @@ const defaultNotificationPrefs: NotificationPrefs = {
 
 // 설정 상태 인터페이스 / Settings state interface
 interface SettingsState {
-  /** 현재 테마 / Current theme */
+  /** 현재 테마
+   * Current theme */
   theme: Theme;
-  /** 현재 로케일 / Current locale */
+  /** 현재 로케일
+   * Current locale */
   locale: Locale;
-  /** 알림 설정 / Notification preferences */
+  /** 알림 설정
+   * Notification preferences */
   notificationPrefs: NotificationPrefs;
   setTheme: (theme: Theme) => void;
-  /** 테마 토글 (dark <-> light) / Toggle theme (dark <-> light) */
+  /** 테마 토글 (dark <-> light)
+   * Toggle theme (dark <-> light) */
   toggleTheme: () => void;
   setLocale: (locale: Locale) => void;
-  /** 로케일 토글 (ko <-> en) / Toggle locale (ko <-> en) */
+  /** 로케일 토글 (ko <-> en)
+   * Toggle locale (ko <-> en) */
   toggleLocale: () => void;
-  /** 개별 알림 설정 변경 / Change individual notification preference */
+  /** 개별 알림 설정 변경
+   * Change individual notification preference */
   setNotificationPref: (key: keyof NotificationPrefs, value: boolean) => void;
 }
 

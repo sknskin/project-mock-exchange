@@ -23,6 +23,8 @@ interface AssetListItemProps {
   onToggleWatchlist?: (symbol: string) => void;
 }
 
+/** 심볼 해시 기반 아바타 배경색 결정
+ * Determine avatar background color from symbol hash */
 function getSymbolColor(symbol: string): string {
   const colors = [
     'bg-blue-500', 'bg-emerald-500', 'bg-violet-500', 'bg-orange-500',
@@ -36,6 +38,8 @@ function getSymbolColor(symbol: string): string {
   return colors[Math.abs(hash) % colors.length];
 }
 
+/** 자산 목록 아이템 — 순위, 가격, 등락률, 거래대금 등 표시
+ * Asset list item — displays rank, price, change, volume, etc. */
 function AssetListItem({ asset, rank, isWatchlisted, onToggleWatchlist }: AssetListItemProps) {
   const router = useRouter();
   const { t } = useTranslation();

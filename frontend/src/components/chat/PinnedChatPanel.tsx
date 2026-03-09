@@ -16,14 +16,18 @@ import RoomList from './RoomList';
 import MessageArea from './MessageArea';
 import CreateRoomModal from './CreateRoomModal';
 
+/** 고정 채팅 패널 — 데스크톱 우측 사이드바에 고정 표시
+ * Pinned chat panel — fixed to right sidebar on desktop */
 export default function PinnedChatPanel() {
-  const { isOpen, isPinned, view, activeRoomId, closeChat, backToList } = useChatStore();
+  const { isOpen, isPinned, view, activeRoomId, closeChat: _closeChat, backToList } = useChatStore();
   const leaveRoom = useLeaveRoom();
   const { joinRoom, leaveRoom: leaveSocketRoom, emitTyping } = useChatSocket();
   const { t } = useTranslation();
 
   const visible = isOpen && isPinned;
 
+  /** 채팅방 퇴장 확인 후 처리
+   * Confirm and handle leaving the room */
   const handleLeaveRoom = async () => {
     if (!activeRoomId) return;
     if (!window.confirm(t('chat.confirmLeaveRoom'))) return;

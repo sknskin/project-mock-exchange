@@ -81,7 +81,8 @@ export function formatCurrency(value: number): string {
   return rounded.toLocaleString('ko-KR') + '원';
 }
 
-/** USD 포맷 — 항상 소수점 2자리 */
+/** USD 포맷 — 항상 소수점 2자리
+ * USD format — always 2 decimal places */
 export function formatDollar(value: number): string {
   if (value == null || isNaN(value)) return '-';
   return '$' + value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -89,9 +90,11 @@ export function formatDollar(value: number): string {
 
 /**
  * 통화 모드에 따라 원화 또는 달러로 표시
- * @param value 원화 기준 금액
- * @param mode 'krw' | 'original' (original = USD)
- * @param exchangeRate USD→KRW 환율
+ * Displays value in KRW or USD based on currency mode
+ *
+ * @param value - 원화 기준 금액 / Amount in KRW
+ * @param mode - 'krw' | 'original' (original = USD)
+ * @param exchangeRate - USD→KRW 환율 / USD to KRW exchange rate
  */
 export function formatCurrencyDisplay(
   value: number,
@@ -165,12 +168,14 @@ export function cn(...classes: (string | boolean | undefined | null)[]): string 
   return classes.filter(Boolean).join(' ');
 }
 
-/** 심볼 기반 통화 판별: .KS 접미사 → KRW, 나머지 → USD */
+/** 심볼 기반 통화 판별: .KS 접미사 → KRW, 나머지 → USD
+ * Determine currency by symbol: .KS suffix → KRW, else → USD */
 export function isKRW(symbol: string): boolean {
   return symbol.endsWith('.KS');
 }
 
-/** KRW 포맷 (정수 + '원') */
+/** KRW 포맷 (정수 + '원')
+ * KRW format (integer + '원' suffix) */
 function formatKRWPrice(price: number): string {
   if (!Number.isFinite(price)) return '0원';
   const locale = getLocale();
@@ -178,7 +183,8 @@ function formatKRWPrice(price: number): string {
   return price.toLocaleString('ko-KR', { maximumFractionDigits: 0 }) + '원';
 }
 
-/** USD 포맷 ($X,XXX.XX) */
+/** USD 포맷 ($X,XXX.XX)
+ * USD format ($X,XXX.XX) */
 function formatUSDPrice(price: number): string {
   if (!Number.isFinite(price)) return '$0.00';
   if (price >= 1) {
@@ -192,8 +198,12 @@ function formatUSDPrice(price: number): string {
 
 /**
  * 통화 접두사/접미사 포함 가격 표시
- * @param currencyMode 'krw'=모든 수치를 원화로, 'original'=원래 통화 그대로
- * @param exchangeRate USD→KRW 환율
+ * Displays price with currency prefix/suffix
+ *
+ * @param price - 가격 / Price value
+ * @param symbol - 종목 심볼 / Asset symbol
+ * @param currencyMode - 'krw'=원화 변환, 'original'=원래 통화 / 'krw'=convert to KRW, 'original'=original currency
+ * @param exchangeRate - USD→KRW 환율 / USD to KRW exchange rate
  */
 export function formatPriceDisplay(
   price: number,
@@ -214,7 +224,8 @@ export function formatPriceDisplay(
   return formatUSDPrice(price);
 }
 
-/** 통화 접두사 포함 변동금액 표시 */
+/** 통화 접두사 포함 변동금액 표시
+ * Displays change amount with currency prefix */
 export function formatAmountDisplay(
   amount: number,
   symbol: string,
@@ -255,7 +266,8 @@ export function formatAmountDisplay(
   return prefix + abs.toFixed(6);
 }
 
-/** 통화별 거래대금 표시 */
+/** 통화별 거래대금 표시
+ * Displays trading volume with currency formatting */
 export function formatVolumeDisplay(
   volume: number,
   symbol: string,

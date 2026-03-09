@@ -76,7 +76,8 @@ function formatTimestamp(ts: number, locale: string): string {
   return `${month}월 ${day}일 ${hours}:${minutes}:${seconds}`;
 }
 
-/** 절대 수익 계산 / Calculate absolute PnL from totalValue and pnlPercent */
+/** 절대 수익 계산
+ * Calculate absolute PnL from totalValue and pnlPercent */
 function calcAbsolutePnl(totalValue: number, pnlPercent: number): number {
   if (pnlPercent === 0) return 0;
   const initialCapital = totalValue / (1 + pnlPercent / 100);
@@ -222,7 +223,7 @@ export default function LeaderboardPage() {
         el.style.transition = 'none';
         el.style.transform = `translateY(${delta}px)`;
         // 리플로우 강제 / force reflow
-        el.offsetHeight;
+        void el.offsetHeight;
         el.style.transition = 'transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
         el.style.transform = 'translateY(0)';
       }

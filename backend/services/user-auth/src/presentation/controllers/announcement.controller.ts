@@ -39,6 +39,8 @@ export class AnnouncementController {
     }
   }
 
+  /** 공지사항 목록 조회 (페이지네이션, 검색)
+   * List announcements with pagination and search */
   @Get()
   async list(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
@@ -53,6 +55,8 @@ export class AnnouncementController {
     return { success: true, data: result };
   }
 
+  /** 첨부파일 다운로드 (공개)
+   * Serve attachment file (public) */
   @Get('uploads/:fileName')
   @Public()
   async serveFile(@Param('fileName') fileName: string, @Res() res: Response) {
@@ -68,6 +72,8 @@ export class AnnouncementController {
     return res.sendFile(filePath);
   }
 
+  /** 이전/다음 공지사항 조회
+   * Get previous/next announcements */
   @Get(':id/adjacent')
   @Public()
   async getAdjacent(@Param('id') id: string) {
@@ -75,6 +81,8 @@ export class AnnouncementController {
     return { success: true, data: result };
   }
 
+  /** 공지사항 상세 조회 (댓글 포함)
+   * Get announcement detail with comments */
   @Get(':id')
   @OptionalAuth()
   async detail(@Param('id') id: string, @CurrentUser() user?: UserDto) {
@@ -82,6 +90,8 @@ export class AnnouncementController {
     return { success: true, data: result };
   }
 
+  /** 공지사항 작성 (관리자 전용)
+   * Create announcement (admin only) */
   @Post()
   async create(
     @CurrentUser() user: UserDto,
@@ -91,6 +101,8 @@ export class AnnouncementController {
     return { success: true, data: result };
   }
 
+  /** 공지사항 수정
+   * Update announcement */
   @Put(':id')
   async update(
     @CurrentUser() user: UserDto,
@@ -101,6 +113,8 @@ export class AnnouncementController {
     return { success: true, data: result };
   }
 
+  /** 공지사항 삭제
+   * Delete announcement */
   @Delete(':id')
   async delete(
     @CurrentUser() user: UserDto,
@@ -110,7 +124,8 @@ export class AnnouncementController {
     return { success: true, message: 'Announcement deleted' };
   }
 
-  // Pin toggle
+  /** 공지사항 고정/고정 해제 토글
+   * Toggle announcement pin status */
   @Post(':id/pin')
   async togglePin(
     @CurrentUser() user: UserDto,
@@ -120,7 +135,8 @@ export class AnnouncementController {
     return { success: true, data: result };
   }
 
-  // Like
+  /** 공지사항 좋아요 토글
+   * Toggle announcement like */
   @Post(':id/like')
   async toggleAnnouncementLike(
     @CurrentUser() user: UserDto,
@@ -130,7 +146,8 @@ export class AnnouncementController {
     return { success: true, data: result };
   }
 
-  // View count
+  /** 조회수 증가
+   * Increment view count */
   @Post(':id/view')
   @Public()
   async incrementViewCount(@Param('id') id: string) {
@@ -138,7 +155,8 @@ export class AnnouncementController {
     return { success: true };
   }
 
-  // Comment like
+  /** 댓글 좋아요 토글
+   * Toggle comment like */
   @Post('comments/:commentId/like')
   async toggleCommentLike(
     @CurrentUser() user: UserDto,
@@ -148,7 +166,8 @@ export class AnnouncementController {
     return { success: true, data: result };
   }
 
-  // Attachments
+  /** 첨부파일 업로드 (base64 JSON, 10MB 제한)
+   * Upload attachment (base64 JSON, 10MB limit) */
   @Post(':id/attachments')
   async addAttachment(
     @CurrentUser() _user: UserDto,
@@ -178,6 +197,8 @@ export class AnnouncementController {
     return { success: true, data: result };
   }
 
+  /** 첨부파일 삭제
+   * Delete attachment */
   @Delete('attachments/:attachmentId')
   async deleteAttachment(
     @CurrentUser() user: UserDto,
@@ -187,7 +208,8 @@ export class AnnouncementController {
     return { success: true, message: 'Attachment deleted' };
   }
 
-  // Comments
+  /** 댓글/답글 작성
+   * Add comment or reply */
   @Post(':id/comments')
   async addComment(
     @CurrentUser() user: UserDto,
@@ -203,6 +225,8 @@ export class AnnouncementController {
     return { success: true, data: result };
   }
 
+  /** 댓글 삭제
+   * Delete comment */
   @Delete('comments/:commentId')
   async deleteComment(
     @CurrentUser() user: UserDto,

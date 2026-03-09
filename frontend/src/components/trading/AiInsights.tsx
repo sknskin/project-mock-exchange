@@ -27,17 +27,23 @@ import Skeleton from '@/components/ui/Skeleton';
 // AI 시그널 데이터 타입 / AI signal data type
 interface MarketSignal {
   symbol: string;
-  /** 매매 시그널 강도 / Trading signal strength */
+  /** 매매 시그널 강도
+   * Trading signal strength */
   signal: 'STRONG_BUY' | 'BUY' | 'HOLD' | 'SELL' | 'STRONG_SELL';
-  /** 신뢰도 (0~100) / Confidence level (0-100) */
+  /** 신뢰도 (0~100)
+   * Confidence level (0-100) */
   confidence: number;
-  /** 분석 사유 / Analysis reason */
+  /** 분석 사유
+   * Analysis reason */
   reason: string;
-  /** 목표가 / Target price */
+  /** 목표가
+   * Target price */
   targetPrice: number;
-  /** 손절가 / Stop-loss price */
+  /** 손절가
+   * Stop-loss price */
   stopLoss: number;
-  /** 위험도 / Risk level */
+  /** 위험도
+   * Risk level */
   riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
 }
 
@@ -78,6 +84,8 @@ const RISK_CONFIG = {
   HIGH: { color: 'text-danger', icon: AlertTriangle },
 };
 
+/** AI 시장 분석 위젯 — 매매 시그널과 목표가/손절가 카드 표시
+ * AI market analysis widget — displays trading signals with target/stop-loss cards */
 export default function AiInsights() {
   const { t } = useTranslation();
   const { data: signals, isLoading, isError } = useAiSignals();

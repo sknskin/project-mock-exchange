@@ -34,6 +34,8 @@ const CATEGORIES = [
  * Suspense 래퍼 — useSearchParams 사용을 위해 필요
  * Suspense wrapper — required for useSearchParams usage in Next.js 15
  */
+/** 커뮤니티 게시글 작성/수정 페이지 컴포넌트 — Suspense 래퍼
+ * Community post create/edit page component — Suspense wrapper */
 export default function CommunityNewPostPage() {
   return (
     <Suspense fallback={<div className="py-24 text-center text-text-quaternary animate-pulse">Loading...</div>}>
@@ -42,6 +44,8 @@ export default function CommunityNewPostPage() {
   );
 }
 
+/** 게시글 작성/수정 폼 — TipTap 에디터 + 카테고리 + 첨부파일
+ * Post create/edit form — TipTap editor + category + attachments */
 function CommunityNewPostContent() {
   const { t, locale } = useTranslation();
   const router = useRouter();
@@ -104,13 +108,43 @@ function CommunityNewPostContent() {
     }
   };
 
+  // 허용 파일 타입 / Allowed file types
+  const ALLOWED_FILE_TYPES = [
+    'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+    'application/pdf',
+    'text/plain',
+    'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  ];
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
+  /** 파일 선택 시 허용 타입/크기 검증 후 추가
+   * Validate file type/size on selection and add */
   const handleFileAdd = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files;
     if (!selected) return;
-    setFiles((prev) => [...prev, ...Array.from(selected)]);
+    const validFiles: File[] = [];
+    for (const file of Array.from(selected)) {
+      if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+        alert(locale === 'ko'
+          ? `허용되지 않는 파일 형식입니다: ${file.name}`
+          : `File type not allowed: ${file.name}`);
+        continue;
+      }
+      if (file.size > MAX_FILE_SIZE) {
+        alert(locale === 'ko'
+          ? `파일 크기가 10MB를 초과합니다: ${file.name}`
+          : `File exceeds 10MB limit: ${file.name}`);
+        continue;
+      }
+      validFiles.push(file);
+    }
+    if (validFiles.length > 0) setFiles((prev) => [...prev, ...validFiles]);
     e.target.value = '';
   };
 
+  /** 첨부 파일 목록에서 특정 파일 제거
+   * Remove a specific file from attachments list */
   const removeFile = (index: number) => {
     setFiles((prev) => prev.filter((_, i) => i !== index));
   };
@@ -189,7 +223,7 @@ function CommunityNewPostContent() {
             >
               <Paperclip className="w-5 h-5 mx-auto text-text-quaternary mb-1" />
               <span className="text-[12px] text-text-quaternary">
-                {locale === 'ko' ? '클릭하여 파일을 첨부하세요 (최대 10MB)' : 'Click to attach files (max 10MB)'}
+                {t('community.post.attachHint')}
               </span>
             </div>
             <input

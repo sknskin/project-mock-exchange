@@ -28,6 +28,8 @@ export class AdminService {
 
   private readonly ROLE_ORDER: Record<string, number> = { SYSTEM: 0, ADMIN: 1, USER: 2 };
 
+  /** 사용자 목록 조회 (페이지네이션, 검색, 역할/상태 필터)
+   * List users with pagination, search, role/status filter */
   async listUsers(params: {
     page: number;
     limit: number;
@@ -100,6 +102,8 @@ export class AdminService {
     };
   }
 
+  /** 사용자 상세 정보 조회 (승인자/반려자 이름 포함)
+   * Get user detail with approver/rejector name resolution */
   async getUserDetail(id: string) {
     const user = await this.prisma.user.findUnique({
       where: { id },
@@ -152,6 +156,8 @@ export class AdminService {
     return { ...user, approvedByUsername, rejectedByUsername };
   }
 
+  /** 사용자 가입 승인 및 알림 발송
+   * Approve user registration and send notification */
   async approveUser(id: string, approvedById: string, currentRole: string, note?: string) {
     const target = await this.prisma.user.findUnique({ where: { id } });
     if (!target) throw new NotFoundException('User not found');
@@ -193,6 +199,8 @@ export class AdminService {
     return updated;
   }
 
+  /** 사용자 가입 반려 및 알림 발송
+   * Reject user registration and send notification */
   async rejectUser(id: string, rejectedById: string, currentRole: string, note?: string) {
     const target = await this.prisma.user.findUnique({ where: { id } });
     if (!target) throw new NotFoundException('User not found');
@@ -223,6 +231,8 @@ export class AdminService {
     return updated;
   }
 
+  /** 사용자 비활성화
+   * Deactivate user account */
   async deactivateUser(id: string, currentRole: string) {
     const target = await this.prisma.user.findUnique({ where: { id } });
     if (!target) throw new NotFoundException('User not found');
@@ -237,6 +247,8 @@ export class AdminService {
     return result;
   }
 
+  /** 사용자 활성화
+   * Activate user account */
   async activateUser(id: string, currentRole: string) {
     const target = await this.prisma.user.findUnique({ where: { id } });
     if (!target) throw new NotFoundException('User not found');
@@ -251,6 +263,8 @@ export class AdminService {
     return result;
   }
 
+  /** 사용자 삭제
+   * Delete user account */
   async deleteUser(id: string, currentRole: string) {
     const target = await this.prisma.user.findUnique({ where: { id } });
     if (!target) throw new NotFoundException('User not found');
@@ -260,6 +274,8 @@ export class AdminService {
     this.logger.log(`User ${target.username} deleted`);
   }
 
+  /** 사용자 역할 변경 (SYSTEM만 ADMIN 승격 가능)
+   * Update user role (only SYSTEM can promote to ADMIN) */
   async updateRole(id: string, newRole: string, currentUserRole: string) {
     this.checkPermission(currentUserRole, 'ADMIN');
 
@@ -291,6 +307,8 @@ export class AdminService {
     return updated;
   }
 
+  /** 잠긴 사용자 계정 해제
+   * Unlock locked user account */
   async unlockUser(id: string, currentRole: string) {
     const target = await this.prisma.user.findUnique({ where: { id } });
     if (!target) throw new NotFoundException('User not found');
@@ -305,6 +323,8 @@ export class AdminService {
     return result;
   }
 
+  /** 역할 기반 권한 검증 — 상위 역할만 하위 역할 관리 가능
+   * Role-based permission check — only higher roles can manage lower ones */
   private checkPermission(currentRole: string, targetRole: string) {
     const currentLevel = this.ROLE_ORDER[currentRole] ?? 99;
     const targetLevel = this.ROLE_ORDER[targetRole] ?? 99;

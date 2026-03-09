@@ -34,6 +34,8 @@ export class OrderProxyController {
     private readonly chatGateway: ChatGateway,
   ) {}
 
+  /** 주문 생성 요청을 order-engine으로 프록시
+   * Proxy order placement to order-engine service */
   // 주문 생성 — 분당 60건 제한으로 악의적 대량 주문 방지 / Place order — 60/min limit prevents malicious order flooding
   @Post()
   @UseGuards(JwtAuthGuard)
@@ -131,6 +133,8 @@ export class OrderProxyController {
   // ── 구체적 경로를 :orderId 파라미터 경로보다 먼저 정의 ──
   // ── Specific paths must come before :orderId parameter path ──
 
+  /** 거래 통계 조회를 order-engine으로 프록시
+   * Proxy trading statistics to order-engine service */
   @Get('stats/trading')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -149,6 +153,8 @@ export class OrderProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 호가창 조회를 order-engine으로 프록시
+   * Proxy order book to order-engine service */
   @Get('book/:symbol')
   @ApiOperation({ summary: '호가창 조회', description: '특정 자산의 호가창(주문서)을 반환합니다' })
   @ApiParam({ name: 'symbol', description: '자산 심볼 (예: BTC-USD)' })
@@ -161,6 +167,8 @@ export class OrderProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 사용자 체결 내역 조회를 order-engine으로 프록시
+   * Proxy user trade history to order-engine service */
   @Get('trades/history')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -184,6 +192,8 @@ export class OrderProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 사용자 주문 목록 조회를 order-engine으로 프록시
+   * Proxy user order list to order-engine service */
   @Get()
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -209,6 +219,8 @@ export class OrderProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 주문 상세 조회를 order-engine으로 프록시
+   * Proxy order detail to order-engine service */
   @Get(':orderId')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -226,6 +238,8 @@ export class OrderProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 주문 수정을 order-engine으로 프록시
+   * Proxy order modification to order-engine service */
   @Patch(':orderId')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -249,6 +263,8 @@ export class OrderProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 주문 취소를 order-engine으로 프록시
+   * Proxy order cancellation to order-engine service */
   @Delete(':orderId')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

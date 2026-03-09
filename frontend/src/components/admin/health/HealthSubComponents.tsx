@@ -11,9 +11,9 @@
 
 import React from 'react';
 import {
-  Server, Database, Cpu, Clock, Globe, Zap, Code, Link2, Layers, Info,
+  Database, Cpu, Clock, Zap, Link2, Layers,
   BarChart3, Monitor, HardDrive, FileText, RotateCcw, ArrowRight, ArrowLeft,
-  Shield, Loader2,
+  Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/format';
 import type { TranslationKey } from '@/lib/i18n';
@@ -143,6 +143,8 @@ const SERVICE_DB_SCHEMAS: Record<string, string[]> = {
 
 const MAX_HISTORY = 5;
 
+/** 정보 행 — 라벨/값 한 줄 표시
+ * Info row — displays label/value on a single line */
 export function InfoRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
     <div className="flex items-center justify-between gap-2">
@@ -152,6 +154,8 @@ export function InfoRow({ label, value, mono }: { label: string; value: string; 
   );
 }
 
+/** 프로브 행 — 서비스 프로브 상태/응답 시간 표시
+ * Probe row — displays service probe status and response time */
 export function ProbeRow({ label, status, responseTime, data }: {
   label: string;
   status: 'up' | 'down';
@@ -186,7 +190,8 @@ export function ProbeRow({ label, status, responseTime, data }: {
   );
 }
 
-// ===== [NEW] System Resource Summary Cell =====
+/** 시스템 리소스 요약 셀 — 아이콘+값+라벨 카드
+ * System resource summary cell — icon+value+label card */
 export function SummaryCell({ label, value, sub, icon, color }: {
   label: string;
   value: string;
@@ -204,7 +209,8 @@ export function SummaryCell({ label, value, sub, icon, color }: {
   );
 }
 
-// ===== [NEW] Architecture Diagram =====
+/** 아키텍처 다이어그램 — 마이크로서비스 구조 및 상태를 시각적으로 표시
+ * Architecture diagram — visualizes microservice structure and status */
 export function ArchitectureDiagram({ services, t }: {
   services: ServiceHealth[];
   t: (key: TranslationKey) => string;
@@ -353,8 +359,9 @@ export function ArchitectureDiagram({ services, t }: {
   );
 }
 
-// ===== [NEW] Response Time History Card =====
-export function ResponseTimeHistoryCard({ serviceKey, history, t }: {
+/** 응답 시간 이력 카드 — 최근 응답 시간을 바 차트로 표시
+ * Response time history card — displays recent response times as bar chart */
+export function ResponseTimeHistoryCard({ serviceKey: _serviceKey, history, t }: {
   serviceKey: string;
   history: number[];
   t: (key: TranslationKey) => string;
@@ -409,7 +416,8 @@ export function ResponseTimeHistoryCard({ serviceKey, history, t }: {
   );
 }
 
-// ===== [NEW] Environment Info Card =====
+/** 환경 정보 카드 — 서비스 실행 환경(Node, OS 등) 표시
+ * Environment info card — displays service runtime environment (Node, OS, etc.) */
 export function EnvironmentInfoCard({ serviceKey, t }: {
   serviceKey: string;
   t: (key: TranslationKey) => string;
@@ -431,7 +439,8 @@ export function EnvironmentInfoCard({ serviceKey, t }: {
   );
 }
 
-// ===== [NEW] Database Info Card =====
+/** 데이터베이스 정보 카드 — DB 연결 상태 및 엔티티 목록 표시
+ * Database info card — displays DB connection status and entity list */
 export function DatabaseInfoCard({ serviceKey, serviceHealth, t }: {
   serviceKey: string;
   serviceHealth?: ServiceHealth;
@@ -477,8 +486,9 @@ export function DatabaseInfoCard({ serviceKey, serviceHealth, t }: {
   );
 }
 
-// ===== [NEW] Log Level Badge =====
-export function LogLevelBadge({ level, t }: {
+/** 로그 레벨 뱃지 — debug/info/warn 레벨을 색상 구분 표시
+ * Log level badge — color-coded debug/info/warn display */
+export function LogLevelBadge({ level, t: _t }: {
   level: 'debug' | 'info' | 'warn';
   t: (key: TranslationKey) => string;
 }) {
@@ -495,7 +505,8 @@ export function LogLevelBadge({ level, t }: {
   );
 }
 
-// ===== [NEW] Service Communication Map =====
+/** 서비스 통신 맵 — 마이크로서비스 간 의존 관계를 시각적으로 표시
+ * Service communication map — visualizes inter-service dependencies */
 export function ServiceCommunicationMap({ serviceKey, services: svcHealth, t }: {
   serviceKey: string;
   services: ServiceHealth[];
@@ -589,8 +600,9 @@ export function ServiceCommunicationMap({ serviceKey, services: svcHealth, t }: 
   );
 }
 
-// ===== [NEW] Quick Actions Card =====
-export function QuickActionsCard({ serviceKey, t }: {
+/** 빠른 작업 카드 — 서비스 재시작/로그 확인 등 빠른 액션
+ * Quick actions card — service restart, view logs, etc. */
+export function QuickActionsCard({ serviceKey: _serviceKey, t }: {
   serviceKey: string;
   t: (key: TranslationKey) => string;
 }) {
@@ -624,7 +636,8 @@ export function QuickActionsCard({ serviceKey, t }: {
   );
 }
 
-// ===== Service Metrics Card =====
+/** 서비스 메트릭 카드 — 서비스별 상세 통계 지표 표시
+ * Service metrics card — displays detailed service-specific statistics */
 export function ServiceMetricsCard({ serviceKey, stats, loading, t }: {
   serviceKey: string;
   stats: Record<string, unknown> | null | undefined;
@@ -711,6 +724,8 @@ export function ServiceMetricsCard({ serviceKey, stats, loading, t }: {
   );
 }
 
+/** 메트릭 그리드 — 아이콘+라벨+값 형태의 메트릭을 그리드로 표시
+ * Metrics grid — displays icon+label+value metrics in a grid layout */
 export function MetricsGrid({ title, metrics }: {
   title: string;
   metrics: { label: string; value: number; icon: string }[];

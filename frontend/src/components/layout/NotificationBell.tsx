@@ -25,6 +25,8 @@ import type { NotificationItem } from '@/types';
 
 const DROPDOWN_LIMIT = 50;
 
+/** 날짜를 상대 시간 문자열로 변환 (예: "5분 전")
+ * Convert date to relative time string (e.g., "5m ago") */
 function getRelativeTime(dateString: string, locale: string): string {
   const date = new Date(dateString);
   const now = new Date();
@@ -90,6 +92,8 @@ export default function NotificationBell() {
     return () => document.removeEventListener('keydown', handleKey);
   }, [modalNotification]);
 
+  /** 벨 클릭 시 드롭다운 토글 + 데이터 새로고침
+   * Toggle dropdown and refresh data on bell click */
   function handleBellClick() {
     setOpen((prev) => {
       if (!prev) refetch();
@@ -97,6 +101,8 @@ export default function NotificationBell() {
     });
   }
 
+  /** 알림 항목 클릭 시 읽음 처리 + 타입별 액션 수행
+   * Mark as read and perform type-specific action on notification click */
   function handleNotificationClick(notification: NotificationItem) {
     if (!notification.isRead) {
       markAsRead.mutate(notification.id);
@@ -123,6 +129,8 @@ export default function NotificationBell() {
     }
   }
 
+  /** 모든 알림 읽음 처리
+   * Mark all notifications as read */
   function handleMarkAllRead() {
     markAllAsRead.mutate();
   }

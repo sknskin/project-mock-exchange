@@ -12,15 +12,20 @@ import { useTranslation } from '@/hooks/useTranslation';
 
 // 주민등록번호 입력 Props / Resident Number Input Props
 interface ResidentNumberInputProps {
-  /** 앞자리 6자리 / Front 6 digits */
+  /** 앞자리 6자리
+   * Front 6 digits */
   front: string;
-  /** 뒷자리 7자리 / Back 7 digits */
+  /** 뒷자리 7자리
+   * Back 7 digits */
   back: string;
-  /** 앞자리 변경 콜백 / Front digit change callback */
+  /** 앞자리 변경 콜백
+   * Front digit change callback */
   onFrontChange: (value: string) => void;
-  /** 뒷자리 변경 콜백 / Back digit change callback */
+  /** 뒷자리 변경 콜백
+   * Back digit change callback */
   onBackChange: (value: string) => void;
-  /** 에러 메시지 / Error message */
+  /** 에러 메시지
+   * Error message */
   error?: string;
 }
 
@@ -34,6 +39,8 @@ export default function ResidentNumberInput({
   const { t } = useTranslation();
   const backRef = useRef<HTMLInputElement>(null);
 
+  /** 앞자리 입력 처리: 숫자만 허용, 6자리 완성 시 뒷자리로 포커스 이동
+   * Front input: digits only, auto-focus back on 6 digits */
   const handleFrontChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value.replace(/[^0-9]/g, '').slice(0, 6);
     onFrontChange(val);
@@ -42,6 +49,8 @@ export default function ResidentNumberInput({
     }
   };
 
+  /** 뒷자리 입력 처리: 숫자만 허용, 최대 7자리
+   * Back input: digits only, max 7 digits */
   const handleBackChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value.replace(/[^0-9]/g, '').slice(0, 7);
     onBackChange(val);

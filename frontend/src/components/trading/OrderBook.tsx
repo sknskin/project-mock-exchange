@@ -22,7 +22,8 @@ interface OrderBookProps {
   symbol?: string;
 }
 
-/** 누적 합계를 추가한 엔트리 / Entry with cumulative total */
+/** 누적 합계를 추가한 엔트리
+ * Entry with cumulative total */
 interface CumulativeEntry extends OrderBookEntry {
   cumTotal: number;
   depthPercent: number;
@@ -42,6 +43,8 @@ function computeCumulative(entries: OrderBookEntry[]): CumulativeEntry[] {
   });
 }
 
+/** 누적 합계 기준 깊이 퍼센트 할당
+ * Assign depth percent based on cumulative total */
 function assignDepthPercent(entries: CumulativeEntry[]): CumulativeEntry[] {
   if (entries.length === 0) return entries;
   const maxCum = entries[entries.length - 1].cumTotal;
@@ -60,6 +63,8 @@ interface DepthChartProps {
   fp: (price: number) => string;
 }
 
+/** 깊이 차트 — 매수/매도 누적 수량을 SVG로 시각화
+ * Depth chart — visualizes bid/ask cumulative volume as SVG */
 function DepthChart({ asks, bids, fp }: DepthChartProps) {
   const { t } = useTranslation();
 
@@ -242,6 +247,8 @@ function DepthChart({ asks, bids, fp }: DepthChartProps) {
 
 // ─── 메인 호가창 / Main Order Book ─────────────────────────────────
 
+/** 호가창 — 매수/매도 호가 리스트 및 깊이 차트 표시
+ * Order book — displays bid/ask list and depth chart */
 export default function OrderBook({ orderBook, symbol = '' }: OrderBookProps) {
   const { t } = useTranslation();
   const { query: { data: rateData } } = useExchangeRate();
@@ -252,7 +259,7 @@ export default function OrderBook({ orderBook, symbol = '' }: OrderBookProps) {
 
   // 누적 데이터 계산 (메모이제이션)
   // Compute cumulative data (memoized)
-  const { asksCum, bidsCum, maxTotal, bestBid, bestAsk, spread, midPrice, spreadPercent } =
+  const { asksCum, bidsCum, maxTotal, bestBid: _bestBid, bestAsk: _bestAsk, spread, midPrice, spreadPercent } =
     useMemo(() => {
       // 매도: 가격 오름차순 정렬 후 누적
       // Asks: sort ascending, cumulate

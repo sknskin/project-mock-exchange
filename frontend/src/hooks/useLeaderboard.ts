@@ -19,9 +19,11 @@ export type LeaderboardSortBy = 'return' | 'absolute' | 'assets';
 
 // 리더보드 훅 옵션 인터페이스 / Leaderboard hook options interface
 interface UseLeaderboardOptions {
-  /** 조회 기간 (기본: 전체) / Query period (default: all) */
+  /** 조회 기간 (기본: 전체)
+   * Query period (default: all) */
   period?: LeaderboardPeriod;
-  /** 정렬 기준 (기본: 수익률) / Sort by (default: return rate) */
+  /** 정렬 기준 (기본: 수익률)
+   * Sort by (default: return rate) */
   sortBy?: LeaderboardSortBy;
 }
 

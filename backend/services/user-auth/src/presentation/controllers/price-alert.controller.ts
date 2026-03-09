@@ -53,6 +53,7 @@ class CreatePriceAlertDto {
 export class PriceAlertController {
   constructor(private readonly prisma: PrismaService) {}
 
+  /** 가격 알림 생성 (최대 20개) / Create price alert (max 20 active) */
   @Post()
   @UseGuards(JwtAuthGuard)
   async create(
@@ -80,6 +81,7 @@ export class PriceAlertController {
     return { success: true, data: alert };
   }
 
+  /** 내 가격 알림 목록 조회 (심볼 필터 가능) / List my price alerts (optional symbol filter) */
   @Get()
   @UseGuards(JwtAuthGuard)
   async list(
@@ -97,6 +99,7 @@ export class PriceAlertController {
     return { success: true, data: { items } };
   }
 
+  /** 전체 활성 가격 알림 조회 (내부 서비스용) / List all active price alerts (for internal services) */
   @Get('active')
   async listActive() {
     const items = await this.prisma.priceAlert.findMany({
@@ -114,6 +117,7 @@ export class PriceAlertController {
     return { success: true, data: { items } };
   }
 
+  /** 가격 알림 삭제 / Delete price alert */
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
   async remove(
@@ -126,6 +130,7 @@ export class PriceAlertController {
     return { success: true };
   }
 
+  /** 가격 알림 트리거 처리 — 비활성화 및 트리거 시간 기록 / Trigger price alert — deactivate and record trigger time */
   @Post(':id/trigger')
   async trigger(@Param('id') id: string) {
     await this.prisma.priceAlert.update({

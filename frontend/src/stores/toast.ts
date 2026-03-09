@@ -12,21 +12,27 @@ export type ToastType = 'default' | 'info' | 'error' | 'success';
 
 // 개별 토스트 데이터 / Individual toast data
 interface Toast {
-  /** 고유 ID / Unique ID */
+  /** 고유 ID
+   * Unique ID */
   id: number;
-  /** 표시 메시지 / Display message */
+  /** 표시 메시지
+   * Display message */
   message: string;
-  /** 토스트 유형 (색상 결정) / Toast type (determines color) */
+  /** 토스트 유형 (색상 결정)
+   * Toast type (determines color) */
   type: ToastType;
 }
 
 // 토스트 상태 인터페이스 / Toast state interface
 interface ToastState {
-  /** 현재 표시 중인 토스트 목록 / Currently displayed toasts */
+  /** 현재 표시 중인 토스트 목록
+   * Currently displayed toasts */
   toasts: Toast[];
-  /** 토스트 추가 (3초 후 자동 제거) / Add toast (auto-removed after 3s) */
+  /** 토스트 추가 (3초 후 자동 제거)
+   * Add toast (auto-removed after 3s) */
   addToast: (message: string, type?: ToastType) => void;
-  /** 토스트 수동 제거 / Manually remove toast */
+  /** 토스트 수동 제거
+   * Manually remove toast */
   removeToast: (id: number) => void;
 }
 

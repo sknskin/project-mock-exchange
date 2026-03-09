@@ -31,8 +31,8 @@ export class OrderController {
     private readonly orderService: OrderService,
   ) {}
 
-  // 주문 생성 — userId는 API Gateway에서 JWT로부터 추출하여 x-user-id 헤더로 전달
-  // Place order — userId extracted from JWT by API Gateway and forwarded via x-user-id header
+  /** 주문 생성 — userId는 API Gateway에서 JWT로 추출하여 전달
+   * Place order — userId forwarded from API Gateway via JWT */
   @Post()
   async placeOrder(
     @Headers('x-user-id') userId: string,
@@ -68,8 +68,8 @@ export class OrderController {
     return { success: true, data: result };
   }
 
-  // 조건부 주문 트리거 확인 — Market Data 서비스에서 주기적으로 호출
-  // Check conditional order triggers — called periodically by Market Data service
+  /** 조건부 주문 트리거 확인 — Market Data 서비스에서 주기적 호출
+   * Check conditional order triggers — called periodically by Market Data service */
   @Post('check-triggers')
   async checkTriggers(
     @Body() body: { symbol: string; currentPrice: string },
@@ -81,6 +81,8 @@ export class OrderController {
     return { success: true, data: result };
   }
 
+  /** 주문 가격/수량 수정
+   * Modify order price and/or quantity */
   @Patch(':orderId')
   async modifyOrder(
     @Headers('x-user-id') userId: string,
@@ -97,6 +99,8 @@ export class OrderController {
     return { success: true, data: result };
   }
 
+  /** 주문 취소
+   * Cancel an order */
   @Delete(':orderId')
   async cancelOrder(
     @Headers('x-user-id') userId: string,
@@ -107,6 +111,8 @@ export class OrderController {
     return { success: true, data: { message: `Order ${orderId} cancelled` } };
   }
 
+  /** 특정 주문 상세 조회
+   * Get details of a specific order */
   @Get(':orderId')
   async getOrder(
     @Headers('x-user-id') userId: string,
@@ -120,6 +126,8 @@ export class OrderController {
     return { success: true, data: order };
   }
 
+  /** 사용자의 주문 목록을 페이징 조회
+   * Get paginated list of user's orders */
   @Get()
   async getUserOrders(
     @Headers('x-user-id') userId: string,
@@ -140,6 +148,8 @@ export class OrderController {
     return { success: true, data: orders };
   }
 
+  /** 사용자의 체결 내역을 페이징 조회
+   * Get paginated trade history for a user */
   @Get('trades/history')
   async getUserTrades(
     @Headers('x-user-id') userId: string,
@@ -155,6 +165,8 @@ export class OrderController {
     return { success: true, data: trades };
   }
 
+  /** 거래 통계 조회 (기간별 주문 수, 거래량 등)
+   * Get trading statistics (order count, volume, etc.) */
   @Get('stats/trading')
   async tradingStats(@Query('days') days?: string) {
     const daysNum = Math.min(parseInt(days || '30', 10) || 30, 365);
@@ -162,6 +174,8 @@ export class OrderController {
     return { success: true, data: stats };
   }
 
+  /** 특정 심볼의 오더북(호가창) 조회
+   * Get order book depth for a symbol */
   @Get('book/:symbol')
   async getOrderBook(@Param('symbol') symbol: string) {
     const book = this.orderService.getOrderBook(symbol);

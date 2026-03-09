@@ -58,9 +58,7 @@ import {
   Shield,
   ListFilter,
   CandlestickChart,
-  LineChart,
   BookOpen,
-  ArrowLeftRight,
   Settings,
   Activity,
   User,
@@ -91,6 +89,8 @@ interface FeatureItemData {
   text: TranslationKey;
 }
 
+/** 기능 항목 — 클릭 시 SVG 일러스트 + 팁 펼침/접힘
+ * Feature item — expands/collapses SVG illustration + tips on click */
 function FeatureItem({
   item,
   index,
@@ -183,6 +183,8 @@ interface HelpSection {
   adminOnly?: boolean;
 }
 
+/** 도움말 탭 콘텐츠 — 섹션 헤더 + 기능 목록
+ * Help tab content — section header + feature list */
 function HelpTab({
   section,
   tabKey,
@@ -244,6 +246,8 @@ function HelpTab({
 }
 
 /* ─── FAQ Feature Item (illustration + tips, like FeatureItem) ─── */
+/** FAQ 항목 — 질문 클릭 시 일러스트 + 팁 펼침/접힘
+ * FAQ item — expands/collapses illustration + tips on question click */
 function FaqFeatureItem({
   id,
   tabKey,
@@ -327,6 +331,8 @@ function FaqFeatureItem({
 }
 
 /* ─── FAQ Section with expandable items ─── */
+/** FAQ 섹션 — 탭별 FAQ + 공통 FAQ 표시
+ * FAQ section — displays tab-specific FAQs + common FAQs */
 function FaqSection({ tabFaqs, commonFaqs, activeTab, t }: {
   tabFaqs: string[];
   commonFaqs: string[];
@@ -381,6 +387,8 @@ function FaqSection({ tabFaqs, commonFaqs, activeTab, t }: {
 }
 
 /* ─── 메인 도움말 페이지 — 16개 탭(일반 11 + 관리자 5), 각 탭마다 기능 목록 + SVG 와이어프레임 일러스트 / Main help page — 16 tabs (11 normal + 5 admin), each tab has feature list + SVG wireframe illustrations ─── */
+/** 도움말 페이지 컴포넌트 — 16개 탭별 기능 설명 + SVG 일러스트 + FAQ
+ * Help page component — 16 tabbed feature guides with SVG illustrations + FAQ */
 export default function HelpPage() {
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
@@ -411,7 +419,7 @@ export default function HelpPage() {
   // 일반 탭/관리자 탭 분리 — 사이드바에서 구분선으로 나뉨 / Separate normal/admin tabs — divided by separator in sidebar
   const normalTabs = tabs.filter((tab) => !tab.adminOnly);
   const adminTabs = tabs.filter((tab) => tab.adminOnly && isAdmin);
-  const visibleTabs = tabs.filter((tab) => !tab.adminOnly || isAdmin);
+  const _visibleTabs = tabs.filter((tab) => !tab.adminOnly || isAdmin);
 
   /**
    * 각 탭의 콘텐츠 정의 — 아이콘, 제목, 설명, 기능 목록(items)

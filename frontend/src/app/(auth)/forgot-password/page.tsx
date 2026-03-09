@@ -19,6 +19,8 @@ import type { AxiosError } from 'axios';
 
 type Step = 'identifier' | 'sms' | 'newPassword';
 
+/** 비밀번호 찾기 페이지 컴포넌트 — 3단계 비밀번호 재설정 플로우
+ * Forgot password page component — 3-step password reset flow */
 export default function ForgotPasswordPage() {
   const router = useRouter();
   const { t } = useTranslation();
@@ -59,6 +61,8 @@ export default function ForgotPasswordPage() {
     if (step === 'newPassword') setTimeout(() => passwordRef.current?.focus(), 100);
   }, [step]);
 
+  /** 남은 시간을 m:ss 형식으로 포맷
+   * Format remaining seconds as m:ss */
   const formatTime = useCallback((seconds: number) => {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;

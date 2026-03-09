@@ -31,6 +31,8 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 export class PortfolioProxyController {
   constructor(private readonly proxyService: ProxyService) {}
 
+  /** 가상 자금 입금 요청을 portfolio 서비스로 프록시
+   * Proxy virtual fund deposit to portfolio service */
   @Post('deposit')
   @ApiOperation({ summary: '자금 입금', description: '포트폴리오에 가상 자금을 입금합니다' })
   @ApiResponse({ status: 201, description: '입금 성공' })
@@ -47,6 +49,8 @@ export class PortfolioProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 계정 초기화 요청을 portfolio 서비스로 프록시
+   * Proxy account reset to portfolio service */
   @Post('reset')
   @ApiOperation({ summary: '계정 초기화', description: '보유 자산, 거래 내역 삭제 및 잔고를 초기 상태로 리셋합니다' })
   @ApiResponse({ status: 201, description: '초기화 성공' })
@@ -60,6 +64,8 @@ export class PortfolioProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 가상 자금 출금 요청을 portfolio 서비스로 프록시
+   * Proxy virtual fund withdrawal to portfolio service */
   @Post('withdraw')
   @ApiOperation({ summary: '자금 출금', description: '포트폴리오에서 가상 자금을 출금합니다' })
   @ApiResponse({ status: 201, description: '출금 성공' })
@@ -75,6 +81,8 @@ export class PortfolioProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 잔고 조회를 portfolio 서비스로 프록시
+   * Proxy balance inquiry to portfolio service */
   @Get('balance')
   @ApiOperation({ summary: '잔고 조회', description: '현재 사용자의 잔고를 반환합니다' })
   @ApiResponse({ status: 200, description: '잔고 정보 반환' })
@@ -88,6 +96,8 @@ export class PortfolioProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 보유 자산 목록 조회를 portfolio 서비스로 프록시
+   * Proxy holdings list to portfolio service */
   @Get('holdings')
   @ApiOperation({ summary: '보유 자산 조회', description: '현재 사용자의 보유 자산 목록을 반환합니다' })
   @ApiResponse({ status: 200, description: '보유 자산 목록 반환' })
@@ -101,6 +111,8 @@ export class PortfolioProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 포트폴리오 요약 조회를 portfolio 서비스로 프록시
+   * Proxy portfolio summary to portfolio service */
   @Get('summary')
   @ApiOperation({ summary: '포트폴리오 요약', description: '총 자산, 수익률 등 포트폴리오 요약 정보를 반환합니다' })
   @ApiResponse({ status: 200, description: '포트폴리오 요약 반환' })
@@ -114,6 +126,8 @@ export class PortfolioProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 자산 평가액 조회를 portfolio 서비스로 프록시
+   * Proxy asset valuation to portfolio service */
   @Get('valuation')
   @ApiOperation({ summary: '자산 평가 조회', description: '보유 자산의 현재 평가액을 반환합니다' })
   @ApiResponse({ status: 200, description: '자산 평가 반환' })
@@ -127,6 +141,8 @@ export class PortfolioProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 리더보드 조회 후 사용자 정보 보강 및 개인정보 마스킹
+   * Proxy leaderboard with user enrichment and PII masking */
   @Get('leaderboard')
   @ApiOperation({ summary: '리더보드 조회', description: '수익률 기준 상위 사용자 랭킹을 반환합니다' })
   @ApiQuery({ name: 'limit', required: false, description: '조회 개수 (기본값: 10)' })
@@ -196,6 +212,8 @@ export class PortfolioProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 거래 내역 조회를 portfolio 서비스로 프록시
+   * Proxy transaction history to portfolio service */
   @Get('transactions')
   @ApiOperation({ summary: '거래 내역 조회', description: '입출금 및 매수/매도 거래 내역을 반환합니다' })
   @ApiQuery({ name: 'limit', required: false, description: '조회 개수' })
@@ -217,6 +235,8 @@ export class PortfolioProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 관심종목 목록 조회를 portfolio 서비스로 프록시
+   * Proxy watchlist retrieval to portfolio service */
   @Get('watchlist')
   @ApiOperation({ summary: '관심종목 조회', description: '관심종목 심볼 목록을 반환합니다' })
   @ApiResponse({ status: 200, description: '관심종목 목록 반환' })
@@ -230,6 +250,8 @@ export class PortfolioProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 관심종목 추가를 portfolio 서비스로 프록시
+   * Proxy watchlist add to portfolio service */
   @Post('watchlist/:symbol')
   @ApiOperation({ summary: '관심종목 추가', description: '종목을 관심종목에 추가합니다' })
   @ApiResponse({ status: 201, description: '관심종목 추가 성공' })
@@ -247,6 +269,8 @@ export class PortfolioProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 관심종목 삭제를 portfolio 서비스로 프록시
+   * Proxy watchlist removal to portfolio service */
   @Delete('watchlist/:symbol')
   @ApiOperation({ summary: '관심종목 삭제', description: '종목을 관심종목에서 삭제합니다' })
   @ApiResponse({ status: 200, description: '관심종목 삭제 성공' })

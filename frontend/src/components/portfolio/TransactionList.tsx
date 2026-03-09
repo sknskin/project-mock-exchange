@@ -15,10 +15,13 @@ import type { Order } from '@/types';
 
 // 거래 내역 Props / Transaction List Props
 interface TransactionListProps {
-  /** 주문 내역 배열 / Array of order records */
+  /** 주문 내역 배열
+   * Array of order records */
   orders: Order[];
 }
 
+/** 거래 내역 리스트 — 매수/매도 주문을 시간순으로 표시
+ * Transaction list — displays buy/sell orders chronologically */
 export default function TransactionList({ orders }: TransactionListProps) {
   const { t } = useTranslation();
   const { query: { data: rateData } } = useExchangeRate();

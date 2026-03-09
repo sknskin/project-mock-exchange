@@ -241,11 +241,13 @@ export function useOrderBook(symbol: string) {
   });
 }
 
-/** 기간별 가격 변동 정보 / Period-based price change information */
+/** 기간별 가격 변동 정보
+ * Period-based price change information */
 export interface PeriodChange {
   symbol: string;
   currentPrice: number;
-  /** 기준 가격 (기간 시작 시점) / Base price (at period start) */
+  /** 기준 가격 (기간 시작 시점)
+   * Base price (at period start) */
   basePrice: number;
   changeAmount: number;
   changePercent: number;

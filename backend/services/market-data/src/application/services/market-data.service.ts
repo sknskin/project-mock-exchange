@@ -33,6 +33,8 @@ export class MarketDataService implements OnModuleInit {
     await this.seedAssets();
   }
 
+  /** 기본 자산 목록을 DB에 시드하고 가격 엔진을 초기화합니다
+   * Seed default assets into DB and initialize price engine */
   private async seedAssets() {
     for (const asset of DEFAULT_ASSETS) {
       await this.prisma.asset.upsert({
@@ -140,6 +142,8 @@ export class MarketDataService implements OnModuleInit {
     }
   }
 
+  /** 모든 자산의 최신 가격을 Redis 캐시에서 조회합니다
+   * Get latest prices for all assets from Redis cache */
   async getLatestPrices(): Promise<PriceTick[]> {
     const symbols = this.assets.map((a) => a.symbol);
     const cached = await this.priceCache.getAllPrices(symbols);
@@ -154,10 +158,14 @@ export class MarketDataService implements OnModuleInit {
     return result;
   }
 
+  /** 특정 심볼의 최신 가격을 조회합니다
+   * Get latest price for a specific symbol */
   async getPrice(symbol: string): Promise<PriceTick | null> {
     return this.priceCache.getPrice(symbol);
   }
 
+  /** 활성 자산 목록을 DB에서 조회합니다
+   * Get active asset list from database */
   async getAssets() {
     return this.prisma.asset.findMany({
       where: { isActive: true },
@@ -165,6 +173,8 @@ export class MarketDataService implements OnModuleInit {
     });
   }
 
+  /** 특정 심볼의 가격 히스토리를 DB에서 조회합니다
+   * Get price history for a symbol from database */
   async getPriceHistory(symbol: string, limit = 100) {
     return this.prisma.priceHistory.findMany({
       where: { symbol },
@@ -329,6 +339,8 @@ export class MarketDataService implements OnModuleInit {
     return Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
   }
 
+  /** 특정 심볼의 캔들스틱 데이터를 조회하고 프론트엔드 호환 타입으로 변환합니다
+   * Get candlestick data and convert to frontend-compatible types */
   async getCandlesticks(symbol: string, interval: string, limit = 100) {
     const candles = await this.prisma.candlestick.findMany({
       where: { symbol, interval },
@@ -350,6 +362,8 @@ export class MarketDataService implements OnModuleInit {
     }));
   }
 
+  /** 가격 틱 데이터를 DB에 영구 저장합니다
+   * Persist price tick data to database */
   private async persistPrices(ticks: PriceTick[]) {
     try {
       await this.prisma.priceHistory.createMany({
@@ -377,6 +391,8 @@ export class MarketDataService implements OnModuleInit {
     return Math.min(Math.max(value, -MarketDataService.MAX_DECIMAL_20_8), MarketDataService.MAX_DECIMAL_20_8);
   }
 
+  /** 1분 캔들스틱을 upsert하고 고가/저가를 갱신합니다
+   * Upsert 1-minute candlesticks and update high/low */
   private async updateCandlesticks(ticks: PriceTick[]) {
     const now = new Date();
     const minuteStart = new Date(now);

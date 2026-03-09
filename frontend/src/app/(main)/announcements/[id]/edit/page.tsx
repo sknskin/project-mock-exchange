@@ -22,6 +22,8 @@ import { useAuthStore } from '@/stores/auth';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import { cn } from '@/lib/format';
 
+/** 공지사항 수정 페이지 컴포넌트 — 제목/내용/고정/첨부파일 수정
+ * Edit announcement page component — edit title, content, pin, and attachments */
 export default function EditAnnouncementPage({
   params,
 }: {
@@ -66,6 +68,8 @@ export default function EditAnnouncementPage({
 
   if (user && user.role !== 'SYSTEM' && user.role !== 'ADMIN') return null;
 
+  /** 파일 선택 시 5MB 이하 파일만 추가
+   * Add only files under 5MB on file selection */
   const handleAddFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     const valid = files.filter((f) => f.size <= 5 * 1024 * 1024);
@@ -73,22 +77,30 @@ export default function EditAnnouncementPage({
     e.target.value = '';
   };
 
+  /** 새 첨부 파일 목록에서 특정 파일 제거
+   * Remove a specific file from new attachments list */
   const handleRemoveNewFile = (index: number) => {
     setNewFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
+  /** 바이트를 읽기 쉬운 파일 크기로 변환
+   * Convert bytes to human-readable file size */
   const formatFileSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
+  /** 폼 제출 시 확인 모달 표시
+   * Show confirm modal on form submit */
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !content.trim()) return;
     setShowConfirm(true);
   };
 
+  /** 확인 후 공지 수정 + 새 파일 업로드 실행
+   * Execute announcement update + upload new files after confirm */
   const handleConfirmSave = async () => {
     try {
       await updateAnnouncement.mutateAsync({
@@ -108,6 +120,8 @@ export default function EditAnnouncementPage({
     }
   };
 
+  /** 기존 첨부파일 삭제 처리
+   * Handle existing attachment deletion */
   const handleDeleteAttachment = async () => {
     if (!attachmentToDelete) return;
     try {

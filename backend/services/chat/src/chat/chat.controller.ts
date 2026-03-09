@@ -32,19 +32,24 @@ import { InternalAuthGuard } from '../common/guards/internal-auth.guard';
 export class ChatController {
   constructor(private readonly chatService: ChatService) {}
 
-  // 채팅 통계 (Chat Statistics)
+  /** 채팅 통계 조회 (기간별 메시지 수, 활성 사용자 등)
+   * Get chat statistics (message counts, active users, etc.) */
   @Get('statistics')
   async statistics(@Query('days', new DefaultValuePipe(30), ParseIntPipe) days: number) {
     const data = await this.chatService.getStatistics(days);
     return { success: true, data };
   }
 
+  /** 사용자가 참여 중인 채팅방 목록 조회
+   * Get list of rooms the user participates in */
   @Get('rooms')
   async getRooms(@Headers('x-user-id') userId: string) {
     const rooms = await this.chatService.getRooms(userId);
     return { success: true, data: rooms };
   }
 
+  /** 새 채팅방 생성 (DM 또는 그룹)
+   * Create a new chat room (DM or GROUP) */
   @Post('rooms')
   async createRoom(
     @Headers('x-user-id') userId: string,
@@ -77,6 +82,8 @@ export class ChatController {
     return { success: true, data: room };
   }
 
+  /** 채팅방의 메시지 목록을 커서 기반 페이징으로 조회
+   * Get paginated messages in a room using cursor-based pagination */
   @Get('rooms/:id/messages')
   async getMessages(
     @Param('id') roomId: string,
@@ -90,6 +97,8 @@ export class ChatController {
     return { success: true, data: result };
   }
 
+  /** 채팅방에 메시지 전송
+   * Send a message to a chat room */
   @Post('rooms/:id/messages')
   async sendMessage(
     @Param('id') roomId: string,
@@ -105,6 +114,8 @@ export class ChatController {
     return { success: true, data: message };
   }
 
+  /** 채팅방에 사용자 초대
+   * Invite users to a chat room */
   @Post('rooms/:id/invite')
   async inviteUsers(
     @Param('id') roomId: string,
@@ -125,6 +136,8 @@ export class ChatController {
     return { success: true, data: result };
   }
 
+  /** 채팅방 퇴장
+   * Leave a chat room */
   @Post('rooms/:id/leave')
   async leaveRoom(
     @Param('id') roomId: string,
@@ -134,6 +147,8 @@ export class ChatController {
     return { success: true, data: result };
   }
 
+  /** 채팅방에서 사용자 강퇴 (방장만 가능)
+   * Kick a user from a chat room (creator only) */
   @Post('rooms/:id/kick')
   async kickUser(
     @Param('id') roomId: string,
@@ -144,6 +159,8 @@ export class ChatController {
     return { success: true, data: result };
   }
 
+  /** 채팅방의 안 읽은 메시지를 읽음 처리
+   * Mark unread messages in a room as read */
   @Post('rooms/:id/read')
   async markAsRead(
     @Param('id') roomId: string,
@@ -153,6 +170,8 @@ export class ChatController {
     return { success: true, data: result };
   }
 
+  /** 그룹 채팅방 이름 변경
+   * Rename a group chat room */
   @Post('rooms/:id/rename')
   async renameRoom(
     @Param('id') roomId: string,
@@ -163,6 +182,8 @@ export class ChatController {
     return { success: true, data: result };
   }
 
+  /** 채팅방 삭제 (관리자만 가능)
+   * Delete a chat room (admin only) */
   @Delete('rooms/:id')
   async deleteRoom(
     @Param('id') roomId: string,
@@ -173,6 +194,8 @@ export class ChatController {
     return { success: true, data: result };
   }
 
+  /** 메시지 삭제 (본인 또는 관리자)
+   * Delete a message (own message or admin) */
   @Delete('rooms/:roomId/messages/:messageId')
   async deleteMessage(
     @Param('roomId') roomId: string,

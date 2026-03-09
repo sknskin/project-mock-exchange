@@ -168,6 +168,8 @@ function generateMockStrategies(
 
 /* ───────── 전략 카드 컴포넌트 / Strategy Card Component ───────── */
 
+/** 전략 카드 — 모의 전략의 종목/수익률/좋아요/댓글 표시
+ * Strategy card — displays mock strategy symbol, return, likes, comments */
 function StrategyCard({
   strategy,
   locale,
@@ -248,6 +250,8 @@ function StrategyCard({
 
 /* ───────── 트레이더 카드 컴포넌트 / Trader Card Component ───────── */
 
+/** 트레이더 카드 — 리더보드 기반 트레이더 정보 + 팔로우 기능
+ * Trader card — leaderboard-based trader info + follow toggle */
 function TraderCard({
   entry,
   isFollowed,
@@ -381,6 +385,8 @@ function stripHtml(html: string): string {
   return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
 }
 
+/** 커뮤니티 페이지 컴포넌트 — 자유게시판/전략 공유/트레이더 랭킹 탭
+ * Community page component — discussions, strategies, and trader rankings tabs */
 export default function CommunityPage() {
   const { t, locale } = useTranslation();
   const router = useRouter();
@@ -431,6 +437,8 @@ export default function CommunityPage() {
       .map((entry, i) => ({ ...entry, rank: i + 1 }));
   }, [leaderboardData]);
 
+  /** 트레이더 팔로우/언팔로우 토글
+   * Toggle trader follow/unfollow */
   const toggleFollow = (userId: string) => {
     setFollowedUsers((prev) => {
       const next = new Set(prev);

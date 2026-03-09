@@ -26,7 +26,8 @@ import Skeleton from '@/components/ui/Skeleton';
 
 import Toggle from '@/components/ui/Toggle';
 
-// ===== Number input field =====
+/** 숫자 입력 필드 — 편집/읽기 전용 모드 지원
+ * Number input field — supports edit and read-only modes */
 function NumberField({
   label,
   value,
@@ -75,7 +76,8 @@ function NumberField({
   );
 }
 
-// ===== Time input field =====
+/** 시간 입력 필드 — 편집/읽기 전용 모드 지원
+ * Time input field — supports edit and read-only modes */
 function TimeField({
   label,
   value,
@@ -108,7 +110,8 @@ function TimeField({
   );
 }
 
-// ===== Toggle row with label + description =====
+/** 토글 행 — 라벨 + 설명 + ON/OFF 토글
+ * Toggle row — label + description + ON/OFF toggle */
 function ToggleRow({
   label,
   description,
@@ -149,7 +152,8 @@ function ToggleRow({
   );
 }
 
-// ===== Section card =====
+/** 설정 섹션 카드 — 아이콘 + 제목 + 하위 필드 그룹
+ * Settings section card — icon + title + child field group */
 function SectionCard({
   icon: Icon,
   iconColor,
@@ -183,6 +187,8 @@ function SectionCard({
   );
 }
 
+/** 관리자 시스템 설정 페이지 컴포넌트 — 거래/수수료/시스템/보안 설정 관리
+ * Admin system settings page component — manage trading, fees, system, and security settings */
 export default function AdminSettingsPage() {
   const router = useRouter();
   const { t } = useTranslation();
@@ -280,7 +286,6 @@ export default function AdminSettingsPage() {
         require2FAForAdmin: pb('sessionSecurity.require2FAForAdmin', sessionSecurity.require2FAForAdmin),
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [serverSettings]);
 
   // Sync from store when no server settings
@@ -324,6 +329,8 @@ export default function AdminSettingsPage() {
     return null;
   }
 
+  /** 설정 저장 — 로컬 스토어 + 백엔드 동시 업데이트
+   * Save settings — update local store + backend simultaneously */
   const handleSave = () => {
     // Save to local store
     setTradingLimits(limits);
@@ -360,6 +367,8 @@ export default function AdminSettingsPage() {
     saveMutation.mutate(payload);
   };
 
+  /** 편집 취소 — 서버 값 또는 스토어 기본값으로 되돌리기
+   * Cancel edit — revert to server values or store defaults */
   const handleCancel = () => {
     // Revert to server values or store defaults
     if (serverSettings) {

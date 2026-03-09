@@ -51,9 +51,11 @@ export function useCreatePriceAlert() {
       targetPrice: number;
       /** 'ABOVE' = 목표가 이상일 때, 'BELOW' = 목표가 이하일 때 알림 / 'ABOVE' = alert when above target, 'BELOW' = when below */
       condition: 'ABOVE' | 'BELOW';
-      /** 통화 단위 (KRW/USD 등) / Currency unit (KRW/USD, etc.) */
+      /** 통화 단위 (KRW/USD 등)
+       * Currency unit (KRW/USD, etc.) */
       currency?: string;
-      /** UI 표시용 목표가 (환율 변환된 값) / Target price for UI display (exchange-rate-converted value) */
+      /** UI 표시용 목표가 (환율 변환된 값)
+       * Target price for UI display (exchange-rate-converted value) */
       displayTargetPrice?: number;
     }) => {
       const { data } = await api.post('/api/price-alerts', payload);

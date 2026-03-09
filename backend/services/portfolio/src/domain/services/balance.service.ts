@@ -66,7 +66,8 @@ export class BalanceService {
   private readonly logger = new Logger(BalanceService.name);
   private readonly marketDataUrl: string;
 
-  /** 환율 캐시 (USD → KRW) / Exchange rate cache */
+  /** 환율 캐시 (USD → KRW)
+   * Exchange rate cache */
   private cachedExchangeRate: { rate: Decimal; fetchedAt: number } | null = null;
   private static readonly EXCHANGE_RATE_TTL_MS = 10 * 60 * 1000; // 10분
 

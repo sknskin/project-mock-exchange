@@ -7,11 +7,14 @@
  */
 // 기술 스택 아이템 인터페이스 / Tech stack item interface
 export interface TechItem {
-  /** 기술 이름 / Technology name */
+  /** 기술 이름
+   * Technology name */
   name: string;
-  /** 아이콘 CDN URL / Icon CDN URL */
+  /** 아이콘 CDN URL
+   * Icon CDN URL */
   icon: string;
-  /** 라이트 모드에서 색상 반전 여부 / Whether to invert color in light mode */
+  /** 라이트 모드에서 색상 반전 여부
+   * Whether to invert color in light mode */
   invertInLight?: boolean;
 }
 

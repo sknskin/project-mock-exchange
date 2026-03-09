@@ -30,6 +30,8 @@ export class StatisticsProxyController {
     private readonly configService: ConfigService,
   ) {}
 
+  /** 페이지 뷰 기록을 user-auth 통계 API로 프록시
+   * Proxy page view tracking to user-auth statistics API */
   // Public endpoint for page view tracking
   @Post('page-view')
   @UseGuards(ThrottlerGuard)
@@ -48,6 +50,8 @@ export class StatisticsProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 통계 개요 조회를 user-auth로 프록시
+   * Proxy statistics overview to user-auth */
   @Get('overview')
   @UseGuards(JwtAuthGuard, AdminRolesGuard)
   @ApiBearerAuth()
@@ -63,6 +67,8 @@ export class StatisticsProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 가입 통계 조회를 user-auth로 프록시
+   * Proxy registration statistics to user-auth */
   @Get('registrations')
   @UseGuards(JwtAuthGuard, AdminRolesGuard)
   @ApiBearerAuth()
@@ -81,6 +87,8 @@ export class StatisticsProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 승인 완료 가입 통계 조회를 user-auth로 프록시
+   * Proxy approved registration statistics to user-auth */
   @Get('registrations-approved')
   @UseGuards(JwtAuthGuard, AdminRolesGuard)
   @ApiBearerAuth()
@@ -99,6 +107,8 @@ export class StatisticsProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 로그인 통계 조회를 user-auth로 프록시
+   * Proxy login statistics to user-auth */
   @Get('logins')
   @UseGuards(JwtAuthGuard, AdminRolesGuard)
   @ApiBearerAuth()
@@ -117,6 +127,8 @@ export class StatisticsProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 페이지 뷰 통계 조회를 user-auth로 프록시
+   * Proxy page view statistics to user-auth */
   @Get('page-views')
   @UseGuards(JwtAuthGuard, AdminRolesGuard)
   @ApiBearerAuth()
@@ -135,6 +147,8 @@ export class StatisticsProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 공지사항 통계 조회를 user-auth로 프록시
+   * Proxy announcement statistics to user-auth */
   @Get('announcements')
   @UseGuards(JwtAuthGuard, AdminRolesGuard)
   @ApiBearerAuth()
@@ -153,6 +167,8 @@ export class StatisticsProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 통계 개요 트렌드 조회를 user-auth로 프록시
+   * Proxy statistics overview trend to user-auth */
   @Get('overview-trend')
   @UseGuards(JwtAuthGuard, AdminRolesGuard)
   @ApiBearerAuth()
@@ -168,6 +184,8 @@ export class StatisticsProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 인기 공지사항 조회를 user-auth로 프록시
+   * Proxy popular announcements to user-auth */
   @Get('popular-announcements')
   @UseGuards(JwtAuthGuard, AdminRolesGuard)
   @ApiBearerAuth()
@@ -183,6 +201,8 @@ export class StatisticsProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 사용자 통계 조회를 user-auth로 프록시
+   * Proxy user statistics to user-auth */
   @Get('users')
   @UseGuards(JwtAuthGuard, AdminRolesGuard)
   @ApiBearerAuth()
@@ -198,6 +218,8 @@ export class StatisticsProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 좋아요 통계 조회를 user-auth로 프록시
+   * Proxy like statistics to user-auth */
   // 좋아요 통계 프록시
   @Get('likes')
   @UseGuards(JwtAuthGuard, AdminRolesGuard)
@@ -217,6 +239,8 @@ export class StatisticsProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 채팅 통계 조회를 chat 서비스로 프록시
+   * Proxy chat statistics to chat service */
   // 채팅 통계 프록시 (Chat statistics proxy)
   @Get('chat')
   @UseGuards(JwtAuthGuard, AdminRolesGuard)

@@ -150,6 +150,8 @@ export class NewsService implements OnModuleInit {
     }
   }
 
+  /** 30분마다 실행되는 예약 뉴스 스크래핑
+   * Scheduled news scraping every 30 minutes */
   @Interval(30 * 60 * 1000)
   async scheduledScrape() {
     if (this.isScraping) {
@@ -165,6 +167,8 @@ export class NewsService implements OnModuleInit {
     }
   }
 
+  /** 모든 카테고리의 뉴스를 병렬로 스크래핑합니다
+   * Scrape news for all categories in parallel */
   async scrapeAll() {
     const categories: NewsCategory[] = [
       'CRYPTO',
@@ -176,6 +180,8 @@ export class NewsService implements OnModuleInit {
     );
   }
 
+  /** 특정 카테고리의 RSS 피드를 스크래핑하고 DB에 저장합니다
+   * Scrape RSS feeds for a category and save to database */
   async scrapeByCategory(category: NewsCategory) {
     const feeds = RSS_FEEDS.filter((f) => f.category === category);
     let totalInserted = 0;
@@ -247,6 +253,8 @@ export class NewsService implements OnModuleInit {
     return totalInserted;
   }
 
+  /** 카테고리별 뉴스 목록을 페이징하여 조회합니다
+   * Get paginated news list by category */
   async list(category: NewsCategory, page: number, limit: number) {
     const skip = (page - 1) * limit;
 
@@ -269,6 +277,8 @@ export class NewsService implements OnModuleInit {
     };
   }
 
+  /** 카테고리별 스크래핑 로그 상태를 조회합니다
+   * Get scrape status logs for all categories */
   async getScrapeStatus() {
     const logs = await this.prisma.newsScrapeLog.findMany();
     return logs;

@@ -16,6 +16,8 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 export class UserSettingsProxyController {
   constructor(private readonly proxyService: ProxyService) {}
 
+  /** 사용자 알림 설정 조회를 user-auth로 프록시
+   * Proxy get notification settings to user-auth */
   @Get()
   async getAll(@Req() req: Request, @Res() res: Response) {
     const result = await this.proxyService.forward('user-auth', {
@@ -26,6 +28,8 @@ export class UserSettingsProxyController {
     res.status(result.status).json(result.data);
   }
 
+  /** 사용자 알림 설정 수정을 user-auth로 프록시
+   * Proxy update notification settings to user-auth */
   @Put()
   async update(@Req() req: Request, @Res() res: Response, @Body() body: Record<string, string>) {
     const result = await this.proxyService.forward('user-auth', {

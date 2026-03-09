@@ -11,6 +11,8 @@ import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/format';
 
+/** 환율 정보 바 — USD/KRW 환율 표시 및 통화 전환
+ * Exchange rate bar — shows USD/KRW rate with currency toggle */
 export default function ExchangeRateBar() {
   const { query, manualRefetch } = useExchangeRate();
   const { data, isFetching } = query;

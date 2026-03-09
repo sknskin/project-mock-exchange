@@ -22,17 +22,23 @@ export type LiveToastCategory =
 
 // 실시간 토스트 데이터 / Live toast data
 export interface LiveToast {
-  /** 고유 ID / Unique ID */
+  /** 고유 ID
+   * Unique ID */
   id: number;
-  /** 토스트 카테고리 (아이콘/색상 결정) / Toast category (determines icon/color) */
+  /** 토스트 카테고리 (아이콘/색상 결정)
+   * Toast category (determines icon/color) */
   category: LiveToastCategory;
-  /** 토스트 제목 / Toast title */
+  /** 토스트 제목
+   * Toast title */
   title: string;
-  /** 토스트 메시지 / Toast message */
+  /** 토스트 메시지
+   * Toast message */
   message: string;
-  /** 클릭 시 이동할 경로 / Path to navigate on click */
+  /** 클릭 시 이동할 경로
+   * Path to navigate on click */
   navigateTo?: string;
-  /** 클릭 시 열 채팅방 ID / Chat room ID to open on click */
+  /** 클릭 시 열 채팅방 ID
+   * Chat room ID to open on click */
   chatRoomId?: string;
 }
 

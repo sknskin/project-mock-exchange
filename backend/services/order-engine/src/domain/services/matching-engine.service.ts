@@ -46,6 +46,8 @@ export class MatchingEngineService implements OnModuleInit {
   // 초기화 완료 여부 — 초기화 전 주문 유입 방지 / Initialization flag — prevents order intake before ready
   private initialized = false;
 
+  /** 매칭 엔진 초기화 완료 여부를 반환합니다
+   * Check if the matching engine has completed initialization */
   isReady(): boolean {
     return this.initialized;
   }
@@ -108,6 +110,8 @@ export class MatchingEngineService implements OnModuleInit {
     }
   }
 
+  /** 오더북에 새 주문을 추가합니다
+   * Add a new order entry to the order book */
   addToOrderBook(entry: OrderBookEntry): void {
     this.assertReady('addToOrderBook');
     this.insertEntry(entry);
@@ -139,6 +143,8 @@ export class MatchingEngineService implements OnModuleInit {
     }
   }
 
+  /** 오더북에서 특정 주문을 제거합니다
+   * Remove a specific order from the order book */
   removeFromOrderBook(orderId: string, symbol: string, side: 'BUY' | 'SELL'): void {
     this.assertReady('removeFromOrderBook');
     const book = side === 'BUY' ? this.bids : this.asks;
@@ -352,6 +358,8 @@ export class MatchingEngineService implements OnModuleInit {
     );
   }
 
+  /** 특정 심볼의 오더북 뎁스(매수/매도 호가)를 반환합니다
+   * Get order book depth (bids/asks) for a symbol */
   getOrderBookDepth(symbol: string): { bids: { price: string; quantity: string }[]; asks: { price: string; quantity: string }[] } {
     const bidEntries = this.bids.get(symbol) || [];
     const askEntries = this.asks.get(symbol) || [];

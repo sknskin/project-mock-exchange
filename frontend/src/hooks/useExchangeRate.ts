@@ -38,11 +38,14 @@ import { useCallback } from 'react';
 // ── 환율 데이터 타입 / Exchange rate data type ──
 
 interface ExchangeRateData {
-  /** USD → KRW 환율 / USD to KRW exchange rate */
+  /** USD → KRW 환율
+   * USD to KRW exchange rate */
   rate: number;
-  /** 마지막 조회 시각 / Last fetched timestamp */
+  /** 마지막 조회 시각
+   * Last fetched timestamp */
   updatedAt: Date;
-  /** 데이터 소스 / Data source */
+  /** 데이터 소스
+   * Data source */
   source: 'exchangerate-fun' | 'frankfurter';
 }
 
@@ -83,9 +86,11 @@ const STORAGE_KEY = 'vx_exchange_rate_usage';
 // ── 일일 사용량 관리 (localStorage 기반) / Daily usage management (localStorage-based) ──
 
 interface DailyUsage {
-  /** 날짜 문자열 (YYYY-MM-DD) / Date string */
+  /** 날짜 문자열 (YYYY-MM-DD)
+   * Date string */
   date: string;
-  /** 해당일 수동 새로고침 횟수 / Manual refresh count for the day */
+  /** 해당일 수동 새로고침 횟수
+   * Manual refresh count for the day */
   count: number;
 }
 
@@ -216,7 +221,8 @@ async function fetchExchangeRate(): Promise<ExchangeRateData> {
  * Exchange rate hook return type
  */
 interface UseExchangeRateReturn {
-  /** TanStack Query 결과 / TanStack Query result */
+  /** TanStack Query 결과
+   * TanStack Query result */
   query: UseQueryResult<ExchangeRateData>;
   /**
    * 수동 새로고침 함수

@@ -20,6 +20,8 @@ export class AnnouncementService {
 
   constructor(private readonly prisma: PrismaService) {}
 
+  /** 공지사항 목록 조회 (고정글 우선, 페이지네이션)
+   * List announcements (pinned first, with pagination) */
   async list(params: { page: number; limit: number; search?: string }) {
     const { page, limit, search } = params;
     const skip = (page - 1) * limit;
@@ -67,6 +69,8 @@ export class AnnouncementService {
     };
   }
 
+  /** 이전/다음 공지사항 조회
+   * Get previous and next announcements */
   async getAdjacent(id: string) {
     const current = await this.prisma.announcement.findUnique({
       where: { id },
@@ -102,6 +106,8 @@ export class AnnouncementService {
     return { prev, next };
   }
 
+  /** 공지사항 상세 조회 (댓글, 좋아요, 첨부파일 포함)
+   * Get announcement detail with comments, likes, and attachments */
   async detail(id: string, userId?: string) {
     const announcement = await this.prisma.announcement.findUnique({
       where: { id },
@@ -165,6 +171,8 @@ export class AnnouncementService {
     };
   }
 
+  /** 공지사항 좋아요 토글
+   * Toggle announcement like */
   async toggleAnnouncementLike(userId: string, announcementId: string) {
     const announcement = await this.prisma.announcement.findUnique({ where: { id: announcementId } });
     if (!announcement) throw new NotFoundException('Announcement not found');
@@ -184,6 +192,8 @@ export class AnnouncementService {
     }
   }
 
+  /** 댓글 좋아요 토글
+   * Toggle comment like */
   async toggleCommentLike(userId: string, commentId: string) {
     const comment = await this.prisma.comment.findUnique({ where: { id: commentId } });
     if (!comment) throw new NotFoundException('Comment not found');
@@ -203,6 +213,8 @@ export class AnnouncementService {
     }
   }
 
+  /** 조회수 1 증가
+   * Increment view count by 1 */
   async incrementViewCount(announcementId: string) {
     await this.prisma.announcement.update({
       where: { id: announcementId },
@@ -210,6 +222,8 @@ export class AnnouncementService {
     });
   }
 
+  /** 공지사항 작성 및 전체 사용자 알림 발송
+   * Create announcement and notify all active users */
   async create(user: UserDto, title: string, content: string, isPinned?: boolean) {
     if (user.role !== USER_ROLE.SYSTEM && user.role !== USER_ROLE.ADMIN) {
       throw new ForbiddenException('Only SYSTEM/ADMIN can create announcements');
@@ -248,6 +262,8 @@ export class AnnouncementService {
     return announcement;
   }
 
+  /** 공지사항 수정 및 수정 알림 발송
+   * Update announcement and send update notification */
   async update(user: UserDto, id: string, title: string, content: string, isPinned?: boolean) {
     const announcement = await this.prisma.announcement.findUnique({ where: { id } });
     if (!announcement) throw new NotFoundException('Announcement not found');
@@ -291,6 +307,8 @@ export class AnnouncementService {
     return updated;
   }
 
+  /** 공지사항 삭제 (SYSTEM 또는 작성자만)
+   * Delete announcement (SYSTEM or author only) */
   async delete(user: UserDto, id: string) {
     const announcement = await this.prisma.announcement.findUnique({ where: { id } });
     if (!announcement) throw new NotFoundException('Announcement not found');
@@ -303,6 +321,8 @@ export class AnnouncementService {
     this.logger.log(`Announcement deleted: ${id} by ${user.username}`);
   }
 
+  /** 공지사항 고정/해제 토글 (관리자 전용)
+   * Toggle announcement pin (admin only) */
   async togglePin(user: UserDto, id: string) {
     if (user.role !== USER_ROLE.SYSTEM && user.role !== USER_ROLE.ADMIN) {
       throw new ForbiddenException('Only SYSTEM/ADMIN can pin announcements');
@@ -324,6 +344,8 @@ export class AnnouncementService {
     return updated;
   }
 
+  /** 공지사항에 첨부파일 추가
+   * Add attachment to announcement */
   async addAttachment(
     announcementId: string,
     file: { fileName: string; originalName: string; mimeType: string; size: number },
@@ -342,6 +364,8 @@ export class AnnouncementService {
     });
   }
 
+  /** 첨부파일 삭제 (SYSTEM 또는 작성자만)
+   * Delete attachment (SYSTEM or author only) */
   async deleteAttachment(user: UserDto, attachmentId: string) {
     const attachment = await this.prisma.attachment.findUnique({
       where: { id: attachmentId },
@@ -357,6 +381,8 @@ export class AnnouncementService {
     this.logger.log(`Attachment ${attachmentId} deleted by ${user.username}`);
   }
 
+  /** 댓글/답글 작성
+   * Add comment or reply */
   async addComment(user: UserDto, announcementId: string, content: string, parentId?: string) {
     const announcement = await this.prisma.announcement.findUnique({ where: { id: announcementId } });
     if (!announcement) throw new NotFoundException('Announcement not found');
@@ -381,6 +407,8 @@ export class AnnouncementService {
     });
   }
 
+  /** 댓글 삭제 (SYSTEM 또는 작성자만)
+   * Delete comment (SYSTEM or author only) */
   async deleteComment(user: UserDto, commentId: string) {
     const comment = await this.prisma.comment.findUnique({ where: { id: commentId } });
     if (!comment) throw new NotFoundException('Comment not found');

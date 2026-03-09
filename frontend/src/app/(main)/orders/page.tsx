@@ -22,7 +22,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { cn, formatQuantity, formatDate, formatPriceDisplay, formatCurrencyDisplay } from '@/lib/format';
 import { useAuthStore } from '@/stores/auth';
 import { useToastStore } from '@/stores/toast';
-import { Search, ChevronDown, ClipboardList, Check, BarChart, LayoutDashboard, TrendingUp, Activity, Download } from 'lucide-react';
+import { Search, ChevronDown, ClipboardList, Check, BarChart, LayoutDashboard, Activity, Download } from 'lucide-react';
 import { exportToCSV } from '@/lib/export';
 import type { TranslationKey } from '@/lib/i18n';
 import type { Order } from '@/types';

@@ -15,15 +15,20 @@ import api from '@/lib/api';
 
 // 전화번호 인증 Props / Phone Verification Props
 interface PhoneVerificationProps {
-  /** 전화번호 / Phone number */
+  /** 전화번호
+   * Phone number */
   phone: string;
-  /** 전화번호 변경 콜백 / Phone number change callback */
+  /** 전화번호 변경 콜백
+   * Phone number change callback */
   onPhoneChange: (phone: string) => void;
-  /** 인증 완료 콜백 / Verification success callback */
+  /** 인증 완료 콜백
+   * Verification success callback */
   onVerified: () => void;
-  /** 인증 완료 여부 / Whether verified */
+  /** 인증 완료 여부
+   * Whether verified */
   verified: boolean;
-  /** 에러 메시지 / Error message */
+  /** 에러 메시지
+   * Error message */
   error?: string;
 }
 
@@ -51,12 +56,16 @@ export default function PhoneVerification({
     return () => clearInterval(interval);
   }, [timer]);
 
+  /** 초를 분:초 형식으로 변환
+   * Format seconds to m:ss */
   const formatTimer = (seconds: number) => {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
     return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
+  /** SMS 인증번호 발송 요청
+   * Send SMS verification code request */
   const handleSendCode = useCallback(async () => {
     setSending(true);
     setMessage('');
@@ -74,6 +83,8 @@ export default function PhoneVerification({
     }
   }, [phone, t]);
 
+  /** 인증번호 확인 요청
+   * Verify SMS code request */
   const handleVerify = useCallback(async () => {
     setVerifying(true);
     setMessage('');

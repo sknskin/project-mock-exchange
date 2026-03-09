@@ -1,3 +1,10 @@
+/**
+ * @file 토글 스위치 컴포넌트
+ * @description on/off 상태를 전환하는 슬라이드 토글 스위치
+ *
+ * @file Toggle Switch Component
+ * @description Slide toggle switch for on/off state transitions
+ */
 'use client';
 
 import { cn } from '@/lib/format';
@@ -8,6 +15,8 @@ interface ToggleProps {
   disabled?: boolean;
 }
 
+/** 토글 스위치
+ * Toggle switch */
 export default function Toggle({ checked, onChange, disabled }: ToggleProps) {
   return (
     <button

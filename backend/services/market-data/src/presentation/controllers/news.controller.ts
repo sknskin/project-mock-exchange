@@ -15,6 +15,8 @@ import { InternalAuthGuard } from '../../common/guards/internal-auth.guard';
 export class NewsController {
   constructor(private readonly newsService: NewsService) {}
 
+  /** 카테고리별 뉴스 목록 페이징 조회
+   * Get paginated news list by category */
   @Get()
   async list(
     @Query('category') category: NewsCategory = 'CRYPTO',
@@ -27,12 +29,16 @@ export class NewsController {
     return { success: true, data: result };
   }
 
+  /** 카테고리별 스크래핑 상태 조회
+   * Get scraping status by category */
   @Get('scrape-status')
   async scrapeStatus() {
     const status = await this.newsService.getScrapeStatus();
     return { success: true, data: status };
   }
 
+  /** 수동 뉴스 스크래핑 트리거
+   * Manually trigger news scraping for a category */
   @Post('scrape')
   async triggerScrape(@Query('category') category: NewsCategory) {
     const count = await this.newsService.scrapeByCategory(category);

@@ -51,6 +51,8 @@ export class NotificationController {
     return { success: true, data: notification };
   }
 
+  /** 내 알림 목록 조회 (페이지네이션)
+   * List my notifications with pagination */
   @Get()
   @UseGuards(JwtAuthGuard)
   async list(
@@ -86,6 +88,8 @@ export class NotificationController {
     };
   }
 
+  /** 읽지 않은 알림 개수 조회
+   * Get unread notification count */
   @Get('unread-count')
   @UseGuards(JwtAuthGuard)
   async unreadCount(@CurrentUser() user: UserDto) {
@@ -95,6 +99,8 @@ export class NotificationController {
     return { success: true, data: { count } };
   }
 
+  /** 개별 알림 읽음 처리
+   * Mark single notification as read */
   @Post(':id/read')
   @UseGuards(JwtAuthGuard)
   async markAsRead(
@@ -108,6 +114,8 @@ export class NotificationController {
     return { success: true };
   }
 
+  /** 전체 알림 읽음 처리
+   * Mark all notifications as read */
   @Post('read-all')
   @UseGuards(JwtAuthGuard)
   async markAllAsRead(@CurrentUser() user: UserDto) {
@@ -118,6 +126,8 @@ export class NotificationController {
     return { success: true };
   }
 
+  /** 알림 삭제
+   * Delete notification */
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
   async deleteNotification(

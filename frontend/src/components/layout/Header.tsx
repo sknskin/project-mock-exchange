@@ -248,7 +248,7 @@ export default function Header() {
                       {isAdmin && (
                         <>
                           <div className="mx-3 mt-2 mb-1 px-1 py-0.5 text-[10px] font-bold uppercase tracking-wider text-accent">
-                            Admin
+                            {t('common.admin')}
                           </div>
                           <div className="mx-2 mb-1 rounded-lg border border-accent/20 bg-accent/5 overflow-hidden">
                             <Link
@@ -401,7 +401,7 @@ export default function Header() {
               {/* 관리자 메뉴 - 2열 그리드 / Admin menu - 2-column grid */}
               {mobileAdminItems.length > 0 && (
                 <div className="mt-3 pt-3 border-t border-border">
-                  <div className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-accent">Admin</div>
+                  <div className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-accent">{t('common.admin')}</div>
                   <div className="flex flex-col gap-0.5">
                     {mobileAdminItems.map((item) => (
                       <Link

@@ -30,6 +30,8 @@ const ERROR_MAP_KO: [RegExp, string][] = [
   [/Reserve amount must be positive/i, '주문 금액은 0보다 커야 합니다'],
 ];
 
+/** 영문 에러 메시지를 한국어로 변환
+ * Convert English error message to Korean */
 function localizeError(message: string, locale: string): string {
   if (locale !== 'ko') return message;
   for (const [pattern, korean] of ERROR_MAP_KO) {
@@ -38,6 +40,8 @@ function localizeError(message: string, locale: string): string {
   return message;
 }
 
+/** 에러 객체에서 사용자 표시용 메시지 추출
+ * Extract user-facing message from error object */
 function extractErrorMessage(error: unknown): string {
   const locale = useSettingsStore.getState().locale ?? 'ko';
 
@@ -58,6 +62,8 @@ function extractErrorMessage(error: unknown): string {
   return locale === 'ko' ? '알 수 없는 오류가 발생했습니다' : 'An unexpected error occurred';
 }
 
+/** QueryClient 생성 및 전역 에러 핸들링 래퍼
+ * QueryClient creation and global error handling wrapper */
 export default function QueryProvider({
   children,
 }: {

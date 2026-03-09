@@ -28,6 +28,8 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 export class PriceAlertProxyController {
   constructor(private readonly proxyService: ProxyService) {}
 
+  /** 가격 알림 생성을 user-auth로 프록시
+   * Proxy price alert creation to user-auth */
   @Post()
   @ApiOperation({ summary: '가격 알림 생성', description: '새로운 가격 알림을 생성합니다.' })
   @ApiResponse({ status: 201, description: '가격 알림 생성 성공' })
@@ -42,6 +44,8 @@ export class PriceAlertProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 가격 알림 목록 조회를 user-auth로 프록시
+   * Proxy price alert list to user-auth */
   @Get()
   @ApiOperation({ summary: '가격 알림 목록 조회', description: '내 가격 알림 목록을 조회합니다.' })
   @ApiResponse({ status: 200, description: '가격 알림 목록 조회 성공' })
@@ -56,6 +60,8 @@ export class PriceAlertProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 가격 알림 삭제를 user-auth로 프록시
+   * Proxy price alert deletion to user-auth */
   @Delete(':id')
   @ApiOperation({ summary: '가격 알림 삭제', description: '특정 가격 알림을 삭제합니다.' })
   @ApiParam({ name: 'id', description: '삭제할 가격 알림 ID' })

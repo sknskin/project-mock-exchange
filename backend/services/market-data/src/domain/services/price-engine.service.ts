@@ -56,6 +56,8 @@ export class PriceEngineService {
     this.MIN_PRICE = this.config.get<number>('PRICE_ENGINE_MIN_PRICE', 0.0001);
   }
 
+  /** 자산의 초기 가격 및 추적 상태를 설정합니다
+   * Initialize asset price and tracking state */
   initializeAsset(config: AssetConfig): void {
     this.prices.set(config.symbol, config.basePrice);
     this.openPrices24h.set(config.symbol, config.basePrice);
@@ -79,6 +81,8 @@ export class PriceEngineService {
     this.logger.warn(`Volatility event triggered for ${symbol}: ${multiplier.toFixed(1)}x for ${this.VOLATILITY_EVENT_DURATION_MS / 1000}s`);
   }
 
+  /** 변동성 이벤트를 반영한 유효 변동성을 계산합니다
+   * Calculate effective volatility considering volatility events */
   private getEffectiveVolatility(config: AssetConfig): number {
     const event = this.volatilityMultipliers.get(config.symbol);
     if (event && Date.now() < event.expiresAt) {
@@ -176,6 +180,8 @@ export class PriceEngineService {
     this.volumes.set(symbol, tick.volume);
   }
 
+  /** 특정 심볼의 현재 가격을 반환합니다
+   * Get current price for a symbol */
   getCurrentPrice(symbol: string): number | undefined {
     return this.prices.get(symbol);
   }
@@ -207,6 +213,8 @@ export class PriceEngineService {
     return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
   }
 
+  /** 가격 크기에 따라 적절한 소수점으로 반올림합니다
+   * Round price to appropriate decimal places based on magnitude */
   private roundPrice(price: number): number {
     if (price >= 1000) return Math.round(price * 100) / 100;
     if (price >= 1) return Math.round(price * 10000) / 10000;

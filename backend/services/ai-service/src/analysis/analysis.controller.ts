@@ -15,11 +15,15 @@ import { AnalyzePortfolioDto } from './dto/analyze-portfolio.dto';
 export class AnalysisController {
   constructor(private readonly analysisService: AnalysisService) {}
 
+  /** 데모 자산에 대한 매매 시그널 조회
+   * Get market signals for demo assets */
   @Get('signals')
   getMarketSignals() {
     return this.analysisService.getMarketSignals();
   }
 
+  /** 포트폴리오 보유 현황을 분석하여 인사이트 제공
+   * Analyze portfolio holdings and provide insights */
   @Post('portfolio')
   analyzePortfolio(@Body() dto: AnalyzePortfolioDto) {
     return this.analysisService.analyzePortfolio(dto.holdings ?? []);

@@ -16,10 +16,13 @@ import type { Asset } from '@/types';
 
 // 마켓 티커 Props / Market Ticker Props
 interface MarketTickerProps {
-  /** 전체 자산 배열 (거래대금 상위 5개 추출) / Full asset array (top 5 by turnover extracted) */
+  /** 전체 자산 배열 (거래대금 상위 5개 추출)
+   * Full asset array (top 5 by turnover extracted) */
   assets: Asset[];
 }
 
+/** 마켓 티커 — 거래대금 상위 5개 종목 가로 스크롤 표시
+ * Market ticker — horizontal display of top 5 assets by turnover */
 export default function MarketTicker({ assets }: MarketTickerProps) {
   const { t } = useTranslation();
   const { display } = useCurrencyDisplay();

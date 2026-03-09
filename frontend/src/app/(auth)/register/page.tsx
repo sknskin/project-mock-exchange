@@ -28,6 +28,8 @@ import {
 } from '@/lib/validation';
 import api from '@/lib/api';
 
+/** 회원가입 페이지 컴포넌트 — 사용자 정보 입력 및 중복 검사 후 가입 요청
+ * Register page component — input user info, duplicate checks, and submit registration */
 export default function RegisterPage() {
   const router = useRouter();
   const { t } = useTranslation();
@@ -127,6 +129,8 @@ export default function RegisterPage() {
     }
   }, [username, email, password, passwordConfirm, name, phone, rrnFront, rrnBack, address, addressDetail, zipCode, t]);
 
+  /** 중복 검사 상태에 따른 안내 메시지 반환
+   * Return guidance message based on duplicate check status */
   const getDuplicateMessage = (status: string): string | undefined => {
     switch (status) {
       case 'checking': return t('validation.duplicate.checking');
@@ -136,6 +140,8 @@ export default function RegisterPage() {
     }
   };
 
+  /** 중복 검사 상태에 따른 텍스트 색상 클래스 반환
+   * Return text color class based on duplicate check status */
   const getDuplicateColor = (status: string): string => {
     switch (status) {
       case 'taken': return 'text-danger';

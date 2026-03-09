@@ -28,6 +28,8 @@ import ConfirmModal from '@/components/ui/ConfirmModal';
 import { cn } from '@/lib/format';
 import type { CommentItem } from '@/types';
 
+/** 공지사항 상세 페이지 컴포넌트 — 본문 조회, 좋아요, 댓글/답글, 삭제 기능
+ * Announcement detail page component — view content, like, comments/replies, and delete */
 export default function AnnouncementDetailPage({
   params,
 }: {
@@ -93,12 +95,16 @@ export default function AnnouncementDetailPage({
   const canEditAnnouncement = isSystem || (isAdmin && isAuthor);
 
   // Format dates
+  /** ISO 날짜를 로컬 날짜+시간 문자열로 변환
+   * Convert ISO date to local date+time string */
   const formatDate = (iso: string) => {
     const d = new Date(iso);
     return `${d.toLocaleDateString()} ${d.toLocaleTimeString()}`;
   };
 
   // Role badge
+  /** 역할별 뱃지 CSS 클래스 반환
+   * Return badge CSS class by role */
   const getRoleBadgeClass = (role: string) => {
     switch (role) {
       case 'SYSTEM':
@@ -110,6 +116,8 @@ export default function AnnouncementDetailPage({
     }
   };
 
+  /** 역할 코드를 번역된 라벨로 변환
+   * Convert role code to translated label */
   const getRoleLabel = (role: string) => {
     switch (role) {
       case 'SYSTEM':
@@ -123,12 +131,16 @@ export default function AnnouncementDetailPage({
 
   // ─── Handlers ────────────────────────────────────────────────────────────────
 
+  /** 바이트를 읽기 쉬운 파일 크기로 변환
+   * Convert bytes to human-readable file size */
   const formatFileSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
+  /** 공지사항 삭제 후 목록으로 이동
+   * Delete announcement and navigate to list */
   const handleDeleteAnnouncement = async () => {
     try {
       await deleteAnnouncement.mutateAsync(id);
@@ -138,6 +150,8 @@ export default function AnnouncementDetailPage({
     }
   };
 
+  /** 새 댓글 등록
+   * Submit new comment */
   const handleSubmitComment = async () => {
     if (!newComment.trim()) return;
     try {
@@ -151,6 +165,8 @@ export default function AnnouncementDetailPage({
     }
   };
 
+  /** 댓글에 대한 답글 등록
+   * Submit reply to a comment */
   const handleSubmitReply = async (parentId: string) => {
     if (!replyText.trim()) return;
     try {
@@ -166,6 +182,8 @@ export default function AnnouncementDetailPage({
     }
   };
 
+  /** 댓글 삭제 처리
+   * Handle comment deletion */
   const handleDeleteComment = async () => {
     if (!commentToDelete) return;
     try {
@@ -183,6 +201,8 @@ export default function AnnouncementDetailPage({
     return comment.author.id === user.id;
   };
 
+  /** 답글 입력 토글 — 같은 댓글 클릭 시 닫기
+   * Toggle reply input — close if same comment clicked */
   const openReply = (commentId: string) => {
     if (replyingTo === commentId) {
       setReplyingTo(null);

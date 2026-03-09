@@ -53,7 +53,8 @@ class PeriodQueryDto {
 export class StatisticsController {
   constructor(private readonly prisma: PrismaService) {}
 
-  // Public endpoint: track page view
+  /** 페이지 뷰 추적 기록
+   * Track page view */
   @Post('page-view')
   async trackPageView(@Body() body: TrackPageViewDto) {
     await this.prisma.pageView.create({
@@ -62,6 +63,8 @@ export class StatisticsController {
     return { success: true };
   }
 
+  /** 대시보드 개요 통계 (사용자, 로그인, 공지, 페이지뷰)
+   * Dashboard overview stats (users, logins, announcements, page views) */
   @Get('overview')
   @UseGuards(JwtAuthGuard)
   async overview(@CurrentUser() user: UserDto) {
@@ -92,6 +95,8 @@ export class StatisticsController {
     };
   }
 
+  /** 회원가입 통계 (기간별 그룹화)
+   * Registration statistics grouped by period */
   @Get('registrations')
   @UseGuards(JwtAuthGuard)
   async registrationStats(
@@ -117,6 +122,8 @@ export class StatisticsController {
     return { success: true, data: grouped };
   }
 
+  /** 승인된 회원가입 통계 (기간별)
+   * Approved registration statistics by period */
   @Get('registrations-approved')
   @UseGuards(JwtAuthGuard)
   async approvedRegistrationStats(
@@ -147,6 +154,8 @@ export class StatisticsController {
     return { success: true, data: grouped };
   }
 
+  /** 로그인 통계 (기간별)
+   * Login statistics by period */
   @Get('logins')
   @UseGuards(JwtAuthGuard)
   async loginStats(
@@ -172,6 +181,8 @@ export class StatisticsController {
     return { success: true, data: grouped };
   }
 
+  /** 페이지 뷰 통계 및 인기 페이지 Top 10
+   * Page view statistics and top 10 popular pages */
   @Get('page-views')
   @UseGuards(JwtAuthGuard)
   async pageViewStats(
@@ -207,6 +218,8 @@ export class StatisticsController {
     return { success: true, data: { timeline: grouped, topPages } };
   }
 
+  /** 공지사항/댓글 통계 (타임라인 + 합계)
+   * Announcement/comment statistics (timeline + totals) */
   @Get('announcements')
   @UseGuards(JwtAuthGuard)
   async announcementStats(
@@ -250,6 +263,8 @@ export class StatisticsController {
     };
   }
 
+  /** 전일 대비 통계 추이 (신규가입, 로그인, 페이지뷰, 공지)
+   * Day-over-day trend (registrations, logins, page views, announcements) */
   @Get('overview-trend')
   @UseGuards(JwtAuthGuard)
   async overviewTrend(@CurrentUser() user: UserDto) {
@@ -286,7 +301,8 @@ export class StatisticsController {
     };
   }
 
-  // 인기 공지사항 Top 10 (댓글 수 기준)
+  /** 인기 공지사항 Top 10 (댓글 수 기준)
+   * Top 10 popular announcements by comment count */
   @Get('popular-announcements')
   @UseGuards(JwtAuthGuard)
   async popularAnnouncements(@CurrentUser() user: UserDto) {
@@ -313,7 +329,8 @@ export class StatisticsController {
     };
   }
 
-  // 좋아요 통계 (공지사항 좋아요, 댓글 좋아요 타임라인 + 합계)
+  /** 좋아요 통계 (공지사항/댓글 좋아요 타임라인 + 합계)
+   * Like statistics (announcement/comment like timelines + totals) */
   @Get('likes')
   @UseGuards(JwtAuthGuard)
   async likeStats(
@@ -373,6 +390,8 @@ export class StatisticsController {
     };
   }
 
+  /** 사용자 분포 통계 (역할별, 상태별)
+   * User distribution statistics by role and status */
   @Get('users')
   @UseGuards(JwtAuthGuard)
   async userStats(@CurrentUser() user: UserDto) {
@@ -403,6 +422,8 @@ export class StatisticsController {
     };
   }
 
+  /** 관리자 권한 검증 — SYSTEM 또는 ADMIN만 허용
+   * Admin authorization check — only SYSTEM or ADMIN allowed */
   private assertAdmin(user: UserDto) {
     if (user.role !== USER_ROLE.SYSTEM && user.role !== USER_ROLE.ADMIN) {
       throw new ForbiddenException('Admin access required');
