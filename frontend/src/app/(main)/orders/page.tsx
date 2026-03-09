@@ -253,27 +253,54 @@ function AnalysisTab({ trades, userId, isLoading, error, refetch, t, currencyMod
 
       {/* Time distribution chart */}
       <div>
-        <h3 className="text-[14px] font-bold text-text-secondary mb-3">{t('orders.analysisTimeDistribution')}</h3>
-        <div className="bg-bg-secondary/60 border border-border/60 rounded-xl p-3 md:p-4 space-y-1.5">
-          {stats.hourCounts.map((count, hour) => (
-            <div key={hour} className="flex items-center gap-2">
-              <span className="w-8 text-[11px] text-text-quaternary tabular-nums text-right shrink-0">
-                {String(hour).padStart(2, '0')}{t('orders.analysisTimeHour')}
-              </span>
-              <div className="flex-1 h-5 bg-bg-tertiary rounded overflow-hidden">
-                <div
-                  className="h-full bg-accent rounded transition-all"
-                  style={{ width: `${(count / stats.maxHourCount) * 100}%` }}
-                />
+        <h3 className="text-[15px] md:text-[16px] font-bold text-text-secondary mb-4">{t('orders.analysisTimeDistribution')}</h3>
+        <div className="bg-bg-secondary/60 border border-border/60 rounded-xl p-4 md:p-6">
+          {/* Vertical bar chart */}
+          <div className="flex items-end gap-[3px] md:gap-[6px] h-[180px] md:h-[220px] mb-3">
+            {stats.hourCounts.map((count, hour) => {
+              const pct = (count / stats.maxHourCount) * 100;
+              return (
+                <div key={hour} className="flex-1 flex flex-col items-center justify-end h-full group relative">
+                  {/* Tooltip on hover */}
+                  {count > 0 && (
+                    <div className="absolute -top-7 left-1/2 -translate-x-1/2 hidden group-hover:flex items-center px-2 py-1 bg-bg-primary border border-border rounded-lg shadow-lg z-10 whitespace-nowrap">
+                      <span className="text-[11px] md:text-[12px] font-semibold text-text-primary tabular-nums">
+                        {String(hour).padStart(2, '0')}{t('orders.analysisTimeHour')} — {count}
+                      </span>
+                    </div>
+                  )}
+                  {/* Count label above bar (only show if non-zero) */}
+                  {count > 0 && (
+                    <span className="text-[10px] md:text-[11px] font-medium text-text-tertiary tabular-nums mb-1 leading-none">
+                      {count}
+                    </span>
+                  )}
+                  {/* Bar */}
+                  <div
+                    className={cn(
+                      'w-full rounded-t-sm md:rounded-t transition-all',
+                      count > 0 ? 'bg-accent hover:bg-accent/80' : 'bg-bg-tertiary/60',
+                    )}
+                    style={{ height: count > 0 ? `${Math.max(pct, 4)}%` : '2px' }}
+                  />
+                </div>
+              );
+            })}
+          </div>
+          {/* Hour labels below chart */}
+          <div className="flex gap-[3px] md:gap-[6px]">
+            {stats.hourCounts.map((_, hour) => (
+              <div key={hour} className="flex-1 text-center">
+                <span className="text-[9px] md:text-[11px] text-text-quaternary tabular-nums leading-none">
+                  {String(hour).padStart(2, '0')}
+                </span>
               </div>
-              <span className="w-6 text-[11px] text-text-tertiary tabular-nums text-right shrink-0">
-                {count}
-              </span>
-            </div>
-          ))}
-          <div className="flex items-center justify-between pt-1">
-            <span className="text-[10px] text-text-quaternary">{t('orders.analysisTimeHour')}</span>
-            <span className="text-[10px] text-text-quaternary">{t('orders.analysisTradeCount')}</span>
+            ))}
+          </div>
+          {/* Axis legend */}
+          <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/40">
+            <span className="text-[11px] md:text-[12px] text-text-quaternary">{t('orders.analysisTimeHour')}</span>
+            <span className="text-[11px] md:text-[12px] text-text-quaternary">{t('orders.analysisTradeCount')}</span>
           </div>
         </div>
       </div>

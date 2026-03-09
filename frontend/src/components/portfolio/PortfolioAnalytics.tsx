@@ -338,21 +338,21 @@ export default function PortfolioAnalytics({ portfolio }: PortfolioAnalyticsProp
               {t('portfolio.analytics.assetAllocation')}
             </h2>
           </div>
-          <p className="text-[12px] text-text-quaternary mb-4">
+          <p className="text-[12px] text-text-quaternary mb-4 lg:mb-2">
             {t('portfolio.analytics.assetAllocationDesc')}
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center gap-4">
+          <div className="flex flex-col sm:flex-row items-center gap-4 lg:gap-6">
             {/* Pie Chart */}
-            <div className="w-[180px] h-[180px] shrink-0">
+            <div className="w-[180px] h-[180px] lg:w-[260px] lg:h-[260px] shrink-0">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
                     data={allocationData}
                     cx="50%"
                     cy="50%"
-                    innerRadius={50}
-                    outerRadius={80}
+                    innerRadius="38%"
+                    outerRadius="62%"
                     dataKey="value"
                     stroke="none"
                     isAnimationActive={false}
