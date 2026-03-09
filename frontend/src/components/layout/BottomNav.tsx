@@ -13,7 +13,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/format';
-import { LayoutDashboard, Briefcase, Star, Newspaper, LogIn, ClipboardList, HelpCircle } from 'lucide-react';
+import { LayoutDashboard, Briefcase, Star, Newspaper, LogIn, ClipboardList, Users } from 'lucide-react';
 
 export default function BottomNav() {
   const pathname = usePathname();
@@ -86,15 +86,15 @@ export default function BottomNav() {
             <span className="text-[11px] font-semibold">{t('nav.news')}</span>
           </Link>
           <Link
-            href="/help"
-            aria-label={t('help.title')}
+            href="/community"
+            aria-label={t('nav.community')}
             className={cn(
               'flex flex-col items-center justify-center gap-0.5 py-1.5 px-4 min-h-[44px] min-w-[44px] transition-colors active:scale-95',
-              pathname.startsWith('/help') ? 'text-text-primary' : 'text-text-quaternary',
+              pathname.startsWith('/community') ? 'text-text-primary' : 'text-text-quaternary',
             )}
           >
-            <HelpCircle className="w-[22px] h-[22px]" strokeWidth={pathname.startsWith('/help') ? 2.2 : 1.6} />
-            <span className="text-[11px] font-semibold">{t('help.title')}</span>
+            <Users className="w-[22px] h-[22px]" strokeWidth={pathname.startsWith('/community') ? 2.2 : 1.6} />
+            <span className="text-[11px] font-semibold">{t('nav.community')}</span>
           </Link>
           <Link
             href="/login"

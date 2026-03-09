@@ -14,7 +14,7 @@ import AuthGuard from '@/components/layout/AuthGuard';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useCreatePost, useUpdatePost, useCommunityPost, useUploadCommunityAttachment } from '@/hooks/useCommunity';
-import { ArrowLeft, Send, Paperclip, X } from 'lucide-react';
+import { ArrowLeft, Send, Paperclip, X, Lock, Globe } from 'lucide-react';
 import { cn } from '@/lib/format';
 
 // TipTap 리치 에디터 동적 임포트 (SSR 비활성화) / Dynamic import of TipTap rich editor (SSR disabled)
@@ -57,6 +57,7 @@ function CommunityNewPostContent() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [category, setCategory] = useState('FREE');
+  const [visibility, setVisibility] = useState<'PUBLIC' | 'MEMBERS_ONLY'>('PUBLIC');
   const [files, setFiles] = useState<File[]>([]);
   const [showConfirm, setShowConfirm] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -74,6 +75,7 @@ function CommunityNewPostContent() {
       setTitle(editPost.title);
       setContent(editPost.content);
       setCategory(editPost.category);
+      if (editPost.visibility === 'MEMBERS_ONLY') setVisibility('MEMBERS_ONLY');
     }
   }, [editPost, editId]);
 
@@ -90,14 +92,14 @@ function CommunityNewPostContent() {
     if (!title.trim() || !content.trim()) return;
 
     if (isEditing) {
-      await updatePost.mutateAsync({ id: editId!, title: title.trim(), content: content.trim(), category });
+      await updatePost.mutateAsync({ id: editId!, title: title.trim(), content: content.trim(), category, visibility });
       // Upload new files for edit
       for (const file of files) {
         await uploadAttachment.mutateAsync({ postId: editId!, file });
       }
       router.push(`/community/${editId}`);
     } else {
-      const result = await createPost.mutateAsync({ title: title.trim(), content: content.trim(), category });
+      const result = await createPost.mutateAsync({ title: title.trim(), content: content.trim(), category, visibility });
       const newId = result?.data?.id;
       if (newId && files.length > 0) {
         for (const file of files) {
@@ -183,6 +185,39 @@ function CommunityNewPostContent() {
                   {locale === 'ko' ? cat.ko : cat.en}
                 </button>
               ))}
+            </div>
+          </div>
+
+          {/* Visibility / 공개 범위 */}
+          <div>
+            <label className="block text-[13px] font-semibold text-text-secondary mb-2">
+              {t('community.post.visibility')}
+            </label>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setVisibility('PUBLIC')}
+                className={cn(
+                  'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors',
+                  visibility === 'PUBLIC'
+                    ? 'bg-accent text-white'
+                    : 'bg-bg-tertiary text-text-quaternary hover:text-text-secondary',
+                )}
+              >
+                <Globe className="w-3.5 h-3.5" />
+                {t('community.post.visibilityPublic')}
+              </button>
+              <button
+                onClick={() => setVisibility('MEMBERS_ONLY')}
+                className={cn(
+                  'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors',
+                  visibility === 'MEMBERS_ONLY'
+                    ? 'bg-warning text-white'
+                    : 'bg-bg-tertiary text-text-quaternary hover:text-text-secondary',
+                )}
+              >
+                <Lock className="w-3.5 h-3.5" />
+                {t('community.post.visibilityMembersOnly')}
+              </button>
             </div>
           </div>
 

@@ -11,7 +11,6 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import DOMPurify from 'isomorphic-dompurify';
 import api from '@/lib/api';
-import AuthGuard from '@/components/layout/AuthGuard';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import { useAuthStore } from '@/stores/auth';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -278,7 +277,6 @@ export default function CommunityPostDetailPage() {
 
   if (isLoading) {
     return (
-      <AuthGuard>
         <div className="py-6">
           <div className="animate-pulse space-y-4">
             <div className="h-6 w-48 bg-bg-tertiary rounded" />
@@ -287,22 +285,18 @@ export default function CommunityPostDetailPage() {
             <div className="h-32 w-full bg-bg-tertiary rounded" />
           </div>
         </div>
-      </AuthGuard>
     );
   }
 
   if (!post) {
     return (
-      <AuthGuard>
         <div className="py-24 text-center text-text-quaternary">
           {t('community.post.notFound')}
         </div>
-      </AuthGuard>
     );
   }
 
   return (
-    <AuthGuard>
       <div className="pb-16">
         {/* Back button + title */}
         <div className="py-6 flex items-center gap-3 h-[88px]">
@@ -452,6 +446,5 @@ export default function CommunityPostDetailPage() {
           loading={deletePost.isPending}
         />
       </div>
-    </AuthGuard>
   );
 }

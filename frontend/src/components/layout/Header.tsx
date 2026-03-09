@@ -61,7 +61,9 @@ export default function Header() {
           { href: '/announcements', label: t('nav.announcements'), icon: Megaphone },
           { href: '/community', label: t('nav.community'), icon: Users },
         ]
-      : []),
+      : [
+          { href: '/community', label: t('nav.community'), icon: Users },
+        ]),
   ];
 
   const mobileAdminItems = isAdmin
@@ -134,8 +136,18 @@ export default function Header() {
                 {t('nav.news')}
               </Link>
 
-              {/* 비인증 시 도움말 표시 / Help link visible pre-login */}
+              {/* 비인증 시 커뮤니티 + 도움말 표시 / Community + Help links visible pre-login */}
               <div className="contents auth-hide">
+                <Link
+                  href="/community"
+                  className={cn(
+                    'text-[13px] xl:text-[14px] font-medium transition-colors py-1 whitespace-nowrap',
+                    pathname === '/community' || pathname.startsWith('/community/')
+                      ? 'text-text-primary' : 'text-text-tertiary hover:text-text-primary',
+                  )}
+                >
+                  {t('nav.community')}
+                </Link>
                 <Link
                   href="/help"
                   className={cn(
