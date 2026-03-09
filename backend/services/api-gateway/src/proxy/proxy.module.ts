@@ -23,6 +23,8 @@ import { AiProxyController } from './ai-proxy.controller';
 import { SettingsProxyController } from './settings-proxy.controller';
 import { UserSettingsProxyController } from './user-settings-proxy.controller';
 import { CommunityProxyController } from './community-proxy.controller';
+import { FollowProxyController } from './follow-proxy.controller';
+import { CopyTradeProxyController } from './copy-trade-proxy.controller';
 import { ProxyService } from './proxy.service';
 import { GatewayModule } from '../gateway/gateway.module';
 
@@ -52,6 +54,8 @@ import { GatewayModule } from '../gateway/gateway.module';
     SettingsProxyController,
     UserSettingsProxyController,
     CommunityProxyController,
+    FollowProxyController,
+    CopyTradeProxyController,
   ],
   // ProxyService: 마이크로서비스 프록시 + Circuit Breaker / Microservice proxy with Circuit Breaker
   // ConfigService: 환경변수 접근용 / For accessing environment variables

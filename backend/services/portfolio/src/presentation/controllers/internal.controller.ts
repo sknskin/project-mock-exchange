@@ -14,9 +14,12 @@ import {
   Query,
   BadRequestException,
   UseGuards,
+  Logger,
 } from '@nestjs/common';
 import Decimal from 'decimal.js';
 import { BalanceService } from '../../domain/services/balance.service';
+import { ActivityService } from '../../domain/services/activity.service';
+import { CopyTradeService } from '../../domain/services/copy-trade.service';
 import { InternalAuthGuard } from '../../common/guards/internal-auth.guard';
 import { ReserveFundsDto, ReleaseFundsDto, SettleTradeDto, ReserveHoldingsDto, ReleaseHoldingsDto } from '../dto/internal.dto';
 
@@ -27,7 +30,13 @@ const SYMBOL_REGEX = /^[A-Z0-9]{2,10}([.-][A-Z]{1,4})?(-USD)?$/;
 @UseGuards(InternalAuthGuard)
 @Controller('portfolio/internal')
 export class InternalController {
-  constructor(private readonly balanceService: BalanceService) {}
+  private readonly logger = new Logger(InternalController.name);
+
+  constructor(
+    private readonly balanceService: BalanceService,
+    private readonly activityService: ActivityService,
+    private readonly copyTradeService: CopyTradeService,
+  ) {}
 
   /** 자금 예약 — 주문 실행을 위해 사용자의 현금을 예약합니다 */
   @Post('reserve')
@@ -73,6 +82,35 @@ export class InternalController {
       body.price,
       body.tradeId,
     );
+
+    // 활동 기록 및 카피 트레이딩 처리 — 정산 실패에 영향 없도록 try/catch 격리
+    // Record activity and process copy trades — isolated in try/catch to not break settlement
+    try {
+      await this.activityService.recordActivity({
+        userId,
+        type: 'TRADE',
+        symbol: body.symbol,
+        side: 'BUY',
+        quantity: body.quantity,
+        price: body.price,
+        tradeId: body.tradeId,
+      });
+    } catch (err: any) {
+      this.logger.warn(`Failed to record buy activity: ${err?.message}`);
+    }
+
+    try {
+      await this.copyTradeService.processCopyTrade(userId, {
+        symbol: body.symbol,
+        side: 'BUY',
+        quantity: body.quantity,
+        price: body.price,
+        tradeId: body.tradeId,
+      });
+    } catch (err: any) {
+      this.logger.warn(`Failed to process copy trade for buy: ${err?.message}`);
+    }
+
     return { success: true, data: result };
   }
 
@@ -90,6 +128,35 @@ export class InternalController {
       body.price,
       body.tradeId,
     );
+
+    // 활동 기록 및 카피 트레이딩 처리 — 정산 실패에 영향 없도록 try/catch 격리
+    // Record activity and process copy trades — isolated in try/catch to not break settlement
+    try {
+      await this.activityService.recordActivity({
+        userId,
+        type: 'TRADE',
+        symbol: body.symbol,
+        side: 'SELL',
+        quantity: body.quantity,
+        price: body.price,
+        tradeId: body.tradeId,
+      });
+    } catch (err: any) {
+      this.logger.warn(`Failed to record sell activity: ${err?.message}`);
+    }
+
+    try {
+      await this.copyTradeService.processCopyTrade(userId, {
+        symbol: body.symbol,
+        side: 'SELL',
+        quantity: body.quantity,
+        price: body.price,
+        tradeId: body.tradeId,
+      });
+    } catch (err: any) {
+      this.logger.warn(`Failed to process copy trade for sell: ${err?.message}`);
+    }
+
     return { success: true, data: result };
   }
 

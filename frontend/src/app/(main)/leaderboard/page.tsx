@@ -13,8 +13,11 @@ import type { LeaderboardPeriod, LeaderboardSortBy } from '@/hooks/useLeaderboar
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useFollowing, useFollowTrader, useUnfollowTrader } from '@/hooks/useFollow';
+import { useAuthStore } from '@/stores/auth';
 import ExchangeRateBar from '@/components/market/ExchangeRateBar';
 import Skeleton from '@/components/ui/Skeleton';
+import CopyTradeModal from '@/components/trading/CopyTradeModal';
 import { cn, formatCurrencyDisplay, formatPercent } from '@/lib/format';
 import {
   Trophy,
@@ -24,6 +27,9 @@ import {
   TrendingUp,
   TrendingDown,
   Minus,
+  UserPlus,
+  UserCheck,
+  Copy,
 } from 'lucide-react';
 
 /* ───────── 상수 / Constants ───────── */
@@ -144,6 +150,29 @@ export default function LeaderboardPage() {
   const [sortMode, setSortMode] = useState<LeaderboardSortBy>('return');
 
   const { data: leaderboard, isLoading, dataUpdatedAt, refetch } = useLeaderboard({ period, sortBy: sortMode });
+
+  // 팔로우 상태 훅 / Follow state hooks
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const { data: followingData } = useFollowing();
+  const followTrader = useFollowTrader();
+  const unfollowTrader = useUnfollowTrader();
+  const followedUserIds = useMemo(() => {
+    if (!followingData) return new Set<string>();
+    return new Set(followingData.map((f) => f.followeeId));
+  }, [followingData]);
+
+  // 카피 트레이딩 모달 상태 / Copy trade modal state
+  const [copyTradeTarget, setCopyTradeTarget] = useState<{ id: string; name: string; pnlPercent: number } | null>(null);
+
+  /** 팔로우/언팔로우 토글 / Toggle follow/unfollow */
+  const toggleFollow = useCallback((userId: string) => {
+    if (!isAuthenticated) return;
+    if (followedUserIds.has(userId)) {
+      unfollowTrader.mutate(userId);
+    } else {
+      followTrader.mutate(userId);
+    }
+  }, [isAuthenticated, followedUserIds, followTrader, unfollowTrader]);
 
   // 기간 필터 탭 / Period filter tabs
   const periodTabs = useMemo(
@@ -361,6 +390,17 @@ export default function LeaderboardPage() {
         </div>
       )}
 
+      {/* 카피 트레이딩 모달 / Copy Trade Modal */}
+      {copyTradeTarget && (
+        <CopyTradeModal
+          isOpen={!!copyTradeTarget}
+          onClose={() => setCopyTradeTarget(null)}
+          traderId={copyTradeTarget.id}
+          traderName={copyTradeTarget.name}
+          returnRate={copyTradeTarget.pnlPercent}
+        />
+      )}
+
       {/* 테이블 헤더 / Table header */}
       <div className="flex items-center py-2.5 text-[11px] text-text-quaternary font-medium border-b border-border/80">
         <span className="w-10 sm:w-14 text-center shrink-0">{t('leaderboard.rank')}</span>
@@ -368,6 +408,8 @@ export default function LeaderboardPage() {
         <span className="hidden sm:block w-36 text-right shrink-0">{thirdColHeader}</span>
         <span className="w-20 sm:w-24 text-right shrink-0">{t('leaderboard.returnRate')}</span>
         <span className="w-10 sm:w-14 text-center shrink-0"></span>
+        {/* 팔로우/카피 액션 열 (인증 시만) / Follow/Copy action column (auth only) */}
+        {isAuthenticated && <span className="hidden sm:block w-24 text-center shrink-0"></span>}
       </div>
 
       {isLoading ? (
@@ -461,6 +503,39 @@ export default function LeaderboardPage() {
                 <div className="w-10 sm:w-14 flex justify-center shrink-0">
                   <RankChangeIndicator change={rankChange} />
                 </div>
+
+                {/* 팔로우 + 카피 트레이딩 버튼 (인증 시, 본인 제외) / Follow + Copy buttons (auth, not self) */}
+                {isAuthenticated && (
+                  <div className="hidden sm:flex w-24 items-center justify-center gap-1 shrink-0">
+                    {!isMe && (
+                      <>
+                        <button
+                          onClick={() => toggleFollow(entry.id)}
+                          className={cn(
+                            'p-1.5 rounded-lg transition-colors',
+                            followedUserIds.has(entry.id)
+                              ? 'text-accent bg-accent/10'
+                              : 'text-text-quaternary hover:text-accent hover:bg-accent/10',
+                          )}
+                          title={followedUserIds.has(entry.id) ? t('follow.unfollow') : t('follow.follow')}
+                        >
+                          {followedUserIds.has(entry.id) ? (
+                            <UserCheck className="w-3.5 h-3.5" />
+                          ) : (
+                            <UserPlus className="w-3.5 h-3.5" />
+                          )}
+                        </button>
+                        <button
+                          onClick={() => setCopyTradeTarget({ id: entry.id, name: displayName, pnlPercent: entry.pnlPercent })}
+                          className="p-1.5 rounded-lg text-text-quaternary hover:text-accent hover:bg-accent/10 transition-colors"
+                          title={t('copyTrade.title')}
+                        >
+                          <Copy className="w-3.5 h-3.5" />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })}

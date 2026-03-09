@@ -500,6 +500,92 @@ export interface ChatUserSearchResult {
   name: string;
 }
 
+// 트레이더 팔로우 (Trader Follow)
+export interface TraderFollow {
+  id: string;
+  followerId: string;
+  followeeId: string;
+  /** 알림 모드: ALL, BUY_ONLY, SELL_ONLY, OFF
+   * Notification mode: ALL, BUY_ONLY, SELL_ONLY, OFF */
+  notifyMode: string;
+  createdAt: string;
+}
+
+// 팔로우 카운트 (Follow Counts)
+export interface FollowCounts {
+  followingCount: number;
+  followerCount: number;
+}
+
+// 트레이더 활동 (Trader Activity)
+export interface TraderActivity {
+  id: string;
+  userId: string;
+  username?: string;
+  name?: string;
+  /** 활동 유형: TRADE 등
+   * Activity type: TRADE, etc. */
+  type: string;
+  symbol: string;
+  side: string;
+  quantity: string;
+  price: string;
+  createdAt: string;
+}
+
+// 카피 트레이딩 설정 (Copy Trade Config)
+export interface CopyTradeConfig {
+  id: string;
+  followerId: string;
+  traderId: string;
+  traderName?: string;
+  isActive: boolean;
+  /** 복사 비율 (0.1 ~ 5.0)
+   * Scale ratio (0.1 ~ 5.0) */
+  scaleRatio: string;
+  /** 최대 투자금
+   * Maximum investment amount */
+  maxInvestment: string;
+  /** 손절 비율 (%)
+   * Stop loss percentage (%) */
+  stopLossPercent?: string;
+  /** 총 투자 금액
+   * Total invested amount */
+  totalInvested: string;
+  createdAt: string;
+}
+
+// 카피 트레이딩 실행 내역 (Copy Trade Execution)
+export interface CopyTradeExecution {
+  id: string;
+  configId: string;
+  traderId: string;
+  traderName?: string;
+  originalTradeId: string;
+  copiedOrderId?: string;
+  symbol: string;
+  side: string;
+  originalQty: string;
+  copiedQty: string;
+  price: string;
+  /** 실행 상태: EXECUTED, FAILED, SKIPPED, PENDING
+   * Execution status: EXECUTED, FAILED, SKIPPED, PENDING */
+  status: string;
+  failReason?: string;
+  createdAt: string;
+}
+
+// 앱 알림 (App Notification — for follow/copy-trade features)
+export interface AppNotification {
+  id: string;
+  type: string;
+  title: string;
+  message: string;
+  isRead: boolean;
+  data?: Record<string, unknown>;
+  createdAt: string;
+}
+
 // 가격 알림 (Price Alerts)
 export interface PriceAlert {
   id: string;

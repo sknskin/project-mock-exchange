@@ -12,9 +12,13 @@ import { TerminusModule } from '@nestjs/terminus';
 import { PrismaModule } from './infrastructure/persistence/prisma/prisma.module';
 import { BalanceService } from './domain/services/balance.service';
 import { WatchlistService } from './domain/services/watchlist.service';
+import { ActivityService } from './domain/services/activity.service';
+import { CopyTradeService } from './domain/services/copy-trade.service';
 import { PortfolioController } from './presentation/controllers/portfolio.controller';
 import { WatchlistController } from './presentation/controllers/watchlist.controller';
 import { InternalController } from './presentation/controllers/internal.controller';
+import { ActivityController } from './presentation/controllers/activity.controller';
+import { CopyTradeController } from './presentation/controllers/copy-trade.controller';
 import { HealthController } from './health/health.controller';
 
 @Module({
@@ -31,7 +35,7 @@ import { HealthController } from './health/health.controller';
     TerminusModule,
     PrismaModule,
   ],
-  controllers: [HealthController, PortfolioController, WatchlistController, InternalController],
-  providers: [BalanceService, WatchlistService],
+  controllers: [HealthController, PortfolioController, WatchlistController, InternalController, ActivityController, CopyTradeController],
+  providers: [BalanceService, WatchlistService, ActivityService, CopyTradeService],
 })
 export class AppModule {}

@@ -799,10 +799,9 @@ export class BalanceService {
       pnlPercent: string;
     }[]
   > {
-    const accounts = await this.prisma.account.findMany({
-      orderBy: { availableCash: 'desc' },
-      take: limit,
-    });
+    /** 전체 계좌 조회 — totalValue 기준 정렬은 보유자산 가치 포함 후 수행
+     * Fetch all accounts — sort by totalValue after calculating holdings value */
+    const accounts = await this.prisma.account.findMany();
 
     const userIds = accounts.map((a) => a.userId);
 

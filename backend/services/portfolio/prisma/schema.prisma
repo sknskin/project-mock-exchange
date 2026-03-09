@@ -76,3 +76,62 @@ model Watchlist {
   @@index([userId])
   @@map("watchlists")
 }
+
+model TraderActivity {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  type      String   @db.VarChar(10)
+  symbol    String   @db.VarChar(20)
+  side      String   @db.VarChar(4)
+  quantity  Decimal  @db.Decimal(20, 8)
+  price     Decimal  @db.Decimal(20, 8)
+  tradeId   String   @map("trade_id") @db.VarChar(50)
+  isPublic  Boolean  @default(true) @map("is_public")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([createdAt(sort: Desc)])
+  @@map("trader_activities")
+}
+
+model CopyTradeConfig {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  followerId      String   @map("follower_id") @db.Uuid
+  traderId        String   @map("trader_id") @db.Uuid
+  isActive        Boolean  @default(true) @map("is_active")
+  scaleRatio      Decimal  @default(1.0) @map("scale_ratio") @db.Decimal(10, 4)
+  maxInvestment   Decimal  @map("max_investment") @db.Decimal(20, 8)
+  stopLossPercent Decimal? @map("stop_loss_percent") @db.Decimal(5, 2)
+  totalInvested   Decimal  @default(0) @map("total_invested") @db.Decimal(20, 8)
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
+  executions CopyTradeExecution[]
+
+  @@unique([followerId, traderId])
+  @@index([traderId, isActive])
+  @@map("copy_trade_configs")
+}
+
+model CopyTradeExecution {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  configId        String   @map("config_id") @db.Uuid
+  followerId      String   @map("follower_id") @db.Uuid
+  traderId        String   @map("trader_id") @db.Uuid
+  originalTradeId String   @map("original_trade_id") @db.VarChar(50)
+  copiedOrderId   String?  @map("copied_order_id") @db.VarChar(50)
+  symbol          String   @db.VarChar(20)
+  side            String   @db.VarChar(4)
+  originalQty     Decimal  @map("original_qty") @db.Decimal(20, 8)
+  copiedQty       Decimal  @map("copied_qty") @db.Decimal(20, 8)
+  price           Decimal  @db.Decimal(20, 8)
+  status          String   @default("PENDING") @db.VarChar(20)
+  failReason      String?  @map("fail_reason") @db.VarChar(500)
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  config CopyTradeConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  @@index([followerId, createdAt(sort: Desc)])
+  @@index([configId])
+  @@map("copy_trade_executions")
+}

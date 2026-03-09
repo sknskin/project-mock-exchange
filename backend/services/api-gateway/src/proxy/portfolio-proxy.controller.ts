@@ -17,7 +17,7 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiParam } from '@nestjs/swagger';
 import { Request, Response } from 'express';
 import { ProxyService } from './proxy.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -231,6 +231,68 @@ export class PortfolioProxyController {
       url: '/portfolio/transactions',
       params: { limit, offset },
       headers: { 'x-user-id': userId },
+    });
+    return res.status(result.status).json(result.data);
+  }
+
+  /** 활동 피드 조회 — user-auth에서 팔로잉 목록을 조회한 후 portfolio 서비스로 프록시
+   * Proxy activity feed with user enrichment — get following IDs from user-auth then forward to portfolio */
+  @Get('feed')
+  @ApiOperation({ summary: '활동 피드 조회', description: '팔로잉 중인 트레이더들의 거래 활동 피드를 반환합니다' })
+  @ApiQuery({ name: 'page', required: false, description: '페이지 번호' })
+  @ApiQuery({ name: 'limit', required: false, description: '조회 개수' })
+  @ApiResponse({ status: 200, description: '활동 피드 반환' })
+  async getFeed(
+    @Query('page') page: string,
+    @Query('limit') limit: string,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    const userId = (req as Record<string, any>).user?.id;
+
+    // user-auth에서 팔로잉 목록 조회 / Get following IDs from user-auth
+    let followingIds = '';
+    try {
+      const followingResult = await this.proxyService.forward('user-auth', {
+        method: 'GET',
+        url: '/users/following',
+        headers: { 'x-user-id': userId },
+      });
+      const followingData = followingResult.data as Record<string, unknown>;
+      if (followingData?.success && Array.isArray(followingData?.data)) {
+        followingIds = (followingData.data as string[]).join(',');
+      }
+    } catch {
+      // 팔로잉 목록 조회 실패 시 빈 피드 반환 / Return empty feed on following list failure
+    }
+
+    const result = await this.proxyService.forward('portfolio', {
+      method: 'GET',
+      url: '/portfolio/feed',
+      params: { followingIds, page, limit },
+      headers: { 'x-user-id': userId },
+    });
+    return res.status(result.status).json(result.data);
+  }
+
+  /** 특정 트레이더의 공개 활동 조회를 portfolio 서비스로 프록시
+   * Proxy specific trader's public activities to portfolio service */
+  @Get('activities/:userId')
+  @ApiOperation({ summary: '트레이더 활동 조회', description: '특정 트레이더의 공개 거래 활동을 반환합니다' })
+  @ApiParam({ name: 'userId', description: '트레이더 ID' })
+  @ApiQuery({ name: 'page', required: false, description: '페이지 번호' })
+  @ApiQuery({ name: 'limit', required: false, description: '조회 개수' })
+  @ApiResponse({ status: 200, description: '트레이더 활동 반환' })
+  async getUserActivities(
+    @Param('userId') targetUserId: string,
+    @Query('page') page: string,
+    @Query('limit') limit: string,
+    @Res() res: Response,
+  ) {
+    const result = await this.proxyService.forward('portfolio', {
+      method: 'GET',
+      url: `/portfolio/activities/${targetUserId}`,
+      params: { page, limit },
     });
     return res.status(result.status).json(result.data);
   }
