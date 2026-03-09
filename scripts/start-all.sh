@@ -128,7 +128,11 @@ cleanup() {
   echo -e "  ${GREEN}✓${NC} Docker 컨테이너 종료 완료 / Docker containers stopped"
 
   echo -e "${YELLOW}로컬 PostgreSQL 복구 중... / Restoring local PostgreSQL...${NC}"
-  brew services start postgresql@16 2>/dev/null || true
+  if command -v brew &>/dev/null; then
+    brew services start postgresql@16 2>/dev/null || true
+  elif command -v systemctl &>/dev/null; then
+    sudo systemctl start postgresql 2>/dev/null || true
+  fi
   echo -e "  ${GREEN}✓${NC} 로컬 PostgreSQL 복구 완료 / Local PostgreSQL restored"
 
   echo ""
@@ -206,9 +210,9 @@ wait_for_port() {
   # HTTP readiness probe — /health 엔드포인트 200 응답 확인
   # HTTP readiness probe — verify /health endpoint returns 200
   local health_waited=0
-  local health_max=10
+  local health_max=20
   while [ $health_waited -lt $health_max ]; do
-    if curl -sf "http://localhost:$port/health" >/dev/null 2>&1; then
+    if curl -sf "http://localhost:$port/health/live" >/dev/null 2>&1; then
       echo -e "  ${GREEN}✓${NC} $name (포트/port $port) 준비 완료 / ready"
       return 0
     fi
@@ -239,11 +243,23 @@ echo ""
 # 모든 마이크로서비스 + API Gateway + 프론트엔드 포트 목록
 # All microservice + API Gateway + Frontend ports
 SERVICE_PORTS="3000 3001 3002 3003 3004 3005 3006 3007 4000"
-EXISTING_PIDS=$(lsof -ti :$(echo $SERVICE_PORTS | tr ' ' ',') 2>/dev/null || true)
+if command -v lsof &>/dev/null; then
+  EXISTING_PIDS=$(lsof -ti :$(echo $SERVICE_PORTS | tr ' ' ',') 2>/dev/null || true)
+elif command -v ss &>/dev/null; then
+  EXISTING_PIDS=$(for p in $SERVICE_PORTS; do ss -tlnp "sport = :$p" 2>/dev/null | grep -oP 'pid=\K\d+'; done | sort -u)
+else
+  EXISTING_PIDS=""
+fi
 if [ -n "$EXISTING_PIDS" ]; then
   echo -e "${YELLOW}[0] 기존 서비스 프로세스 종료 중... / Killing existing service processes...${NC}"
-  echo "$EXISTING_PIDS" | xargs kill -9 2>/dev/null || true
-  sleep 1
+  echo "$EXISTING_PIDS" | xargs kill -15 2>/dev/null || true
+  sleep 2
+  # SIGTERM으로 종료되지 않은 프로세스만 SIGKILL / Only SIGKILL processes that didn't terminate with SIGTERM
+  REMAINING=$(echo "$EXISTING_PIDS" | xargs ps -p 2>/dev/null | tail -n +2 | awk '{print $1}' || true)
+  if [ -n "$REMAINING" ]; then
+    echo "$REMAINING" | xargs kill -9 2>/dev/null || true
+    sleep 1
+  fi
   echo -e "  ${GREEN}✓${NC} 기존 프로세스 종료 완료 / Existing processes killed (포트/ports: $SERVICE_PORTS)"
   echo ""
 fi
@@ -374,7 +390,7 @@ set +e
 for svc in user-auth market-data order-engine portfolio chat; do
   if [ -f "backend/services/$svc/prisma/schema.prisma" ]; then
     cd "backend/services/$svc"
-    push_output=$(npx prisma db push --skip-generate 2>&1)
+    push_output=$(npx prisma db push --skip-generate 2>&1 </dev/null)
     push_exit=$?
     if [ $push_exit -eq 0 ]; then
       echo -e "  ${GREEN}✓${NC} $svc"
@@ -451,7 +467,7 @@ echo ""
 # Start frontend (Next.js dev server) in background (with timestamps)
 cd "$ROOT_DIR/frontend"
 npx next dev --port 4000 2>&1 \
-  | perl -MPOSIX -pe 'BEGIN{$|=1} $_ = strftime("[%Y. %m. %d. %H:%M:%S] ", localtime) . $_' \
+  | while IFS= read -r line; do printf '[%s] %s\n' "$(date '+%Y. %m. %d. %H:%M:%S')" "$line"; done \
   >> "$ROOT_DIR/logs/frontend.log" &
 FRONTEND_PID=$!
 PIDS+=($FRONTEND_PID)
