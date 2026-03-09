@@ -15,6 +15,7 @@ import { AnnouncementService } from './services/announcement.service';
 import { SmsVerificationService } from './services/sms-verification.service';
 import { TotpService } from './services/totp.service';
 import { SettingsService } from './services/settings.service';
+import { FollowService } from './services/follow.service';
 import { AuthController } from '../presentation/controllers/auth.controller';
 import { AdminController } from '../presentation/controllers/admin.controller';
 import { AnnouncementController } from '../presentation/controllers/announcement.controller';
@@ -25,6 +26,7 @@ import { UserController } from '../presentation/controllers/user.controller';
 import { PriceAlertController } from '../presentation/controllers/price-alert.controller';
 import { SettingsController } from '../presentation/controllers/settings.controller';
 import { CommunityController } from '../presentation/controllers/community.controller';
+import { FollowController } from '../presentation/controllers/follow.controller';
 import { JwtStrategy } from '../infrastructure/config/jwt.strategy';
 import { UserRepository } from '../infrastructure/persistence/prisma/user.repository';
 import { USER_REPOSITORY } from '../domain/repositories/user.repository.interface';
@@ -55,6 +57,7 @@ import { USER_REPOSITORY } from '../domain/repositories/user.repository.interfac
     PriceAlertController,
     SettingsController,
     CommunityController,
+    FollowController,
   ],
   providers: [
     AuthService,           // 회원가입/로그인/토큰 관리 / Registration, login, token management
@@ -63,6 +66,7 @@ import { USER_REPOSITORY } from '../domain/repositories/user.repository.interfac
     SmsVerificationService, // SMS 인증코드 발송/검증 / SMS code sending/verification
     TotpService,           // TOTP 2FA 관리 / TOTP 2FA management
     SettingsService,       // 시스템 설정 관리 / System settings management
+    FollowService,         // 트레이더 팔로우 관리 / Trader follow management
     JwtStrategy,           // Passport JWT 전략 구현 / Passport JWT strategy implementation
     {
       // 의존성 역전: 도메인 인터페이스에 Prisma 구현체 바인딩
@@ -71,6 +75,6 @@ import { USER_REPOSITORY } from '../domain/repositories/user.repository.interfac
       useClass: UserRepository,
     },
   ],
-  exports: [AuthService, AdminService, AnnouncementService, SmsVerificationService, TotpService, SettingsService],
+  exports: [AuthService, AdminService, AnnouncementService, SmsVerificationService, TotpService, SettingsService, FollowService],
 })
 export class AuthModule {}
