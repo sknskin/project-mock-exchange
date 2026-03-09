@@ -16,7 +16,8 @@ import type { Holding } from '@/types';
 
 // 보유 자산 카드 Props / Holding Card Props
 interface HoldingCardProps {
-  /** 보유 종목 데이터 / Holding data */
+  /** 보유 종목 데이터
+   * Holding data */
   holding: Holding;
 }
 
@@ -33,6 +34,8 @@ function getSymbolColor(symbol: string): string {
   return colors[Math.abs(hash) % colors.length];
 }
 
+/** 보유 자산 카드 — 종목별 수량, 평균가, 수익률 표시
+ * Holding card — displays quantity, avg price, and return per asset */
 export default function HoldingCard({ holding }: HoldingCardProps) {
   const { t } = useTranslation();
   const { query: { data: rateData } } = useExchangeRate();
@@ -73,7 +76,7 @@ export default function HoldingCard({ holding }: HoldingCardProps) {
             isPositive ? 'text-rise' : 'text-fall',
           )}
         >
-          {isPositive ? '+' : ''}{fmt(Math.abs(holding.pnl))} ({formatPercent(holding.pnlPercent)})
+          {isPositive ? '+' : '-'}{fmt(Math.abs(holding.pnl))} ({formatPercent(holding.pnlPercent)})
         </div>
       </div>
     </Link>

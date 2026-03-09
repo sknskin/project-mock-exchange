@@ -16,6 +16,7 @@ import {
   UseGuards,
   Get,
   Query,
+  BadRequestException,
 } from '@nestjs/common';
 import { Response, Request } from 'express';
 import { AuthService } from '../../application/services/auth.service';
@@ -60,6 +61,8 @@ export class AuthController {
     private readonly totpService: TotpService,
   ) {}
 
+  /** 회원가입 요청 처리
+   * Handle user registration request */
   @Post('register')
   async register(@Body() dto: RegisterRequestDto) {
     const user = await this.authService.register({
@@ -98,6 +101,9 @@ export class AuthController {
   @Post('login/resend-sms')
   @HttpCode(HttpStatus.OK)
   async resendLoginSms(@Body('sessionId') sessionId: string) {
+    if (!sessionId || typeof sessionId !== 'string') {
+      throw new BadRequestException('sessionId is required');
+    }
     const result = await this.authService.resendLoginSms(sessionId);
     return { success: true, data: result };
   }
@@ -131,6 +137,8 @@ export class AuthController {
     };
   }
 
+  /** 액세스 토큰 갱신 (httpOnly 쿠키의 리프레시 토큰 사용)
+   * Refresh access token using httpOnly cookie refresh token */
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   async refresh(
@@ -160,6 +168,8 @@ export class AuthController {
     };
   }
 
+  /** 로그아웃 — 리프레시 토큰 삭제 및 쿠키 제거
+   * Logout — delete refresh token and clear cookie */
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   async logout(
@@ -176,12 +186,16 @@ export class AuthController {
     return { success: true, message: 'Logged out' };
   }
 
+  /** 현재 로그인 사용자 정보 조회
+   * Get current authenticated user info */
   @Get('me')
   @UseGuards(JwtAuthGuard)
   async me(@CurrentUser() user: UserDto) {
     return { success: true, data: user };
   }
 
+  /** SMS 인증번호 발송
+   * Send SMS verification code */
   @Post('sms/send')
   @HttpCode(HttpStatus.OK)
   async sendSmsCode(@Body() dto: SendCodeRequestDto) {
@@ -189,6 +203,8 @@ export class AuthController {
     return { success: true, message: 'Verification code sent' };
   }
 
+  /** SMS 인증번호 검증
+   * Verify SMS verification code */
   @Post('sms/verify')
   @HttpCode(HttpStatus.OK)
   async verifySmsCode(@Body() dto: VerifyCodeRequestDto) {
@@ -196,6 +212,8 @@ export class AuthController {
     return { success: true, message: 'Phone verified' };
   }
 
+  /** 비밀번호 찾기 요청 — SMS 인증 세션 생성
+   * Request password reset — create SMS verification session */
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
   async forgotPassword(@Body() dto: ForgotPasswordDto) {
@@ -203,13 +221,20 @@ export class AuthController {
     return { success: true, data: result };
   }
 
+  /** 비밀번호 재설정 SMS 인증번호 재전송
+   * Resend password reset SMS verification code */
   @Post('forgot-password/resend-sms')
   @HttpCode(HttpStatus.OK)
   async resendPasswordResetSms(@Body('sessionId') sessionId: string) {
+    if (!sessionId || typeof sessionId !== 'string') {
+      throw new BadRequestException('sessionId is required');
+    }
     const result = await this.authService.resendPasswordResetSms(sessionId);
     return { success: true, data: result };
   }
 
+  /** 비밀번호 재설정 SMS 인증번호 검증
+   * Verify password reset SMS code */
   @Post('forgot-password/verify-sms')
   @HttpCode(HttpStatus.OK)
   async forgotPasswordVerifySms(@Body() dto: ForgotPasswordVerifySmsDto) {
@@ -220,6 +245,8 @@ export class AuthController {
     return { success: true };
   }
 
+  /** 새 비밀번호로 재설정 (SMS 인증 완료 후)
+   * Reset to new password (after SMS verification) */
   @Post('forgot-password/reset')
   @HttpCode(HttpStatus.OK)
   async resetPassword(@Body() dto: ResetPasswordDto) {
@@ -227,6 +254,8 @@ export class AuthController {
     return { success: true, message: 'Password has been reset' };
   }
 
+  /** 이메일/아이디/전화번호 중복 확인
+   * Check email/username/phone duplication */
   @Get('check-duplicate')
   async checkDuplicate(
     @Query('field') field: string,
@@ -238,6 +267,8 @@ export class AuthController {
 
   // ── TOTP 2FA (시간 기반 일회용 비밀번호) / Time-based One-Time Password ──
 
+  /** TOTP 2FA 초기 설정 — QR 코드용 비밀키 생성
+   * TOTP 2FA initial setup — generate secret for QR code */
   @Post('totp/setup')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
@@ -246,6 +277,8 @@ export class AuthController {
     return { success: true, data: result };
   }
 
+  /** TOTP 2FA 활성화 — 코드 검증 후 활성화
+   * Enable TOTP 2FA — activate after code verification */
   @Post('totp/enable')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
@@ -257,6 +290,8 @@ export class AuthController {
     return { success: true, message: 'TOTP enabled' };
   }
 
+  /** TOTP 2FA 비활성화 — 코드 검증 후 해제
+   * Disable TOTP 2FA — deactivate after code verification */
   @Post('totp/disable')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
@@ -268,6 +303,8 @@ export class AuthController {
     return { success: true, message: 'TOTP disabled' };
   }
 
+  /** TOTP 코드 유효성 검증
+   * Verify TOTP code validity */
   @Post('totp/verify')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
@@ -279,6 +316,8 @@ export class AuthController {
     return { success: true, data: { valid } };
   }
 
+  /** TOTP 2FA 활성화 상태 조회
+   * Get TOTP 2FA enabled status */
   @Get('totp/status')
   @UseGuards(JwtAuthGuard)
   async totpStatus(@CurrentUser() user: UserDto) {

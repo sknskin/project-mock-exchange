@@ -1869,6 +1869,7 @@ const translations = {
     'community.post.deleteConfirm': '이 게시글을 삭제하시겠습니까?',
     'community.post.deleteCommentConfirm': '이 댓글을 삭제하시겠습니까?',
     'community.post.attachments': '첨부파일',
+    'community.post.attachHint': '클릭하여 파일을 첨부하세요 (최대 10MB)',
     'community.post.search': '게시글 검색',
     'community.post.searchPlaceholder': '검색어를 입력하세요',
     'community.post.download': '다운로드',
@@ -3758,6 +3759,7 @@ const translations = {
     'community.post.deleteConfirm': 'Delete this post?',
     'community.post.deleteCommentConfirm': 'Delete this comment?',
     'community.post.attachments': 'Attachments',
+    'community.post.attachHint': 'Click to attach files (max 10MB)',
     'community.post.search': 'Search posts',
     'community.post.searchPlaceholder': 'Enter search keyword',
     'community.post.download': 'Download',
@@ -3790,6 +3792,8 @@ const translations = {
 
 export type TranslationKey = keyof typeof translations.ko;
 
+/** 번역 키를 현재 로케일의 문자열로 변환 (키가 없으면 키 자체를 반환)
+ * Translates a key to the localized string (returns key itself if not found) */
 export function t(key: TranslationKey, locale: Locale): string {
   return translations[locale][key] ?? key;
 }

@@ -27,6 +27,8 @@ model Asset {
   @@map("assets")
 }
 
+// TODO: 프로덕션 — timestamp 기준 파티셔닝 및 90일 데이터 보존 정책 적용 필요
+// TODO: Production — apply timestamp-based partitioning and 90-day data retention policy
 model PriceHistory {
   id        BigInt   @id @default(autoincrement())
   symbol    String   @db.VarChar(20)

@@ -214,6 +214,8 @@ model Notification {
   @@map("notifications")
 }
 
+// TODO: 프로덕션 — 30일 데이터 보존 정책 적용 필요 (크론잡으로 오래된 레코드 삭제)
+// TODO: Production — apply 30-day data retention policy (cron job to purge old records)
 model PageView {
   id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   path      String   @db.VarChar(500)
@@ -250,7 +252,7 @@ model CommunityPost {
   title      String    @db.VarChar(200)
   content    String    @db.Text
   category   String    @default("FREE") @db.VarChar(50)
-  authorId   String    @map("author_id")
+  authorId   String    @map("author_id") @db.Uuid
   authorName String    @map("author_name") @db.VarChar(100)
   viewCount  Int       @default(0) @map("view_count")
   createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz()
@@ -283,7 +285,7 @@ model CommunityAttachment {
 model CommunityComment {
   id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   content    String    @db.VarChar(2000)
-  authorId   String    @map("author_id")
+  authorId   String    @map("author_id") @db.Uuid
   authorName String    @map("author_name") @db.VarChar(100)
   postId     String    @map("post_id") @db.Uuid
   parentId   String?   @map("parent_id") @db.Uuid

@@ -11,14 +11,16 @@ import { Injectable, Logger, BadGatewayException, ServiceUnavailableException } 
 import { ConfigService } from '@nestjs/config';
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 
-/** Circuit Breaker 상태 / Circuit Breaker state per service */
+/** Circuit Breaker 상태
+ * Circuit Breaker state per service */
 interface CircuitBreakerState {
   failures: number;
   lastFailureTime: number;
   isOpen: boolean;
 }
 
-/** Circuit Breaker 설정값 / Circuit Breaker configuration */
+/** Circuit Breaker 설정값
+ * Circuit Breaker configuration */
 const CIRCUIT_BREAKER_THRESHOLD = 5;       // 연속 실패 횟수 (consecutive failures to open)
 const CIRCUIT_BREAKER_COOLDOWN_MS = 30000; // 쿨다운 시간 30초 (cooldown before half-open retry)
 
@@ -67,6 +69,8 @@ export class ProxyService {
     }
   }
 
+  /** 대상 마이크로서비스로 HTTP 요청을 전달하고 응답을 반환
+   * Forward HTTP request to target microservice and return response */
   async forward(
     service: string,
     config: AxiosRequestConfig,
@@ -130,6 +134,8 @@ export class ProxyService {
 
   // ---- Circuit Breaker 헬퍼 / Circuit Breaker helpers ----
 
+  /** 서비스별 Circuit Breaker 상태를 조회하거나 초기화
+   * Get or initialize circuit breaker state for a service */
   private getCircuitBreaker(service: string): CircuitBreakerState {
     let cb = this.circuitBreakers.get(service);
     if (!cb) {
@@ -167,6 +173,8 @@ export class ProxyService {
     );
   }
 
+  /** 서비스 실패를 기록하고 임계값 초과 시 Circuit Breaker 오픈
+   * Record failure and open circuit breaker if threshold exceeded */
   private recordFailure(service: string): void {
     const cb = this.getCircuitBreaker(service);
     cb.failures++;
@@ -181,6 +189,8 @@ export class ProxyService {
     }
   }
 
+  /** 서비스 성공을 기록하고 Circuit Breaker를 리셋
+   * Record success and reset circuit breaker */
   private recordSuccess(service: string): void {
     const cb = this.getCircuitBreaker(service);
     if (cb.failures > 0 || cb.isOpen) {

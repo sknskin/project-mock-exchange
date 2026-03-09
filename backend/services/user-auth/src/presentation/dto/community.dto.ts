@@ -5,15 +5,17 @@
  * @file Community Board DTOs
  * @description Data Transfer Objects for validating community post/comment requests
  */
-import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, MaxLength } from 'class-validator';
 
 export class CreatePostDto {
   @IsString()
   @IsNotEmpty()
+  @MaxLength(200)
   title: string;
 
   @IsString()
   @IsNotEmpty()
+  @MaxLength(50000)
   content: string;
 
   @IsString()

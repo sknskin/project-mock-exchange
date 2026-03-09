@@ -49,18 +49,25 @@ function SystemMessageRow({ message, t }: { message: ChatMessage; t: (key: Trans
 
 // 메시지 영역 Props / Message Area Props
 interface MessageAreaProps {
-  /** 현재 채팅방 ID / Current chat room ID */
+  /** 현재 채팅방 ID
+   * Current chat room ID */
   roomId: string;
-  /** 소켓 방 입장 함수 / Socket room join function */
+  /** 소켓 방 입장 함수
+   * Socket room join function */
   joinRoom: (roomId: string) => void;
-  /** 소켓 방 퇴장 함수 / Socket room leave function */
+  /** 소켓 방 퇴장 함수
+   * Socket room leave function */
   leaveSocketRoom: (roomId: string) => void;
-  /** 채팅방 나가기 콜백 / Leave room callback */
+  /** 채팅방 나가기 콜백
+   * Leave room callback */
   onLeaveRoom: () => void;
-  /** 타이핑 상태 전송 함수 / Typing indicator emit function */
+  /** 타이핑 상태 전송 함수
+   * Typing indicator emit function */
   emitTyping: (roomId: string) => void;
 }
 
+/** 메시지 영역 — 메시지 목록, 무한 스크롤, 검색, 참여자 관리 등 핵심 채팅 UI
+ * Message area — core chat UI with message list, infinite scroll, search, participant management */
 export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeaveRoom, emitTyping }: MessageAreaProps) {
   const { t, locale } = useTranslation();
   const backToList = useChatStore((s) => s.backToList);
@@ -93,7 +100,7 @@ export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeave
   const handleTyping = useCallback(() => emitTyping(roomId), [roomId, emitTyping]);
 
   const room: ChatRoom | undefined = rooms?.find((r) => r.id === roomId);
-  const messages = data?.pages.flatMap((p) => p.items) ?? [];
+  const messages = useMemo(() => data?.pages.flatMap((p) => p.items) ?? [], [data?.pages]);
 
   const filteredMessages = useMemo(() => {
     if (!searchQuery.trim()) return messages;
@@ -121,13 +128,17 @@ export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeave
     return () => leaveSocketRoom(roomId);
   }, [roomId, joinRoom, leaveSocketRoom]);
 
+  // markRead를 ref로 안정화 — 매 렌더마다 새 참조 생성 방지 / Stabilize markRead via ref — prevent new reference every render
+  const markReadRef = useRef(markRead);
+  markReadRef.current = markRead;
+
   // 마운트 시 및 새 메시지 도착 시 읽음 처리 (Mark as read on mount and when new messages arrive)
   useEffect(() => {
     if (roomId && messages.length > lastMarkedLengthRef.current) {
       lastMarkedLengthRef.current = messages.length;
-      markRead.mutate(roomId);
+      markReadRef.current.mutate(roomId);
     }
-  }, [roomId, messages.length, markRead]);
+  }, [roomId, messages.length]);
 
   // 새 메시지 시 자동 스크롤 (Auto-scroll on new message)
   useEffect(() => {
@@ -194,7 +205,7 @@ export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeave
           <div className="flex items-center gap-1.5">
             <h3 className="text-[14px] font-bold text-text-primary truncate">{displayName}</h3>
             {room?.type === 'DM' && isOtherOnline && (
-              <span className="w-2 h-2 bg-green-500 rounded-full shrink-0" />
+              <span className="w-2 h-2 bg-green-500 rounded-full shrink-0" role="status" aria-label={t('chat.online')} />
             )}
           </div>
           {room && (
@@ -219,7 +230,7 @@ export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeave
               {/* 관리자/시스템용 참여자 목록 (Participant list for admin/system) */}
               {isAdmin && room && (
                 <div className="border-b border-border overflow-y-auto overscroll-contain shrink min-h-0">
-                  <p className="px-3.5 pt-2 pb-1 text-[10px] font-bold text-text-quaternary uppercase tracking-wider sticky top-0 bg-bg-secondary">Participants</p>
+                  <p className="px-3.5 pt-2 pb-1 text-[10px] font-bold text-text-quaternary uppercase tracking-wider sticky top-0 bg-bg-secondary">{t('chat.participants')}</p>
                   {room.participants.map((p) => (
                     <div key={p.userId} className="flex items-center gap-2 px-3.5 py-1.5">
                       <div className="relative shrink-0">
@@ -432,7 +443,7 @@ export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeave
 
       {/* 퇴장 확인 모달 (Leave Confirm Modal) */}
       {leaveConfirm && (
-        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 rounded-2xl">
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 rounded-2xl" role="dialog" aria-modal="true" aria-label={t('chat.leaveRoom')}>
           <div className="bg-bg-primary border border-border rounded-2xl p-5 w-[260px] shadow-2xl">
             <p className="text-[13px] text-text-primary text-center whitespace-pre-line leading-relaxed">
               {t('chat.leaveConfirm')}
@@ -457,7 +468,7 @@ export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeave
 
       {/* 강퇴 확인 모달 (Kick Confirm Modal) */}
       {kickTarget && (
-        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 rounded-2xl">
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 rounded-2xl" role="dialog" aria-modal="true" aria-label={t('chat.kick')}>
           <div className="bg-bg-primary border border-border rounded-2xl p-5 w-[260px] shadow-2xl">
             <p className="text-[13px] text-text-primary text-center leading-relaxed">
               <span className="font-bold">{kickTarget.username}</span> {t('chat.kickConfirm')}
@@ -482,7 +493,7 @@ export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeave
 
       {/* 채팅방 삭제 확인 모달 (Delete Room Confirm Modal) */}
       {deleteConfirm && (
-        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 rounded-2xl">
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 rounded-2xl" role="dialog" aria-modal="true" aria-label={t('chat.deleteRoom')}>
           <div className="bg-bg-primary border border-border rounded-2xl p-5 w-[260px] shadow-2xl">
             <p className="text-[13px] text-text-primary text-center whitespace-pre-line leading-relaxed">
               {t('chat.deleteRoomConfirm')}

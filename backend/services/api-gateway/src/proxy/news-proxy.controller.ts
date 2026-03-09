@@ -10,6 +10,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiBearerAuth } from '@ne
 import { Request, Response } from 'express';
 import { ProxyService } from './proxy.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { AdminRolesGuard } from '../auth/admin-roles.guard';
 
 // 뉴스 목록은 공개, 스크래핑 관리는 인증 필수 / News listing is public, scraping management requires auth
 @ApiTags('News')
@@ -17,6 +18,8 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 export class NewsProxyController {
   constructor(private readonly proxyService: ProxyService) {}
 
+  /** 뉴스 목록 조회를 market-data로 프록시
+   * Proxy news list to market-data service */
   @Get()
   @ApiOperation({ summary: '뉴스 목록 조회', description: '카테고리, 페이지, 개수 기준으로 뉴스 목록을 조회합니다.' })
   @ApiQuery({ name: 'category', required: false, description: '뉴스 카테고리' })
@@ -32,8 +35,10 @@ export class NewsProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 뉴스 스크래핑 상태 조회를 market-data로 프록시
+   * Proxy scrape status to market-data service */
   @Get('scrape-status')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AdminRolesGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '스크래핑 상태 조회', description: '뉴스 스크래핑 작업의 현재 상태를 조회합니다. (관리자 전용)' })
   @ApiResponse({ status: 200, description: '스크래핑 상태 조회 성공' })
@@ -46,8 +51,10 @@ export class NewsProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 뉴스 스크래핑 수동 실행을 market-data로 프록시
+   * Proxy manual scrape trigger to market-data service */
   @Post('scrape')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AdminRolesGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '뉴스 스크래핑 실행', description: '뉴스 스크래핑 작업을 수동으로 트리거합니다. (관리자 전용)' })
   @ApiResponse({ status: 200, description: '스크래핑 실행 성공' })

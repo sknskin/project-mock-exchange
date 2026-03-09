@@ -26,6 +26,8 @@ import { InternalAuthGuard } from '../../common/guards/internal-auth.guard';
 export class ProfileController {
   constructor(private readonly prisma: PrismaService) {}
 
+  /** 내 프로필 조회 (민감 정보 마스킹)
+   * Get my profile (sensitive data masked) */
   @Get()
   async getProfile(@CurrentUser() user: UserDto) {
     const raw = await this.prisma.user.findUnique({
@@ -56,6 +58,8 @@ export class ProfileController {
     return { success: true, data: profile };
   }
 
+  /** 프로필 정보 수정 (이름, 전화번호, 주소)
+   * Update profile (name, phone, address) */
   @Put()
   async updateProfile(
     @CurrentUser() user: UserDto,
@@ -63,7 +67,14 @@ export class ProfileController {
   ) {
     const data: Record<string, string> = {};
     if (body.name) data.name = body.name;
-    if (body.phone) data.phone = body.phone;
+    if (body.phone) {
+      // 전화번호 형식 검증 (한국 형식) / Validate phone format (Korean format)
+      const phoneRegex = /^01[016789]-?\d{3,4}-?\d{4}$/;
+      if (!phoneRegex.test(body.phone)) {
+        throw new BadRequestException('Invalid phone number format');
+      }
+      data.phone = body.phone;
+    }
     if (body.address) data.address = body.address;
     if (body.addressDetail !== undefined) data.addressDetail = body.addressDetail;
     if (body.zipCode) data.zipCode = body.zipCode;
@@ -110,6 +121,11 @@ export class ProfileController {
     }
     if (body.newPassword.length < 8) {
       throw new BadRequestException('Password must be at least 8 characters');
+    }
+    // 비밀번호 복잡도 검증: 영문+숫자+특수문자 포함 / Password complexity: must include letter, number, special char
+    const complexityRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/;
+    if (!complexityRegex.test(body.newPassword)) {
+      throw new BadRequestException('Password must contain at least one letter, one number, and one special character');
     }
 
     const dbUser = await this.prisma.user.findUnique({ where: { id: user.id } });

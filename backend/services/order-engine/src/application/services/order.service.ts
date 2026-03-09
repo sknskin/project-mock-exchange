@@ -45,7 +45,8 @@ export class OrderService {
   private readonly internalToken: string;
   private readonly httpTimeout: number;
 
-  /** 환율 캐시 (USD → KRW) / Exchange rate cache */
+  /** 환율 캐시 (USD → KRW)
+   * Exchange rate cache */
   private cachedExchangeRate: { rate: Decimal; fetchedAt: number } | null = null;
   private static readonly EXCHANGE_RATE_TTL_MS = 10 * 60 * 1000; // 10분
 
@@ -112,6 +113,8 @@ export class OrderService {
     return price.mul(rate);
   }
 
+  /** 주문을 생성하고 매칭 엔진을 통해 체결합니다
+   * Place an order and execute through the matching engine */
   async placeOrder(params: PlaceOrderParams): Promise<{
     orderId: string;
     status: string;
@@ -259,6 +262,8 @@ export class OrderService {
     };
   }
 
+  /** 주문을 취소하고 예약된 자금/보유량을 해제합니다
+   * Cancel an order and release reserved funds/holdings */
   async cancelOrder(orderId: string, userId: string): Promise<void> {
     const streamId = OrderAggregate.streamId(orderId);
     const events = await this.eventStore.readStream(streamId);
@@ -364,6 +369,8 @@ export class OrderService {
     updatedAt: true,
   } as const;
 
+  /** 특정 주문의 상세 정보를 조회합니다
+   * Get details of a specific order */
   async getOrder(orderId: string, userId: string) {
     return this.prisma.orderRead.findFirst({
       where: { orderId, userId },
@@ -371,6 +378,8 @@ export class OrderService {
     });
   }
 
+  /** 사용자의 주문 목록을 필터링/페이징하여 조회합니다
+   * Get filtered and paginated order list for a user */
   async getUserOrders(userId: string, limit = 50, offset = 0, status?: string) {
     const where: Prisma.OrderReadWhereInput = { userId };
     if (status) {
@@ -385,6 +394,8 @@ export class OrderService {
     });
   }
 
+  /** 사용자의 체결 내역을 조회합니다
+   * Get trade execution history for a user */
   async getUserTrades(userId: string, limit = 50, offset = 0): Promise<unknown[]> {
     return this.prisma.tradeRead.findMany({
       where: {
@@ -396,10 +407,14 @@ export class OrderService {
     });
   }
 
+  /** 특정 심볼의 오더북 뎁스를 조회합니다
+   * Get order book depth for a symbol */
   getOrderBook(symbol: string) {
     return this.matchingEngine.getOrderBookDepth(symbol);
   }
 
+  /** 기간별 거래 통계를 DB 집계로 조회합니다
+   * Get trading statistics via DB aggregation for a given period */
   async getTradingStats(days: number) {
     const since = new Date(Date.now() - days * 86400000);
 
@@ -463,6 +478,8 @@ export class OrderService {
     };
   }
 
+  /** 주문의 가격/수량을 수정하고 자금/보유량을 재조정합니다
+   * Modify order price/quantity and re-adjust funds/holdings */
   async modifyOrder(
     orderId: string,
     userId: string,
@@ -727,6 +744,8 @@ export class OrderService {
     throw new Error(`${label} failed after ${maxRetries} retries`);
   }
 
+  /** 지정가 주문의 오더북 교차 체결을 처리합니다
+   * Process limit order crossing fills against the order book */
   private async processLimitCrossingFills(
     orderId: string,
     params: PlaceOrderParams,
@@ -782,6 +801,8 @@ export class OrderService {
     return fills;
   }
 
+  /** 시장가 주문을 매칭 엔진으로 즉시 체결합니다
+   * Execute a market order immediately via matching engine */
   private async executeMarketOrder(
     _order: OrderAggregate,
     orderId: string,
@@ -861,9 +882,12 @@ export class OrderService {
    */
   private async getMarketPrice(symbol: string): Promise<Decimal | null> {
     try {
-      const response = await axios.get(
-        `${this.marketDataUrl}/market/prices/${symbol}`,
-        { timeout: this.httpTimeout, headers: { 'x-internal-token': this.internalToken } },
+      const response = await this.withRetry(
+        () => axios.get(
+          `${this.marketDataUrl}/market/prices/${symbol}`,
+          { timeout: this.httpTimeout, headers: { 'x-internal-token': this.internalToken } },
+        ),
+        'getMarketPrice',
       );
       if (response.data?.success && response.data?.data?.price) {
         return new Decimal(response.data.data.price);
@@ -912,6 +936,8 @@ export class OrderService {
     }
   }
 
+  /** Portfolio 서비스에 예약 자금 해제를 요청합니다
+   * Request fund release from Portfolio service */
   private async releaseFunds(
     userId: string,
     amount: string,
@@ -934,6 +960,8 @@ export class OrderService {
     }
   }
 
+  /** 매도 주문을 위해 보유량을 검증하고 예약합니다
+   * Validate and reserve holdings for a sell order */
   private async validateAndReserveHoldings(
     userId: string,
     symbol: string,
@@ -960,6 +988,8 @@ export class OrderService {
     }
   }
 
+  /** Portfolio 서비스에 예약 보유량 해제를 요청합니다
+   * Request holdings release from Portfolio service */
   private async releaseHoldings(
     userId: string,
     symbol: string,
@@ -1101,6 +1131,8 @@ export class OrderService {
     }
   }
 
+  /** 체결 내역을 읽기 모델(TradeRead)에 투영합니다
+   * Project a trade fill into the read model (TradeRead) */
   private async projectTrade(fill: MatchResult): Promise<void> {
     const qty = new Decimal(fill.matchedQuantity);
     const price = new Decimal(fill.matchedPrice);

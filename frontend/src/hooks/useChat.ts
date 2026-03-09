@@ -329,6 +329,7 @@ export function useDeleteMessage() {
 export function useSearchUsers(query: string, excludeIds?: string[]) {
   return useQuery({
     queryKey: ['chat-user-search', query, excludeIds],
+    enabled: query.trim().length > 0,
     queryFn: async () => {
       const { data } = await api.get('/api/chat/users/search', {
         params: {

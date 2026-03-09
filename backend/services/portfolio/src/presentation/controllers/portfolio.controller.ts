@@ -175,5 +175,10 @@ export class PortfolioController {
         'x-user-id header is required',
       );
     }
+    // UUID 형식 검증 / Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(userId)) {
+      throw new BadRequestException('Invalid userId format — must be a valid UUID');
+    }
   }
 }

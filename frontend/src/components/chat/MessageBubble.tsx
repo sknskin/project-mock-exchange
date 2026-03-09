@@ -17,24 +17,33 @@ import type { ChatMessage } from '@/types';
 
 // 메시지 버블 Props / Message Bubble Props
 interface MessageBubbleProps {
-  /** 채팅 메시지 데이터 / Chat message data */
+  /** 채팅 메시지 데이터
+   * Chat message data */
   message: ChatMessage;
-  /** 본인이 보낸 메시지 여부 / Whether this message is sent by current user */
+  /** 본인이 보낸 메시지 여부
+   * Whether this message is sent by current user */
   isMine: boolean;
-  /** 발신자 이름 표시 여부 / Whether to show sender name */
+  /** 발신자 이름 표시 여부
+   * Whether to show sender name */
   showSender: boolean;
-  /** 현재 로케일 (시간 포맷용) / Current locale (for time formatting) */
+  /** 현재 로케일 (시간 포맷용)
+   * Current locale (for time formatting) */
   locale: string;
-  /** 현재 사용자 역할 (삭제 권한 판단) / Current user role (for delete permission) */
+  /** 현재 사용자 역할 (삭제 권한 판단)
+   * Current user role (for delete permission) */
   userRole?: string;
 }
 
+/** 메시지 시각을 HH:MM 형식으로 변환
+ * Format message timestamp to HH:MM */
 function formatTime(dateString: string) {
   const date = new Date(dateString);
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-export default function MessageBubble({ message, isMine, showSender, locale, userRole }: MessageBubbleProps) {
+/** 메시지 버블 — 본인/상대/시스템/관리자 스타일 분기 및 삭제 기능
+ * Message bubble — style varies by sender role with delete support */
+export default function MessageBubble({ message, isMine, showSender, locale: _locale, userRole }: MessageBubbleProps) {
   const { t } = useTranslation();
   const deleteMessage = useDeleteMessage();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -49,6 +58,8 @@ export default function MessageBubble({ message, isMine, showSender, locale, use
   const isSystemUser = message.senderRole === 'SYSTEM';
   const isAdminUser = message.senderRole === 'ADMIN';
 
+  /** 메시지 삭제 요청 처리
+   * Handle message deletion */
   const handleDelete = async () => {
     await deleteMessage.mutateAsync({ roomId: message.roomId, messageId: message.id });
     setShowDeleteConfirm(false);
@@ -106,9 +117,10 @@ export default function MessageBubble({ message, isMine, showSender, locale, use
                   disabled={deleteMessage.isPending}
                   title={t('chat.deleteMessage')}
                   className={cn(
-                    'absolute -top-1.5 opacity-0 group-hover:opacity-100 transition-opacity',
+                    'absolute -top-1.5 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity',
                     'w-5 h-5 flex items-center justify-center rounded-full bg-bg-elevated border border-border shadow-sm',
-                    'text-text-tertiary hover:text-red-400 hover:border-red-400/50',
+                    'text-text-tertiary hover:text-red-400 hover:border-red-400/50 focus:text-red-400 focus:border-red-400/50',
+                    'focus:outline-none focus:ring-1 focus:ring-red-400/50',
                     isMine ? '-left-1.5' : '-right-1.5',
                   )}
                 >

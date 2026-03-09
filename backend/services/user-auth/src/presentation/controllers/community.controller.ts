@@ -458,6 +458,18 @@ export class CommunityController {
     if (!post) throw new NotFoundException('Post not found');
     if (post.authorId !== userId) throw new ForbiddenException('Only the author can add attachments');
 
+    // MIME 화이트리스트 검증 / MIME type whitelist validation
+    const ALLOWED_MIME_TYPES = [
+      'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+      'application/pdf',
+      'text/plain',
+      'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    ];
+    if (!ALLOWED_MIME_TYPES.includes(body.mimeType)) {
+      throw new BadRequestException(`File type not allowed: ${body.mimeType}`);
+    }
+
     // 파일 크기 검증 — 서버 메모리 보호를 위해 10MB 제한 / File size validation — 10MB limit to protect server memory
     const MAX_FILE_SIZE = 10 * 1024 * 1024;
     const bufferData = Buffer.from(body.data, 'base64');

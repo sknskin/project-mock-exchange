@@ -45,11 +45,14 @@ export class PriceSubscriberService implements OnModuleInit, OnModuleDestroy {
     private readonly priceGateway: PriceGateway,
     private readonly chatGateway: ChatGateway,
   ) {
+    const host = this.configService.get('SERVICE_HOST', 'localhost');
     const port = this.configService.get('USER_AUTH_PORT', 3007);
-    this.userAuthUrl = `http://localhost:${port}`;
+    this.userAuthUrl = `http://${host}:${port}`;
     this.internalToken = this.configService.get<string>('INTERNAL_SERVICE_SECRET', '');
   }
 
+  /** Redis PubSub 구독 시작 및 가격 알림 주기적 갱신 설정
+   * Start Redis PubSub subscriptions and set up periodic alert refresh */
   async onModuleInit() {
     const redisUrl = this.configService.get<string>('REDIS_URL', 'redis://localhost:6379');
     this.subscriber = new Redis(redisUrl);
@@ -79,6 +82,8 @@ export class PriceSubscriberService implements OnModuleInit, OnModuleDestroy {
     }, 30_000);
   }
 
+  /** Redis 구독 해제 및 알림 갱신 인터벌 정리
+   * Unsubscribe from Redis and clear alert refresh interval */
   async onModuleDestroy() {
     if (this.alertRefreshInterval) {
       clearInterval(this.alertRefreshInterval);
@@ -89,6 +94,8 @@ export class PriceSubscriberService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  /** 활성 가격 알림을 user-auth에서 조회하여 로컬 캐시 갱신
+   * Fetch active price alerts from user-auth and refresh local cache */
   private async refreshAlerts() {
     try {
       const res = await axios.get(`${this.userAuthUrl}/price-alerts/active`, {
@@ -116,6 +123,8 @@ export class PriceSubscriberService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  /** 현재가로 가격 알림 조건 충족 여부를 확인하고 트리거 처리
+   * Check if current price meets alert conditions and process triggers */
   private checkPriceAlerts(symbol: string, price: number) {
     const alerts = this.alertsBySymbol.get(symbol);
     if (!alerts || alerts.length === 0) return;
@@ -155,6 +164,8 @@ export class PriceSubscriberService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  /** 통화에 따라 가격을 포맷팅 (KRW: 원, USD: 달러)
+   * Format price by currency (KRW: won, USD: dollar) */
   private formatPrice(price: number, currency: string): string {
     if (currency === 'KRW') {
       return `₩${Math.round(price).toLocaleString()}`;
@@ -162,6 +173,8 @@ export class PriceSubscriberService implements OnModuleInit, OnModuleDestroy {
     return `$${price.toFixed(2)}`;
   }
 
+  /** 트리거된 가격 알림을 DB에 기록하고 WebSocket으로 사용자에게 알림 전송
+   * Persist triggered alert to DB and notify user via WebSocket */
   private async handleTriggeredAlert(alert: CachedAlert, currentPrice: number) {
     try {
       const condLabel = alert.condition === 'ABOVE' ? '↑' : '↓';
