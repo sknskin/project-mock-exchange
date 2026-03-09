@@ -51,6 +51,9 @@ export default function RichEditor({ content, onChange, placeholder }: RichEdito
       Placeholder.configure({ placeholder: placeholder || '' }),
     ],
     content,
+    // SSR hydration 불일치 방지 — 클라이언트 마운트 후 렌더링
+    // Prevent SSR hydration mismatch — render after client mount
+    immediatelyRender: false,
     onUpdate: ({ editor: e }) => {
       onChange(e.getHTML());
     },
