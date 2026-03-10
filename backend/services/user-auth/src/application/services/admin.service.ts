@@ -55,7 +55,9 @@ export class AdminService {
       where.role = role;
     }
 
-    if (status === 'approved') where.approvalStatus = 'APPROVED';
+    // 승인완료 필터 시 활성 사용자만 조회 — 비활성 사용자는 '비활성' 필터에서 별도 조회
+    // Approved filter only shows active users — inactive users shown in 'inactive' filter
+    if (status === 'approved') { where.approvalStatus = 'APPROVED'; where.isActive = true; }
     else if (status === 'pending') where.approvalStatus = 'PENDING';
     else if (status === 'rejected') where.approvalStatus = 'REJECTED';
     else if (status === 'inactive') where.isActive = false;
