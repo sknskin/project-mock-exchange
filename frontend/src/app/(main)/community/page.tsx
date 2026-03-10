@@ -379,8 +379,8 @@ function CommunityPage() {
       .map((entry, i) => ({ ...entry, rank: i + 1 }));
   }, [leaderboardData]);
 
-  // 트레이더 팔로워 수 일괄 조회 / Batch fetch follower counts for traders
-  const traderUserIds = useMemo(() => activeTraders.map((e) => e.id), [activeTraders]);
+  // 트레이더 팔로워 수 일괄 조회 — anon_ ID 제외 / Batch fetch follower counts — exclude anon_ IDs
+  const traderUserIds = useMemo(() => activeTraders.map((e) => e.id).filter((id) => !id.startsWith('anon_')), [activeTraders]);
   const { data: batchFollowCounts } = useBatchFollowCounts(traderUserIds);
 
   /** 전략 글쓰기 자격 확인 — 수익률 5% 이상 또는 자산 상위 20%
@@ -408,6 +408,8 @@ function CommunityPage() {
       showLoginModal();
       return;
     }
+    // anon_ ID는 팔로우 불가 / Cannot follow anonymized IDs
+    if (userId.startsWith('anon_')) return;
     if (followedUserIds.has(userId)) {
       unfollowTrader.mutate(userId);
     } else {

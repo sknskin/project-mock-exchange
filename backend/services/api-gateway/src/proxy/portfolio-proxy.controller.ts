@@ -191,7 +191,9 @@ export class PortfolioProxyController {
               const { userId: _uid, ...rest } = entry;
               return {
                 ...rest,
-                id: isMe ? entry.userId : `anon_${idx}`,
+                // 인증된 사용자에게는 실제 ID 제공(팔로우 기능용), 비인증 시 익명화
+                // Provide real ID to authenticated users (for follow), anonymize for guests
+                id: currentUserId ? entry.userId : `anon_${idx}`,
                 isMe: !!isMe,
                 username: userInfo?.username || '',
                 name: userInfo?.name || '',
@@ -203,7 +205,7 @@ export class PortfolioProxyController {
           data.data = entries.map((entry, idx) => {
             const isMe = currentUserId && entry.userId === currentUserId;
             const { userId: _uid, ...rest } = entry;
-            return { ...rest, id: isMe ? entry.userId : `anon_${idx}`, isMe: !!isMe };
+            return { ...rest, id: currentUserId ? entry.userId : `anon_${idx}`, isMe: !!isMe };
           });
         }
       }
