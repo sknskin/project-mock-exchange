@@ -179,8 +179,10 @@ export default function AdminStatsPage() {
       statusLabel = t('admin.users.pending');
       color = CHART_COLORS.yellow;
     } else {
+      // 비활성 사용자는 회색으로 구분 표시 (반려=빨강과 구별)
+      // Inactive users shown in gray to distinguish from rejected (red)
       statusLabel = t('admin.users.inactive');
-      color = CHART_COLORS.red;
+      color = CHART_COLORS.gray;
     }
     return { name: statusLabel, value: s.count, color };
   });
