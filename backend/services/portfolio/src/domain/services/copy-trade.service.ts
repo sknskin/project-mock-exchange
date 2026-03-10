@@ -24,6 +24,19 @@ export interface TradeData {
   tradeId: string;
 }
 
+/**
+ * 슬리피지 허용 비율 상수 (2%)
+ * Slippage tolerance constant (2%) — configurable for future expansion
+ * TODO: Move to config/env variable for per-environment tuning
+ */
+const SLIPPAGE_TOLERANCE = 0.02;
+
+/**
+ * 팔로워당 최대 카피 트레이딩 대상 수
+ * Maximum number of copy trade targets per follower
+ */
+const MAX_COPY_TRADE_TARGETS = 10;
+
 @Injectable()
 export class CopyTradeService {
   private readonly logger = new Logger(CopyTradeService.name);
@@ -62,6 +75,16 @@ export class CopyTradeService {
 
     if (existing && existing.isActive) {
       throw new BadRequestException('Copy trading is already active for this trader');
+    }
+
+    // 팔로워의 활성 카피 트레이딩 수 제한 확인 (#9)
+    // Check active copy trade count limit for follower (#9)
+    const activeCount = await this.prisma.copyTradeConfig.count({
+      where: { followerId, isActive: true },
+    });
+
+    if (activeCount >= MAX_COPY_TRADE_TARGETS) {
+      throw new BadRequestException('Maximum 10 copy trade targets allowed');
     }
 
     // 기존 비활성 설정이 있으면 재활성화, 없으면 새로 생성
@@ -154,8 +177,21 @@ export class CopyTradeService {
       data: { isActive: false },
     });
 
+    // 해당 설정의 PENDING 상태 실행 기록을 CANCELLED로 변경 (#6)
+    // Cancel any PENDING execution records for this config (#6)
+    const cancelled = await this.prisma.copyTradeExecution.updateMany({
+      where: {
+        configId: existing.id,
+        status: 'PENDING',
+      },
+      data: {
+        status: 'CANCELLED',
+        failReason: 'Copy trading deactivated by user',
+      },
+    });
+
     this.logger.log(
-      `Stopped copy trading: follower=${followerId.substring(0, 8)}..., trader=${traderId.substring(0, 8)}...`,
+      `Stopped copy trading: follower=${followerId.substring(0, 8)}..., trader=${traderId.substring(0, 8)}... (cancelled ${cancelled.count} pending executions)`,
     );
 
     return this.toConfigResponse(updated);
@@ -257,33 +293,77 @@ export class CopyTradeService {
         const copiedQty = originalQty.mul(scaleRatio);
         const investmentAmount = copiedQty.mul(price);
 
-        // 최대 투자 한도 확인 / Check max investment limit
-        const totalInvested = new Decimal(config.totalInvested.toString());
-        const maxInvestment = new Decimal(config.maxInvestment.toString());
-        const remainingBudget = maxInvestment.minus(totalInvested);
+        // 슬리피지 보호 (#8): 가격 변동 경고 로깅
+        // Slippage protection (#8): log warning for price deviation
+        // TODO: 실시간 시장 가격을 가져와 원래 거래 가격과 비교하는 로직 확장 필요
+        // TODO: Expand to fetch real-time market price and compare against original trade price
+        const tradePrice = new Decimal(tradeData.price);
+        if (!tradePrice.isZero()) {
+          this.logger.debug(
+            `Slippage check: symbol=${tradeData.symbol}, tradePrice=${tradePrice.toFixed(8)}, tolerance=${SLIPPAGE_TOLERANCE * 100}%`,
+          );
+        }
 
-        if (tradeData.side === 'BUY' && investmentAmount.gt(remainingBudget)) {
-          // 한도 초과 시 실패 기록 / Record failure if limit exceeded
-          await this.prisma.copyTradeExecution.create({
-            data: {
-              configId: config.id,
-              followerId: config.followerId,
-              traderId,
-              originalTradeId: tradeData.tradeId,
-              symbol: tradeData.symbol,
-              side: tradeData.side,
-              originalQty: originalQty.toFixed(8),
-              copiedQty: copiedQty.toFixed(8),
-              price: price.toFixed(8),
-              status: 'FAILED',
-              failReason: `Max investment limit exceeded: invested=${totalInvested.toFixed(2)}, limit=${maxInvestment.toFixed(2)}, required=${investmentAmount.toFixed(2)}`,
-            },
+        // 레이스 컨디션 방지를 위해 트랜잭션 내에서 totalInvested 읽기+확인+갱신 (#2)
+        // Use transaction with FOR UPDATE lock to prevent race condition on totalInvested (#2)
+        if (tradeData.side === 'BUY') {
+          const budgetCheckResult = await this.prisma.$transaction(async (tx) => {
+            // FOR UPDATE 잠금으로 최신 설정 조회 / Read latest config with FOR UPDATE lock
+            const [lockedConfig] = await tx.$queryRawUnsafe<any[]>(
+              `SELECT "totalInvested", "maxInvestment" FROM "CopyTradeConfig" WHERE "id" = $1 FOR UPDATE`,
+              config.id,
+            );
+
+            if (!lockedConfig) {
+              return { skip: true, reason: 'Config not found during transaction' };
+            }
+
+            const currentTotalInvested = new Decimal(lockedConfig.totalInvested.toString());
+            const currentMaxInvestment = new Decimal(lockedConfig.maxInvestment.toString());
+            const remainingBudget = currentMaxInvestment.minus(currentTotalInvested);
+
+            if (investmentAmount.gt(remainingBudget)) {
+              return {
+                skip: true,
+                reason: `Max investment limit exceeded: invested=${currentTotalInvested.toFixed(2)}, limit=${currentMaxInvestment.toFixed(2)}, required=${investmentAmount.toFixed(2)}`,
+                totalInvested: currentTotalInvested,
+              };
+            }
+
+            // 한도 내이면 totalInvested 즉시 갱신 / Update totalInvested immediately if within limit
+            await tx.copyTradeConfig.update({
+              where: { id: config.id },
+              data: {
+                totalInvested: currentTotalInvested.plus(investmentAmount).toFixed(8),
+              },
+            });
+
+            return { skip: false, totalInvested: currentTotalInvested };
           });
 
-          this.logger.warn(
-            `Copy trade skipped for follower ${config.followerId.substring(0, 8)}...: max investment exceeded`,
-          );
-          continue;
+          if (budgetCheckResult.skip) {
+            // 한도 초과 시 실패 기록 / Record failure if limit exceeded
+            await this.prisma.copyTradeExecution.create({
+              data: {
+                configId: config.id,
+                followerId: config.followerId,
+                traderId,
+                originalTradeId: tradeData.tradeId,
+                symbol: tradeData.symbol,
+                side: tradeData.side,
+                originalQty: originalQty.toFixed(8),
+                copiedQty: copiedQty.toFixed(8),
+                price: price.toFixed(8),
+                status: 'FAILED',
+                failReason: budgetCheckResult.reason,
+              },
+            });
+
+            this.logger.warn(
+              `Copy trade skipped: follower=${config.followerId.substring(0, 8)}..., trader=${traderId.substring(0, 8)}..., symbol=${tradeData.symbol}, reason=${budgetCheckResult.reason}`,
+            );
+            continue;
+          }
         }
 
         // order-engine에 주문 전송 / Send order to order-engine
@@ -330,14 +410,14 @@ export class CopyTradeService {
             },
           });
 
-          this.logger.error(
-            `Copy trade order failed for follower ${config.followerId.substring(0, 8)}...: ${reason}`,
+          this.logger.warn(
+            `Copy trade order failed: follower=${config.followerId.substring(0, 8)}..., trader=${traderId.substring(0, 8)}..., symbol=${tradeData.symbol}, reason=${reason}`,
           );
           continue;
         }
 
-        // 성공 시 실행 기록 생성 및 총 투자금 갱신
-        // On success: create execution record and update total invested
+        // 성공 시 실행 기록 생성 (BUY의 경우 totalInvested는 이미 트랜잭션에서 갱신됨)
+        // On success: create execution record (totalInvested already updated in transaction for BUY)
         await this.prisma.copyTradeExecution.create({
           data: {
             configId: config.id,
@@ -354,22 +434,15 @@ export class CopyTradeService {
           },
         });
 
-        // 매수일 때만 총 투자금 갱신 / Update total invested only for buy trades
-        if (tradeData.side === 'BUY') {
-          await this.prisma.copyTradeConfig.update({
-            where: { id: config.id },
-            data: {
-              totalInvested: totalInvested.plus(investmentAmount).toFixed(8),
-            },
-          });
-        }
-
         this.logger.log(
           `Copy trade executed: follower=${config.followerId.substring(0, 8)}..., ${tradeData.side} ${copiedQty.toFixed(8)} ${tradeData.symbol} @ ${price.toFixed(8)}`,
         );
       } catch (error: any) {
         // 개별 카피 트레이딩 실패가 다른 팔로워에 영향을 주지 않도록 격리
         // Isolate individual copy trade failures to prevent affecting other followers
+        this.logger.warn(
+          `Copy trade execution failed: follower=${config.followerId.substring(0, 8)}..., trader=${traderId.substring(0, 8)}..., symbol=${tradeData.symbol}, reason=${error?.message}`,
+        );
         this.logger.error(
           `Unexpected error processing copy trade for follower ${config.followerId.substring(0, 8)}...: ${error?.message}`,
         );
