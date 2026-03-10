@@ -8,6 +8,7 @@
 'use client';
 
 import { cn, formatPrice, formatPercent } from '@/lib/format';
+import AnimatedNumber from '@/components/ui/AnimatedNumber';
 
 // 가격 표시 Props / Price Display Props
 interface PriceDisplayProps {
@@ -55,7 +56,7 @@ export default function PriceDisplay({
           'text-text-primary',
         )}
       >
-        {formatPrice(price)}
+        <AnimatedNumber value={formatPrice(price)} />
       </div>
       <div
         className={cn(
@@ -66,7 +67,7 @@ export default function PriceDisplay({
           !isRise && !isFall && 'text-text-quaternary',
         )}
       >
-        {formatPercent(changePercent)}
+        <AnimatedNumber value={formatPercent(changePercent)} />
       </div>
     </div>
   );

@@ -453,6 +453,25 @@ nextjs-portal,
     border-radius: 4px;
   }
 
+  /* 숫자 슬롯 애니메이션: 자릿수 위/아래 슬라이드 */
+  /* Digit slot animation: slide up/down per digit */
+  @keyframes digit-slide-up-in {
+    from { transform: translateY(100%); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+  @keyframes digit-slide-up-out {
+    from { transform: translateY(0);     opacity: 1; }
+    to   { transform: translateY(-100%); opacity: 0; }
+  }
+  @keyframes digit-slide-down-in {
+    from { transform: translateY(-100%); opacity: 0; }
+    to   { transform: translateY(0);     opacity: 1; }
+  }
+  @keyframes digit-slide-down-out {
+    from { transform: translateY(0);    opacity: 1; }
+    to   { transform: translateY(100%); opacity: 0; }
+  }
+
   /* 인증 기반 가시성 – 인라인 script(layout.tsx)가 설정한 data-authed/data-role 사용 */
   /* Auth-based visibility – uses data-authed/data-role set by inline script in layout.tsx */
   /* display: contents → 래퍼가 레이아웃에 영향 없이 자식을 그대로 노출 */

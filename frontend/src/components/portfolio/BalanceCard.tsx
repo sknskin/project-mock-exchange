@@ -11,6 +11,7 @@ import { cn, formatCurrencyDisplay, formatPercent } from '@/lib/format';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
+import AnimatedNumber from '@/components/ui/AnimatedNumber';
 import { Plus, Minus } from 'lucide-react';
 
 // 잔고 카드 Props / Balance Card Props
@@ -124,7 +125,7 @@ export default function BalanceCard({
         <div className="text-[12px] text-text-quaternary mb-0.5">{t('portfolio.totalAssetsDesc')}</div>
         <div className="text-[13px] text-text-tertiary font-medium mb-2">{t('portfolio.totalAssets')}</div>
         <div className="text-[28px] sm:text-[32px] font-extrabold text-text-primary tabular-nums leading-tight">
-          {fmt(totalValue)}
+          <AnimatedNumber value={fmt(totalValue)} />
         </div>
 
         {/* 총 손익 / Total P&L */}
@@ -135,8 +136,7 @@ export default function BalanceCard({
               isPositive ? 'text-rise' : 'text-fall',
             )}
           >
-            {isPositive ? '+' : ''}
-            {fmt(totalPnl)}
+            <AnimatedNumber value={`${isPositive ? '+' : ''}${fmt(totalPnl)}`} />
           </span>
           <span
             className={cn(
@@ -144,7 +144,7 @@ export default function BalanceCard({
               isPositive ? 'bg-rise/12 text-rise' : 'bg-fall/12 text-fall',
             )}
           >
-            {formatPercent(totalPnlPercent)}
+            <AnimatedNumber value={formatPercent(totalPnlPercent)} />
           </span>
           <span className="text-[11px] text-text-quaternary">
             {t('portfolio.totalReturnDesc')}

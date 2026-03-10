@@ -13,6 +13,7 @@ import { cn, formatPriceDisplay, formatPercent, formatAmountDisplay, formatVolum
 import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useTranslation } from '@/hooks/useTranslation';
+import AnimatedNumber from '@/components/ui/AnimatedNumber';
 import { Star } from 'lucide-react';
 import type { Asset } from '@/types';
 
@@ -124,7 +125,7 @@ function AssetListItem({ asset, rank, isWatchlisted, onToggleWatchlist }: AssetL
 
       {/* 현재가 / Price */}
       <span className={cn('w-[80px] sm:w-[100px] lg:w-[120px] text-right text-[13px] md:text-[14px] font-semibold text-text-primary tabular-nums shrink-0 truncate', flashClass)}>
-        {formatPriceDisplay(asset.currentPrice, asset.symbol, display, rate)}
+        <AnimatedNumber value={formatPriceDisplay(asset.currentPrice, asset.symbol, display, rate)} />
       </span>
 
       {/* 변동 금액 / Change amount */}
@@ -136,7 +137,7 @@ function AssetListItem({ asset, rank, isWatchlisted, onToggleWatchlist }: AssetL
           !isRise && !isFall && 'text-text-quaternary',
         )}
       >
-        {formatAmountDisplay(asset.changeAmount ?? 0, asset.symbol, display, rate)}
+        <AnimatedNumber value={formatAmountDisplay(asset.changeAmount ?? 0, asset.symbol, display, rate)} />
       </span>
 
       {/* 변동률 / Change percent */}
@@ -148,7 +149,7 @@ function AssetListItem({ asset, rank, isWatchlisted, onToggleWatchlist }: AssetL
               isRise ? 'bg-rise/10 text-rise' : 'bg-fall/10 text-fall',
             )}
           >
-            {formatPercent(asset.changePercent)}
+            <AnimatedNumber value={formatPercent(asset.changePercent)} />
           </span>
         ) : (
           <span
@@ -159,7 +160,7 @@ function AssetListItem({ asset, rank, isWatchlisted, onToggleWatchlist }: AssetL
               !isRise && !isFall && 'text-text-quaternary',
             )}
           >
-            {formatPercent(asset.changePercent)}
+            <AnimatedNumber value={formatPercent(asset.changePercent)} />
           </span>
         )}
       </div>
