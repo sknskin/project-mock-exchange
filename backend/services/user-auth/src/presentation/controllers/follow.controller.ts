@@ -31,6 +31,27 @@ export class FollowController {
   constructor(private readonly followService: FollowService) {}
 
   /**
+   * 여러 사용자의 팔로잉/팔로워 수 일괄 조회
+   * Get follow counts for multiple users in batch
+   * NOTE: 반드시 @Post(':userId')보다 먼저 정의 — 리터럴 라우트 우선 매칭 필요
+   * NOTE: Must be defined before @Post(':userId') — literal route must match first
+   */
+  @Post('batch-counts')
+  async getBatchFollowCounts(
+    @Body() body: { userIds: string[] },
+  ) {
+    if (!body.userIds || !Array.isArray(body.userIds)) {
+      throw new BadRequestException('userIds array is required');
+    }
+
+    // 최대 100명으로 제한 — 대량 요청에 의한 성능 저하 방지
+    // Limit to 100 users — prevent performance degradation from bulk requests
+    const safeUserIds = body.userIds.slice(0, 100);
+    const data = await this.followService.getBatchFollowCounts(safeUserIds);
+    return { success: true, data };
+  }
+
+  /**
    * 트레이더 팔로우
    * Follow a trader
    */
@@ -130,25 +151,6 @@ export class FollowController {
   @Get('follower-ids/:userId')
   async getFollowerIds(@Param('userId') userId: string) {
     const data = await this.followService.getFollowerIds(userId);
-    return { success: true, data };
-  }
-
-  /**
-   * 여러 사용자의 팔로잉/팔로워 수 일괄 조회
-   * Get follow counts for multiple users in batch
-   */
-  @Post('batch-counts')
-  async getBatchFollowCounts(
-    @Body() body: { userIds: string[] },
-  ) {
-    if (!body.userIds || !Array.isArray(body.userIds)) {
-      throw new BadRequestException('userIds array is required');
-    }
-
-    // 최대 100명으로 제한 — 대량 요청에 의한 성능 저하 방지
-    // Limit to 100 users — prevent performance degradation from bulk requests
-    const safeUserIds = body.userIds.slice(0, 100);
-    const data = await this.followService.getBatchFollowCounts(safeUserIds);
     return { success: true, data };
   }
 
