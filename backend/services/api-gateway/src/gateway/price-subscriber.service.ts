@@ -28,12 +28,6 @@ interface CachedAlert {
 export class PriceSubscriberService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(PriceSubscriberService.name);
   private subscriber: Redis;
-  private readonly symbols: string[] = [
-    'BTC-USD', 'ETH-USD', 'SOL-USD', 'XRP-USD', 'DOGE-USD',
-    'AAPL', 'GOOGL', 'TSLA', 'MSFT', 'NVDA',
-    'ADA-USD', 'DOT-USD', 'AVAX-USD', 'LINK-USD', 'MATIC-USD',
-    'AMZN', 'META', 'NFLX', 'AMD', 'INTC',
-  ];
 
   private alertsBySymbol = new Map<string, CachedAlert[]>();
   private alertRefreshInterval: ReturnType<typeof setInterval> | null = null;
@@ -58,7 +52,9 @@ export class PriceSubscriberService implements OnModuleInit, OnModuleDestroy {
     this.subscriber = new Redis(redisUrl);
     this.subscriber.on('error', (err) => this.logger.error('Redis subscriber error', err));
 
-    this.subscriber.on('message', (channel: string, message: string) => {
+    // 패턴 구독으로 모든 종목의 가격 채널을 한 번에 구독
+    // Pattern subscribe to all price channels at once
+    this.subscriber.on('pmessage', (_pattern: string, channel: string, message: string) => {
       try {
         const priceData = JSON.parse(message);
         const symbol = channel.replace('prices:', '');
@@ -69,11 +65,9 @@ export class PriceSubscriberService implements OnModuleInit, OnModuleDestroy {
       }
     });
 
-    for (const symbol of this.symbols) {
-      await this.subscriber.subscribe(`prices:${symbol}`);
-    }
+    await this.subscriber.psubscribe('prices:*');
 
-    this.logger.log(`Subscribed to ${this.symbols.length} price channels via Redis PubSub`);
+    this.logger.log('Subscribed to all price channels via Redis PSUBSCRIBE prices:*');
 
     // 시작 시 알림 로드 후 30초마다 갱신 (Load alerts on startup and refresh every 30 seconds)
     this.refreshAlerts().catch((e) => this.logger.warn('Initial refreshAlerts failed', e.message));
@@ -89,7 +83,7 @@ export class PriceSubscriberService implements OnModuleInit, OnModuleDestroy {
       clearInterval(this.alertRefreshInterval);
     }
     if (this.subscriber) {
-      await this.subscriber.unsubscribe();
+      await this.subscriber.punsubscribe();
       await this.subscriber.quit();
     }
   }

@@ -134,8 +134,22 @@ export function useWebSocket(
       }
     });
 
-    socket.on('price:update', (data: PriceUpdate) => {
-      callbackRef.current(data);
+    // 서버 응답: { channel, data: PriceTick, timestamp } → data 언래핑 + 필드 매핑
+    // Server response: { channel, data: PriceTick, timestamp } → unwrap data + map fields
+    socket.on('price:update', (raw: Record<string, unknown>) => {
+      const tick = (raw.data && typeof raw.data === 'object' && 'symbol' in (raw.data as object))
+        ? raw.data as Record<string, unknown>
+        : raw;
+      if (!tick.symbol) return;
+      const update: PriceUpdate = {
+        symbol: tick.symbol as string,
+        price: Number(tick.price ?? 0),
+        changePercent: Number(tick.changePercent ?? tick.changePercent24h ?? 0),
+        changeAmount: Number(tick.changeAmount ?? tick.change24h ?? 0),
+        volume: Number(tick.volume ?? 0),
+        timestamp: Number(tick.timestamp ?? Date.now()),
+      };
+      callbackRef.current(update);
     });
 
     socketRef.current = socket;
