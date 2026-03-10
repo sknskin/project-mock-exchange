@@ -115,6 +115,37 @@ export function useFollowTrader() {
       const { data } = await api.post(`/api/follow/${userId}`);
       return data;
     },
+    // 낙관적 업데이트: 즉시 팔로우 상태 반영 / Optimistic update: immediately reflect follow state
+    onMutate: async (userId: string) => {
+      // 진행 중인 쿼리를 취소하여 낙관적 업데이트와 충돌 방지
+      // Cancel in-flight queries to prevent conflict with optimistic update
+      await queryClient.cancelQueries({ queryKey: ['follow', 'status', userId] });
+      await queryClient.cancelQueries({ queryKey: ['follow', 'following'] });
+
+      // 이전 값 저장 (롤백용) / Save previous values (for rollback)
+      const previousStatus = queryClient.getQueryData<{ isFollowing: boolean }>(['follow', 'status', userId]);
+      const previousFollowing = queryClient.getQueryData<TraderFollow[]>(['follow', 'following']);
+
+      // 캐시를 낙관적으로 업데이트 / Optimistically update the cache
+      queryClient.setQueryData(['follow', 'status', userId], { isFollowing: true });
+      if (previousFollowing) {
+        queryClient.setQueryData<TraderFollow[]>(['follow', 'following'], [
+          ...previousFollowing,
+          { id: `optimistic-${userId}`, followerId: '', followeeId: userId, notifyMode: 'ALL', createdAt: new Date().toISOString() },
+        ]);
+      }
+
+      return { previousStatus, previousFollowing };
+    },
+    onError: (_err, userId, context) => {
+      // 에러 시 이전 캐시 복원 / Rollback cache on error
+      if (context?.previousStatus !== undefined) {
+        queryClient.setQueryData(['follow', 'status', userId], context.previousStatus);
+      }
+      if (context?.previousFollowing !== undefined) {
+        queryClient.setQueryData(['follow', 'following'], context.previousFollowing);
+      }
+    },
     onSuccess: (_data, userId) => {
       // 팔로우 관련 모든 캐시 무효화 / Invalidate all follow-related caches
       queryClient.invalidateQueries({ queryKey: ['follow'] });
@@ -140,6 +171,32 @@ export function useUnfollowTrader() {
     mutationFn: async (userId: string) => {
       const { data } = await api.delete(`/api/follow/${userId}`);
       return data;
+    },
+    // 낙관적 업데이트: 즉시 언팔로우 상태 반영 / Optimistic update: immediately reflect unfollow state
+    onMutate: async (userId: string) => {
+      await queryClient.cancelQueries({ queryKey: ['follow', 'status', userId] });
+      await queryClient.cancelQueries({ queryKey: ['follow', 'following'] });
+
+      const previousStatus = queryClient.getQueryData<{ isFollowing: boolean }>(['follow', 'status', userId]);
+      const previousFollowing = queryClient.getQueryData<TraderFollow[]>(['follow', 'following']);
+
+      queryClient.setQueryData(['follow', 'status', userId], { isFollowing: false });
+      if (previousFollowing) {
+        queryClient.setQueryData<TraderFollow[]>(
+          ['follow', 'following'],
+          previousFollowing.filter((f) => f.followeeId !== userId),
+        );
+      }
+
+      return { previousStatus, previousFollowing };
+    },
+    onError: (_err, userId, context) => {
+      if (context?.previousStatus !== undefined) {
+        queryClient.setQueryData(['follow', 'status', userId], context.previousStatus);
+      }
+      if (context?.previousFollowing !== undefined) {
+        queryClient.setQueryData(['follow', 'following'], context.previousFollowing);
+      }
     },
     onSuccess: (_data, userId) => {
       // 팔로우 관련 모든 캐시 무효화 / Invalidate all follow-related caches

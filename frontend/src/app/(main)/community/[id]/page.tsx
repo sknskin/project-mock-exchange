@@ -25,6 +25,7 @@ import {
 } from '@/hooks/useCommunity';
 import type { CommunityComment, CommunityAttachment } from '@/hooks/useCommunity';
 import { cn } from '@/lib/format';
+import LoginRequiredModal from '@/components/ui/LoginRequiredModal';
 import {
   ArrowLeft,
   Heart,
@@ -215,6 +216,7 @@ export default function CommunityPostDetailPage() {
   const createComment = useCreateComment();
   const [commentText, setCommentText] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
   /**
    * 조회수 증가 — 세션당 사용자별 1회, 30분 쿨다운으로 어뷰징 방지
@@ -293,6 +295,27 @@ export default function CommunityPostDetailPage() {
         <div className="py-24 text-center text-text-quaternary">
           {t('community.post.notFound')}
         </div>
+    );
+  }
+
+  // MEMBERS_ONLY 게시글에 비로그인 사용자 접근 시 로그인 모달 표시
+  // Show login modal when unauthenticated user accesses a MEMBERS_ONLY post
+  if (post.visibility === 'MEMBERS_ONLY' && !user) {
+    return (
+      <div className="py-24 text-center text-text-quaternary">
+        <p className="text-[14px] mb-4">{t('community.membersOnlyPost')}</p>
+        <button
+          onClick={() => setShowLoginModal(true)}
+          className="px-4 py-2 rounded-xl bg-accent text-white text-[14px] font-semibold hover:bg-accent/90 transition-colors"
+        >
+          {t('nav.login')}
+        </button>
+        <LoginRequiredModal
+          isOpen={showLoginModal}
+          onClose={() => setShowLoginModal(false)}
+          message={t('community.membersOnlyPost')}
+        />
+      </div>
     );
   }
 
