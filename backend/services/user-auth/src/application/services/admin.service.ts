@@ -178,6 +178,10 @@ export class AdminService {
       select: { id: true, username: true, approvalStatus: true, approvedAt: true },
     });
 
+    // 승인 상태 변경 시 Redis 캐시 즉시 무효화 (JWT 전략의 stale 캐시 방지)
+    // Invalidate Redis cache on approval to prevent stale cache in JWT strategy
+    await this.redis.del(`user:status:${id}`);
+
     // 해당 사용자에게 알림 생성 (Create notification for the user)
     const approver = await this.prisma.user.findUnique({
       where: { id: approvedById },

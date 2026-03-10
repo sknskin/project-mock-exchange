@@ -21,9 +21,30 @@ import {
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/format';
 import { useChatStore } from '@/stores/chat';
+import { useSettingsStore, type NotificationPrefs } from '@/stores/settings';
 import type { NotificationItem } from '@/types';
 
 const DROPDOWN_LIMIT = 50;
+
+/** 알림 타입 → 설정 키 매핑 (Notification type → settings key mapping) */
+function shouldShowNotification(type: string, prefs: NotificationPrefs): boolean {
+  switch (type) {
+    case 'ANNOUNCEMENT_NEW':
+    case 'ANNOUNCEMENT_UPDATED':
+      return prefs.announcement;
+    case 'TRADE':
+      return prefs.trade;
+    case 'PRICE_ALERT':
+      return prefs.priceAlert;
+    case 'CHAT_MESSAGE':
+      return prefs.chat;
+    case 'REGISTRATION_APPROVED':
+    case 'REGISTRATION_REJECTED':
+      return prefs.registration;
+    default:
+      return true;
+  }
+}
 
 /** 날짜를 상대 시간 문자열로 변환 (예: "5분 전")
  * Convert date to relative time string (e.g., "5m ago") */
@@ -59,13 +80,22 @@ export default function NotificationBell() {
   const [modalNotification, setModalNotification] = useState<NotificationItem | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
-  const { data: unreadCount = 0 } = useUnreadCount();
+  const { data: rawUnreadCount = 0 } = useUnreadCount();
   const { data: notificationsData, refetch } = useNotifications({ page: 1, limit: DROPDOWN_LIMIT });
   const markAsRead = useMarkAsRead();
   const markAllAsRead = useMarkAllAsRead();
   const deleteNotification = useDeleteNotification();
+  const notificationPrefs = useSettingsStore((s) => s.notificationPrefs);
 
-  const notifications: NotificationItem[] = notificationsData?.items ?? [];
+  // 알림 설정에 따라 비활성화된 타입 필터링 (Filter out disabled notification types based on prefs)
+  const allNotifications: NotificationItem[] = notificationsData?.items ?? [];
+  const notifications = allNotifications.filter((n) => shouldShowNotification(n.type, notificationPrefs));
+  // 필터링된 읽지 않은 알림 수 계산 — 비활성화된 타입의 읽지 않은 알림 제외
+  // Calculate filtered unread count — exclude unread notifications of disabled types
+  const disabledUnreadCount = allNotifications.filter(
+    (n) => !n.isRead && !shouldShowNotification(n.type, notificationPrefs),
+  ).length;
+  const unreadCount = Math.max(0, rawUnreadCount - disabledUnreadCount);
 
   // 외부 클릭 시 닫기 (Close on click outside)
   useEffect(() => {
