@@ -117,13 +117,13 @@ export default function CopyTradeHistory() {
             <thead>
               <tr className="border-b border-border text-[11px] text-text-quaternary font-medium">
                 <th className="py-2.5 px-3 text-left whitespace-nowrap">{t('feed.tradedAt')}</th>
+                <th className="py-2.5 px-3 text-left whitespace-nowrap">{t('copyTrade.trader')}</th>
                 <th className="py-2.5 px-3 text-left whitespace-nowrap">{t('table.name')}</th>
-                <th className="py-2.5 px-3 text-left whitespace-nowrap">{t('table.name')}</th>
-                <th className="py-2.5 px-3 text-center whitespace-nowrap">Side</th>
+                <th className="py-2.5 px-3 text-center whitespace-nowrap">{t('copyTrade.side')}</th>
                 <th className="py-2.5 px-3 text-right whitespace-nowrap">{t('copyTrade.originalQty')}</th>
                 <th className="py-2.5 px-3 text-right whitespace-nowrap">{t('copyTrade.copiedQty')}</th>
                 <th className="py-2.5 px-3 text-right whitespace-nowrap">{t('table.price')}</th>
-                <th className="py-2.5 px-3 text-center whitespace-nowrap">Status</th>
+                <th className="py-2.5 px-3 text-center whitespace-nowrap">{t('copyTrade.status')}</th>
               </tr>
             </thead>
 

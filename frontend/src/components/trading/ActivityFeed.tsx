@@ -10,8 +10,9 @@
 import { useActivityFeed } from '@/hooks/useActivityFeed';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/format';
-import { Activity, ArrowDownLeft, ArrowUpRight } from 'lucide-react';
+import { Activity, ArrowDownLeft, ArrowUpRight, Users } from 'lucide-react';
 import Pagination from '@/components/ui/Pagination';
+import Link from 'next/link';
 import { useState } from 'react';
 
 /**
@@ -108,9 +109,7 @@ export default function ActivityFeed() {
                     <div className="flex items-center gap-2 text-[12px] text-text-tertiary">
                       <span className="font-medium text-text-secondary">{activity.symbol}</span>
                       <span className="text-text-quaternary">|</span>
-                      <span className="tabular-nums">{activity.quantity}</span>
-                      <span className="text-text-quaternary">@</span>
-                      <span className="tabular-nums">{Number(activity.price).toLocaleString()}</span>
+                      <span>{isBuy ? t('feed.buyExecuted') : t('feed.sellExecuted')}</span>
                     </div>
                   </div>
 
@@ -125,8 +124,20 @@ export default function ActivityFeed() {
         </div>
       ) : (
         /* 빈 상태 / Empty state */
-        <div className="py-16 text-center text-text-quaternary text-[14px]">
-          {t('feed.empty')}
+        <div className="py-16 text-center">
+          <Users className="w-8 h-8 text-text-quaternary mx-auto mb-3" />
+          <p className="text-text-quaternary text-[14px] mb-1">
+            {t('feed.empty')}
+          </p>
+          <p className="text-text-quaternary text-[13px] mb-4">
+            {t('feed.emptyHint')}
+          </p>
+          <Link
+            href="/community?tab=traders"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-accent text-white text-[13px] font-semibold hover:bg-accent/90 transition-colors"
+          >
+            {t('feed.goToTraders')}
+          </Link>
         </div>
       )}
 

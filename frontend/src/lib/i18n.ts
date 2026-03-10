@@ -1938,6 +1938,10 @@ const translations = {
     'feed.publicTrades': '거래 공개',
     'feed.privateTrades': '거래 비공개',
     'feed.tradedAt': '거래 시간',
+    'feed.buyExecuted': '매수 체결',
+    'feed.sellExecuted': '매도 체결',
+    'feed.emptyHint': '커뮤니티에서 트레이더를 팔로우해보세요',
+    'feed.goToTraders': '트레이더 찾기',
 
     // Copy Trading (카피 트레이딩)
     'copyTrade.title': '카피 트레이딩',
@@ -1966,6 +1970,9 @@ const translations = {
     'copyTrade.copying': '카피 중',
     'copyTrade.originalQty': '원본 수량',
     'copyTrade.copiedQty': '복사 수량',
+    'copyTrade.side': '매수/매도',
+    'copyTrade.status': '상태',
+    'copyTrade.trader': '트레이더',
 
     // Notification (알림)
     'notification.tradeAlert': '거래 알림',
@@ -3927,6 +3934,10 @@ const translations = {
     'feed.publicTrades': 'Public trades',
     'feed.privateTrades': 'Private trades',
     'feed.tradedAt': 'Traded at',
+    'feed.buyExecuted': 'Buy Executed',
+    'feed.sellExecuted': 'Sell Executed',
+    'feed.emptyHint': 'Follow traders from the community page',
+    'feed.goToTraders': 'Find Traders',
 
     // Copy Trading
     'copyTrade.title': 'Copy Trading',
@@ -3955,6 +3966,9 @@ const translations = {
     'copyTrade.copying': 'Copying',
     'copyTrade.originalQty': 'Original Qty',
     'copyTrade.copiedQty': 'Copied Qty',
+    'copyTrade.side': 'Side',
+    'copyTrade.status': 'Status',
+    'copyTrade.trader': 'Trader',
 
     // Notification
     'notification.tradeAlert': 'Trade Alert',
