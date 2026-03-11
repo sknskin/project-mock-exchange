@@ -28,12 +28,14 @@ export class PlaceOrderRequestDto {
   @IsOptional()
   @IsString()
   @MaxLength(50)
-  @Matches(/^\d+(\.\d+)?$/, { message: 'price must be a valid decimal string' })
+  @Matches(/^\d+(\.\d+)?$/, { message: 'price must be a valid positive decimal string' })
+  @Matches(/^(?!0+(\.0+)?$)/, { message: 'price must be greater than zero' })
   price?: string;
 
   @IsString()
   @MaxLength(50)
-  @Matches(/^\d+(\.\d+)?$/, { message: 'quantity must be a valid decimal string' })
+  @Matches(/^\d+(\.\d+)?$/, { message: 'quantity must be a valid positive decimal string' })
+  @Matches(/^(?!0+(\.0+)?$)/, { message: 'quantity must be greater than zero' })
   quantity: string;
 
   @IsString()
@@ -44,7 +46,8 @@ export class PlaceOrderRequestDto {
   @IsOptional()
   @IsString()
   @MaxLength(50)
-  @Matches(/^\d+(\.\d+)?$/, { message: 'triggerPrice must be a valid decimal string' })
+  @Matches(/^\d+(\.\d+)?$/, { message: 'triggerPrice must be a valid positive decimal string' })
+  @Matches(/^(?!0+(\.0+)?$)/, { message: 'triggerPrice must be greater than zero' })
   triggerPrice?: string;
 
   @IsOptional()

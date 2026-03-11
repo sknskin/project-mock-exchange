@@ -48,6 +48,15 @@ export class PriceEngineService {
 
   constructor(private readonly config: ConfigService) {
     this.TICK_INTERVAL_MS = this.config.get<number>('PRICE_ENGINE_TICK_INTERVAL_MS', 1000);
+    // M-03: 드리프트 기본값 0.0은 의도적인 설계입니다.
+    // 모의 거래 플랫폼에서는 가격이 장기적으로 상승/하락 추세를 갖지 않도록
+    // 중립적인 랜덤 워크를 사용합니다. 실제 시장의 장기 상승 편향(equity risk premium)을
+    // 모사하려면 양수 값(예: 0.07 = 연 7%)으로 설정할 수 있습니다.
+    //
+    // M-03: Drift default of 0.0 is an intentional design choice.
+    // For a mock trading platform, prices should follow a neutral random walk without
+    // long-term upward/downward bias. To simulate real-market long-term appreciation
+    // (equity risk premium), set to a positive value (e.g., 0.07 = 7% annual return).
     this.DRIFT = this.config.get<number>('PRICE_ENGINE_DRIFT', 0.0);
     this.VOLATILITY_EVENT_PROBABILITY = this.config.get<number>('PRICE_ENGINE_VOLATILITY_EVENT_PROBABILITY', 0.002);
     this.VOLATILITY_EVENT_DURATION_MS = this.config.get<number>('PRICE_ENGINE_VOLATILITY_EVENT_DURATION_MS', 30000);
@@ -132,7 +141,11 @@ export class PriceEngineService {
     // 거래량 시뮬레이션: 기본 거래량 + 변동성 기반 급등 + 랜덤 노이즈 / Simulate volume: base volume + volatility-driven spikes + random noise
     const baseVolume = config.basePrice > 100 ? 500 : 10000; // 고가 자산은 적은 수량 거래 / higher-priced assets trade fewer units
     const volatilityFactor = effectiveVolatility / config.volatility; // 변동성 이벤트 시 급등 / spikes during volatility events
-    const movementFactor = Math.abs(dS / currentPrice) * 50;
+    // M-04: 거래량 이동 팩터를 5x로 상한 제한하여 극단적인 가격 변동 시
+    // 비현실적인 거래량 급등을 방지합니다.
+    // M-04: Cap volume movement factor at 5x to prevent unrealistic volume spikes
+    // during extreme price movements.
+    const movementFactor = Math.min(Math.abs(dS / currentPrice) * 50, 5);
     const randomNoise = 0.5 + Math.random();
     const volumeDelta = (baseVolume * movementFactor + baseVolume * 0.1 * randomNoise) * volatilityFactor;
     const currentVolume = (this.volumes.get(config.symbol) || 0) + volumeDelta;

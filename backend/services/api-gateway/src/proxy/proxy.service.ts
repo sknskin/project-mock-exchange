@@ -77,7 +77,8 @@ export class ProxyService {
   ): Promise<{ status: number; data: unknown; headers?: Record<string, string> }> {
     const client = this.clients.get(service);
     if (!client) {
-      throw new Error(`Unknown service: ${service}`);
+      this.logger.error(`Unknown service requested: ${service}`);
+      throw new BadGatewayException('An internal error occurred. Please try again later.');
     }
 
     // Circuit Breaker 검사 / Check circuit breaker before forwarding
@@ -123,12 +124,14 @@ export class ProxyService {
           // 연결 실패 — Circuit Breaker에 실패 기록 / Connection failure — record in circuit breaker
           this.recordFailure(service);
           this.logger.error(`Service unavailable: ${service} (${error.code})`);
-          throw new ServiceUnavailableException(`${service} service is unavailable`);
+          // 클라이언트에 내부 서비스명 노출 방지 — 일반적인 메시지 반환 (M-11)
+          // Prevent leaking internal service names to clients — return generic message
+          throw new ServiceUnavailableException('Upstream service is temporarily unavailable. Please try again later.');
         }
       }
       this.recordFailure(service);
       this.logger.error(`Proxy error to ${service}: ${error instanceof Error ? error.message : 'unknown'}`);
-      throw new BadGatewayException('Internal service error');
+      throw new BadGatewayException('An internal error occurred. Please try again later.');
     }
   }
 
@@ -168,8 +171,10 @@ export class ProxyService {
     this.logger.warn(
       `Circuit breaker OPEN for ${service}: failing fast (${Math.ceil((CIRCUIT_BREAKER_COOLDOWN_MS - elapsed) / 1000)}s remaining)`,
     );
+    // 클라이언트에 내부 서비스명/구현 상세 노출 방지 (M-11)
+    // Prevent leaking internal service names/implementation details to clients
     throw new ServiceUnavailableException(
-      `${service} service is temporarily unavailable (circuit breaker open)`,
+      'Service is temporarily unavailable. Please try again later.',
     );
   }
 

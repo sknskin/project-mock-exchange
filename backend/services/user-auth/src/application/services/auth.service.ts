@@ -75,21 +75,6 @@ export class AuthService {
       throw new BadRequestException('전화번호 인증이 완료되지 않았습니다.');
     }
 
-    const existingEmail = await this.userRepository.findByEmail(email);
-    if (existingEmail) {
-      throw new ConflictException('이미 등록된 이메일입니다.');
-    }
-
-    const existingUsername = await this.userRepository.findByUsername(username);
-    if (existingUsername) {
-      throw new ConflictException('이미 사용 중인 사용자명입니다.');
-    }
-
-    const existingPhone = await this.userRepository.findByPhone(phone);
-    if (existingPhone) {
-      throw new ConflictException('이미 등록된 전화번호입니다.');
-    }
-
     // 주민등록번호 암호화 / Encrypt resident number
     const rrn = ResidentNumber.from(residentNumber);
     const rrnValidation = rrn.validate();
@@ -97,25 +82,92 @@ export class AuthService {
       throw new BadRequestException(`Invalid resident number: ${rrnValidation.message}`);
     }
 
-    const rrnSecret = this.configService.getOrThrow<string>('JWT_SECRET');
+    // C-07: 전용 ENCRYPTION_KEY 사용, 미설정 시 JWT_SECRET으로 대체 (하위 호환)
+    // C-07: Use dedicated ENCRYPTION_KEY, fall back to JWT_SECRET for backward compatibility
+    const rrnSecret = this.configService.get<string>('ENCRYPTION_KEY')
+      ?? this.configService.getOrThrow<string>('JWT_SECRET');
     const encryptionSalt = this.configService.getOrThrow<string>('ENCRYPTION_SALT');
     const encryptedRrn = rrn.encrypt(rrnSecret, encryptionSalt);
 
     const passwordHash = await bcrypt.hash(password, this.SALT_ROUNDS);
-    const user = UserEntity.create({
-      id: '',
-      email,
-      username,
-      passwordHash,
-      name,
-      phone,
-      encryptedRrn,
-      address,
-      addressDetail,
-      zipCode,
-    });
 
-    const created = await this.userRepository.create(user);
+    // C-06: 중복 확인 + 사용자 생성을 Prisma 트랜잭션으로 원자적 처리
+    // C-06: Wrap duplicate checks + user creation in a Prisma transaction for atomicity
+    let created: UserEntity;
+    try {
+      created = await this.prisma.$transaction(async (tx) => {
+        const existingEmail = await tx.user.findUnique({ where: { email } });
+        if (existingEmail) {
+          throw new ConflictException('이미 등록된 이메일입니다.');
+        }
+
+        const existingUsername = await tx.user.findUnique({ where: { username } });
+        if (existingUsername) {
+          throw new ConflictException('이미 사용 중인 사용자명입니다.');
+        }
+
+        const existingPhone = await tx.user.findUnique({ where: { phone } });
+        if (existingPhone) {
+          throw new ConflictException('이미 등록된 전화번호입니다.');
+        }
+
+        const user = UserEntity.create({
+          id: '',
+          email,
+          username,
+          passwordHash,
+          name,
+          phone,
+          encryptedRrn,
+          address,
+          addressDetail,
+          zipCode,
+        });
+
+        const row = await tx.user.create({
+          data: {
+            email: user.email,
+            username: user.username,
+            passwordHash: user.passwordHash,
+            name: user.name,
+            role: user.role,
+            approvalStatus: user.approvalStatus as never,
+            phone: user.phone,
+            encryptedRrn: user.encryptedRrn,
+            address: user.address,
+            addressDetail: user.addressDetail ?? undefined,
+            zipCode: user.zipCode,
+          },
+        });
+
+        return new UserEntity(
+          row.id, row.email, row.username, row.passwordHash, row.name,
+          row.role as JwtPayload['role'], row.isActive, row.approvalStatus,
+          row.approvedAt, row.approvedBy, row.approvalNote,
+          row.rejectedAt, row.rejectedBy, row.rejectionNote,
+          row.createdAt, row.updatedAt, row.phone, row.encryptedRrn,
+          row.address, row.addressDetail, row.zipCode,
+        );
+      });
+    } catch (error) {
+      // P2002: Prisma unique constraint violation — 동시 요청 시 중복 방지 폴백
+      // P2002: Prisma unique constraint violation — fallback for concurrent duplicate
+      const prismaError = error as { code?: string; meta?: Record<string, unknown> };
+      if (prismaError.code === 'P2002') {
+        const fields = (prismaError.meta?.target as string[]) ?? [];
+        if (fields.includes('email')) {
+          throw new ConflictException('이미 등록된 이메일입니다.');
+        }
+        if (fields.includes('username')) {
+          throw new ConflictException('이미 사용 중인 사용자명입니다.');
+        }
+        if (fields.includes('phone')) {
+          throw new ConflictException('이미 등록된 전화번호입니다.');
+        }
+        throw new ConflictException('이미 등록된 정보입니다.');
+      }
+      throw error;
+    }
     this.logger.log(`User registered: ${created.email}`);
 
     // 새 회원가입에 대해 SYSTEM/ADMIN 사용자에게 알림 (Notify SYSTEM/ADMIN users about new registration)
@@ -219,7 +271,8 @@ export class AuthService {
       throw new UnauthorizedException('세션이 만료되었습니다.');
     }
 
-    const session = JSON.parse(raw) as { userId: string; phone: string; attemptsLeft: number };
+    // M-07: Redis 세션 JSON 파싱 오류 방어 / Guard against corrupted Redis session JSON
+    const session = this.safeParseSession<{ userId: string; phone: string; attemptsLeft: number }>(raw, sessionKey);
     await this.smsVerificationService.sendVerificationCode(session.phone);
 
     // 세션 TTL 갱신 — 재전송 시 만료 시간 연장 / Renew session TTL — extend expiry on resend
@@ -245,7 +298,8 @@ export class AuthService {
       throw new UnauthorizedException('세션이 만료되었습니다.');
     }
 
-    const session = JSON.parse(raw) as { userId: string; phone: string; attemptsLeft: number };
+    // M-07: Redis 세션 JSON 파싱 오류 방어 / Guard against corrupted Redis session JSON
+    const session = this.safeParseSession<{ userId: string; phone: string; attemptsLeft: number }>(raw, sessionKey);
 
     if (session.attemptsLeft <= 0) {
       await this.lockUser(session.userId, 'SMS verification attempts exceeded');
@@ -333,9 +387,6 @@ export class AuthService {
       throw new UnauthorizedException('유효하지 않거나 만료된 토큰입니다.');
     }
 
-    // 리프레시 토큰 갱신 / Rotate refresh token
-    await this.prisma.refreshToken.delete({ where: { id: stored.id } });
-
     const user = new UserEntity(
       stored.user.id,
       stored.user.email,
@@ -361,9 +412,22 @@ export class AuthService {
     );
 
     const tokens = await this.generateTokens(user);
-    const refreshToken = await this.createRefreshToken(user.id);
 
-    return { tokens, refreshToken };
+    // H-09: 리프레시 토큰 로테이션 (삭제 + 생성)을 트랜잭션으로 원자적 처리
+    // H-09: Wrap refresh token rotation (delete old + create new) in a Prisma transaction
+    const newToken = randomBytes(40).toString('hex');
+    const newTokenHash = this.hashToken(newToken);
+    const expiresIn = this.configService.get('JWT_REFRESH_EXPIRY', '7d');
+    const expiresAt = new Date(Date.now() + this.parseExpiry(expiresIn) * 1000);
+
+    await this.prisma.$transaction([
+      this.prisma.refreshToken.delete({ where: { id: stored.id } }),
+      this.prisma.refreshToken.create({
+        data: { userId: user.id, tokenHash: newTokenHash, expiresAt },
+      }),
+    ]);
+
+    return { tokens, refreshToken: newToken };
   }
 
   /** 로그아웃 — DB에서 리프레시 토큰 삭제
@@ -467,7 +531,8 @@ export class AuthService {
       throw new UnauthorizedException('세션이 만료되었습니다.');
     }
 
-    const session = JSON.parse(raw) as { userId: string; phone: string; attemptsLeft: number; verified: boolean };
+    // M-07: Redis 세션 JSON 파싱 오류 방어 / Guard against corrupted Redis session JSON
+    const session = this.safeParseSession<{ userId: string; phone: string; attemptsLeft: number; verified: boolean }>(raw, sessionKey);
     await this.smsVerificationService.sendVerificationCode(session.phone);
     // 세션 TTL 갱신 — 재전송 시 만료 시간 연장 / Renew session TTL — extend expiry on resend
     await this.redis.expire(sessionKey, this.LOGIN_SESSION_TTL);
@@ -528,7 +593,8 @@ export class AuthService {
       throw new UnauthorizedException('세션이 만료되었습니다.');
     }
 
-    const session = JSON.parse(raw) as { userId: string; phone: string; attemptsLeft: number; verified: boolean };
+    // M-07: Redis 세션 JSON 파싱 오류 방어 / Guard against corrupted Redis session JSON
+    const session = this.safeParseSession<{ userId: string; phone: string; attemptsLeft: number; verified: boolean }>(raw, sessionKey);
 
     if (session.attemptsLeft <= 0) {
       await this.redis.del(sessionKey);
@@ -582,7 +648,8 @@ export class AuthService {
       throw new UnauthorizedException('세션이 만료되었습니다.');
     }
 
-    const session = JSON.parse(raw) as { userId: string; phone: string; verified: boolean };
+    // M-07: Redis 세션 JSON 파싱 오류 방어 / Guard against corrupted Redis session JSON
+    const session = this.safeParseSession<{ userId: string; phone: string; verified: boolean }>(raw, sessionKey);
     if (!session.verified) {
       throw new UnauthorizedException('SMS 인증이 필요합니다.');
     }
@@ -595,6 +662,18 @@ export class AuthService {
 
     await this.redis.del(sessionKey);
     this.logger.log(`Password reset completed for user: ${session.userId}`);
+  }
+
+  /** M-07: Redis 세션 JSON 안전 파싱 — 손상된 데이터 시 세션 삭제 후 만료 처리
+   * M-07: Safe JSON parse for Redis sessions — delete corrupted data and treat as expired */
+  private safeParseSession<T>(raw: string, sessionKey: string): T {
+    try {
+      return JSON.parse(raw) as T;
+    } catch {
+      this.logger.warn(`Corrupted Redis session data for key: ${sessionKey}`);
+      this.redis.del(sessionKey).catch(() => {});
+      throw new UnauthorizedException('세션이 만료되었습니다.');
+    }
   }
 
   /** 필드별 중복 확인 (이메일/아이디/전화번호)

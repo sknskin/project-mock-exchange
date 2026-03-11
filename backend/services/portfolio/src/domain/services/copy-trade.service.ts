@@ -68,6 +68,15 @@ export class CopyTradeService {
       throw new BadRequestException('Cannot copy your own trades');
     }
 
+    // 순환 참조 방지 — 대상 트레이더가 직접 또는 간접적으로 팔로워를 이미 카피 중인지 확인 (최대 5단계)
+    // Circular reference prevention — check if the target trader already copies the follower directly or transitively (max depth 5)
+    const hasCycle = await this.detectCopyCycle(traderId, followerId, 5);
+    if (hasCycle) {
+      throw new BadRequestException(
+        'Circular copy trading detected: the target trader already copies you directly or indirectly',
+      );
+    }
+
     // 기존 설정이 있는지 확인 / Check for existing config
     const existing = await this.prisma.copyTradeConfig.findUnique({
       where: { followerId_traderId: { followerId, traderId } },
@@ -448,6 +457,55 @@ export class CopyTradeService {
         );
       }
     }
+  }
+
+  /**
+   * 순환 참조 탐지 — BFS로 startUserId에서 시작하여 targetUserId에 도달 가능한지 확인합니다.
+   * startUserId가 (직접 또는 간접적으로) targetUserId를 카피하고 있다면 순환이 발생합니다.
+   *
+   * Cycle detection — BFS from startUserId to check if targetUserId is reachable.
+   * If startUserId copies targetUserId (directly or transitively), enabling the reverse would create a cycle.
+   *
+   * @param startUserId 탐색 시작점 (트레이더) / BFS start node (trader)
+   * @param targetUserId 도달 여부를 확인할 대상 (팔로워) / Target to check reachability for (follower)
+   * @param maxDepth 최대 탐색 깊이 / Maximum traversal depth
+   */
+  private async detectCopyCycle(
+    startUserId: string,
+    targetUserId: string,
+    maxDepth: number,
+  ): Promise<boolean> {
+    let currentLevel = [startUserId];
+    const visited = new Set<string>([startUserId]);
+
+    for (let depth = 0; depth < maxDepth; depth++) {
+      if (currentLevel.length === 0) break;
+
+      // startUserId가 팔로워로서 카피하고 있는 트레이더 목록 조회
+      // Find all traders that current-level users are following
+      const configs = await this.prisma.copyTradeConfig.findMany({
+        where: {
+          followerId: { in: currentLevel },
+          isActive: true,
+        },
+        select: { traderId: true },
+      });
+
+      const nextLevel: string[] = [];
+      for (const config of configs) {
+        if (config.traderId === targetUserId) {
+          return true; // 순환 발견 / Cycle detected
+        }
+        if (!visited.has(config.traderId)) {
+          visited.add(config.traderId);
+          nextLevel.push(config.traderId);
+        }
+      }
+
+      currentLevel = nextLevel;
+    }
+
+    return false;
   }
 
   /**

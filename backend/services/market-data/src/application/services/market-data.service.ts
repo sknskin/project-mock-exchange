@@ -246,10 +246,13 @@ export class MarketDataService implements OnModuleInit {
             changePercent: Math.round(changePercent * 100) / 100,
           };
         }
+        // H-06: Binance 과거 데이터가 없는 암호화폐는 시뮬레이션으로 폴백합니다
+        // H-06: Crypto with missing Binance historical data falls through to simulation
+        this.logger.debug(`No Binance historical data for ${tick.symbol}, using simulation fallback`);
       }
 
-      // 2) 주식 또는 Binance 데이터 없는 경우: 시뮬레이션
-      // Stocks or missing Binance data: simulation
+      // 2) 주식 또는 Binance 데이터 없는 경우: 시뮬레이션으로 기간별 등락률 계산
+      // Stocks or missing Binance data: calculate period changes via simulation
       const cap = maxPct[period] ?? 30;
       const offset = periodOffset[period] ?? 0;
       const seed = this.hashString(`${tick.symbol}:${period}:${today}`) + offset;
@@ -297,6 +300,13 @@ export class MarketDataService implements OnModuleInit {
           const data = await response.json() as number[][];
           if (data.length > 0) {
             // kline 데이터: [시가시간, 시가, 고가, 저가, 종가, ...] (kline: [openTime, open, high, low, close, ...])
+            // H-05: parseFloat은 IEEE-754 배정밀도 부동소수점(~15-17자리)으로 변환됩니다.
+            // 대부분의 암호화폐 가격에는 충분하지만, 극단적으로 작은 토큰 가격(소수점 이하 17자리 이상)에서는
+            // 정밀도 손실이 발생할 수 있습니다. 현재 지원하는 자산 범위에서는 문제 없음.
+            //
+            // H-05: parseFloat converts to IEEE-754 double precision (~15-17 significant digits).
+            // This is sufficient for most crypto prices but may lose precision for tokens with
+            // extreme decimal places (>17 digits). Acceptable for our current supported asset range.
             const openPrice = parseFloat(String(data[0][1]));
             if (openPrice > 0) {
               result.set(asset.symbol, openPrice);
@@ -388,7 +398,13 @@ export class MarketDataService implements OnModuleInit {
   private static readonly MAX_DECIMAL_20_8 = 999_999_999_999;
 
   private clampDecimal(value: number): number {
-    return Math.min(Math.max(value, -MarketDataService.MAX_DECIMAL_20_8), MarketDataService.MAX_DECIMAL_20_8);
+    const clamped = Math.min(Math.max(value, -MarketDataService.MAX_DECIMAL_20_8), MarketDataService.MAX_DECIMAL_20_8);
+    // H-07: clampDecimal이 값을 잘라냈을 때 경고 로그 기록
+    // H-07: Log warning when clampDecimal truncates values
+    if (clamped !== value) {
+      this.logger.warn(`clampDecimal truncated value: ${value} → ${clamped}`);
+    }
+    return clamped;
   }
 
   /** 1분 캔들스틱을 upsert하고 고가/저가를 갱신합니다
@@ -402,33 +418,23 @@ export class MarketDataService implements OnModuleInit {
     for (const tick of ticks) {
       try {
         const vol = this.clampDecimal(tick.volume);
-        // 1분 캔들 upsert 후 조건부로 고가/저가 갱신 (Upsert 1m candle, then conditionally update high/low)
-        await this.prisma.candlestick.upsert({
-          where: {
-            symbol_interval_openTime: {
-              symbol: tick.symbol,
-              interval: '1m',
-              openTime: minuteStart,
-            },
-          },
-          create: {
-            symbol: tick.symbol,
-            interval: '1m',
-            openPrice: tick.price,
-            highPrice: tick.price,
-            lowPrice: tick.price,
-            closePrice: tick.price,
-            volume: vol,
-            openTime: minuteStart,
-            closeTime: minuteEnd,
-          },
-          update: {
-            closePrice: tick.price,
-            volume: vol,
-          },
-        });
-        // 원자적 max/min을 위해 Raw SQL로 고가/저가 갱신 (Update high/low with raw SQL for atomic max/min)
-        await this.prisma.$executeRaw`UPDATE "Candlestick" SET "highPrice" = GREATEST("highPrice", ${tick.price}), "lowPrice" = LEAST("lowPrice", ${tick.price}) WHERE "symbol" = ${tick.symbol} AND "interval" = '1m' AND "openTime" = ${minuteStart}`;
+        // C-04 Fix: 단일 원자적 SQL로 캔들 생성/갱신 + 고가/저가 조건부 갱신을 수행합니다.
+        // 두 단계(upsert + raw SQL)로 분리하면 race condition이 발생할 수 있으므로
+        // INSERT ... ON CONFLICT로 한 번에 처리합니다.
+        //
+        // C-04 Fix: Single atomic SQL for candle create/update with conditional high/low.
+        // A two-step (upsert + raw SQL) approach is prone to race conditions between
+        // concurrent ticks. Using INSERT ... ON CONFLICT handles it in one statement.
+        await this.prisma.$executeRaw`
+          INSERT INTO "Candlestick" ("symbol", "interval", "openPrice", "highPrice", "lowPrice", "closePrice", "volume", "openTime", "closeTime")
+          VALUES (${tick.symbol}, '1m', ${tick.price}, ${tick.price}, ${tick.price}, ${tick.price}, ${vol}, ${minuteStart}, ${minuteEnd})
+          ON CONFLICT ("symbol", "interval", "openTime")
+          DO UPDATE SET
+            "closePrice" = ${tick.price},
+            "volume" = ${vol},
+            "highPrice" = GREATEST("Candlestick"."highPrice", ${tick.price}),
+            "lowPrice"  = LEAST("Candlestick"."lowPrice", ${tick.price})
+        `;
       } catch (error) {
         this.logger.error(`Failed to update candlestick for ${tick.symbol}`, error);
       }

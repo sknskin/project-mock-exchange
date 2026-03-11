@@ -31,6 +31,10 @@ export class PriceSubscriberService implements OnModuleInit, OnModuleDestroy {
 
   private alertsBySymbol = new Map<string, CachedAlert[]>();
   private alertRefreshInterval: ReturnType<typeof setInterval> | null = null;
+  private alertRefreshTimeout: ReturnType<typeof setTimeout> | null = null;
+  private consecutiveFailures = 0;
+  private static readonly MAX_BACKOFF_MS = 5 * 60_000; // 최대 5분 백오프 (max 5 min backoff)
+  private static readonly BASE_INTERVAL_MS = 30_000;   // 기본 30초 간격 (base 30s interval)
   private readonly userAuthUrl: string;
   private readonly internalToken: string;
 
@@ -69,11 +73,10 @@ export class PriceSubscriberService implements OnModuleInit, OnModuleDestroy {
 
     this.logger.log('Subscribed to all price channels via Redis PSUBSCRIBE prices:*');
 
-    // 시작 시 알림 로드 후 30초마다 갱신 (Load alerts on startup and refresh every 30 seconds)
+    // 시작 시 알림 로드 후 스케줄 갱신 — 실패 시 지수 백오프 적용
+    // Load alerts on startup then schedule refresh — exponential backoff on failure
     this.refreshAlerts().catch((e) => this.logger.warn('Initial refreshAlerts failed', e.message));
-    this.alertRefreshInterval = setInterval(() => {
-      this.refreshAlerts().catch((e) => this.logger.warn('refreshAlerts failed', e.message));
-    }, 30_000);
+    this.scheduleNextRefresh();
   }
 
   /** Redis 구독 해제 및 알림 갱신 인터벌 정리
@@ -82,10 +85,32 @@ export class PriceSubscriberService implements OnModuleInit, OnModuleDestroy {
     if (this.alertRefreshInterval) {
       clearInterval(this.alertRefreshInterval);
     }
+    if (this.alertRefreshTimeout) {
+      clearTimeout(this.alertRefreshTimeout);
+    }
     if (this.subscriber) {
       await this.subscriber.punsubscribe();
       await this.subscriber.quit();
     }
+  }
+
+  /**
+   * 다음 알림 갱신을 스케줄 — 연속 실패 시 지수 백오프 적용 (M-09)
+   * Schedule next alert refresh — exponential backoff on consecutive failures
+   */
+  private scheduleNextRefresh() {
+    const delay = this.consecutiveFailures === 0
+      ? PriceSubscriberService.BASE_INTERVAL_MS
+      : Math.min(
+          PriceSubscriberService.BASE_INTERVAL_MS * Math.pow(2, this.consecutiveFailures),
+          PriceSubscriberService.MAX_BACKOFF_MS,
+        );
+
+    this.alertRefreshTimeout = setTimeout(() => {
+      this.refreshAlerts()
+        .catch((e) => this.logger.warn('refreshAlerts failed', e.message))
+        .finally(() => this.scheduleNextRefresh());
+    }, delay);
   }
 
   /** 활성 가격 알림을 user-auth에서 조회하여 로컬 캐시 갱신
@@ -112,8 +137,18 @@ export class PriceSubscriberService implements OnModuleInit, OnModuleDestroy {
         bySymbol.get(alert.symbol)!.push(alert);
       }
       this.alertsBySymbol = bySymbol;
+      // 성공 시 실패 카운터 리셋 (Reset failure counter on success)
+      this.consecutiveFailures = 0;
     } catch (e) {
-      this.logger.warn('refreshAlerts failed', e instanceof Error ? e.message : e);
+      this.consecutiveFailures++;
+      const nextDelay = Math.min(
+        PriceSubscriberService.BASE_INTERVAL_MS * Math.pow(2, this.consecutiveFailures),
+        PriceSubscriberService.MAX_BACKOFF_MS,
+      );
+      this.logger.warn(
+        `refreshAlerts failed (attempt ${this.consecutiveFailures}, next retry in ${Math.round(nextDelay / 1000)}s)`,
+        e instanceof Error ? e.message : e,
+      );
     }
   }
 

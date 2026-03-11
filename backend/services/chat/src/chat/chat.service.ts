@@ -256,38 +256,50 @@ export class ChatService {
   /** 채팅방에 메시지를 전송하고 방의 updatedAt을 갱신합니다
    * Send a message to a room and update room's updatedAt */
   async sendMessage(roomId: string, userId: string, username: string, dto: SendMessageDto, name?: string, role?: string) {
-    await this.verifyParticipant(roomId, userId);
+    // 참여자 검증 + 메시지 생성 + 방 업데이트를 트랜잭션으로 원자적 처리
+    // Wrap participant verification + message creation + room update in a transaction for atomicity
+    const { message, participantCount } = await this.prisma.$transaction(async (tx) => {
+      // 트랜잭션 내에서 참여자 검증 (Verify participant within transaction)
+      const participant = await tx.participant.findFirst({
+        where: { roomId, userId, leftAt: null },
+      });
+      if (!participant) {
+        throw new ForbiddenException('Not a participant of this room');
+      }
 
-    const message = await this.prisma.message.create({
-      data: {
-        roomId,
-        senderId: userId,
-        senderUsername: username,
-        senderName: name || '',
-        senderRole: role || 'USER',
-        content: dto.content,
-      },
-      select: {
-        id: true,
-        roomId: true,
-        senderId: true,
-        senderUsername: true,
-        senderName: true,
-        senderRole: true,
-        content: true,
-        createdAt: true,
-      },
-    });
+      const msg = await tx.message.create({
+        data: {
+          roomId,
+          senderId: userId,
+          senderUsername: username,
+          senderName: name || '',
+          senderRole: role || 'USER',
+          content: dto.content,
+        },
+        select: {
+          id: true,
+          roomId: true,
+          senderId: true,
+          senderUsername: true,
+          senderName: true,
+          senderRole: true,
+          content: true,
+          createdAt: true,
+        },
+      });
 
-    // 채팅방의 최근 업데이트 시간 갱신 (Update room's updatedAt)
-    await this.prisma.room.update({
-      where: { id: roomId },
-      data: { updatedAt: new Date() },
-    });
+      // 채팅방의 최근 업데이트 시간 갱신 (Update room's updatedAt)
+      await tx.room.update({
+        where: { id: roomId },
+        data: { updatedAt: new Date() },
+      });
 
-    // 안읽음 수 계산을 위한 참여자 수 조회 (Get participant count for unreadCount)
-    const participantCount = await this.prisma.participant.count({
-      where: { roomId, leftAt: null },
+      // 안읽음 수 계산을 위한 참여자 수 조회 (Get participant count for unreadCount)
+      const pCount = await tx.participant.count({
+        where: { roomId, leftAt: null },
+      });
+
+      return { message: msg, participantCount: pCount };
     });
 
     return {

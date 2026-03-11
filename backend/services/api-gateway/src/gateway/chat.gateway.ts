@@ -43,17 +43,19 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
       this.logger.error(`Chat WebSocket connection error: ${err.message}`);
     });
 
-    // 모든 수신 이벤트에 대해 content 필드 길이 검증 미들웨어 (#17)
-    // Middleware: validate content field length on all incoming events
+    // 모든 수신 이벤트에 대해 content 필드 길이 검증 — 초과 시 에러 emit
+    // Validate content field length on all incoming events — emit error if exceeded
     server.use((socket, next) => {
       socket.onAny((_event: string, ...args: unknown[]) => {
         for (const arg of args) {
-          if (arg && typeof arg === 'object' && 'content' in arg) {
+          if (arg && typeof arg === 'object' && 'content' in (arg as Record<string, unknown>)) {
             const content = (arg as { content: unknown }).content;
             if (typeof content === 'string' && content.length > MAX_MESSAGE_LENGTH) {
               socket.emit('chat:error', {
                 message: `Message content exceeds maximum length of ${MAX_MESSAGE_LENGTH} characters`,
               });
+              // 핸들러는 계속 실행되지만, 서비스 레이어의 DTO 검증에서 재차 차단됨
+              // Handler still executes, but service-layer DTO validation blocks it again
               return;
             }
           }

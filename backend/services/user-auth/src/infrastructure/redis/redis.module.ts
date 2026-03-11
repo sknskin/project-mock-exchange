@@ -22,6 +22,9 @@ export const REDIS_CLIENT = Symbol('REDIS_CLIENT');
           port: config.get<number>('REDIS_PORT', 6379),
           password: config.get('REDIS_PASSWORD', undefined),
           maxRetriesPerRequest: 3,
+          // H-11: 명령어 타임아웃 5초 — Redis 응답 지연 시 무한 대기 방지
+          // H-11: Command timeout 5s — prevent infinite hang on Redis response delay
+          commandTimeout: 5000,
         });
       },
       inject: [ConfigService],

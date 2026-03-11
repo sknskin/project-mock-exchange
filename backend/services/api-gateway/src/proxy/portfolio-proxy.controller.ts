@@ -174,10 +174,13 @@ export class PortfolioProxyController {
       const userIds = entries.map((e) => e.userId).filter(Boolean) as string[];
       if (userIds.length > 0) {
         try {
+          // 사용자 정보 조회에 2초 타임아웃 적용 — 리더보드 응답 지연 방지 (#H-14)
+          // Apply 2-second timeout to user enrichment — prevent leaderboard response delay
           const usersResult = await this.proxyService.forward('user-auth', {
             method: 'POST',
             url: '/users/by-ids',
             data: { ids: userIds },
+            timeout: 2000,
           });
           const usersData = usersResult.data as Record<string, unknown>;
           if (usersData?.success && Array.isArray(usersData?.data)) {

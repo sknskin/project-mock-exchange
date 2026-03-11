@@ -197,6 +197,9 @@ export class MatchingEngineService implements OnModuleInit {
     for (const entry of entries) {
       if (remainingQty.isZero()) break;
 
+      // 셀프 트레이딩 방지 — 동일 사용자의 주문은 건너뜀 / Self-trading prevention — skip orders from the same user
+      if (entry.userId === userId) continue;
+
       // 시장가 매수: 매도호가의 가격으로 매칭 / For market buys: match against asks at their ask price
       // 시장가 매도: 매수호가의 가격으로 매칭 / For market sells: match against bids at their bid price
       const matchQty = Decimal.min(remainingQty, entry.remainingQuantity);
@@ -282,6 +285,9 @@ export class MatchingEngineService implements OnModuleInit {
 
     for (const entry of entries) {
       if (remainingQty.isZero()) break;
+
+      // 셀프 트레이딩 방지 — 동일 사용자의 주문은 건너뜀 / Self-trading prevention — skip orders from the same user
+      if (entry.userId === userId) continue;
 
       // 교차 조건 확인 / Check crossing condition
       if (side === 'BUY' && entry.price.gt(limitPrice)) break; // 매도호가 오름차순, 더 이상 매칭 없음 / asks sorted asc, no more matches

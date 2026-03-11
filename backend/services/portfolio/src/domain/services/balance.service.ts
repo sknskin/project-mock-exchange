@@ -341,50 +341,84 @@ export class BalanceService {
       throw new BadRequestException('Release amount must be positive');
     }
 
-    const updated = await this.prisma.$transaction(async (tx) => {
-      const [account] = await tx.$queryRaw<Array<{
-        userId: string; availableCash: string; reservedCash: string;
-      }>>`SELECT "user_id" AS "userId", "available_cash" AS "availableCash", "reserved_cash" AS "reservedCash" FROM "accounts" WHERE "user_id" = ${userId}::uuid FOR UPDATE`;
+    // 최대 3회 재시도 로직: 일시적 DB 오류 시 자금이 영구 잠김 방지
+    // Retry up to 3 times to prevent funds from being permanently locked on transient DB errors
+    const MAX_RETRIES = 3;
+    let lastError: Error | undefined;
 
-      if (!account) {
-        throw new NotFoundException(`Account not found for user ${userId}`);
-      }
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        const updated = await this.prisma.$transaction(async (tx) => {
+          const [account] = await tx.$queryRaw<Array<{
+            userId: string; availableCash: string; reservedCash: string;
+          }>>`SELECT "user_id" AS "userId", "available_cash" AS "availableCash", "reserved_cash" AS "reservedCash" FROM "accounts" WHERE "user_id" = ${userId}::uuid FOR UPDATE`;
 
-      const reserved = new Decimal(account.reservedCash.toString());
+          if (!account) {
+            throw new NotFoundException(`Account not found for user ${userId}`);
+          }
 
-      if (reserved.lt(releaseAmount)) {
-        throw new BadRequestException(
-          `Insufficient reserved funds: reserved ${reserved.toFixed(8)}, requested release ${releaseAmount.toFixed(8)}`,
+          const reserved = new Decimal(account.reservedCash.toString());
+
+          if (reserved.lt(releaseAmount)) {
+            throw new BadRequestException(
+              `Insufficient reserved funds: reserved ${reserved.toFixed(8)}, requested release ${releaseAmount.toFixed(8)}`,
+            );
+          }
+
+          const updatedAccount = await tx.account.update({
+            where: { userId },
+            data: {
+              availableCash: new Decimal(account.availableCash.toString())
+                .plus(releaseAmount)
+                .toFixed(8),
+              reservedCash: reserved.minus(releaseAmount).toFixed(8),
+            },
+          });
+
+          await tx.transaction.create({
+            data: {
+              userId,
+              type: 'RELEASE',
+              cashDelta: releaseAmount.toFixed(8),
+              referenceId: toUuidOrNull(orderId),
+            },
+          });
+
+          return updatedAccount;
+        });
+
+        this.logger.log(
+          `Released ${releaseAmount.toFixed(8)} for user ${userId.substring(0, 8)}..., order ${orderId}`,
         );
+
+        return this.toBalanceInfo(updated);
+      } catch (error) {
+        lastError = error as Error;
+
+        // 비즈니스 로직 오류(BadRequest, NotFound)는 재시도하지 않음
+        // Do not retry business logic errors (BadRequest, NotFound)
+        if (
+          error instanceof BadRequestException ||
+          error instanceof NotFoundException
+        ) {
+          throw error;
+        }
+
+        this.logger.warn(
+          `releaseFunds attempt ${attempt}/${MAX_RETRIES} failed for user ${userId.substring(0, 8)}..., order ${orderId}: ${(error as Error).message}`,
+        );
+
+        if (attempt < MAX_RETRIES) {
+          // 지수 백오프: 100ms, 200ms 대기 / Exponential backoff: 100ms, 200ms
+          await new Promise((resolve) => setTimeout(resolve, 100 * attempt));
+        }
       }
+    }
 
-      const updatedAccount = await tx.account.update({
-        where: { userId },
-        data: {
-          availableCash: new Decimal(account.availableCash.toString())
-            .plus(releaseAmount)
-            .toFixed(8),
-          reservedCash: reserved.minus(releaseAmount).toFixed(8),
-        },
-      });
-
-      await tx.transaction.create({
-        data: {
-          userId,
-          type: 'RELEASE',
-          cashDelta: releaseAmount.toFixed(8),
-          referenceId: toUuidOrNull(orderId),
-        },
-      });
-
-      return updatedAccount;
-    });
-
-    this.logger.log(
-      `Released ${releaseAmount.toFixed(8)} for user ${userId.substring(0, 8)}..., order ${orderId}`,
+    this.logger.error(
+      `releaseFunds failed after ${MAX_RETRIES} attempts for user ${userId.substring(0, 8)}..., order ${orderId}`,
     );
-
-    return this.toBalanceInfo(updated);
+    throw lastError!;
   }
 
   /**
@@ -555,8 +589,12 @@ export class BalanceService {
       const existingTotalCost = new Decimal(
         existingHolding.totalCost.toString(),
       );
-      // 매도 수량에 비례하여 총 비용 감소 / Reduce total cost proportionally to quantity sold
-      const costReduction = existingTotalCost.mul(qty).div(existingQty);
+      // 마지막 부분 매도 시(잔여 수량 == 매도 수량) 비례 계산 대신 잔여 비용 전체를 할당하여
+      // 소수점 정밀도 손실 방지 / When selling the last remaining shares, assign the entire
+      // remaining cost instead of proportional calculation to prevent precision loss
+      const costReduction = newQty.isZero()
+        ? existingTotalCost
+        : existingTotalCost.mul(qty).div(existingQty);
       const newTotalCost = existingTotalCost.minus(costReduction);
       const newAvgCost = newQty.gt(0)
         ? newTotalCost.div(newQty)
@@ -807,7 +845,7 @@ export class BalanceService {
 
     // 배치 조회: 보유 자산, 입출금 집계, 실현 손익을 한 번에 처리
     // Batch queries: fetch holdings, deposit/withdraw aggregates, and realized P&L
-    const [allHoldings, depositAggs, withdrawAggs, realizedPnlAggs] = await Promise.all([
+    const [allHoldings, depositAggs, withdrawAggs] = await Promise.all([
       this.prisma.holding.findMany({
         where: { userId: { in: userIds } },
       }),
@@ -820,11 +858,6 @@ export class BalanceService {
         by: ['userId'],
         where: { userId: { in: userIds }, type: 'WITHDRAWAL' },
         _sum: { cashDelta: true },
-      }),
-      this.prisma.transaction.groupBy({
-        by: ['userId'],
-        where: { userId: { in: userIds }, type: 'SELL', realizedPnl: { not: null } },
-        _sum: { realizedPnl: true },
       }),
     ]);
 
@@ -843,7 +876,6 @@ export class BalanceService {
     // 유저별 입출금/실현손익 맵 구성 / Build deposit/withdraw/realized P&L maps per user
     const depositMap = new Map(depositAggs.map((d) => [d.userId, d._sum.cashDelta]));
     const withdrawMap = new Map(withdrawAggs.map((w) => [w.userId, w._sum?.cashDelta]));
-    const realizedPnlMap = new Map(realizedPnlAggs.map((r) => [r.userId, r._sum.realizedPnl]));
 
     // USD 시장가를 KRW로 변환 / Convert USD market prices to KRW
     const exchangeRate = await this.getExchangeRate();
@@ -880,12 +912,14 @@ export class BalanceService {
       if (txNetDeposit.gt(0)) {
         netDeposit = txNetDeposit;
       } else {
-        // 트랜잭션 기록이 없는 경우: totalValue - totalPnl 역산
-        // Fallback when transaction records are missing: derive from totalValue - totalPnl
-        const unrealizedPnl = holdingsValue.minus(holdingsCost);
-        const realizedPnl = new Decimal(realizedPnlMap.get(account.userId)?.toString() || '0');
-        const totalPnl = unrealizedPnl.plus(realizedPnl);
-        netDeposit = totalValue.minus(totalPnl);
+        // 트랜잭션 기록이 없거나 순입금이 0 이하인 경우:
+        // netDeposit을 0으로 설정하여 잘못된 PnL% 계산을 방지합니다.
+        // 실현 손익만 별도로 보존합니다.
+        //
+        // When no deposit history or net deposit <= 0:
+        // Set netDeposit to zero to prevent skewed PnL%.
+        // Only realized PnL is preserved separately.
+        netDeposit = new Decimal(0);
       }
 
       results.push({
@@ -898,6 +932,10 @@ export class BalanceService {
     results.sort((a, b) => b.totalValue.minus(a.totalValue).toNumber());
 
     return results.slice(0, limit).map((r, i) => {
+      // netDeposit이 0 이하인 경우 PnL%를 0으로 설정하여
+      // 0 나눗셈 또는 음수 netDeposit으로 인한 왜곡 방지
+      // When netDeposit is zero or negative, set PnL% to 0 to prevent
+      // division-by-zero or skewed percentages from negative netDeposit
       const pnlPercent = r.netDeposit.gt(0)
         ? r.totalValue.minus(r.netDeposit).div(r.netDeposit).mul(100)
         : new Decimal(0);

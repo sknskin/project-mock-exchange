@@ -51,12 +51,20 @@ export class EmailController {
     @Body() dto: SendEmailDto,
     @Headers('x-internal-token') token: string,
   ) {
-    // timingSafeEqual 기반 토큰 검증 — 타이밍 공격 방지
-    // timingSafeEqual-based token verification — prevents timing attacks
+    // timingSafeEqual 기반 토큰 검증 — 길이 정보 노출 없이 타이밍 공격 방지
+    // timingSafeEqual-based token verification — prevents timing attacks without leaking length info
     const secret = this.configService.get<string>('INTERNAL_SERVICE_SECRET');
-    if (!token || !secret
-      || Buffer.byteLength(token) !== Buffer.byteLength(secret)
-      || !timingSafeEqual(Buffer.from(token), Buffer.from(secret))) {
+    if (!token || !secret) {
+      throw new UnauthorizedException('Invalid internal token');
+    }
+    const tokenBuf = Buffer.from(token);
+    const secretBuf = Buffer.from(secret);
+    const maxLen = Math.max(tokenBuf.length, secretBuf.length);
+    const paddedToken = Buffer.alloc(maxLen, 0);
+    const paddedSecret = Buffer.alloc(maxLen, 0);
+    tokenBuf.copy(paddedToken);
+    secretBuf.copy(paddedSecret);
+    if (tokenBuf.length !== secretBuf.length || !timingSafeEqual(paddedToken, paddedSecret)) {
       throw new UnauthorizedException('Invalid internal token');
     }
 

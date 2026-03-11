@@ -269,15 +269,40 @@ export class AdminService {
     return result;
   }
 
-  /** 사용자 삭제
-   * Delete user account */
+  /** 사용자 삭제 — 관련 데이터 정리 후 삭제
+   * Delete user account — cascade cleanup related data before deletion */
   async deleteUser(id: string, currentRole: string) {
     const target = await this.prisma.user.findUnique({ where: { id } });
     if (!target) throw new NotFoundException('User not found');
     this.checkPermission(currentRole, target.role);
 
-    await this.prisma.user.delete({ where: { id } });
-    this.logger.log(`User ${target.username} deleted`);
+    // H-10: 사용자 삭제 전 관련 데이터 일괄 정리 (DB onDelete Cascade 외 방어적 처리)
+    // H-10: Cascade cleanup before user deletion (defense-in-depth alongside DB onDelete Cascade)
+    await this.prisma.$transaction(async (tx) => {
+      // 알림 삭제 / Delete notifications
+      await tx.notification.deleteMany({ where: { userId: id } });
+      // 팔로우 관계 삭제 / Delete follow relationships
+      await tx.traderFollow.deleteMany({ where: { OR: [{ followerId: id }, { followeeId: id }] } });
+      // 좋아요 삭제 / Delete likes
+      await tx.announcementLike.deleteMany({ where: { userId: id } });
+      await tx.commentLike.deleteMany({ where: { userId: id } });
+      // 댓글 삭제 / Delete comments
+      await tx.comment.deleteMany({ where: { authorId: id } });
+      // 게시글 삭제 / Delete announcements
+      await tx.announcement.deleteMany({ where: { authorId: id } });
+      // 가격 알림 삭제 / Delete price alerts
+      await tx.priceAlert.deleteMany({ where: { userId: id } });
+      // 리프레시 토큰 삭제 / Delete refresh tokens
+      await tx.refreshToken.deleteMany({ where: { userId: id } });
+      // 로그인 로그 삭제 / Delete login logs
+      await tx.loginLog.deleteMany({ where: { userId: id } });
+      // 사용자 삭제 / Delete user
+      await tx.user.delete({ where: { id } });
+    });
+
+    // Redis 캐시 정리 / Clean up Redis cache
+    await this.redis.del(`user:status:${id}`);
+    this.logger.log(`User ${target.username} deleted with cascade cleanup`);
   }
 
   /** 사용자 역할 변경 (SYSTEM만 ADMIN 승격 가능)

@@ -95,11 +95,11 @@ export class OrderAggregate extends AggregateRoot {
       counterpartyOrderId,
     });
 
-    // 전량 체결 시 / If fully filled
-    if (this._remainingQuantity.isZero()) {
+    // 전량 체결 시 (매칭 후 잔여 수량 미리 계산) / If fully filled (pre-compute remaining after match)
+    if (this._remainingQuantity.minus(matchQty).isZero()) {
       this.raise(ORDER_EVENT_TYPES.ORDER_FILLED, {
         orderId: this._orderId,
-        totalFilledQuantity: this._filledQuantity.toString(),
+        totalFilledQuantity: this._filledQuantity.plus(matchQty).toString(),
         averagePrice: matchedPrice, // 단순화; 실제 구현은 가중 평균 추적 / simplified; real impl would track weighted avg
         status: 'FILLED',
       });

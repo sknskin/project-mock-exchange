@@ -25,6 +25,33 @@ export class AuthProxyController {
     private readonly chatGateway: ChatGateway,
   ) {}
 
+  /**
+   * Set-Cookie 헤더를 검증하여 Secure, HttpOnly 플래그가 포함된 쿠키만 전달
+   * Validate Set-Cookie headers — only forward cookies that have Secure and HttpOnly flags
+   */
+  private sanitizeAndForwardCookies(
+    setCookieHeader: string | string[] | undefined,
+    res: Response,
+  ): void {
+    if (!setCookieHeader) return;
+    const cookies = Array.isArray(setCookieHeader) ? setCookieHeader : [setCookieHeader];
+    for (let cookie of cookies) {
+      // Secure 플래그 확인 및 추가 (Ensure Secure flag)
+      if (!/;\s*Secure/i.test(cookie)) {
+        cookie += '; Secure';
+      }
+      // HttpOnly 플래그 확인 및 추가 (Ensure HttpOnly flag)
+      if (!/;\s*HttpOnly/i.test(cookie)) {
+        cookie += '; HttpOnly';
+      }
+      // SameSite 플래그 확인 및 추가 (Ensure SameSite flag defaults to Lax)
+      if (!/;\s*SameSite/i.test(cookie)) {
+        cookie += '; SameSite=Lax';
+      }
+      res.append('Set-Cookie', cookie);
+    }
+  }
+
   /** 회원가입 요청을 user-auth 서비스로 프록시
    * Proxy registration request to user-auth service */
   // 회원가입 — 하루 3회 제한으로 자동화된 대량 등록 방지 / Register — 3/day rate limit prevents automated mass registration
@@ -109,11 +136,9 @@ export class AuthProxyController {
       },
     });
 
-    // user-auth에서 Set-Cookie 헤더 전달 / Forward Set-Cookie headers from user-auth
-    const setCookieHeader = result.headers?.['set-cookie'];
-    if (setCookieHeader) {
-      res.setHeader('Set-Cookie', setCookieHeader);
-    }
+    // Set-Cookie 헤더 검증 후 전달 — Secure, HttpOnly 플래그 보장
+    // Validate and forward Set-Cookie headers — ensure Secure, HttpOnly flags
+    this.sanitizeAndForwardCookies(result.headers?.['set-cookie'], res);
 
     return res.status(result.status).json(result.data);
   }
@@ -134,11 +159,9 @@ export class AuthProxyController {
       },
     });
 
-    // user-auth에서 Set-Cookie 헤더 전달 / Forward Set-Cookie headers from user-auth
-    const setCookieHeader = result.headers?.['set-cookie'];
-    if (setCookieHeader) {
-      res.setHeader('Set-Cookie', setCookieHeader);
-    }
+    // Set-Cookie 헤더 검증 후 전달 — Secure, HttpOnly 플래그 보장
+    // Validate and forward Set-Cookie headers — ensure Secure, HttpOnly flags
+    this.sanitizeAndForwardCookies(result.headers?.['set-cookie'], res);
 
     return res.status(result.status).json(result.data);
   }

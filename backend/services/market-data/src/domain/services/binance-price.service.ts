@@ -6,6 +6,7 @@
  * @description Receives live crypto prices via Binance WebSocket Combined Stream
  */
 import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { Interval } from '@nestjs/schedule';
 import WebSocket from 'ws';
 import {
   PriceTick,
@@ -22,6 +23,9 @@ export class BinancePriceService implements OnModuleInit, OnModuleDestroy {
   private reconnectDelay = 5000;
   private readonly MAX_RECONNECT_DELAY = 30_000;
   private readonly STALE_THRESHOLD_MS = 10_000;
+  /** C-05: 캐시에서 오래된 항목을 제거하는 주기 (30초)
+   * C-05: Interval for removing stale cache entries (30 seconds) */
+  private readonly STALE_CLEANUP_MS = 30_000;
   private isShuttingDown = false;
 
   onModuleInit() {
@@ -48,6 +52,30 @@ export class BinancePriceService implements OnModuleInit, OnModuleDestroy {
       return null;
     }
     return entry.tick;
+  }
+
+  /**
+   * C-05: 30초마다 캐시에서 오래된(stale) 항목을 제거합니다.
+   * 심볼 수에 의해 자연적으로 바운드되지만, WebSocket 연결 끊김 시
+   * 오래된 데이터가 남아있는 것을 방지합니다.
+   *
+   * C-05: Periodically remove stale entries from cache every 30 seconds.
+   * Cache is naturally bounded by symbol count, but this prevents stale data
+   * from lingering after WebSocket disconnections.
+   */
+  @Interval(30_000)
+  cleanupStaleEntries() {
+    const now = Date.now();
+    let removed = 0;
+    for (const [key, entry] of this.cache) {
+      if (now - entry.receivedAt > this.STALE_CLEANUP_MS) {
+        this.cache.delete(key);
+        removed++;
+      }
+    }
+    if (removed > 0) {
+      this.logger.debug(`Cleaned up ${removed} stale cache entries`);
+    }
   }
 
   /** Binance WebSocket Combined Stream에 연결합니다
@@ -116,6 +144,13 @@ export class BinancePriceService implements OnModuleInit, OnModuleDestroy {
     const internalSymbol = BINANCE_REVERSE_MAP.get(binanceSymbol);
     if (!internalSymbol) return;
 
+    // H-05: parseFloat은 IEEE-754 배정밀도(~15-17 유효자릿수)를 사용합니다.
+    // Binance 가격은 일반적으로 8자리 이하 소수점이므로 정밀도 손실 없음.
+    // 정밀 계산이 필요한 경우(예: 주문 매칭) Decimal 라이브러리 사용을 고려해야 합니다.
+    //
+    // H-05: parseFloat uses IEEE-754 double precision (~15-17 significant digits).
+    // Binance prices typically have <=8 decimal places, so no precision loss here.
+    // For precision-critical operations (e.g., order matching), consider a Decimal library.
     const tick: PriceTick = {
       symbol: internalSymbol,
       price: parseFloat(data.c as string),

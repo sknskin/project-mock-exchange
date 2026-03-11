@@ -5,7 +5,7 @@
  * @file SMS Verification Service
  * @description Handles SMS verification code sending and validation using Redis
  */
-import { Injectable, Logger, Inject, BadRequestException, HttpException } from '@nestjs/common';
+import { Injectable, Logger, Inject, BadRequestException, HttpException, HttpStatus } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { randomInt } from 'crypto';
 import Redis from 'ioredis';
@@ -17,6 +17,9 @@ export class SmsVerificationService {
   private readonly CODE_TTL: number;
   private readonly VERIFIED_TTL: number;
   private readonly MAX_ATTEMPTS: number;
+  // H-08: SMS 발송 속도 제한 설정 / SMS send rate limit settings
+  private readonly RATE_LIMIT_MAX: number;
+  private readonly RATE_LIMIT_WINDOW: number;
 
   constructor(
     @Inject(REDIS_CLIENT) private readonly redis: Redis,
@@ -25,11 +28,26 @@ export class SmsVerificationService {
     this.CODE_TTL = this.configService.get<number>('SMS_CODE_TTL', 180);
     this.VERIFIED_TTL = this.configService.get<number>('SMS_VERIFIED_TTL', 600);
     this.MAX_ATTEMPTS = this.configService.get<number>('SMS_MAX_ATTEMPTS', 5);
+    // H-08: 10분당 최대 5회 발송 (Max 5 sends per 10 minutes)
+    this.RATE_LIMIT_MAX = this.configService.get<number>('SMS_RATE_LIMIT_MAX', 5);
+    this.RATE_LIMIT_WINDOW = this.configService.get<number>('SMS_RATE_LIMIT_WINDOW', 600);
   }
 
   /** 6자리 인증번호 생성 및 Redis 저장 후 SMS 발송 (모의)
    * Generate 6-digit code, store in Redis, and send SMS (mock) */
   async sendVerificationCode(phone: string): Promise<void> {
+    // H-08: SMS 발송 속도 제한 — 전화번호별 10분당 최대 5회
+    // H-08: Rate limit SMS sends — max 5 per 10 minutes per phone number
+    const rateLimitKey = `sms:rate:${phone}`;
+    const currentCount = await this.redis.get(rateLimitKey);
+    if (currentCount && parseInt(currentCount, 10) >= this.RATE_LIMIT_MAX) {
+      throw new HttpException('SMS 발송 횟수를 초과했습니다. 잠시 후 다시 시도해주세요.', HttpStatus.TOO_MANY_REQUESTS);
+    }
+    const newCount = await this.redis.incr(rateLimitKey);
+    if (newCount === 1) {
+      await this.redis.expire(rateLimitKey, this.RATE_LIMIT_WINDOW);
+    }
+
     const code = randomInt(100000, 999999).toString();
     const key = `sms:verify:${phone}`;
 

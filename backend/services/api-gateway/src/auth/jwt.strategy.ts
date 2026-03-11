@@ -52,12 +52,18 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
           },
         );
         statusStr = JSON.stringify(res.data);
-        await this.redis.set(cacheKey, statusStr, 'EX', 20);
+        // 캐시 성공 시 60초 TTL 저장 (Cache with 60s TTL on success)
+        await this.redis.set(cacheKey, statusStr, 'EX', 60);
       } catch (error) {
-        // user-auth 서비스 장애 시 인증 거부 — 비활성화/잠긴 계정 우회 방지
-        // Reject auth when user-auth service is unavailable — prevents bypassing account status checks
-        this.logger.error(`User status check failed for ${payload.sub?.substring(0, 8)}..., rejecting request`);
-        throw new UnauthorizedException('User verification service unavailable. Please try again later.');
+        // user-auth 장애 시 Redis 캐시 폴백 — 캐시 히트 시 허용, 미스 시 거부
+        // Fallback to Redis cache when user-auth is down — allow on cache hit, reject on miss
+        this.logger.warn(`User-auth unavailable for ${payload.sub?.substring(0, 8)}..., attempting cache fallback`);
+        statusStr = await this.redis.get(cacheKey);
+        if (!statusStr) {
+          this.logger.error(`User status check failed for ${payload.sub?.substring(0, 8)}... — no cache available, rejecting request`);
+          throw new UnauthorizedException('User verification service unavailable. Please try again later.');
+        }
+        this.logger.log(`Using cached status for ${payload.sub?.substring(0, 8)}...`);
       }
     }
 

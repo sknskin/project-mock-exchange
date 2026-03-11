@@ -154,6 +154,13 @@ export class PriceGateway implements OnGatewayConnection, OnGatewayDisconnect, O
     }
   }
 
+  /** 클라이언트 하트비트 ping에 pong 응답 — 연결 유지용
+   * Respond to client heartbeat ping with pong — keeps connection alive */
+  @SubscribeMessage('ping')
+  handlePing(@ConnectedSocket() client: Socket) {
+    client.emit('pong');
+  }
+
   broadcastPrice(symbol: string, priceData: unknown) {
     this.server.to(`prices:${symbol}`).emit('price:update', {
       channel: `prices:${symbol}`,
