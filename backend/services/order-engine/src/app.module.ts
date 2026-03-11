@@ -13,6 +13,7 @@ import { EventStoreModule } from '@virtuex/event-store';
 import { PrismaModule } from './infrastructure/persistence/prisma/prisma.module';
 import { MatchingEngineService } from './domain/services/matching-engine.service';
 import { OrderService } from './application/services/order.service';
+import { SettlementRecoveryService } from './application/services/settlement-recovery.service';
 import { OrderController } from './presentation/controllers/order.controller';
 import { HealthController } from './health/health.controller';
 
@@ -42,6 +43,6 @@ import { HealthController } from './health/health.controller';
     }),
   ],
   controllers: [OrderController, HealthController],
-  providers: [MatchingEngineService, OrderService],
+  providers: [MatchingEngineService, OrderService, SettlementRecoveryService],
 })
 export class AppModule {}

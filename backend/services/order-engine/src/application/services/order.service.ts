@@ -1049,6 +1049,9 @@ export class OrderService {
         this.logger.error(
           `[SETTLE_FAILED] Buy settlement failed for trade ${fill.tradeId}, buyer=${fill.buyerId.substring(0, 8)}...: ${message}`,
         );
+        // 미정산 큐에 저장하여 복구 서비스가 재시도하도록 함
+        // Save to pending queue so recovery service can retry
+        await this.enqueuePendingSettlement(fill.tradeId, 'BUY', fill.buyerId, fill.symbol, fill.matchedQuantity, priceForPortfolio, message);
       }
     }
 
@@ -1073,7 +1076,35 @@ export class OrderService {
         this.logger.error(
           `[SETTLE_FAILED] Sell settlement failed for trade ${fill.tradeId}, seller=${fill.sellerId.substring(0, 8)}...: ${message}`,
         );
+        // 미정산 큐에 저장하여 복구 서비스가 재시도하도록 함
+        // Save to pending queue so recovery service can retry
+        await this.enqueuePendingSettlement(fill.tradeId, 'SELL', fill.sellerId, fill.symbol, fill.matchedQuantity, priceForPortfolio, message);
       }
+    }
+  }
+
+  /**
+   * 정산 실패 시 pending_settlements 테이블에 저장합니다.
+   * Enqueues a failed settlement for later retry by the recovery service.
+   */
+  private async enqueuePendingSettlement(
+    tradeId: string,
+    side: string,
+    userId: string,
+    symbol: string,
+    quantity: string,
+    price: string,
+    errorMessage: string,
+  ): Promise<void> {
+    try {
+      await this.prisma.pendingSettlement.upsert({
+        where: { tradeId_side: { tradeId, side } },
+        create: { tradeId, side, userId, symbol, quantity, price, lastError: errorMessage },
+        update: { retries: { increment: 1 }, lastError: errorMessage },
+      });
+      this.logger.warn(`[PENDING_SETTLEMENT] Enqueued ${side} settlement for trade ${tradeId}`);
+    } catch (err) {
+      this.logger.error(`[PENDING_SETTLEMENT] Failed to enqueue: ${err instanceof Error ? err.message : err}`);
     }
   }
 

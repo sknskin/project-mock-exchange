@@ -51,3 +51,23 @@ model TradeRead {
   @@index([sellerId, executedAt(sort: Desc)])
   @@map("trades_read")
 }
+
+/// 미정산 거래 큐 — 포트폴리오 정산 실패 시 재시도 대상
+/// Pending settlement queue — retry target when portfolio settlement fails
+model PendingSettlement {
+  id        Int      @id @default(autoincrement())
+  tradeId   String   @map("trade_id") @db.VarChar(30)
+  side      String   @db.VarChar(4) // BUY or SELL
+  userId    String   @map("user_id") @db.Uuid
+  symbol    String   @db.VarChar(20)
+  quantity  String   @db.VarChar(40)
+  price     String   @db.VarChar(40)
+  retries   Int      @default(0)
+  lastError String?  @map("last_error") @db.Text
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
+  @@unique([tradeId, side])
+  @@index([retries, createdAt])
+  @@map("pending_settlements")
+}
