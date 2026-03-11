@@ -28,9 +28,8 @@ class AllExceptionsFilter implements ExceptionFilter {
 async function bootstrap() {
   const logger = new Logger('AiService');
 
-  if (!process.env.OPENAI_API_KEY && !process.env.ANTHROPIC_API_KEY) {
-    logger.error('Missing required environment variable: OPENAI_API_KEY or ANTHROPIC_API_KEY');
-    process.exit(1);
+  if (!process.env.GEMINI_API_KEY && !process.env.OPENAI_API_KEY && !process.env.ANTHROPIC_API_KEY) {
+    logger.warn('No AI API key set (GEMINI_API_KEY / OPENAI_API_KEY / ANTHROPIC_API_KEY) — running with rule-based fallback');
   }
 
   const app = await NestFactory.create(AppModule);

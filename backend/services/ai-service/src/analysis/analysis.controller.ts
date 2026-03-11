@@ -15,17 +15,17 @@ import { AnalyzePortfolioDto } from './dto/analyze-portfolio.dto';
 export class AnalysisController {
   constructor(private readonly analysisService: AnalysisService) {}
 
-  /** 데모 자산에 대한 매매 시그널 조회
-   * Get market signals for demo assets */
+  /** AI 매매 시그널 조회 (Gemini AI 또는 규칙 기반 폴백)
+   * Get market signals (Gemini AI or rule-based fallback) */
   @Get('signals')
-  getMarketSignals() {
+  async getMarketSignals() {
     return this.analysisService.getMarketSignals();
   }
 
-  /** 포트폴리오 보유 현황을 분석하여 인사이트 제공
-   * Analyze portfolio holdings and provide insights */
+  /** 포트폴리오 AI 분석 (Gemini AI 또는 규칙 기반 폴백)
+   * Analyze portfolio (Gemini AI or rule-based fallback) */
   @Post('portfolio')
-  analyzePortfolio(@Body() dto: AnalyzePortfolioDto) {
+  async analyzePortfolio(@Body() dto: AnalyzePortfolioDto) {
     return this.analysisService.analyzePortfolio(dto.holdings ?? []);
   }
 }
