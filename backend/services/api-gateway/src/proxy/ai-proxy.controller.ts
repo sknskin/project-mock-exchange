@@ -16,20 +16,15 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 export class AiProxyController {
   constructor(private readonly proxyService: ProxyService) {}
 
-  /** AI 매매 시그널 조회를 ai-service로 프록시
-   * Proxy AI trading signals to ai-service */
+  /** AI 매매 시그널 조회를 ai-service로 프록시 — 비로그인 허용 (대시보드 위젯)
+   * Proxy AI trading signals to ai-service — no auth required (dashboard widget) */
   @Get('signals')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'AI 매매 시그널 조회', description: 'AI 기반 매매 시그널을 반환합니다' })
   @ApiResponse({ status: 200, description: '시그널 목록 반환' })
-  @ApiResponse({ status: 401, description: '인증 필요' })
-  async getSignals(@Req() req: Request, @Res() res: Response) {
-    const userId = (req as Record<string, any>).user?.id;
+  async getSignals(@Req() _req: Request, @Res() res: Response) {
     const result = await this.proxyService.forward('ai-service', {
       method: 'GET',
       url: '/analysis/signals',
-      headers: { 'x-user-id': userId },
     });
     return res.status(result.status).json(result.data);
   }
