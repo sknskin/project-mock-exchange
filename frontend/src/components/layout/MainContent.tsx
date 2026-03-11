@@ -20,7 +20,7 @@ export default function MainContent({ children }: { children: React.ReactNode })
   return (
     <div className="pt-[60px] min-h-[100dvh]">
       {/* 메인 콘텐츠 영역: 사이드바 고정 시 오른쪽 여백으로 겹침 방지 / Main content area: right margin prevents overlap when sidebar is pinned */}
-      <div className={cn('transition-[margin] duration-300 ease-in-out', showPinned ? 'lg:mr-[320px] xl:mr-[380px] overflow-x-hidden' : '')}>
+      <div className={cn('transition-[margin] duration-300 ease-in-out', showPinned ? 'lg:mr-[320px] xl:mr-[380px] overflow-x-clip' : '')}>
         <main id="main-content" className="pb-20 md:pb-0 max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
           {children}
         </main>

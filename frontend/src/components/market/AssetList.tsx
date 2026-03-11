@@ -152,7 +152,12 @@ export default function AssetList({ assets, period, onPeriodChange, mainTab = 'r
   const rowElsRef = useRef<Map<string, HTMLDivElement>>(new Map());
 
   const setRowRef = useCallback((symbol: string, el: HTMLDivElement | null) => {
-    if (el) rowElsRef.current.set(symbol, el);
+    if (el) {
+      rowElsRef.current.set(symbol, el);
+    } else {
+      // 엘리먼트 언마운트 시 stale ref 제거 / Remove stale ref on element unmount
+      rowElsRef.current.delete(symbol);
+    }
   }, []);
 
   useEffect(() => {
@@ -212,65 +217,67 @@ export default function AssetList({ assets, period, onPeriodChange, mainTab = 'r
 
   return (
     <div>
-      {/* 필터 / Filters */}
-      <div className="pt-8 pb-4 flex flex-col gap-2">
-        {/* 카테고리 그룹 / Category group */}
-        <div className="flex items-center gap-1.5 bg-bg-secondary/50 rounded-xl px-1.5 py-1.5 overflow-x-auto scrollbar-hide w-fit">
-          {categoryTabs.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => handleCategoryChange(tab.key)}
-              className={cn(
-                'h-[32px] px-4 text-[13px] font-semibold rounded-lg transition-colors whitespace-nowrap shrink-0',
-                category === tab.key ? pillActive : pillInactive,
-              )}
-            >
-              {tab.label}
-            </button>
-          ))}
+      {/* 필터 + 테이블 헤더 sticky 영역 / Sticky filter + table header area */}
+      <div className="sticky top-[60px] z-30 bg-bg-primary">
+        {/* 필터 / Filters */}
+        <div className="pt-4 pb-3 flex flex-col lg:flex-row lg:items-center gap-2">
+          {/* 카테고리 그룹 / Category group */}
+          <div className="flex items-center gap-1.5 bg-bg-secondary/50 rounded-xl px-1.5 py-1.5 overflow-x-auto scrollbar-hide w-fit shrink-0">
+            {categoryTabs.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => handleCategoryChange(tab.key)}
+                className={cn(
+                  'h-[32px] px-4 text-[13px] font-semibold rounded-lg transition-colors whitespace-nowrap shrink-0',
+                  category === tab.key ? pillActive : pillInactive,
+                )}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+            {/* 정렬 그룹 / Sort group — 실시간 차트 탭에서만 표시 */}
+            {mainTab === 'realtime' && (
+              <div className="flex items-center gap-1 bg-bg-secondary/50 rounded-xl px-1.5 py-1.5 overflow-x-auto scrollbar-hide w-fit shrink-0">
+                {sortOptions.map((opt) => (
+                  <button
+                    key={opt.key}
+                    onClick={() => handleSortChange(opt.key)}
+                    className={cn(
+                      'h-[32px] px-3.5 text-[13px] font-medium transition-colors whitespace-nowrap rounded-lg shrink-0',
+                      sort === opt.key ? pillActive : pillInactive,
+                    )}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* 기간 그룹 / Period group — 인기종목 탭에서는 숨김 */}
+            {mainTab !== 'popular' && (
+              <div className="flex items-center gap-0.5 bg-bg-secondary/50 rounded-xl px-1.5 py-1.5 overflow-x-auto scrollbar-hide w-fit shrink-0">
+                {periodOptions.map((opt) => (
+                  <button
+                    key={opt.key}
+                    onClick={() => onPeriodChange(opt.key)}
+                    className={cn(
+                      'h-[32px] px-2.5 text-[13px] font-medium transition-colors whitespace-nowrap rounded-lg shrink-0',
+                      period === opt.key ? pillActive : pillInactive,
+                    )}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
-          {/* 정렬 그룹 / Sort group — 실시간 차트 탭에서만 표시 */}
-          {mainTab === 'realtime' && (
-            <div className="flex items-center gap-1 bg-bg-secondary/50 rounded-xl px-1.5 py-1.5 overflow-x-auto scrollbar-hide w-fit">
-              {sortOptions.map((opt) => (
-                <button
-                  key={opt.key}
-                  onClick={() => handleSortChange(opt.key)}
-                  className={cn(
-                    'h-[32px] px-3.5 text-[13px] font-medium transition-colors whitespace-nowrap rounded-lg shrink-0',
-                    sort === opt.key ? pillActive : pillInactive,
-                  )}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* 기간 그룹 / Period group — 인기종목 탭에서는 숨김 */}
-          {mainTab !== 'popular' && (
-            <div className="flex items-center gap-0.5 bg-bg-secondary/50 rounded-xl px-1.5 py-1.5 overflow-x-auto scrollbar-hide w-fit">
-              {periodOptions.map((opt) => (
-                <button
-                  key={opt.key}
-                  onClick={() => onPeriodChange(opt.key)}
-                  className={cn(
-                    'h-[32px] px-2.5 text-[13px] font-medium transition-colors whitespace-nowrap rounded-lg shrink-0',
-                    period === opt.key ? pillActive : pillInactive,
-                  )}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* 테이블 헤더 (기간에 따라 라벨 변경) / Table header (labels change by period) */}
-      <div className="flex items-center pt-3 pb-2.5 text-[11px] md:text-[12px] text-text-quaternary font-medium -mx-3 px-3">
+        {/* 테이블 헤더 (기간에 따라 라벨 변경) / Table header (labels change by period) */}
+        <div className="flex items-center pt-3 pb-2.5 text-[11px] md:text-[12px] text-text-quaternary font-medium -mx-3 px-3 border-b border-border/60">
         <span className="w-6 sm:w-8 text-center shrink-0 mr-2 sm:mr-3">{t('table.rank')}</span>
         <span className="w-[120px] sm:w-[160px] md:w-[180px] lg:w-[200px] shrink-0 truncate">
           {t('table.name')} · <span className="text-text-quaternary/70">{timeStr}</span>
@@ -288,10 +295,8 @@ export default function AssetList({ assets, period, onPeriodChange, mainTab = 'r
           {period === 'realtime' ? t('table.lowRealtime') : t('table.lowPeriod')}
         </span>
         <span className="w-[80px] lg:w-[90px] text-right hidden md:block shrink-0">{t('table.tradingVolume')}</span>
+        </div>
       </div>
-
-      {/* 구분선 / Divider */}
-      <div className="h-px bg-border/60" />
 
       {/* 자산 행 목록 / Asset rows */}
       <div>
