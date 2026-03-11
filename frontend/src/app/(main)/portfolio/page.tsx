@@ -145,6 +145,9 @@ export default function PortfolioPage() {
             <h1 className="text-[20px] font-extrabold text-text-primary">{t('nav.portfolio')}</h1>
           </div>
           <div className="flex items-center gap-2">
+            <span className="hidden sm:inline text-[11px] text-text-quaternary">
+              {t('portfolio.autoRefresh')}
+            </span>
             {lastUpdatedText && (
               <span className="text-[11px] text-text-quaternary tabular-nums">
                 {lastUpdatedText}

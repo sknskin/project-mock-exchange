@@ -22,7 +22,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { cn, formatQuantity, formatDate, formatPriceDisplay, formatCurrencyDisplay } from '@/lib/format';
 import { useAuthStore } from '@/stores/auth';
 import { useToastStore } from '@/stores/toast';
-import { Search, ChevronDown, ClipboardList, Check, BarChart, LayoutDashboard, Activity, Download } from 'lucide-react';
+import { Search, ChevronDown, ClipboardList, Check, BarChart, LayoutDashboard, Activity, Download, RefreshCw } from 'lucide-react';
 import { exportToCSV } from '@/lib/export';
 import type { TranslationKey } from '@/lib/i18n';
 import type { Order } from '@/types';
@@ -365,6 +365,13 @@ export default function OrdersPage() {
     statusFilter === 'all' ? undefined : statusFilter,
   );
 
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    await Promise.all([refetchOrders(), refetchTrades(), new Promise((r) => setTimeout(r, 1000))]);
+    setIsRefreshing(false);
+  }, [refetchOrders, refetchTrades]);
+
   // 주문 취소/수정 뮤테이션 / Order cancel/modify mutations
   const cancelOrder = useCancelOrder();
   const modifyOrder = useModifyOrder();
@@ -442,9 +449,29 @@ export default function OrdersPage() {
   return (
     <AuthGuard>
       <div>
-        <div className="py-6 flex items-center gap-2.5 h-[88px]">
-          <ClipboardList className="w-5 h-5 text-accent" />
-          <h1 className="text-[20px] font-extrabold text-text-primary">{t('orders.title')}</h1>
+        <div className="py-6 flex items-center justify-between h-[88px]">
+          <div className="flex items-center gap-2.5">
+            <ClipboardList className="w-5 h-5 text-accent" />
+            <h1 className="text-[20px] font-extrabold text-text-primary">{t('orders.title')}</h1>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="hidden sm:inline text-[11px] text-text-quaternary">
+              {t('orders.autoRefresh')}
+            </span>
+            <button
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className={cn(
+                'flex items-center justify-center gap-2 h-10 min-w-[120px] px-4 rounded-xl text-[13px] font-semibold transition-all duration-150 border btn-outline',
+                isRefreshing
+                  ? 'border-border text-text-quaternary cursor-not-allowed'
+                  : 'border-accent/30 text-accent hover:bg-accent/10',
+              )}
+            >
+              <RefreshCw className={cn('w-4 h-4 shrink-0', isRefreshing && 'animate-spin')} />
+              {t('orders.refresh')}
+            </button>
+          </div>
         </div>
 
         <div className="flex border-b border-border mb-2">

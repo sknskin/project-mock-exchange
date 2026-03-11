@@ -68,9 +68,9 @@ export function useOrders(status?: string) {
         updatedAt: String(o.updatedAt ?? ''),
       }));
     },
-    // 주문 상태 변경을 빠르게 반영하기 위해 5초 간격 폴링
-    // Poll every 5 seconds to quickly reflect order status changes
-    refetchInterval: 5000,
+    // 주문 상태 변경을 반영하기 위해 10초 간격 폴링
+    // Poll every 10 seconds to reflect order status changes
+    refetchInterval: 10000,
   });
 }
 

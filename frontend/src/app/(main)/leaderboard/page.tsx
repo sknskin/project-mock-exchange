@@ -275,6 +275,9 @@ export default function LeaderboardPage() {
           <h1 className="text-[20px] font-extrabold text-text-primary">{t('leaderboard.title')}</h1>
         </div>
         <div className="flex items-center gap-2">
+          <span className="hidden sm:inline text-[11px] text-text-quaternary">
+            {t('leaderboard.autoRefresh')}
+          </span>
           <span className="text-[11px] text-text-quaternary tabular-nums">
             {dataUpdatedAt
               ? locale === 'ko'
