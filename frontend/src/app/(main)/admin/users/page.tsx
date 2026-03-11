@@ -326,7 +326,7 @@ export default function AdminUsersPage() {
                 <tr
                   key={u.id}
                   tabIndex={0}
-                  role="link"
+                  role="button"
                   aria-label={`${u.name} - ${u.email}`}
                   onClick={() => router.push(`/admin/users/${u.id}`)}
                   onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); router.push(`/admin/users/${u.id}`); } }}

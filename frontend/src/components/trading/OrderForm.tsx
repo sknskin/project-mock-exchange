@@ -50,7 +50,14 @@ const typeTabKeys: { key: string; i18nKey: TranslationKey; tooltipKey: Translati
 function toDisplayPrice(usdPrice: number, symbol: string, currencyMode: 'krw' | 'original', rate?: number): number {
   if (!Number.isFinite(usdPrice)) return 0;
   const wantKRW = currencyMode === 'krw';
-  if (isKRW(symbol)) return usdPrice;
+  if (isKRW(symbol)) {
+    // KRW 종목: 백엔드 가격이 KRW 기준, USD 표시 시 환율로 나눔
+    // KRW symbol: backend price is in KRW, divide by rate for USD display
+    if (!wantKRW && rate && rate > 0) return usdPrice / rate;
+    return usdPrice;
+  }
+  // USD 종목: KRW 표시 시 환율로 곱함
+  // USD symbol: multiply by rate for KRW display
   if (wantKRW && rate) return Math.round(usdPrice * rate);
   return usdPrice;
 }
@@ -59,7 +66,14 @@ function toDisplayPrice(usdPrice: number, symbol: string, currencyMode: 'krw' | 
 function toUsdPrice(inputPrice: number, symbol: string, currencyMode: 'krw' | 'original', rate?: number): number {
   if (!Number.isFinite(inputPrice)) return 0;
   const wantKRW = currencyMode === 'krw';
-  if (isKRW(symbol)) return inputPrice;
+  if (isKRW(symbol)) {
+    // KRW 종목: USD 모드에서 입력된 값을 환율로 곱해 KRW(백엔드)로 변환
+    // KRW symbol: multiply USD input by rate to convert back to KRW (backend)
+    if (!wantKRW && rate && rate > 0) return Math.round(inputPrice * rate);
+    return inputPrice;
+  }
+  // USD 종목: KRW 모드에서 입력된 값을 환율로 나눠 USD(백엔드)로 변환
+  // USD symbol: divide KRW input by rate to convert back to USD (backend)
   if (wantKRW && rate && rate > 0) return inputPrice / rate;
   return inputPrice;
 }

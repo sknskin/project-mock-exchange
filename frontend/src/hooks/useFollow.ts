@@ -147,8 +147,9 @@ export function useFollowTrader() {
       }
     },
     onSuccess: (_data, userId) => {
-      // 팔로우 관련 모든 캐시 무효화 / Invalidate all follow-related caches
-      queryClient.invalidateQueries({ queryKey: ['follow'] });
+      // 낙관적 업데이트의 임시 ID를 실제 서버 ID로 교체하기 위해 팔로잉 목록 강제 리페치
+      // Force refetch following list to replace optimistic IDs with real server IDs
+      queryClient.invalidateQueries({ queryKey: ['follow', 'following'] });
       queryClient.invalidateQueries({ queryKey: ['follow', 'status', userId] });
       queryClient.invalidateQueries({ queryKey: ['follow', 'counts'] });
       addToast(t('follow.followSuccess'), 'success');

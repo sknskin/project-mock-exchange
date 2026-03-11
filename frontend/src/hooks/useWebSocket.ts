@@ -147,6 +147,8 @@ export function useWebSocket(
         changePercent: Number(tick.changePercent ?? tick.changePercent24h ?? 0),
         changeAmount: Number(tick.changeAmount ?? tick.change24h ?? 0),
         volume: Number(tick.volume ?? 0),
+        high24h: Number(tick.high24h ?? 0),
+        low24h: Number(tick.low24h ?? 0),
         timestamp: Number(tick.timestamp ?? Date.now()),
       };
       callbackRef.current(update);

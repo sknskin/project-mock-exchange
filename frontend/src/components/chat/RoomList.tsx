@@ -17,6 +17,22 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/format';
 import Tooltip from '@/components/ui/Tooltip';
 import type { ChatRoom } from '@/types';
+import type { TranslationKey } from '@/lib/i18n';
+
+const SYSTEM_SENDER_ID = '00000000-0000-0000-0000-000000000000';
+
+/** 시스템 메시지 JSON을 미리보기 텍스트로 변환 / Parse system message JSON to preview text */
+function formatSystemPreview(content: string, t: (key: TranslationKey) => string): string {
+  try {
+    const data = JSON.parse(content);
+    const action = data.action as string;
+    const name = data.names?.join(', ') || data.name || '';
+    if (action === 'invite') return name + t('chat.system.invited');
+    if (action === 'leave') return name + t('chat.system.left');
+    if (action === 'kick') return name + t('chat.system.kicked');
+  } catch { /* fallback */ }
+  return content;
+}
 
 // 상대적 시간 포맷 (방금, n분, n시간, n일) / Relative time formatter (now, Nm, Nh, Nd)
 function formatRelativeTime(dateString: string, locale: string) {
@@ -173,11 +189,13 @@ export default function RoomList() {
                   : room.name || room.participants.filter((p) => p.userId !== user?.id).map((p) => p.name || p.username).join(', ') || '?';
 
               const preview = room.lastMessage
-                ? room.lastMessage.senderId === user?.id
-                  ? `${t('chat.you')}: ${room.lastMessage.content}`
-                  : room.type === 'GROUP'
-                    ? `${room.lastMessage.senderName || room.lastMessage.senderUsername}: ${room.lastMessage.content}`
-                    : room.lastMessage.content
+                ? room.lastMessage.senderId === SYSTEM_SENDER_ID
+                  ? formatSystemPreview(room.lastMessage.content, t)
+                  : room.lastMessage.senderId === user?.id
+                    ? `${t('chat.you')}: ${room.lastMessage.content}`
+                    : room.type === 'GROUP'
+                      ? `${room.lastMessage.senderName || room.lastMessage.senderUsername}: ${room.lastMessage.content}`
+                      : room.lastMessage.content
                 : '';
 
               const time = room.lastMessage

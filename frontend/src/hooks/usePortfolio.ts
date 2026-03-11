@@ -49,28 +49,28 @@ function mapSummaryToPortfolio(raw: Record<string, unknown>): Portfolio {
   // Extract balance info (prefer availableCash, fallback to totalCash)
   const balance = raw.balance as Record<string, string> | undefined;
   const holdings = (raw.holdings as Record<string, unknown>[]) ?? [];
-  const cashBalance = parseFloat(balance?.availableCash ?? balance?.totalCash ?? '0') || 0;
-  const totalValue = parseFloat(raw.totalPortfolioValue as string ?? '0') || cashBalance;
+  const cashBalance = parseFloat(balance?.availableCash ?? balance?.totalCash ?? '0') ?? 0;
+  const totalValue = parseFloat(raw.totalPortfolioValue as string ?? '0') ?? cashBalance;
 
   // 보유 자산별 필드명 매핑 및 숫자 변환
   // Map field names and convert to numbers for each holding
   const mappedHoldings = holdings.map((h: Record<string, unknown>) => ({
     symbol: String(h.symbol ?? ''),
     name: String(h.name ?? h.symbol ?? ''),
-    quantity: parseFloat(String(h.quantity ?? '0')) || 0,
+    quantity: parseFloat(String(h.quantity ?? '0')) ?? 0,
     // avgCostBasis = 평균 매수 단가 / Average cost basis
-    averagePrice: parseFloat(String(h.avgCostBasis ?? '0')) || 0,
-    currentPrice: parseFloat(String(h.currentPrice ?? h.avgCostBasis ?? '0')) || 0,
+    averagePrice: parseFloat(String(h.avgCostBasis ?? '0')) ?? 0,
+    currentPrice: parseFloat(String(h.currentPrice ?? h.avgCostBasis ?? '0')) ?? 0,
     // marketValue 우선, 없으면 totalCost 폴백 / Prefer marketValue, fallback to totalCost
-    value: parseFloat(String(h.marketValue ?? h.totalCost ?? '0')) || 0,
-    pnl: parseFloat(String(h.unrealizedPnL ?? '0')) || 0,
-    pnlPercent: parseFloat(String(h.unrealizedPnLPercent ?? '0')) || 0,
+    value: parseFloat(String(h.marketValue ?? h.totalCost ?? '0')) ?? 0,
+    pnl: parseFloat(String(h.unrealizedPnL ?? '0')) ?? 0,
+    pnlPercent: parseFloat(String(h.unrealizedPnLPercent ?? '0')) ?? 0,
   }));
 
   // 파생 값 계산 / Calculate derived values
   const investedValue = mappedHoldings.reduce((sum, h) => sum + h.value, 0);
   const unrealizedPnl = mappedHoldings.reduce((sum, h) => sum + h.pnl, 0);
-  const realizedPnl = parseFloat(raw.totalRealizedPnL as string ?? '0') || 0;
+  const realizedPnl = parseFloat(raw.totalRealizedPnL as string ?? '0') ?? 0;
   // 총 손익 = 미실현 + 실현 / Total PnL = unrealized + realized
   const totalPnl = unrealizedPnl + realizedPnl;
   const totalCost = parseFloat(raw.totalCost as string ?? '0')

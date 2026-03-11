@@ -37,7 +37,7 @@ export function formatPrice(price: number): string {
 
 // 퍼센트 포맷: 부호 포함, 소수점 3자리 / Format percent: with sign, 3 decimal places
 export function formatPercent(percent: number): string {
-  if (percent == null || isNaN(percent)) return '-';
+  if (percent == null || !Number.isFinite(percent)) return '-';
   const sign = percent >= 0 ? '+' : '';
   return `${sign}${percent.toFixed(3)}%`;
 }

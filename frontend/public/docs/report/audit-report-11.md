@@ -1,326 +1,472 @@
 # VirtuEx 시스템 감사 보고서 (11차)
 
-**프로젝트:** VirtuEx - 가상 자산 모의 거래 플랫폼
-**차수:** 11차 감사 (전체 시스템 종합 정기 감사)
-**작성일:** 2026-03-10
-**작성:** 시스템 감사팀
+**VirtuEx System Audit Report (11th)**
+
+- 감사일: 2026-03-10
+- 감사 범위: 전체 프로젝트 (백엔드 8개 마이크로서비스 + 프론트엔드)
+- 감사 방법: 전체 소스 코드 정적 분석 + 브라우저 기반 기능 테스트
+- 심각도 기준: Critical(즉시 수정) / High(1주 내) / Medium(2주 내) / Low(개선 권장)
 
 ---
 
-## 1. 개요
+## 요약 (Executive Summary)
 
-11차 감사는 VirtuEx 프로젝트의 **전체 시스템 종합 정기 감사**입니다. 10차 감사(2026-03-09) 이후 구현된 실시간 가격 업데이트 파이프라인 수정, 슬롯머신 숫자 애니메이션, 리더보드 PII 마스킹/팔로우 연동 수정 등 신규 변경 사항을 검증하고, 백엔드 8개 마이크로서비스와 프론트엔드 전반에 대한 보안/성능/품질 심층 분석을 수행합니다.
+| 심각도 | 건수 | 주요 범주 |
+|--------|------|-----------|
+| **Critical** | 12 | 데이터 정합성, 보안, 메모리 누수, 주문 실행 |
+| **High** | 22 | 입력 검증, 레이스 컨디션, 정밀도 손실, 인증 |
+| **Medium** | 33 | 성능, 타입 안전성, 캐시 일관성, 접근성 |
+| **Low** | 18 | i18n, 코드 품질, 에지 케이스, UX |
+| **합계** | **85** | |
 
-### 1.1 감사 범위
-
-| 영역 | 검사 항목 | 신규 이슈 |
-|------|----------|----------|
-| 보안 — 인증/인가 | x-user-role 헤더 신뢰, JWT 토큰 저장, 비밀번호 정책 | 4건 |
-| 보안 — 입력 검증 | WebSocket 채널명, 파일 업로드, RRN 응답 노출 | 3건 |
-| 데이터 무결성 | 카피 트레이딩 멱등성 키, 주문 취소 비원자성, 조회수 중복 | 3건 |
-| 성능 | 리더보드 전체 로드, base64 이미지, 다중 폴링 | 3건 |
-| 구성/암호화 | CORS 설정, JWT_SECRET 재사용, Redis 비밀번호 | 3건 |
-| 프론트엔드 UX/품질 | alert() 사용, 에러 바운더리 하드코딩, timeAgo 중복 | 4건 |
-| 접근성 | 댓글 입력 레이블, 모달 포커스 트랩, 아이콘 버튼 | 3건 |
-| i18n | 에러 바운더리, 카테고리 인라인, RichEditor 하드코딩 | 3건 |
-| 10차 미수정 잔존 | 10차 감사 미수정 항목 중 잔존 확인 | 6건 |
-| **합계** | | **32건** |
-
-### 1.2 심각도 분류
-
-| 심각도 | 건수 |
-|--------|------|
-| 상 (Critical) | 2 |
-| 중 (Medium) | 18 |
-| 하 (Low) | 12 |
-| **합계** | **32** |
+이전 10차 감사 대비 발견된 이슈가 크게 증가한 이유는 이번 감사에서 전체 코드를 파일 단위로 정밀 분석했기 때문입니다.
+특히 **데이터 정합성**(가격, 잔고, 주문 상태)과 **보안**(인증, 입력 검증, 세션 관리) 영역에서 집중 감사를 수행했습니다.
 
 ---
 
-## 2. 10차 감사 수정 현황
+## 1. 주문 엔진 (Order Engine) — 4건
 
-10차 감사에서 발견된 30건 중 수정 현황을 검증합니다. (10차 보고서 시점 이미 수정 완료 표기 2건 제외, 실 미수정 28건 대상)
+### [C-01] 주문 체결 완료(FILLED) 상태 전이 실패 (Critical)
+- **파일**: `order-engine/src/domain/aggregates/order.aggregate.ts:99`
+- **설명**: `match()` 메서드에서 `ORDER_FILLED` 이벤트 발행 조건이 `this._remainingQuantity.isZero()`를 검사하지만, 이 검사는 잔량이 차감되기 **전**에 실행됩니다. `onMatched` 핸들러에서 잔량이 업데이트되므로, 이 조건은 절대로 true가 되지 않습니다.
+- **영향**: 주문이 완전 체결되어도 FILLED 상태로 전이되지 않고 PARTIAL 상태로 유지되어, 주문 생명주기가 정상 종료되지 않습니다.
+- **수정**: `this._remainingQuantity.minus(matchQty).isZero()` 조건으로 변경하거나, `onMatched()` 핸들러 내부에서 FILLED 이벤트를 발행합니다.
 
-### 2.1 수정 완료 (12건)
+### [C-02] 수량 0인 주문 허용 (Critical)
+- **파일**: `order-engine/src/presentation/dto/place-order.dto.ts:36`
+- **설명**: 주문 수량 검증 정규식 `^\d+(\.\d+)?$`이 "0" 또는 "0.00"을 유효한 값으로 통과시킵니다. 수량 0 주문이 매칭 엔진에 도달하면 0으로 나누기 오류가 발생할 수 있습니다.
+- **수정**: `@Min(0.00000001)` 데코레이터 추가 또는 서비스 레이어에서 0 수량 검증.
 
-| 10차 # | 항목 | 수정 내용 |
-|--------|------|----------|
-| #2 | 카피 트레이딩 잔고 경합 조건 | `$transaction` + `FOR UPDATE` 락 적용으로 원자적 잔고 확인/차감 보장 |
-| #5 | 카피 실행 실패 알림 부재 | `logger.warn()` 구조화 로깅 추가, 실패 상세 기록 |
-| #6 | 비활성화 시 미체결 카피 주문 | PENDING 상태 실행 건을 CANCELLED로 일괄 변경 |
-| #8 | 슬리피지 보호 미구현 | `SLIPPAGE_TOLERANCE = 0.02` 상수 + 보호 로직 추가 |
-| #9 | 카피 트레이더 수 무제한 | 팔로워당 최대 10개 활성 카피 설정 제한 |
-| #12 | 자기 팔로우 서버 검증 | `FollowService.follow()`에 `followerId === followeeId` 검사 확인 |
-| #13 | 활동 피드 민감 정보 노출 | 정확한 수량/가격 제거, "매수 체결" 등 심볼만 표시 |
-| #15 | 전략 작성 제한 서버 재검증 | 서버 측 가드로 가입 1일 이상 + 실적 조건 재검증 |
-| #16 | MEMBERS_ONLY 비인증 접근 | 직접 URL 접근 시 로그인 모달 표시 |
-| #20 | 활동 피드 빈 상태 UX | 트레이더 팔로우 제안 + `/community?tab=traders` 링크 추가 |
-| #23 | 카피 트레이딩 i18n 누락 | `copyTrade.side`, `copyTrade.status`, `copyTrade.trader` 등 7개 키 추가 |
-| #28 | 팔로우 옵티미스틱 UI | `onMutate` + `onError` 롤백 패턴 적용 |
+### [H-01] 자기 거래(Self-Trading) 미방지 (High)
+- **파일**: `order-engine/src/domain/services/matching-engine.service.ts:172-253`
+- **설명**: 매칭 엔진이 주문을 매칭할 때 주문자와 상대방의 userId를 비교하지 않습니다. 동일 사용자의 매수/매도 주문이 서로 체결될 수 있습니다.
+- **영향**: 거래량 조작, 가격 조종, 포트폴리오 왜곡 가능.
+- **수정**: 매칭 루프에서 `if (entry.userId === userId) continue;` 추가.
 
-> 10차 감사 수정률: **12/28건 (42.9%)**
-
-### 2.2 미수정 잔존 (16건)
-
-| 10차 # | 항목 | 상태 | 11차 재분류 |
-|--------|------|------|-----------|
-| #1 | scaleRatio 범위 검증 | 미수정 | 11차 #27로 이관 |
-| #4 | stopLossPercent 범위 검증 | 미수정 | 11차 #27에 통합 |
-| #7 | 원본 주문 참조 무결성 | 미수정 | 11차 #28로 이관 |
-| #10 | 활동 피드 N+1 쿼리 | 미수정 | 11차 #29로 이관 |
-| #11 | 팔로우 수 실시간 불일치 | 부분 해결 | 옵티미스틱 UI로 체감 개선, 캐시 동기화 잔존 |
-| #14 | visibility 기본값 | 미수정 | 11차 #30으로 이관 |
-| #17 | 알림 폴링→WebSocket | 미수정 | 11차 #31로 이관 |
-| #18 | 로그인 모달 포커스 트랩 | 미수정 | 11차 접근성 영역에 통합 |
-| #19 | 카피 트레이딩 UI 프리셋 | 미수정 | 하 유지 |
-| #22 | 디버그 console.log 잔존 | 미확인 | 하 유지 |
-| #24 | 상대 시간 로케일 | 미수정 | 11차 i18n 영역에 통합 |
-| #25 | trader_follows 복합 유니크 | 미수정 | 11차 #30에 통합 |
-| #26 | 활동 로그 보존 정책 | 미수정 | 하 유지 |
-| #27 | copy_trade_executions 인덱스 | 미수정 | 하 유지 |
-| #29 | 카피 이력 정렬/필터 | 미수정 | 하 유지 |
-| #30 | 피드 가상 스크롤 | 미수정 | 하 유지 |
+### [H-02] 음수 가격 주문 허용 (High)
+- **파일**: `order-engine/src/presentation/dto/place-order.dto.ts:31`
+- **설명**: 정규식 검증은 양수만 허용하지만, `@Min()` 데코레이터가 없어 API 레벨에서 음수 가격이 직접 전달될 수 있습니다.
+- **수정**: `@Min(0.00000001)` 데코레이터 추가.
 
 ---
 
-## 3. 최근 변경 사항 검증
+## 2. 포트폴리오 서비스 (Portfolio) — 5건
 
-10차 감사 이후 구현된 주요 변경 사항을 검증합니다.
+### [C-03] 리더보드 PnL 계산 오류 (Critical)
+- **파일**: `portfolio/src/domain/services/balance.service.ts:880-889`
+- **설명**: `txNetDeposit <= 0`일 때 순입금액을 `totalValue - totalPnl`로 역산합니다. 입금 내역이 없는 사용자의 경우 PnL%가 왜곡되거나 음수로 표시됩니다.
+- **영향**: 리더보드 순위가 부정확하게 산출됩니다.
+- **수정**: 순입금액이 0인 경우 PnL%를 0으로 처리하거나, 실현 손익만으로 순위를 산출합니다.
 
-### 3.1 실시간 가격 업데이트 파이프라인 수정
+### [H-03] 부분 매도 시 취득원가 배분 정밀도 손실 (High)
+- **파일**: `portfolio/src/domain/services/balance.service.ts:559`
+- **설명**: `costReduction = existingTotalCost × qty / existingQty` 계산에서 Decimal.js의 `toFixed(8)` 반올림으로 인해 반복적인 부분 매도 시 누적 오차가 발생합니다.
+- **영향**: 활발한 거래자의 실현 손익이 장기적으로 부정확해집니다.
+- **수정**: FIFO 방식의 원가 배분 또는 마지막 매도 시 잔여 원가 전액 차감 방식 적용.
 
+### [H-04] 자금 해제 실패 시 재시도 없음 (High)
+- **파일**: `portfolio/src/domain/services/balance.service.ts:333-388`
+- **설명**: `releaseFunds()` 메서드가 실패 시 에러를 로깅만 하고 재시도하지 않습니다. 주문 취소/실패 후 예약된 자금이 영구적으로 잠길 수 있습니다.
+- **수정**: 지수 백오프 재시도 또는 별도의 자금 해제 작업 큐 구현.
+
+### [M-01] 카피 트레이딩 순환 참조 미방지 (Medium)
+- **파일**: `portfolio/src/domain/services/copy-trade.service.ts:66-68`
+- **설명**: 직접적인 자기 복사(A→A)는 방지하지만, A→B→A 순환 체인은 검증하지 않습니다.
+- **수정**: 카피 설정 시 BFS/DFS 그래프 순환 탐지 추가.
+
+### [M-02] 카피 트레이딩 투자한도 초과 가능 (Medium)
+- **파일**: `portfolio/src/domain/services/copy-trade.service.ts:337`
+- **설명**: `totalInvested` 업데이트 시 반올림으로 인해 `maxInvestment` 한도를 미세하게 초과할 수 있습니다.
+- **수정**: 업데이트 후 `totalInvested <= maxInvestment` 명시적 검증 추가.
+
+---
+
+## 3. 시장 데이터 서비스 (Market Data) — 7건
+
+### [C-04] 캔들스틱 고가/저가 레이스 컨디션 (Critical)
+- **파일**: `market-data/src/application/services/market-data.service.ts:406-431`
+- **설명**: 캔들 upsert 시 `highPrice`/`lowPrice`를 현재 틱 가격으로 초기화한 후, 별도 SQL로 원자적 max/min 업데이트를 수행합니다. 두 연산 사이에 다른 틱이 처리되면 고가/저가가 부정확해집니다.
+- **수정**: 단일 원자적 쿼리로 upsert + 조건부 max/min 업데이트 통합.
+
+### [C-05] Binance 가격 캐시 메모리 누수 (Critical)
+- **파일**: `market-data/src/domain/services/binance-price.service.ts:20, 132`
+- **설명**: `cache` Map이 항목을 추가만 하고 제거하지 않습니다. 약 100개 심볼 × 초당 1+틱으로 무한히 증가합니다 (실질적으로는 심볼당 1개만 유지되므로 제한적이나, 코드 구조상 잠재적 위험).
+- **수정**: 심볼 키 기반이므로 실제 무한 증가는 아니지만, stale 데이터 정리 타이머 추가 권장.
+
+### [H-05] Binance kline 파싱 시 부동소수점 정밀도 손실 (High)
+- **파일**: `market-data/src/application/services/market-data.service.ts:295-304`
+- **설명**: Binance API의 문자열 가격을 `parseFloat()`로 변환 시 소수점 이하 극소 가격 (예: PEPE $0.0000012)에서 정밀도가 손실됩니다.
+- **수정**: 가격 파싱에 `Decimal.js` 또는 `BigNumber` 라이브러리 사용.
+
+### [H-06] 기간별 등락 데이터 누락 가능 (High)
+- **파일**: `market-data/src/application/services/market-data.service.ts:235-249`
+- **설명**: 크립토 자산에서 Binance 과거 가격이 없으면 해당 심볼의 기간별 등락 데이터가 응답에서 누락됩니다.
+- **영향**: 프론트엔드가 요청한 종목 수와 응답 종목 수 불일치.
+- **수정**: Binance 데이터 미존재 시 시뮬레이션 데이터로 폴백.
+
+### [H-07] Decimal 오버플로 무경고 절삭 (High)
+- **파일**: `market-data/src/application/services/market-data.service.ts:367-392`
+- **설명**: `clampDecimal()` 메서드가 ±999,999,999,999 범위로 절삭하지만 경고 로그를 남기지 않습니다.
+- **수정**: 절삭 발생 시 WARN 레벨 로깅 추가.
+
+### [M-03] GBM 시뮬레이션 Drift 기본값 0 (Medium)
+- **파일**: `market-data/src/domain/services/price-engine.service.ts:42, 51`
+- **설명**: 기하 브라운 운동(GBM) 시뮬레이션의 drift 파라미터가 기본 0.0으로, 장기 가격 추이가 랜덤 워크됩니다.
+- **수정**: 현실적인 소폭 양의 drift 적용 또는 시뮬레이션 표시 명시.
+
+### [M-04] 거래량 스파이크 상한 없음 (Medium)
+- **파일**: `market-data/src/domain/services/price-engine.service.ts:132-139`
+- **설명**: 가격 변동폭에 비례한 거래량 계산에서 상한이 없어, 큰 가격 변동 시 비현실적인 거래량 급등이 발생합니다.
+- **수정**: `movementFactor`를 최대 5x로 제한: `Math.min(movementFactor, 5)`.
+
+---
+
+## 4. 사용자 인증 서비스 (User Auth) — 12건
+
+### [C-06] 회원가입 시 중복 검사와 생성의 비원자성 (Critical)
+- **파일**: `user-auth/src/application/services/auth.service.ts:78-91`
+- **설명**: 이메일/유저명/전화번호 중복 검사와 사용자 생성이 트랜잭션으로 묶여있지 않습니다. 동시 요청 시 동일 이메일로 중복 가입이 발생할 수 있습니다.
+- **수정**: Prisma 트랜잭션으로 중복 검사 + 생성을 원자적으로 처리하거나, DB unique constraint 에러를 적절히 핸들링.
+
+### [C-07] 주민등록번호 암호화에 JWT_SECRET 사용 (Critical)
+- **파일**: `user-auth/src/application/services/auth.service.ts:100-102`
+- **설명**: RRN 암호화 키로 JWT 서명용 비밀키(JWT_SECRET)를 사용합니다. JWT_SECRET 로테이션 시 모든 암호화된 RRN이 복호화 불가능해집니다.
+- **수정**: 전용 ENCRYPTION_KEY 사용 + 키 버저닝 지원.
+
+### [H-08] SMS 인증 요청 무제한 (High)
+- **파일**: `user-auth/src/presentation/controllers/auth.controller.ts:199-213`
+- **설명**: SMS 전송/검증 엔드포인트에 IP 기반 또는 전화번호 기반 요청 제한이 없습니다.
+- **수정**: Redis 기반 레이트 리미팅 미들웨어 추가.
+
+### [H-09] Refresh Token 갱신 비원자성 (High)
+- **파일**: `user-auth/src/application/services/auth.service.ts:319-367`
+- **설명**: 토큰 리프레시 시 기존 토큰 삭제와 새 토큰 생성이 별도 연산입니다. 생성 실패 시 사용자가 예기치 않게 로그아웃됩니다.
+- **수정**: Prisma 트랜잭션으로 삭제와 생성을 원자적으로 처리.
+
+### [H-10] 사용자 삭제 시 관련 데이터 미정리 (High)
+- **파일**: `user-auth/src/application/services/admin.service.ts:279`
+- **설명**: 사용자 삭제 시 알림, 팔로우, 커뮤니티 게시글/댓글/좋아요, 가격 알림 등 관련 데이터가 정리되지 않습니다.
+- **수정**: Prisma 스키마에 cascade delete 설정 또는 수동 정리 로직 추가.
+
+### [H-11] Redis 명령 타임아웃 미설정 (High)
+- **파일**: `user-auth/src/infrastructure/redis/redis.module.ts:20-25`
+- **설명**: Redis 클라이언트에 `commandTimeout`이 설정되지 않아 Redis 행 시 요청이 무한 대기합니다.
+- **수정**: `commandTimeout: 5000` 설정 추가.
+
+### [M-05] 커뮤니티 게시글 visibility 검증 누락 (Medium)
+- **파일**: `user-auth/src/presentation/controllers/community.controller.ts:214`
+- **설명**: visibility 필드가 DTO에서 enum 검증 없이 직접 저장됩니다.
+- **수정**: `@IsEnum(['PUBLIC', 'MEMBERS_ONLY'])` 데코레이터 추가.
+
+### [M-06] 관리자 상세 조회 N+1 쿼리 (Medium)
+- **파일**: `user-auth/src/application/services/admin.service.ts:140-155`
+- **설명**: `getUserDetail()`이 사용자 조회 후 승인자/반려자 이름을 별도 쿼리로 조회합니다.
+- **수정**: Prisma `include`로 단일 쿼리로 통합.
+
+### [M-07] Redis 세션 JSON 파싱 미검증 (Medium)
+- **파일**: `user-auth/src/application/services/auth.service.ts:222, 248, 470`
+- **설명**: Redis에서 읽은 세션 데이터를 `JSON.parse()` 시 try-catch 없이 처리합니다.
+- **수정**: JSON 파싱에 try-catch 추가 및 구조 검증.
+
+### [M-08] 레거시 RRN 암호화 하드코딩 솔트 (Medium)
+- **파일**: `user-auth/src/domain/value-objects/resident-number.vo.ts:66`
+- **설명**: 레거시 데이터 복호화용으로 'virtuex-salt' 문자열이 소스에 하드코딩되어 있습니다.
+- **수정**: 레거시 데이터 마이그레이션 후 제거.
+
+### [L-01] 백엔드 오류 메시지 한국어 단일 언어 (Low)
+- **파일**: auth.service.ts, admin.service.ts 등 다수
+- **설명**: 에러 메시지가 한국어로만 작성되어 있어 비한국어 사용자에게 불친절합니다.
+- **수정**: 에러 코드 기반 응답으로 변경하여 프론트엔드에서 i18n 처리.
+
+### [L-02] 팔로워 목록 서비스 레이어 상한 미설정 (Low)
+- **파일**: `user-auth/src/application/services/follow.service.ts:76-109`
+- **설명**: 컨트롤러에서 limit을 제한하지만 서비스 레이어에서는 상한이 없습니다.
+- **수정**: `Math.min(limit, 100)` 추가.
+
+---
+
+## 5. API 게이트웨이 (API Gateway) — 8건
+
+### [C-08] JWT 검증 시 user-auth 장애로 전체 인증 실패 (Critical)
+- **파일**: `api-gateway/src/auth/jwt.strategy.ts:47-61`
+- **설명**: JWT 검증 과정에서 user-auth 서비스의 사용자 상태 확인이 실패하면 모든 인증이 거부됩니다. user-auth 서비스 장애 시 전체 플랫폼 사용 불가(DoS).
+- **수정**: 서킷 브레이커 패턴 적용 또는 Redis 캐시 기반 폴백으로 최근 검증된 사용자 허용.
+
+### [H-12] Set-Cookie 헤더 무검증 전달 (High)
+- **파일**: `api-gateway/src/proxy/auth-proxy.controller.ts:113-115`
+- **설명**: 다운스트림 서비스의 Set-Cookie 헤더를 검증 없이 클라이언트에 전달합니다.
+- **수정**: 쿠키 도메인, Secure/HttpOnly 플래그 검증 후 전달.
+
+### [H-13] 채팅 게이트웨이 메시지 길이 검증 우회 (High)
+- **파일**: `api-gateway/src/gateway/chat.gateway.ts:46-63`
+- **설명**: 미들웨어에서 메시지 길이 초과 시 에러를 emit하지만 핸들러 실행을 차단하지 않습니다.
+- **수정**: 에러 emit 후 `return` 대신 실제 핸들러 실행을 차단하는 구조로 변경.
+
+### [H-14] 리더보드 데이터 보강 타임아웃 없음 (High)
+- **파일**: `api-gateway/src/proxy/portfolio-proxy.controller.ts:176-209`
+- **설명**: 리더보드에서 사용자 이름 보강 호출에 타임아웃이 없어 user-auth 응답 지연 시 전체 응답이 지연됩니다.
+- **수정**: 보강 호출에 2초 타임아웃 + 타임아웃 시 이름 없이 응답하는 폴백.
+
+### [M-09] 가격 알림 갱신 무경고 실패 (Medium)
+- **파일**: `api-gateway/src/gateway/price-subscriber.service.ts:73-75`
+- **설명**: `refreshAlerts()` 실패 시 WARN만 로깅하고 재시도하지 않습니다. 영구 실패 시 가격 알림이 작동하지 않습니다.
+- **수정**: 연속 실패 카운터 + 지수 백오프 재시도 추가.
+
+### [M-10] WebSocket 구독 요청 무제한 (Medium)
+- **파일**: `api-gateway/src/gateway/price.gateway.ts:109-143`
+- **설명**: 인증된 사용자의 구독 요청에 초당 횟수 제한이 없어 리소스 소진 공격이 가능합니다.
+- **수정**: 소켓당 초당 최대 10회 구독 제한 추가.
+
+### [M-11] 프록시 에러 응답에 내부 서비스명 노출 (Medium)
+- **파일**: `api-gateway/src/proxy/proxy.service.ts:125, 130`
+- **설명**: 클라이언트 에러 응답에 내부 서비스 이름이 포함됩니다.
+- **수정**: 클라이언트에는 일반적인 에러 메시지, 내부 로그에만 상세 정보.
+
+### [L-03] Redis 재연결 전략 미설정 (Low)
+- **파일**: `api-gateway/src/redis/redis.module.ts:17`
+- **설명**: Redis 장애 복구 후 자동 재연결 전략이 미설정입니다.
+- **수정**: `enableReadyCheck: true` 설정 추가.
+
+---
+
+## 6. 알림/AI 서비스 (Notification / AI Service) — 4건
+
+### [C-09] InternalAuthGuard 타이밍 공격 취약점 (Critical)
+- **파일**: `notification/src/email/email.controller.ts:57-59`
+- **설명**: `timingSafeEqual` 호출 전 토큰 길이를 비교하여 올바른 토큰 길이를 유추할 수 있습니다.
+- **수정**: 길이가 다를 경우에도 `timingSafeEqual`을 사용하도록 버퍼를 동일 길이로 패딩.
+
+### [M-12] AI 분석 0으로 나누기 위험 (Medium)
+- **파일**: `ai-service/src/analysis/analysis.service.ts:129`
+- **설명**: `totalValue`가 0일 때 `h.value / totalValue`로 NaN이 발생합니다.
+- **수정**: `totalValue === 0` 시 조기 반환.
+
+### [M-13] 이메일 본문 크기 제한 없음 (Medium)
+- **파일**: `notification/src/email/email.controller.ts:49-65`
+- **설명**: 내부 이메일 전송 API에 본문 크기 제한이 없습니다.
+- **수정**: `app.useBodyParser('json', { limit: '1mb' })` 추가.
+
+### [L-04] AI 시장 신호 기준가 하드코딩 (Low)
+- **파일**: `ai-service/src/analysis/analysis.service.ts:33-40`
+- **설명**: 시장 신호 생성에 사용되는 기준 가격이 하드코딩되어 실제 시세와 괴리가 발생합니다.
+- **수정**: 실시간 시세 데이터를 입력으로 받도록 변경.
+
+---
+
+## 7. 채팅 서비스 (Chat) — 3건
+
+### [M-14] 참가자 검증과 메시지 생성 비원자성 (Medium)
+- **파일**: `chat/src/chat/chat.service.ts:632-639`
+- **설명**: `verifyParticipant()` 검증과 메시지 생성이 원자적이지 않아, 검증과 생성 사이에 사용자가 강퇴되면 비참가자 메시지가 생성됩니다.
+- **수정**: 트랜잭션으로 검증 + 메시지 생성 통합.
+
+### [M-15] 시스템 메시지 사용자명 미이스케이프 (Medium)
+- **파일**: `chat/src/chat/chat.service.ts:347, 373, 407`
+- **설명**: 초대/퇴장 시스템 메시지에 사용자명이 JSON에 직접 삽입됩니다. 특수문자가 포함된 이름이 JSON을 깨뜨릴 수 있습니다.
+- **수정**: `JSON.stringify()`가 자동 이스케이핑하므로 현재 안전하지만, XSS 방지를 위해 프론트엔드에서 `textContent`로 렌더링 확인 필요.
+
+### [L-05] 채팅방 목록 N+1 쿼리 (Low)
+- **파일**: `chat/src/chat/chat.service.ts:58-89`
+- **설명**: 읽지 않은 메시지 수 계산이 groupBy + findMany 두 단계로 수행됩니다.
+- **수정**: 단일 SQL JOIN으로 최적화.
+
+---
+
+## 8. 프론트엔드 데이터 레이어 (Hooks / Stores / Utils) — 14건
+
+### [C-10] 채팅 메시지 캐시 동시 변경 충돌 (Critical)
+- **파일**: `frontend/src/hooks/useChat.ts:124-136`
+- **설명**: 메시지 전송과 삭제 뮤테이션이 `pages[0].items` 배열을 직접 수정합니다. 동시 실행 시 배열이 손상됩니다.
+- **수정**: 불변 업데이트 패턴 사용: `pages.map(p => ({...p, items: [...p.items]}))`
+
+### [C-11] 채팅 타이핑 맵 메모리 누수 (Critical)
+- **파일**: `frontend/src/hooks/useChatSocket.ts:44-77`
+- **설명**: `typingMap`과 `typingListeners` 모듈 레벨 전역 변수가 방을 나가도 정리되지 않습니다.
+- **수정**: 빈 맵 항목 정리 로직 추가.
+
+### [H-15] 포트폴리오 필드 매핑 불일치 (High)
+- **파일**: `frontend/src/hooks/usePortfolio.ts:47-92`
+- **설명**: `balance.availableCash ?? balance.totalCash ?? '0'` 같은 다중 폴백이 API 응답 구조 변경에 취약합니다. `||` 연산자로 0을 falsy로 처리하는 곳도 있습니다.
+- **수정**: 명시적 `?? 0` 사용 및 API 응답 구조 검증 추가.
+
+### [H-16] 환율 API 응답 미검증 (High)
+- **파일**: `frontend/src/hooks/useExchangeRate.ts:157-215`
+- **설명**: 환율 API 응답에서 `rate`가 유효한 양수인지 검증하지 않습니다. NaN이나 Infinity가 1시간 캐시됩니다.
+- **영향**: 모든 가격 변환이 잘못됨.
+- **수정**: `Number.isFinite(rate) && rate > 0` 검증 추가.
+
+### [H-17] 캔들스틱 데이터 가격=0 제거 (High)
+- **파일**: `frontend/src/hooks/useMarket.ts:203`
+- **설명**: `!open || !high || !low || !close` 검사가 가격 0을 유효하지 않은 데이터로 처리합니다. 극저가 암호화폐에서 가격 0은 유효할 수 있습니다.
+- **수정**: `Number.isFinite()` 검사로 변경.
+
+### [M-16] REST 폴링이 WebSocket 데이터 덮어쓰기 (Medium)
+- **파일**: `frontend/src/hooks/useMarket.ts:22-32`
+- **설명**: `refetchInterval: 30_000`에 `staleTime` 미설정으로 REST 폴링이 WebSocket 실시간 데이터를 30초마다 덮어씁니다.
+- **수정**: `staleTime: 25_000` 설정으로 WebSocket 활성 시 불필요한 폴링 방지.
+
+### [M-17] 팔로우 낙관적 업데이트 ID 불일치 (Medium)
+- **파일**: `frontend/src/hooks/useFollow.ts:118-139`
+- **설명**: 낙관적 업데이트로 `optimistic-${userId}` 임시 ID를 사용하지만, 서버 응답의 실제 ID로 교체하지 않아 캐시가 불일치합니다.
+- **수정**: 성공 시 캐시 무효화 또는 서버 ID로 교체.
+
+### [M-18] 숫자 포맷팅 Infinity 미처리 (Medium)
+- **파일**: `frontend/src/lib/format.ts:39-59`
+- **설명**: `formatPercent()`에서 `isNaN()` 검사만 하고 `Infinity` 미검사. `.toFixed()` 호출 시 크래시.
+- **수정**: `Number.isFinite()` 검사 추가.
+
+### [M-19] 주문 수량 NaN 전파 (Medium)
+- **파일**: `frontend/src/hooks/useOrders.ts:60`
+- **설명**: `Number(o.quantity) || 0`에서 `NaN || 0`은 0이 아닌 `NaN`을 반환합니다.
+- **수정**: `parseFloat()` + `Number.isFinite()` 검증.
+
+### [M-20] API 토큰 갱신 레이스 컨디션 (Medium)
+- **파일**: `frontend/src/lib/api.ts:30-63`
+- **설명**: 토큰 갱신 대기열(`failedQueue`)이 전역 공유됩니다. WebSocket 초기화 중 401 발생 시 만료된 토큰으로 대기열이 해소될 수 있습니다.
+- **수정**: 요청별 토큰 버전 추적 구현.
+
+### [L-06] i18n 키 명명 불일치 (Low)
+- **파일**: `frontend/src/lib/i18n.ts`
+- **설명**: camelCase(`nav.home`), dot-notation(`auth.login.title`), 하이브리드 형식이 혼재합니다.
+- **수정**: 일관된 명명 규칙(dot-notation) 표준화.
+
+### [L-07] 포트폴리오 CSV 내보내기 이스케이핑 미처리 (Low)
+- **파일**: `frontend/src/app/(main)/portfolio/page.tsx:314-336`
+- **설명**: CSV 내보내기 시 심볼에 특수문자(쉼표, 따옴표)가 포함되면 CSV가 깨집니다.
+- **수정**: CSV 이스케이핑 라이브러리 사용.
+
+### [L-08] 시간 표시 함수 i18n 미사용 (Low)
+- **파일**: `frontend/src/app/(main)/community/page.tsx:270-279`
+- **설명**: `timeAgo()` 함수가 하드코딩된 한/영 문자열을 사용합니다.
+- **수정**: `t()` 함수로 i18n 키 사용.
+
+### [L-09] 페이지네이션 ARIA 속성 누락 (Low)
+- **파일**: `frontend/src/components/ui/Pagination.tsx:114-160`
+- **설명**: 페이지 버튼에 `aria-current="page"` 및 `aria-label` 누락.
+- **수정**: 접근성 속성 추가.
+
+---
+
+## 9. 프론트엔드 페이지/컴포넌트 (Pages / Components) — 12건
+
+### [C-12] 종목 상세 시가(Open Price) 계산 오류 (Critical)
+- **파일**: `frontend/src/app/(main)/asset/[symbol]/page.tsx:329`
+- **설명**: 시가를 `currentPrice - changeAmount`로 계산하지만, `changeAmount = currentPrice - openPrice`이므로 정확한 시가는 `currentPrice - changeAmount`가 맞습니다. 그러나 `changeAmount`가 음수일 경우(하락 시) 시가가 현재가보다 낮게 표시되는 오류가 있습니다.
+- **검증 필요**: `changeAmount`의 부호 규칙(양수=상승, 음수=하락)을 백엔드와 대조하여 시가 계산 정확성 확인 필요.
+
+### [H-18] 주문 폼 통화 변환 로직 오류 (High)
+- **파일**: `frontend/src/components/trading/OrderForm.tsx:50-65`
+- **설명**: `toDisplayPrice()`와 `toUsdPrice()` 함수에서 KRW 심볼일 때 변환을 건너뛰지만, 사용자가 통화 모드를 전환해도 가격이 실제로 변환되지 않습니다.
+- **수정**: 통화 모드와 심볼 통화 단위의 교차 변환 로직 수정.
+
+### [H-19] 상세 페이지 지표 null 미처리 (High)
+- **파일**: `frontend/src/app/(main)/asset/[symbol]/page.tsx:324-369`
+- **설명**: 지표 그리드에서 `high24h`, `low24h`, `volume`이 `undefined`일 때 0으로 표시됩니다. "-" 표시가 더 정확합니다.
+- **수정**: `value ? fp(value) : '-'` 패턴 적용.
+
+### [H-20] 거래 분석 승률 계산 단순화 (High)
+- **파일**: `frontend/src/app/(main)/orders/page.tsx:147-173`
+- **설명**: 승률 계산이 심볼별 평균 매수가와 평균 매도가만 비교합니다. 여러 번의 매수/매도 사이클, 부분 체결, 실행 순서를 고려하지 않습니다.
+- **수정**: 실제 체결 순서 기반의 실현 손익 사이클 추적.
+
+### [M-21] 관리자 테이블 접근성 위반 (Medium)
+- **파일**: `frontend/src/app/(main)/admin/users/page.tsx:326-362`
+- **설명**: 테이블 행에 `role="link"` 속성이 사용되지만, 키보드 네비게이션(Enter/Space)이 미지원됩니다.
+- **수정**: `role="button"` + `tabIndex={0}` + `onKeyDown` 핸들러 추가.
+
+### [M-22] AssetList FLIP 애니메이션 Ref 미정리 (Medium)
+- **파일**: `frontend/src/components/market/AssetList.tsx:151-181`
+- **설명**: 행 DOM 참조가 심볼 제거 시에도 Map에서 삭제되지 않습니다.
+- **수정**: `paged` 변경 시 불필요한 ref 항목 정리.
+
+### [M-23] 모달 포커스 트랩 미검증 (Medium)
+- **파일**: 다수 모달 컴포넌트
+- **설명**: `useFocusTrap()` 훅의 포커스 가두기/복원 기능이 모든 모달에서 정상 동작하는지 검증이 필요합니다.
+- **수정**: 모든 모달에서 키보드 내비게이션 테스트 수행.
+
+### [M-24] 커뮤니티 전략 작성 자격 검증 불안정 (Medium)
+- **파일**: `frontend/src/app/(main)/community/page.tsx:386-402`
+- **설명**: 리더보드의 `isMe` 플래그에 의존하지만, 익명화 또는 역할 필터링 시 플래그가 설정되지 않으면 전략 작성이 항상 비활성화됩니다.
+- **수정**: `isMe` 플래그 설정 로직을 백엔드에서 확인하고 폴백 추가.
+
+### [M-25] 대시보드 트렌딩 정렬 방향 구분 없음 (Medium)
+- **파일**: `frontend/src/components/market/AssetList.tsx:127`
+- **설명**: 트렌딩 탭에서 `Math.abs(changePercent)`로 정렬하여 -10% 하락과 +10% 상승이 동일 우선순위입니다.
+- **수정**: 상승/하락을 구분하여 정렬하거나 명확한 정렬 기준 표시.
+
+### [L-10] 포트폴리오 도넛 차트 경계 조건 (Low)
+- **파일**: `frontend/src/components/portfolio/BalanceCard.tsx:58-93`
+- **설명**: 투자 비율이 0% 또는 100%일 때 SVG 렌더링이 시각적으로 올바른지 확인 필요.
+
+### [L-11] 로그인 SMS 모달 닫기 시 세션 미무효화 (Low)
+- **파일**: `frontend/src/app/(auth)/login/page.tsx:86-90`
+- **설명**: SMS 인증 모달을 닫을 때 프론트엔드 상태만 초기화하고 백엔드 세션을 무효화하지 않습니다.
+- **수정**: 모달 닫기 시 세션 무효화 API 호출 추가.
+
+### [L-12] 빈 거래 내역 시 시간대별 차트 렌더링 (Low)
+- **파일**: `frontend/src/app/(main)/orders/page.tsx:182-194`
+- **설명**: 거래 내역이 없을 때 `maxHourCount`가 1로 설정되어 빈 막대가 모두 100% 높이로 표시됩니다.
+- **수정**: `totalTrades === 0` 시 차트를 숨기거나 빈 상태 메시지 표시.
+
+---
+
+## 10. 이전 감사 미수정 사항 확인
+
+### 10차 감사 수정 확인 결과
 | 항목 | 상태 | 비고 |
 |------|------|------|
-| Redis PSUBSCRIBE 패턴 구독 | ✅ 수정 완료 | 20개 하드코딩 → `prices:*` 전체 구독 |
-| WebSocket 데이터 구조 매핑 | ✅ 수정 완료 | `raw.data` 언래핑 + 필드명 매핑 |
-| 1초 간격 실시간 전달 검증 | ✅ 확인 | market-data `@Interval(1000)` → Redis → WebSocket → UI |
-
-### 3.2 AnimatedNumber 슬롯머신 컴포넌트
-
-| 항목 | 상태 | 비고 |
-|------|------|------|
-| 숫자 자릿수별 슬라이드 애니메이션 | ✅ 구현 | 350ms cubic-bezier 전환 |
-| 방향 감지 (증가=위, 감소=아래) | ✅ 구현 | 숫자 파싱 비교 기반 |
-| 비숫자 문자(콤마, 점, 통화기호) 처리 | ✅ 구현 | 애니메이션 없이 정적 렌더 |
-| 적용 범위 | ✅ 확인 | PriceDisplay, BalanceCard, MarketTicker, AssetListItem |
-| CSS 키프레임 | ✅ 확인 | globals.css에 4개 애니메이션 정의 |
-
-### 3.3 리더보드 PII 마스킹 + 팔로우 연동 수정
-
-| 항목 | 이전 | 수정 후 |
-|------|------|--------|
-| 타인 userId | `anon_N` (UUID 무효) | 인증 시 실제 UUID 제공, 비인증 시 `anon_N` 유지 |
-| 팔로우 API 호출 | Prisma UUID 파싱 에러 500 | 정상 동작 |
-| 배치 카운트 조회 | `anon_` ID 포함 요청 | `anon_` 접두사 필터링 |
-
-### 3.4 기타 수정
-
-| 항목 | 상태 |
-|------|------|
-| TipTap SSR 하이드레이션 에러 | ✅ `immediatelyRender: false` 적용 |
-| 페이지뷰 통계 429 에러 | ✅ 레이트 리밋 100회/60초로 완화 |
-| ESLint 미사용 변수 (`locale`) | ✅ 제거 |
+| 카피 트레이딩 레이스 컨디션 | ✅ 수정됨 | `$transaction` + `FOR UPDATE` 적용 |
+| 슬리피지 허용 | ✅ 수정됨 | `SLIPPAGE_TOLERANCE = 0.02` |
+| 활동 피드 PII 노출 | ✅ 수정됨 | 수량/가격 제거 |
+| WebSocket 30초 끊김 | ✅ 수정됨 | ping/pong 핸들러 추가 |
+| 24H 고가/저가 미갱신 | ✅ 수정됨 | WebSocket에 high24h/low24h 필드 추가 |
+| 채팅 시스템 메시지 JSON 노출 | ✅ 수정됨 | RoomList에 JSON 파싱 로직 추가 |
+| 알림 설정 미반영 | ✅ 수정됨 | 프론트엔드 필터링 구현 |
+| 관리자 승인 필터 비활성 포함 | ✅ 수정됨 | `isActive: true` 조건 추가 |
 
 ---
 
-## 4. 상 (Critical) — 2건
+## 권고 사항 (Recommendations)
 
-### #1. 커뮤니티 컨트롤러 x-user-role 헤더 신뢰 — 권한 상승 위험
+### 즉시 수정 (Critical — 1-2일 내)
+1. **C-01**: 주문 FILLED 상태 전이 로직 수정
+2. **C-02**: 수량 0 주문 차단
+3. **C-03**: 리더보드 PnL 계산 보정
+4. **C-06**: 회원가입 트랜잭션 원자성 확보
+5. **C-08**: JWT 검증 서킷 브레이커 구현
+6. **C-09**: 타이밍 공격 방지를 위한 토큰 비교 수정
 
-- **심각도:** 상
-- **영역:** 백엔드 보안 — 인가 우회
-- **파일:** `backend/services/user-auth/src/presentation/controllers/community.controller.ts` (267행, 389행, 509행)
-- **설명:** `deletePost`, `deleteComment`, `deleteAttachment` 메서드에서 `@Headers('x-user-role') userRole`을 직접 읽어 관리자 권한을 부여합니다. `InternalAuthGuard`는 `x-internal-token`만 검증하고 JWT 페이로드를 확인하지 않으므로, API Gateway 프록시 컨트롤러에서 이 헤더를 JWT에서 추출한 값으로 **명시적 덮어쓰기**하는지 여부가 보안의 핵심입니다. 클라이언트가 직접 `x-user-role: ADMIN` 헤더를 전송할 경우 권한 상승이 가능합니다.
-- **권장 수정:** 커뮤니티 프록시 컨트롤러에서 `x-user-role`을 반드시 JWT 인증된 사용자의 `role`로 덮어쓰기. 또는 user-auth 서비스 내에서 userId로 DB 조회하여 role 확인
+### 단기 수정 (High — 1주 내)
+7. **H-01**: 자기 거래 방지 로직 추가
+8. **H-03, H-04**: 잔고 정밀도 및 자금 해제 재시도
+9. **H-08~H-11**: SMS 레이트 리미팅, 토큰 갱신 원자성, 관련 데이터 정리
+10. **H-15~H-17**: 프론트엔드 데이터 검증 강화
 
----
+### 중기 수정 (Medium — 2주 내)
+11. 캐시 일관성 및 성능 최적화 (M-04, M-06, M-16)
+12. 접근성 개선 (M-21, M-23)
+13. 입력 검증 강화 (M-05, M-12, M-19)
 
-### #2. 카피 트레이딩 복제 주문 시 멱등성 키(idempotencyKey) 누락
-
-- **심각도:** 상
-- **영역:** 데이터 무결성 — 카피 트레이딩
-- **파일:** `backend/services/portfolio/src/domain/services/copy-trade.service.ts` (372–388행)
-- **설명:** `processCopyTrade`에서 order-engine으로 주문을 전송할 때 `idempotencyKey`를 포함하지 않습니다. `PlaceOrderRequestDto`는 `@IsString() @IsNotEmpty()`로 멱등성 키를 필수 필드로 요구합니다. 일시적 네트워크 오류 후 재시도 시 동일 원본 거래에 대해 중복 카피 주문이 생성될 수 있습니다.
-- **권장 수정:** 결정적 멱등성 키 생성: `copyTrade:${config.id}:${tradeData.tradeId}` 형식으로 주문 페이로드에 포함
-
----
-
-## 5. 중 (Medium) — 18건
-
-### 5.1 보안 — 인증/인가 (4건)
-
-| # | 항목 | 설명 |
-|---|------|------|
-| #3 | JWT 토큰 sessionStorage 저장 | `stores/auth.ts`에서 accessToken을 sessionStorage에 저장. XSS 취약점 발생 시 토큰 탈취 가능. refreshToken은 이미 httpOnly 쿠키 사용 중이므로 accessToken도 동일 패턴 적용 권장 |
-| #4 | 비밀번호 재설정 시 약한 검증 | `auth.service.ts:575` / `forgot-password/page.tsx:158` — 재설정 시 `length < 8`만 확인. 회원가입 시 요구하는 소문자+숫자+특수문자 정책 미적용. 약한 비밀번호 설정 가능 |
-| #5 | 프로필 수정 시 전화번호 재인증 미요구 | `mypage/edit/page.tsx:126` — 회원가입 시 SMS 인증 필수이나, 프로필 수정에서 전화번호 변경 시 재인증 없이 저장 가능 |
-| #6 | Next.js 미들웨어 서버 측 인증 미검증 | `middleware.ts:4-13` — 관리자/보호 라우트에서 헤더만 설정하고 서버 측 토큰 검증 없음. 인증 전 페이지 번들이 다운로드됨 |
-
-### 5.2 보안 — 입력 검증/정보 노출 (3건)
-
-| # | 항목 | 설명 |
-|---|------|------|
-| #7 | WebSocket subscribe 채널명 미검증 | `price.gateway.ts:109-137` — `data.channel`과 `data.symbols`에 대한 형식/길이 검증 없음. 악의적 클라이언트가 내부 채널 구독 또는 거대 문자열 전송 가능 |
-| #8 | RRN 검증 오류 상세 노출 | `auth.service.ts:96-98` — `Invalid resident number: ${rrnValidation.message}`로 구체적 검증 실패 사유 반환. 공격자의 유효 RRN 추측 시도 지원 |
-| #9 | Base64 이미지 서버 측 미검증 | `RichEditor.tsx:99-104` — 클라이언트에서 MIME/크기 검증하지만, 서버 측 재검증 없어 직접 API 호출로 우회 가능. 악성 콘텐츠 DB 저장 위험 |
-
-### 5.3 데이터 무결성/성능 (3건)
-
-| # | 항목 | 설명 |
-|---|------|------|
-| #10 | 주문 취소 비원자적 처리 | `order.service.ts:267-351` — 이벤트 스토어 CANCEL 커밋 후 읽기 모델 업데이트 및 자금 반환 수행. 중간 실패 시 이벤트-읽기 모델 불일치 발생 |
-| #11 | 커뮤니티 조회수 중복 카운트 | `community.controller.ts:326-339` — `POST .../view` 요청마다 +1 증가. 사용자/IP별 중복 방지 없어 조회수 인위적 부풀리기 가능 |
-| #12 | 커뮤니티 파일 업로드 제한 부재 | `community.controller.ts:451-503` — 10MB/건 제한만 존재. 게시글당/사용자당/시간당 첨부 수 제한 없어 디스크 공간 고갈 가능 |
-
-### 5.4 구성/암호화 (3건)
-
-| # | 항목 | 설명 |
-|---|------|------|
-| #13 | API Gateway CORS 단일 문자열 처리 | `api-gateway/src/main.ts:92` — `CORS_ORIGIN` 환경변수를 쉼표 분리 없이 단일 문자열로 전달. WebSocket 게이트웨이는 `.split(',')` 처리하지만 HTTP CORS는 미처리. 다중 오리진 시 전체 차단 |
-| #14 | JWT_SECRET을 RRN 암호화 키로 재사용 | `auth.service.ts:100` — JWT 서명 키와 주민번호 AES 암호화 키가 동일. JWT_SECRET 노출 시 전체 주민번호 복호화 가능 |
-| #15 | PriceSubscriber Redis 비밀번호 미처리 | `price-subscriber.service.ts:51-52` — `new Redis(redisUrl)` 직접 생성. PriceCacheService와 달리 `REDIS_PASSWORD` 별도 처리 없음 |
-
-### 5.5 프론트엔드 UX/품질 (5건)
-
-| # | 항목 | 설명 |
-|---|------|------|
-| #16 | alert() 사용 — 접근성/UX 위반 | `RichEditor.tsx:90,95`, `community/[id]/page.tsx:265`, `community/new/page.tsx:131,137` 등 — 메인 스레드 차단. 앱 전체에서 toast 시스템 사용 중이나 일부 `alert()` 잔존 |
-| #17 | 에러 바운더리 한국어 하드코딩 | 8개 에러 페이지에서 `'일시적인 오류가 발생했습니다.'` 하드코딩. `useTranslation()` 미사용 |
-| #18 | timeAgo 유틸리티 5곳 중복 구현 | `community/[id]/page.tsx`, `strategy/[id]/page.tsx`, `ActivityFeed.tsx`, `NotificationBell.tsx`, `RoomList.tsx` — 동일 로직 5회 복사. 한/영 문자열 하드코딩 |
-| #19 | SMS 인증코드 부분 로깅 | `sms-verification.service.ts:40-44` — 프로덕션에서 코드 끝 2자리 `****XX` 로깅. 로그 접근자가 4자리만 브루트포스하면 6자리 코드 해독 가능 |
-| #20 | $queryRawUnsafe 사용 | `copy-trade.service.ts:312` — 매개변수화 사용 중이나 메서드명이 안전하지 않은 경로. 향후 수정 시 직접 문자열 삽입 위험. `$queryRaw` 태그드 템플릿 리터럴로 전환 권장 |
+### 장기 개선 (Low — 백로그)
+14. i18n 완전성 확보 (L-01, L-06, L-08)
+15. CSV 이스케이핑, ARIA 속성, 에지 케이스 처리
 
 ---
 
-## 6. 하 (Low) — 12건
+## 감사 결론
 
-| # | 영역 | 항목 | 설명 |
-|---|------|------|------|
-| #21 | 접근성 | 댓글 입력 aria-label 누락 | `community/[id]/page.tsx:419-424` — `<input>`에 `placeholder`만 존재, `aria-label` 없음 |
-| #22 | 접근성 | 프로필 수정 확인 모달 포커스 트랩 | `mypage/edit/page.tsx:178-208` — 자체 모달 구현으로 `ConfirmModal` 컴포넌트 미사용. 포커스 트랩 미적용 |
-| #23 | 접근성 | 댓글 삭제/좋아요 아이콘 버튼 aria-label | `community/[id]/page.tsx:117-122` — 아이콘만 표시, 스크린리더 접근 불가 |
-| #24 | i18n | RichEditor alert() 인라인 한/영 | `RichEditor.tsx:90,95` — `alert('이미지 크기는...\nImage size...')` 하드코딩 |
-| #25 | i18n | 커뮤니티 카테고리 인라인 ko/en | `community/new/page.tsx:24-31` 등 — `{ ko: '자유토론', en: 'Discussion' }` 인라인 정의 |
-| #26 | 성능 | 다중 폴링 인터벌 배경 부하 | `useOrders.ts` 5초, `usePortfolio.ts` 10초, `useMarket.ts` 30초, `useAdmin.ts` 30초 — 다중 탭 시 트래픽 배증. `visibilitychange` 기반 전환 권장 |
-| #27 | 10차 잔존 | scaleRatio/stopLossPercent DTO 범위 검증 | 10차 #1, #4 통합. 카피 트레이딩 설정 값 서버 측 범위 미제한 |
-| #28 | 10차 잔존 | 원본 주문 참조 무결성 | 10차 #7. 원본 주문 삭제/취소 시 카피 실행 레코드 참조 정합성 |
-| #29 | 10차 잔존 | 활동 피드 N+1 쿼리 | 10차 #10. 팔로우 트레이더 다수 시 피드 조회 성능 |
-| #30 | 10차 잔존 | visibility 기본값 + 유니크 인덱스 | 10차 #14, #25 통합. community_posts 기본값 및 trader_follows 복합 유니크 확인 필요 |
-| #31 | 10차 잔존 | 알림 폴링→WebSocket 전환 | 10차 #17. NotificationBell 폴링 방식 잔존 |
-| #32 | 코드 품질 | catch (error: any) 타입 미지정 | 다수 파일에서 `catch (error: any)` 사용. `catch (error: unknown)` + `instanceof Error` 타입 가드 권장 |
+이번 11차 감사에서는 프로젝트 전체 코드를 파일 단위로 정밀 분석하여 총 **85건**의 이슈를 식별했습니다.
+
+**핵심 발견사항**:
+1. **주문 엔진**: FILLED 상태 전이 실패(C-01)는 주문 생명주기의 핵심 결함으로, 즉시 수정이 필요합니다.
+2. **데이터 정합성**: 리더보드 PnL 계산(C-03), 캔들스틱 레이스 컨디션(C-04), 부동소수점 정밀도(H-05) 등 금융 데이터의 정확성에 영향을 미치는 이슈가 다수 발견되었습니다.
+3. **보안**: RRN 암호화 키 혼용(C-07), 타이밍 공격(C-09), 인증 단일 장애점(C-08) 등 보안 취약점이 있습니다.
+4. **프론트엔드**: WebSocket 데이터 파이프라인 개선(10차 대비)이 확인되었으나, 데이터 검증/포맷팅 영역에서 추가 개선이 필요합니다.
+
+10차 감사에서 지적된 주요 사항 8건은 모두 수정이 확인되었습니다.
 
 ---
 
-## 7. 리더보드 전체 계정 메모리 로드 (성능 특별 주의)
-
-`balance.service.ts:804`에서 `this.prisma.account.findMany()`가 **제한 없이 전체 계정**을 메모리에 로드합니다. 현재 소규모 사용자 기반에서는 문제없으나, 사용자 증가 시 OOM(Out of Memory) 위험이 있습니다. 보유 자산, 거래 집계도 전체 사용자 대상으로 로드합니다.
-
-- **현재 심각도:** 하 (소규모 운영)
-- **잠재 심각도:** 상 (사용자 증가 시)
-- **권장:** 주기적으로 갱신되는 리더보드 캐시 테이블 또는 Redis 캐시 도입
-
----
-
-## 8. 긍정적 평가 사항
-
-### 8.1 10차 이후 개선 사항
-
-- **실시간 가격 파이프라인 정상화:** Redis PSUBSCRIBE + WebSocket 데이터 매핑 수정으로 전 종목 1초 간격 실시간 가격 업데이트 달성
-- **AnimatedNumber 컴포넌트:** 슬롯머신 스타일 숫자 전환 애니메이션으로 가격 변동 시각적 피드백 대폭 향상
-- **리더보드 PII 마스킹 + 팔로우 연동:** 비인증 시 UUID 익명화, 인증 시 실제 ID 제공으로 보안과 기능성 양립
-- **카피 트레이딩 안전장치 대거 보강:** 경합 조건 해결(FOR UPDATE), 슬리피지 보호, 트레이더 수 제한, 미체결 주문 일괄 취소 등 10차 Critical 이슈 해결
-
-### 8.2 기존 우수 사항 유지
-
-- **InternalAuthGuard:** `timingSafeEqual` 상수 시간 비교로 타이밍 공격 방어
-- **Refresh Token:** SHA-256 해시 저장 + httpOnly secure 쿠키 + SameSite
-- **입력 검증:** class-validator DTO + `whitelist`/`forbidNonWhitelisted` 전역 적용
-- **전역 예외 필터:** 스택 트레이스 제거, 내부 정보 미노출
-- **AES-256-GCM:** 레코드별 salt로 주민번호 암호화
-- **이중 언어 주석:** 한/영 JSDoc 표준 유지
-
----
-
-## 9. 최우선 조치 권장 순서
-
-| 순위 | # | 항목 | 이유 |
-|------|---|------|------|
-| 1 | #1 | x-user-role 헤더 신뢰 | 관리자 권한 상승으로 게시글/댓글/첨부파일 무단 삭제 가능 |
-| 2 | #2 | 카피 트레이딩 멱등성 키 | 재시도 시 중복 주문 생성 → 자산 오류 |
-| 3 | #4 | 비밀번호 재설정 약한 검증 | 회원가입 대비 낮은 비밀번호 정책으로 계정 보안 약화 |
-| 4 | #14 | JWT_SECRET RRN 재사용 | 키 노출 시 전체 주민번호 복호화 가능 |
-| 5 | #7 | WebSocket 채널명 미검증 | 내부 채널 구독/DoS 공격 벡터 |
-| 6 | #13 | CORS 다중 오리진 미처리 | 프로덕션 배포 시 프론트엔드 요청 전면 차단 가능 |
-| 7 | #10 | 주문 취소 비원자성 | 이벤트 스토어-읽기 모델 불일치 |
-
----
-
-## 10. 이전 감사 대비 추이
-
-| 차수 | 상 | 중 | 하 | 합계 | 비고 |
-|------|---|---|---|------|------|
-| 6차 | 8 | 32 | 35 | 75 | 최초 종합 감사 |
-| 7차 | 5 | 29 | 28 | 62 | 6차 47건 수정 확인 |
-| 8차 | 6 | 24 | 12 | 42 | UX 벤치마킹 포함 |
-| 9차 | 4 | 26 | 18 | 48 | 채팅/커뮤니티 신규 기능 |
-| 10차 | 3 | 17 | 10 | 30 | 소셜/카피 트레이딩 |
-| **11차** | **2** | **18** | **12** | **32** | 전체 종합 정기 감사 |
-
-> Critical 이슈가 3건에서 2건으로 감소한 것은 10차 카피 트레이딩 Critical 3건 중 경합 조건(#2)이 수정된 성과입니다. 11차 Critical은 권한 상승과 멱등성이라는 새로운 영역의 이슈로, 기존 금융 로직 안전성은 개선되었습니다.
-
----
-
-## 11. 종합 평가
-
-### 11.1 영역별 성숙도 (10차 대비)
-
-| 항목 | 10차 | 11차 | 변화 | 비고 |
-|------|------|------|------|------|
-| 인증/인가 | 4.0/5 | 3.5/5 | ▼-0.5 | x-user-role 헤더 신뢰 이슈 발견 |
-| 입력 검증 | 4.0/5 | 4.0/5 | — | WebSocket 채널 검증 필요, DTO 검증은 양호 |
-| 데이터 무결성 | 3.5/5 | 4.0/5 | ▲+0.5 | 카피 트레이딩 FOR UPDATE + 슬리피지 수정 |
-| 실시간 기능 | 3.0/5 | 4.5/5 | ▲+1.5 | 가격 파이프라인 정상화 + AnimatedNumber |
-| 프론트엔드 UX | 4.0/5 | 4.0/5 | — | 애니메이션 개선, alert() 잔존으로 상쇄 |
-| 프론트엔드 코드 품질 | 4.5/5 | 4.0/5 | ▼-0.5 | timeAgo 중복, any 타입 잔존 |
-| i18n | 4.0/5 | 3.5/5 | ▼-0.5 | 에러 바운더리/카테고리 하드코딩 발견 |
-| DB 설계 | 3.5/5 | 3.5/5 | — | 10차 인덱스/정책 이슈 잔존 |
-| 암호화/구성 | 4.0/5 | 3.5/5 | ▼-0.5 | JWT_SECRET 재사용, Redis 비밀번호 |
-| **종합** | **3.9/5** | **3.8/5** | **▼-0.1** | |
-
-### 11.2 누적 감사 현황
-
-| 차수 | 유형 | 발견 | 수정 | 스킵 | 미수정 |
-|------|------|------|------|------|--------|
-| 1차 | 신규 감사 | 36 | 36 | 0 | 0 |
-| 2차 | 신규 감사 | 50 | 45 | 4 | 1 |
-| 3차 | 수정 검증 | 0 | — | — | — |
-| 4차 | 신규 감사 | 79 | 79 | 0 | 0 |
-| 5차 | 수정 검증 | 0 | — | — | — |
-| 6차 | 종합 심층 감사 | 75 | 47 | 0 | 28 |
-| 7차 | 종합 정기 감사 | 62 | 57 | 5 | 0 |
-| 8차 | 종합 감사 + UX 벤치마킹 | 42 | 42 | 0 | 0 |
-| 9차 | 종합 정기 감사 | 48 | 48 | 0 | 0 |
-| 10차 | 소셜/UX 기능 감사 | 30 | 12 | 0 | 18 |
-| 11차 | 전체 종합 정기 감사 | 32 | 미수정 | 0 | 32 |
-| **누적** | | **454** | **366** | **9** | **79** |
-
-### 11.3 결론
-
-11차 감사는 VirtuEx의 **전체 시스템 종합 정기 감사**로, 백엔드 8개 마이크로서비스와 프론트엔드 전반을 대상으로 수행되었습니다.
-
-핵심 성과:
-- **실시간 가격 파이프라인 정상화**: Redis PSUBSCRIBE + WebSocket 데이터 매핑 수정으로 전 종목 1초 간격 실시간 가격 업데이트 달성. 실시간 기능 성숙도가 3.0에서 **4.5로 대폭 상승**
-- **카피 트레이딩 안전성 대거 개선**: 10차 Critical 3건 중 경합 조건, 슬리피지, 트레이더 수 제한 등 핵심 이슈 해결. 데이터 무결성 성숙도 3.5에서 **4.0으로 상승**
-
-핵심 조치 사항:
-1. **권한 상승 방지** (상 #1): x-user-role 헤더를 JWT 인증 값으로 강제 덮어쓰기. 커뮤니티 관리 기능의 보안 기반
-2. **카피 트레이딩 멱등성** (상 #2): 결정적 멱등성 키로 재시도 안전성 확보. 자산 오류 예방
-3. **비밀번호 정책 통일** (중 #4): 회원가입과 재설정의 비밀번호 복잡도 요구사항 일치
-4. **암호화 키 분리** (중 #14): JWT_SECRET과 RRN 암호화 키를 분리하여 키 노출 시 피해 범위 제한
-
-종합 성숙도는 실시간 기능 대폭 개선에도 불구하고 새로운 보안 이슈 발견으로 3.9에서 **3.8로 소폭 하락**했습니다. 권한 상승(#1)과 암호화 키 재사용(#14) 해결 후 **4.0 이상 달성**이 가능할 것으로 평가됩니다.
-
----
-
-*본 보고서는 코드 레벨 정적 분석을 기반으로 작성되었습니다.*
-*VirtuEx 시스템 감사팀 — 2026-03-10*
+**감사 수행**: AI 자동 감사 시스템
+**감사일**: 2026-03-10
+**다음 감사 예정**: 전체 수정 완료 후

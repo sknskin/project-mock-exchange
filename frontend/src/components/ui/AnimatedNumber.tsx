@@ -1,88 +1,105 @@
 /**
  * @file 숫자 슬롯 애니메이션 컴포넌트
- * @description 각 자릿수가 위/아래로 슬라이드되며 전환되는 오도미터(슬롯머신) 효과
+ * @description 각 자릿수가 위/아래로 부드럽게 전환되는 오도미터(슬롯머신) 효과
  *
  * @file Animated Number Component
- * @description Odometer/slot-machine effect where each digit slides up/down on value change
+ * @description Odometer/slot-machine effect where each digit smoothly slides up/down on value change
  */
 'use client';
 
 import { memo, useEffect, useRef, useState } from 'react';
 
-/** 단일 자릿수 슬롯 — 위/아래 슬라이드 애니메이션
- * Single digit slot — slides up/down on change */
+const DURATION = 450; // ms
+
+/** 단일 자릿수 슬롯 — CSS transition 기반 부드러운 슬라이드
+ * Single digit slot — smooth slide via CSS transitions */
 function Digit({ char, direction }: { char: string; direction: 'up' | 'down' | 'none' }) {
-  const [current, setCurrent] = useState(char);
-  const [previous, setPrevious] = useState(char);
-  const [animating, setAnimating] = useState(false);
+  const [display, setDisplay] = useState({ current: char, previous: char });
+  const [phase, setPhase] = useState<'idle' | 'animating'>('idle');
   const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
 
   useEffect(() => {
-    if (char === current) return;
-    setPrevious(current);
-    setCurrent(char);
-    setAnimating(true);
+    if (char === display.current) return;
+    setDisplay((prev) => ({ previous: prev.current, current: char }));
+    setPhase('animating');
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    timeoutRef.current = setTimeout(() => setAnimating(false), 350);
+    timeoutRef.current = setTimeout(() => setPhase('idle'), DURATION);
     return () => { if (timeoutRef.current) clearTimeout(timeoutRef.current); };
-  }, [char, current]);
+  }, [char, display.current]);
 
   // 숫자가 아닌 문자(콤마, 점, 통화기호 등)는 애니메이션 없이 렌더
   // Non-digit chars (comma, dot, currency symbols) render without animation
-  const isDigit = /\d/.test(char);
-
-  if (!isDigit) {
+  if (!/\d/.test(char)) {
     return <span className="inline-block">{char}</span>;
   }
+
+  const isUp = direction === 'up';
+  const animating = phase === 'animating';
 
   return (
     <span
       className="inline-block relative overflow-hidden"
       style={{ width: '0.6em', height: '1.15em', verticalAlign: 'bottom' }}
     >
-      {/* 현재 값 / Current value */}
+      {/* 현재 값 — 슬라이드 인 / Current value — slides in */}
       <span
-        className="absolute inset-x-0 text-center"
+        className="absolute inset-x-0 text-center will-change-transform"
         style={{
-          transition: animating ? 'transform 350ms cubic-bezier(0.4, 0, 0.2, 1), opacity 350ms ease' : 'none',
+          transition: animating
+            ? `transform ${DURATION}ms cubic-bezier(0.22, 1, 0.36, 1), opacity ${DURATION}ms ease-out`
+            : 'none',
           transform: animating ? 'translateY(0)' : 'translateY(0)',
           opacity: 1,
-          ...(animating
-            ? {}
-            : {}),
+          ...(animating ? {} : {}),
+        }}
+        // 애니메이션 시작 시 초기 위치 설정을 위해 key 사용
+        key={`cur-${display.current}-${display.previous}`}
+        ref={(el) => {
+          if (el && animating) {
+            // 강제 초기 위치 적용 후 다음 프레임에서 전환
+            el.style.transition = 'none';
+            el.style.transform = isUp ? 'translateY(100%)' : 'translateY(-100%)';
+            el.style.opacity = '0';
+            requestAnimationFrame(() => {
+              requestAnimationFrame(() => {
+                el.style.transition = `transform ${DURATION}ms cubic-bezier(0.22, 1, 0.36, 1), opacity ${DURATION * 0.6}ms ease-out`;
+                el.style.transform = 'translateY(0)';
+                el.style.opacity = '1';
+              });
+            });
+          }
         }}
       >
-        {current}
+        {display.current}
       </span>
 
-      {/* 이전 값 (슬라이드 아웃) / Previous value (slides out) */}
+      {/* 이전 값 — 슬라이드 아웃 / Previous value — slides out */}
       {animating && (
         <span
-          className="absolute inset-x-0 text-center"
-          style={{
-            animation: `digit-slide-${direction === 'down' ? 'down' : 'up'}-out 350ms cubic-bezier(0.4, 0, 0.2, 1) forwards`,
+          className="absolute inset-x-0 text-center will-change-transform"
+          ref={(el) => {
+            if (el) {
+              el.style.transition = 'none';
+              el.style.transform = 'translateY(0)';
+              el.style.opacity = '1';
+              requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                  el.style.transition = `transform ${DURATION}ms cubic-bezier(0.22, 1, 0.36, 1), opacity ${DURATION * 0.6}ms ease-in`;
+                  el.style.transform = isUp ? 'translateY(-100%)' : 'translateY(100%)';
+                  el.style.opacity = '0';
+                });
+              });
+            }
           }}
         >
-          {previous}
-        </span>
-      )}
-
-      {/* 새 값 (슬라이드 인) / New value (slides in) */}
-      {animating && (
-        <span
-          className="absolute inset-x-0 text-center"
-          style={{
-            animation: `digit-slide-${direction === 'down' ? 'down' : 'up'}-in 350ms cubic-bezier(0.4, 0, 0.2, 1) forwards`,
-          }}
-        >
-          {current}
+          {display.previous}
         </span>
       )}
 
       {/* 비-애니메이션 상태에서 표시 / Shown when not animating */}
       {!animating && (
         <span className="absolute inset-x-0 text-center">
-          {current}
+          {display.current}
         </span>
       )}
     </span>
@@ -117,7 +134,6 @@ function AnimatedNumberInner({ value, className }: AnimatedNumberProps) {
     prevValueRef.current = value;
   }, [value]);
 
-  // 길이가 다를 경우 우측 정렬(끝자리 기준) 매칭 / Right-align matching for different lengths
   const chars = value.split('');
 
   return (

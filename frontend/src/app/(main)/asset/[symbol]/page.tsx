@@ -133,6 +133,9 @@ export default function AssetDetailPage({
   const currentPrice = livePrice?.price ?? asset?.price ?? asset?.currentPrice ?? 0;
   const changePercent = livePrice?.changePercent ?? asset?.changePercent24h ?? asset?.changePercent ?? 0;
   const changeAmount = livePrice?.changeAmount ?? asset?.changeAmount ?? asset?.change24h ?? 0;
+  const high24h = livePrice?.high24h || (asset?.high24h ?? 0);
+  const low24h = livePrice?.low24h || (asset?.low24h ?? 0);
+  const volume = livePrice?.volume || (asset?.volume ?? 0);
   const isRise = changePercent > 0;
   const isFall = changePercent < 0;
 
@@ -329,19 +332,19 @@ export default function AssetDetailPage({
           <div className="flex flex-col gap-0.5">
             <span className="text-[11px] text-text-quaternary">{t('detail.high')}</span>
             <span className="text-[13px] font-semibold tabular-nums text-rise">
-              {fp(asset.high24h ?? 0)}
+              {high24h ? fp(high24h) : '-'}
             </span>
           </div>
           <div className="flex flex-col gap-0.5">
             <span className="text-[11px] text-text-quaternary">{t('detail.low')}</span>
             <span className="text-[13px] font-semibold tabular-nums text-fall">
-              {fp(asset.low24h ?? 0)}
+              {low24h ? fp(low24h) : '-'}
             </span>
           </div>
           <div className="flex flex-col gap-0.5">
             <span className="text-[11px] text-text-quaternary">{t('detail.volume')}</span>
             <span className="text-[13px] font-semibold tabular-nums text-text-primary">
-              {formatQuantity(asset.volume ?? 0)}
+              {volume ? formatQuantity(volume) : '-'}
             </span>
           </div>
           <div className="flex flex-col gap-0.5">
@@ -371,14 +374,14 @@ export default function AssetDetailPage({
           <h3 className="text-[15px] font-bold text-text-primary mb-3">{t('detail.assetInfo')}</h3>
           <div className="py-1">
             {[
-              { label: t('detail.currentPrice'), value: fp(asset.price ?? 0) },
-              { label: t('detail.bidPrice'), value: fp(asset.bid ?? 0) },
-              { label: t('detail.askPrice'), value: fp(asset.ask ?? 0) },
-              { label: t('detail.spread'), value: fp((asset.ask ?? 0) - (asset.bid ?? 0)) },
-              { label: t('detail.high24h'), value: fp(asset.high24h ?? 0) },
-              { label: t('detail.low24h'), value: fp(asset.low24h ?? 0) },
-              { label: t('detail.volume24h'), value: formatQuantity(asset.volume ?? 0) },
-              { label: t('detail.turnover24h'), value: fv((asset.volume ?? 0) * (asset.price ?? 0)) },
+              { label: t('detail.currentPrice'), value: fp(currentPrice) },
+              { label: t('detail.bidPrice'), value: asset.bid ? fp(asset.bid) : '-' },
+              { label: t('detail.askPrice'), value: asset.ask ? fp(asset.ask) : '-' },
+              { label: t('detail.spread'), value: asset.bid && asset.ask ? fp(asset.ask - asset.bid) : '-' },
+              { label: t('detail.high24h'), value: high24h ? fp(high24h) : '-' },
+              { label: t('detail.low24h'), value: low24h ? fp(low24h) : '-' },
+              { label: t('detail.volume24h'), value: volume ? formatQuantity(volume) : '-' },
+              { label: t('detail.turnover24h'), value: volume ? fv(volume * currentPrice) : '-' },
               { label: t('detail.assetType'), value: asset.type === 'CRYPTO' ? t('detail.crypto') : asset.type === 'STOCK' ? t('detail.stock') : '-' },
             ].map((item) => (
               <div

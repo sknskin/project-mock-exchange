@@ -160,8 +160,10 @@ async function fetchFromExchangeRateFun(): Promise<ExchangeRateData> {
   });
   if (!res.ok) throw new Error(`ExchangeRate.fun API error: ${res.status}`);
   const data = await res.json();
+  const rate = data.rates.KRW;
+  if (!Number.isFinite(rate) || rate <= 0) throw new Error('ExchangeRate.fun returned invalid rate');
   return {
-    rate: data.rates.KRW,
+    rate,
     // API가 제공하는 Unix timestamp를 사용하여 실제 데이터 갱신 시각 표시
     // Use API-provided Unix timestamp to show actual data update time
     updatedAt: data.timestamp ? new Date(data.timestamp * 1000) : new Date(),
@@ -188,8 +190,10 @@ async function fetchFromFrankfurter(): Promise<ExchangeRateData> {
   });
   if (!res.ok) throw new Error(`Frankfurter API error: ${res.status}`);
   const data = await res.json();
+  const rate = data.rates.KRW;
+  if (!Number.isFinite(rate) || rate <= 0) throw new Error('Frankfurter returned invalid rate');
   return {
-    rate: data.rates.KRW,
+    rate,
     updatedAt: new Date(),
     source: 'frankfurter',
   };

@@ -162,7 +162,16 @@ export default function DashboardPage() {
     let result = assets.map((asset) => {
       const live = livePrices[asset.symbol];
       let display = live
-        ? { ...asset, currentPrice: live.price, price: live.price, changePercent: live.changePercent ?? asset.changePercent, changeAmount: live.changeAmount ?? asset.changeAmount }
+        ? {
+            ...asset,
+            currentPrice: live.price,
+            price: live.price,
+            changePercent: live.changePercent ?? asset.changePercent,
+            changeAmount: live.changeAmount ?? asset.changeAmount,
+            volume: live.volume || asset.volume,
+            high24h: live.high24h || asset.high24h,
+            low24h: live.low24h || asset.low24h,
+          }
         : asset;
 
       if (period !== 'realtime') {

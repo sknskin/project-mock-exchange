@@ -29,6 +29,9 @@ export function useMarketPrices() {
     // WebSocket이 실시간 업데이트를 처리; REST 폴링은 백업용
     // WebSocket handles real-time updates; REST polling serves as a fallback
     refetchInterval: 30_000,
+    // REST 폴링 데이터가 WebSocket 실시간 데이터를 덮어쓰지 않도록 stale 시간 설정
+    // Prevent REST polling from overwriting WebSocket real-time data
+    staleTime: 25_000,
   });
 }
 
@@ -198,9 +201,9 @@ export function useCandlesticks(
         const close = Number(d.closePrice);
         const volume = Number(d.volume);
 
-        // NaN이나 0인 가격 데이터는 무효 — 차트에 렌더링하면 오류 발생
-        // Invalid price data (NaN or 0) — would cause chart rendering errors
-        if (!open || !high || !low || !close || !isFinite(open) || !isFinite(high) || !isFinite(low) || !isFinite(close)) continue;
+        // NaN이나 Infinity인 가격 데이터는 무효 — 차트에 렌더링하면 오류 발생 (0은 유효한 값)
+        // Invalid price data (NaN or Infinity) — would cause chart rendering errors (0 is valid)
+        if (!Number.isFinite(open) || !Number.isFinite(high) || !Number.isFinite(low) || !Number.isFinite(close)) continue;
 
         candles1m.push({ time, open, high, low, close, volume: isFinite(volume) ? volume : 0 });
       }

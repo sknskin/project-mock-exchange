@@ -239,6 +239,8 @@ export interface PriceUpdate {
   changePercent: number;
   changeAmount: number;
   volume: number;
+  high24h: number;
+  low24h: number;
   /** Unix 타임스탬프 (ms)
    * Unix timestamp (ms) */
   timestamp: number;

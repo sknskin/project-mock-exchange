@@ -56,9 +56,9 @@ export function useOrders(status?: string) {
         side: (o.side as Order['side']) ?? 'BUY',
         type: (o.orderType === 'MARKET' ? 'MARKET' : 'LIMIT') as Order['type'],
         status: (o.status as Order['status']) ?? 'PENDING',
-        quantity: Number(o.quantity) || 0,
+        quantity: Number.isFinite(Number(o.quantity)) ? Number(o.quantity) : 0,
         price: o.price != null ? Number(o.price) : null,
-        filledQuantity: Number(o.filledQuantity) || 0,
+        filledQuantity: Number.isFinite(Number(o.filledQuantity)) ? Number(o.filledQuantity) : 0,
         filledPrice: o.price != null ? Number(o.price) : null,
         // 조건부 주문 관련 필드 / Conditional order related fields
         triggerPrice: o.triggerPrice != null ? Number(o.triggerPrice) : null,
