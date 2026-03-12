@@ -7,15 +7,33 @@
  */
 'use client';
 
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { RefreshCw, ExternalLink, Newspaper, Search } from 'lucide-react';
-import { useNews, useScrapeStatus, useTriggerScrape } from '@/hooks/useNews';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { ExternalLink, Newspaper, Search, Sparkles, X, Loader2 } from 'lucide-react';
+import { useNews } from '@/hooks/useNews';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useScrollLock } from '@/hooks/useScrollLock';
+import { useQueryClient } from '@tanstack/react-query';
 import { useSettingsStore } from '@/stores/settings';
 import Pagination from '@/components/ui/Pagination';
+import RefreshControl from '@/components/ui/RefreshControl';
+import api from '@/lib/api';
 import { cn } from '@/lib/format';
 
 type NewsTab = 'CRYPTO' | 'DOMESTIC_STOCK' | 'FOREIGN_STOCK';
+
+const SENTIMENT_COLOR: Record<string, string> = {
+  BULLISH: 'text-green-500 bg-green-500/10',
+  BEARISH: 'text-red-500 bg-red-500/10',
+  NEUTRAL: 'text-text-tertiary bg-bg-secondary',
+  MIXED: 'text-yellow-500 bg-yellow-500/10',
+};
+
+const SENTIMENT_KEY: Record<string, string> = {
+  BULLISH: 'news.aiAnalysis.sentiment.BULLISH',
+  BEARISH: 'news.aiAnalysis.sentiment.BEARISH',
+  NEUTRAL: 'news.aiAnalysis.sentiment.NEUTRAL',
+  MIXED: 'news.aiAnalysis.sentiment.MIXED',
+};
 
 // 필터 적용 시 클라이언트 측 페이지네이션을 위한 대량 조회 한도 / Large batch fetch limit for client-side pagination when filtered
 const FILTERED_FETCH_LIMIT = 200;
@@ -37,6 +55,22 @@ export default function NewsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [dateFilter, setDateFilter] = useState<'all' | '24h' | '7d' | '30d'>('24h');
 
+  // AI 분석 상태 / AI analysis state
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiResult, setAiResult] = useState<{ summary: string; highlights: string[]; sentiment: string; sectionAnalysis?: { title: string; content: string }[]; marketOutlook?: string; riskFactors?: string[] } | null>(null);
+  const [aiError, setAiError] = useState(false);
+  const [aiModalOpen, setAiModalOpen] = useState(false);
+
+  useScrollLock(aiModalOpen);
+
+  // ESC 닫기 / ESC close when modal is open
+  useEffect(() => {
+    if (!aiModalOpen) return;
+    const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !aiLoading) setAiModalOpen(false); };
+    document.addEventListener('keydown', handleKey);
+    return () => { document.removeEventListener('keydown', handleKey); };
+  }, [aiModalOpen, aiLoading]);
+
   const isFiltered = searchQuery.trim() !== '' || dateFilter !== 'all';
 
   /**
@@ -53,19 +87,14 @@ export default function NewsPage() {
     setPage(1);
   }, [searchQuery, dateFilter]);
 
-  // 뉴스 스크래핑 상태 및 수동 트리거 / News scrape status and manual trigger
-  const { data: scrapeStatusList } = useScrapeStatus();
-  const triggerScrape = useTriggerScrape();
+  // 쿼리 클라이언트 (수동 갱신용) / Query client for manual refresh
+  const queryClient = useQueryClient();
 
   const tabs: { key: NewsTab; label: string }[] = [
     { key: 'CRYPTO', label: t('news.crypto') },
     { key: 'DOMESTIC_STOCK', label: t('news.domesticStock') },
     { key: 'FOREIGN_STOCK', label: t('news.foreignStock') },
   ];
-
-  const currentScrapeStatus = scrapeStatusList?.find(
-    (s) => s.category === activeTab,
-  );
 
   const handleTabChange = (tab: NewsTab) => {
     setActiveTab(tab);
@@ -112,39 +141,58 @@ export default function NewsPage() {
     ? Math.ceil(filteredItems.length / pageSize)
     : (data?.totalPages ?? 0);
 
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const refreshTimer = useRef<ReturnType<typeof setTimeout>>(null);
+  const handleRefresh = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: ['news'] });
+  }, [queryClient]);
 
-  useEffect(() => {
-    return () => { if (refreshTimer.current) clearTimeout(refreshTimer.current); };
-  }, []);
+  const handleAiAnalysis = useCallback(async () => {
+    if (aiLoading) return;
+    setAiLoading(true);
+    setAiError(false);
+    setAiResult(null);
+    setAiModalOpen(true);
+    try {
+      // 24시간 뉴스를 별도 조회 / Fetch 24h news separately for analysis
+      const { data: newsData } = await api.get('/api/news', { params: { category: activeTab, page: 1, limit: 200 } });
+      const items = newsData?.data?.items ?? newsData?.items ?? [];
+      const allItems = items as { title: string; summary: string | null; source: string; publishedAt: string | null; scrapedAt: string }[];
+      const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const recentItems = allItems
+        .filter((item) => new Date(item.publishedAt || item.scrapedAt) >= cutoff && item.title && item.source)
+        .slice(0, 50)
+        .map((item) => ({ title: item.title, summary: item.summary || undefined, source: item.source, publishedAt: item.publishedAt || undefined }));
 
-  const handleRefresh = () => {
-    if (isRefreshing) return;
-    setIsRefreshing(true);
-    triggerScrape.mutate(activeTab, {
-      onSettled: () => {
-        refreshTimer.current = setTimeout(() => setIsRefreshing(false), 1000);
-      },
-    });
-  };
+      if (!recentItems.length) {
+        setAiResult(null);
+        setAiLoading(false);
+        return;
+      }
+
+      const { data: result } = await api.post('/api/ai/news-summary', {
+        category: activeTab,
+        newsItems: recentItems,
+        locale,
+      }, { timeout: 60000 });
+      // 응답이 { summary, highlights, sentiment } 또는 래핑된 형태일 수 있음
+      // Response may be { summary, highlights, sentiment } or wrapped
+      const raw = result?.data ?? result;
+      const parsed = raw?.summary ? raw : raw?.data ?? raw;
+      // 빈 응답 처리 / Handle empty response
+      if (parsed && typeof parsed.summary === 'string' && parsed.summary.length > 0) {
+        setAiResult(parsed);
+      } else {
+        setAiResult(null);
+      }
+    } catch {
+      setAiError(true);
+    } finally {
+      setAiLoading(false);
+    }
+  }, [activeTab, aiLoading, locale, queryClient]);
 
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr);
     return d.toLocaleDateString(dateLocale, {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-    });
-  };
-
-  const formatTimeAgo = (dateStr: string | null | undefined) => {
-    if (!dateStr) return '';
-    const d = new Date(dateStr);
-    return d.toLocaleString(dateLocale, {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
@@ -164,47 +212,47 @@ export default function NewsPage() {
             {t('news.title')}
           </h1>
         </div>
-        <div className="flex items-center gap-2">
-          {currentScrapeStatus && (
-            <span className="hidden sm:inline text-[11px] text-text-quaternary tabular-nums">
-              {t('news.lastScraped')}: {formatTimeAgo(currentScrapeStatus.scrapedAt)}
-            </span>
-          )}
-          <button
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-            className={cn(
-              'flex items-center justify-center gap-2 h-10 min-w-[120px] px-4 rounded-xl text-[13px] font-semibold transition-all duration-150 border btn-outline',
-              isRefreshing
-                ? 'border-border text-text-quaternary cursor-not-allowed'
-                : 'border-accent/30 text-accent hover:bg-accent/10',
-            )}
-          >
-            <RefreshCw className={cn('w-4 h-4 shrink-0', isRefreshing && 'animate-spin')} />
-            {t('portfolio.refresh')}
-          </button>
-        </div>
+        <RefreshControl intervalSeconds={60} onRefresh={handleRefresh} />
       </div>
 
       {/* Tab bar */}
-      <div className="flex border-b border-border mb-5">
-        {tabs.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => handleTabChange(tab.key)}
-            className={cn(
-              'relative px-4 py-2.5 text-[13px] sm:text-[14px] font-semibold transition-colors',
-              activeTab === tab.key
-                ? 'text-accent'
-                : 'text-text-tertiary hover:text-text-primary',
-            )}
-          >
-            {tab.label}
-            {activeTab === tab.key && (
-              <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-accent rounded-t" />
-            )}
-          </button>
-        ))}
+      <div className="flex items-center border-b border-border mb-5">
+        <div className="flex flex-1">
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => handleTabChange(tab.key)}
+              className={cn(
+                'relative px-4 py-2.5 text-[13px] sm:text-[14px] font-semibold transition-colors',
+                activeTab === tab.key
+                  ? 'text-accent'
+                  : 'text-text-tertiary hover:text-text-primary',
+              )}
+            >
+              {tab.label}
+              {activeTab === tab.key && (
+                <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-accent rounded-t" />
+              )}
+            </button>
+          ))}
+        </div>
+        {/* AI 분석 버튼 / AI Analysis button */}
+        <button
+          onClick={handleAiAnalysis}
+          disabled={aiLoading}
+          className={cn(
+            'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-semibold transition-colors shrink-0',
+            'bg-accent/10 text-accent hover:bg-accent/20',
+            aiLoading && 'opacity-60 cursor-not-allowed',
+          )}
+        >
+          {aiLoading ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : (
+            <Sparkles className="w-3.5 h-3.5" />
+          )}
+          {t('news.aiAnalysis')}
+        </button>
       </div>
 
       {/* Search + Date filter */}
@@ -307,6 +355,137 @@ export default function NewsPage() {
           onPageChange={(p) => setPage(p)}
           onLimitChange={(n) => { setPageSize(n); setPage(1); }}
         />
+      )}
+
+      {/* AI 분석 모달 / AI Analysis Modal */}
+      {aiModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="ai-analysis-title">
+          {/* 배경 오버레이 / Background overlay */}
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => !aiLoading && setAiModalOpen(false)} />
+          {/* 모달 본문 / Modal body */}
+          <div className="relative w-full max-w-3xl bg-bg-primary border border-border rounded-2xl shadow-xl max-h-[90vh] flex flex-col overflow-hidden">
+            {/* 모달 헤더 / Modal header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-accent" />
+                <h2 id="ai-analysis-title" className="text-[16px] font-bold text-text-primary">
+                  {t('news.aiAnalysis.title')}
+                </h2>
+                <span className="text-[12px] text-text-quaternary">
+                  {tabs.find((tab) => tab.key === activeTab)?.label}
+                </span>
+              </div>
+              <button onClick={() => !aiLoading && setAiModalOpen(false)} aria-label="Close" className="p-1.5 rounded-lg hover:bg-bg-secondary transition-colors">
+                <X className="w-4.5 h-4.5 text-text-quaternary" />
+              </button>
+            </div>
+
+            {/* 모달 콘텐츠 / Modal content */}
+            <div className="flex-1 overflow-y-auto overscroll-contain p-5 sm:p-6">
+              {aiLoading ? (
+                <div className="flex flex-col items-center gap-4 py-16">
+                  <Loader2 className="w-8 h-8 text-accent animate-spin" />
+                  <p className="text-[14px] text-text-tertiary">{t('news.aiAnalysis.loading')}</p>
+                  <p className="text-[12px] text-text-quaternary">{locale === 'ko' ? '심층 분석 중입니다. 잠시만 기다려주세요...' : 'Performing deep analysis. Please wait...'}</p>
+                </div>
+              ) : aiError ? (
+                <div className="text-center py-12">
+                  <p className="text-[14px] text-red-500">{t('news.aiAnalysis.error')}</p>
+                </div>
+              ) : !aiResult ? (
+                <div className="text-center py-12">
+                  <p className="text-[14px] text-text-quaternary">{t('news.aiAnalysis.noData')}</p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {/* 시장 심리 / Market Sentiment */}
+                  <div className="flex items-center gap-3">
+                    <span className="text-[13px] font-medium text-text-tertiary">{t('news.aiAnalysis.sentiment')}</span>
+                    <span className={cn('px-3 py-1 rounded-full text-[12px] font-bold', SENTIMENT_COLOR[aiResult.sentiment] ?? SENTIMENT_COLOR.NEUTRAL)}>
+                      {t((SENTIMENT_KEY[aiResult.sentiment] ?? SENTIMENT_KEY.NEUTRAL) as never)}
+                    </span>
+                  </div>
+
+                  {/* 시장 요약 / Market Summary */}
+                  <div className="p-4 rounded-xl bg-bg-secondary/50 border border-border/50">
+                    <h3 className="text-[13px] font-bold text-accent mb-2.5">{t('news.aiAnalysis.summary')}</h3>
+                    <p className="text-[14px] text-text-primary leading-[1.8] whitespace-pre-line">{aiResult.summary}</p>
+                  </div>
+
+                  {/* 핵심 포인트 / Key Highlights */}
+                  {aiResult.highlights.length > 0 && (
+                    <div>
+                      <h3 className="text-[13px] font-bold text-text-secondary mb-3">{t('news.aiAnalysis.highlights')}</h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {aiResult.highlights.map((h, i) => (
+                          <div key={i} className="flex items-start gap-2.5 p-3 rounded-lg bg-bg-secondary/30 border border-border/30">
+                            <span className="text-accent font-bold text-[13px] mt-0.5 shrink-0">{i + 1}</span>
+                            <span className="text-[13px] text-text-primary leading-relaxed">{h}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 섹션별 분석 / Section Analysis */}
+                  {aiResult.sectionAnalysis && aiResult.sectionAnalysis.length > 0 && (
+                    <div className="space-y-4">
+                      {aiResult.sectionAnalysis.map((section, i) => (
+                        <div key={i} className="border border-border/50 rounded-xl overflow-hidden">
+                          <div className="px-4 py-2.5 bg-bg-secondary/50 border-b border-border/50">
+                            <h3 className="text-[13px] font-bold text-text-primary">{section.title}</h3>
+                          </div>
+                          <div className="px-4 py-3">
+                            <p className="text-[13px] text-text-secondary leading-[1.9] whitespace-pre-line">{section.content}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* 시장 전망 / Market Outlook */}
+                  {aiResult.marketOutlook && (
+                    <div className="p-4 rounded-xl bg-accent/5 border border-accent/20">
+                      <h3 className="text-[13px] font-bold text-accent mb-2.5">
+                        {locale === 'ko' ? '시장 전망' : 'Market Outlook'}
+                      </h3>
+                      <p className="text-[13px] text-text-primary leading-[1.9] whitespace-pre-line">{aiResult.marketOutlook}</p>
+                    </div>
+                  )}
+
+                  {/* 리스크 요인 / Risk Factors */}
+                  {aiResult.riskFactors && aiResult.riskFactors.length > 0 && (
+                    <div>
+                      <h3 className="text-[13px] font-bold text-red-500/80 mb-3">
+                        {locale === 'ko' ? '리스크 요인' : 'Risk Factors'}
+                      </h3>
+                      <ul className="space-y-2">
+                        {aiResult.riskFactors.map((r, i) => (
+                          <li key={i} className="flex items-start gap-2.5 text-[13px] text-text-secondary">
+                            <span className="text-red-500/60 mt-0.5 shrink-0">⚠</span>
+                            <span className="leading-relaxed">{r}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* 모달 푸터 / Modal footer */}
+            {!aiLoading && (
+              <div className="flex justify-end px-5 py-3 border-t border-border shrink-0">
+                <button
+                  onClick={() => setAiModalOpen(false)}
+                  className="px-4 py-2 rounded-lg text-[13px] font-semibold bg-bg-secondary text-text-primary hover:bg-bg-tertiary transition-colors"
+                >
+                  {t('news.aiAnalysis.close')}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );

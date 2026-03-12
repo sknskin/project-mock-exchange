@@ -32,6 +32,8 @@ export function useNews(params: {
       const { data } = await api.get('/api/news', { params });
       return data.data as PaginatedResponse<NewsItem>;
     },
+    // 60초마다 자동 리페치 / Auto-refetch every 60 seconds
+    refetchInterval: 60_000,
   });
 }
 

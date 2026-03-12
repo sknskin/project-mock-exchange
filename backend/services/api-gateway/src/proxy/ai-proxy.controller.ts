@@ -47,4 +47,19 @@ export class AiProxyController {
     });
     return res.status(result.status).json(result.data);
   }
+
+  /** 뉴스 AI 요약 요청을 ai-service로 프록시 — 비로그인 허용
+   * Proxy news AI summary to ai-service — no auth required */
+  @Post('news-summary')
+  @ApiOperation({ summary: '뉴스 AI 요약', description: '카테고리별 24시간 뉴스를 AI로 분석합니다' })
+  @ApiResponse({ status: 200, description: '뉴스 요약 반환' })
+  async summarizeNews(@Body() body: unknown, @Res() res: Response) {
+    const result = await this.proxyService.forward('ai-service', {
+      method: 'POST',
+      url: '/analysis/news-summary',
+      data: body,
+      timeout: 30000,
+    });
+    return res.status(result.status).json(result.data);
+  }
 }

@@ -9,6 +9,7 @@ import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
 import { AnalysisService } from './analysis.service';
 import { InternalAuthGuard } from '../common/guards/internal-auth.guard';
 import { AnalyzePortfolioDto } from './dto/analyze-portfolio.dto';
+import { SummarizeNewsDto } from './dto/summarize-news.dto';
 
 @UseGuards(InternalAuthGuard)
 @Controller('analysis')
@@ -27,5 +28,12 @@ export class AnalysisController {
   @Post('portfolio')
   async analyzePortfolio(@Body() dto: AnalyzePortfolioDto) {
     return this.analysisService.analyzePortfolio(dto.holdings ?? []);
+  }
+
+  /** 뉴스 AI 요약 — 카테고리별 24시간 뉴스 분석
+   * News AI summary — Analyze 24h news by category */
+  @Post('news-summary')
+  async summarizeNews(@Body() dto: SummarizeNewsDto) {
+    return this.analysisService.summarizeNews(dto.category, dto.newsItems ?? [], dto.locale);
   }
 }

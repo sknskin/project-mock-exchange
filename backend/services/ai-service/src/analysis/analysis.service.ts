@@ -1,16 +1,14 @@
 /**
- * @file AI 분석 서비스 — Google Gemini API 연동
- * @description Gemini AI를 활용한 실시간 매매 시그널 및 포트폴리오 분석
+ * @file AI 분석 서비스 — Google Gemini + Groq API 연동
+ * @description Gemini AI(매매 시그널/포트폴리오) + Groq(뉴스 분석) 이중 AI 서비스
  *
- * @file AI Analysis Service — Google Gemini API Integration
- * @description Real-time market signals and portfolio analysis powered by Gemini AI
- *
- * TODO: 추후 Anthropic/OpenAI 유료 API로 전환 예정
- * TODO: Future migration to Anthropic/OpenAI paid API planned
+ * @file AI Analysis Service — Google Gemini + Groq API Integration
+ * @description Dual AI service: Gemini (signals/portfolio) + Groq (news analysis)
  */
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import OpenAI from 'openai';
 
 export interface MarketSignal {
   symbol: string;
@@ -33,15 +31,19 @@ export class AnalysisService {
   private readonly logger = new Logger(AnalysisService.name);
   private readonly model: ReturnType<InstanceType<typeof GoogleGenerativeAI>['getGenerativeModel']> | null;
   private readonly isAiEnabled: boolean;
+  // Groq 클라이언트 — 뉴스 분석 전용 / Groq client — news analysis only
+  private readonly groqClient: OpenAI | null;
+  private readonly isGroqEnabled: boolean;
 
   // 캐시: 시그널은 1시간마다 갱신 / Cache: signals refresh every 1 hour
   private signalCache: { data: MarketSignal[]; expiry: number } | null = null;
   private readonly SIGNAL_CACHE_TTL = 60 * 60 * 1000; // 1 hour
 
   constructor(private readonly configService: ConfigService) {
-    const apiKey = this.configService.get<string>('GEMINI_API_KEY');
-    if (apiKey) {
-      const genAI = new GoogleGenerativeAI(apiKey);
+    // Gemini — 매매 시그널/포트폴리오 분석용 / Gemini — for signals/portfolio
+    const geminiKey = this.configService.get<string>('GEMINI_API_KEY');
+    if (geminiKey) {
+      const genAI = new GoogleGenerativeAI(geminiKey);
       this.model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
       this.isAiEnabled = true;
       this.logger.log('Gemini AI enabled (gemini-2.0-flash)');
@@ -49,6 +51,18 @@ export class AnalysisService {
       this.model = null;
       this.isAiEnabled = false;
       this.logger.warn('Gemini API key not set — falling back to rule-based analysis');
+    }
+
+    // Groq — 뉴스 분석용 (Qwen3 모델, 한국어 지원) / Groq — for news analysis (Qwen3 model, Korean support)
+    const groqKey = this.configService.get<string>('GROQ_API_KEY');
+    if (groqKey) {
+      this.groqClient = new OpenAI({ apiKey: groqKey, baseURL: 'https://api.groq.com/openai/v1' });
+      this.isGroqEnabled = true;
+      this.logger.log('Groq AI enabled (qwen/qwen3-32b) for news analysis');
+    } else {
+      this.groqClient = null;
+      this.isGroqEnabled = false;
+      this.logger.warn('GROQ_API_KEY not set — news analysis will use Gemini or rule-based fallback');
     }
   }
 
@@ -213,6 +227,191 @@ Rules:
       suggestions: Array.isArray(parsed.suggestions)
         ? parsed.suggestions.filter((s: unknown) => typeof s === 'string').slice(0, 5).map((s: string) => s.slice(0, 150))
         : ['Portfolio analysis completed.'],
+    };
+  }
+
+  /**
+   * 뉴스 AI 요약 — Grok(우선) → Gemini(폴백) → 규칙 기반(최종 폴백)
+   * News AI summary — Grok (primary) → Gemini (fallback) → rule-based (final fallback)
+   */
+  async summarizeNews(category: string, newsItems: { title: string; summary: string | null; source: string; publishedAt: string | null }[], locale: string = 'ko'): Promise<{ summary: string; highlights: string[]; sentiment: string; sectionAnalysis?: { title: string; content: string }[]; marketOutlook?: string; riskFactors?: string[] }> {
+    if (!newsItems.length) {
+      return { summary: locale === 'ko' ? '분석할 최근 뉴스가 없습니다.' : 'No recent news available for analysis.', highlights: [], sentiment: 'NEUTRAL' };
+    }
+
+    // 1순위: Groq (Llama) / Primary: Groq (Llama)
+    if (this.isGroqEnabled) {
+      try {
+        return await this.getGroqNewsSummary(category, newsItems, locale);
+      } catch (error) {
+        this.logger.error(`Groq news summary error: ${error instanceof Error ? error.message : 'unknown'}`);
+      }
+    }
+
+    // 2순위: Gemini / Secondary: Gemini
+    if (this.isAiEnabled) {
+      try {
+        return await this.getGeminiNewsSummary(category, newsItems, locale);
+      } catch (error) {
+        this.logger.error(`Gemini news summary error: ${error instanceof Error ? error.message : 'unknown'}`);
+      }
+    }
+
+    return this.getRuleBasedNewsSummary(category, newsItems, locale);
+  }
+
+  /**
+   * Groq (Llama) 를 활용한 뉴스 요약
+   * Generate news summary using Groq (Llama)
+   */
+  private async getGroqNewsSummary(
+    category: string,
+    newsItems: { title: string; summary: string | null; source: string; publishedAt: string | null }[],
+    locale: string = 'ko',
+  ): Promise<{ summary: string; highlights: string[]; sentiment: string; sectionAnalysis?: { title: string; content: string }[]; marketOutlook?: string; riskFactors?: string[] }> {
+    const categoryLabel = category === 'CRYPTO' ? 'Cryptocurrency' : category === 'DOMESTIC_STOCK' ? 'Korean Stocks' : 'Global Stocks';
+    const sanitize = (s: string) => s.replace(/[\r\n\t]/g, ' ').slice(0, 300);
+    const newsList = newsItems.slice(0, 50).map((n, i) => `${i + 1}. [${sanitize(n.source)}] ${sanitize(n.title)}${n.summary ? ` — ${sanitize(n.summary)}` : ''}`).join('\n');
+    const lang = locale === 'ko' ? 'Korean' : 'English';
+
+    const response = await this.groqClient!.chat.completions.create({
+      model: 'qwen/qwen3-32b',
+      messages: [
+        {
+          role: 'system',
+          content: `You are a senior financial analyst at a major investment bank. Provide extremely detailed, in-depth market analysis. Respond with ONLY a JSON object, no markdown, no code blocks, no thinking tags.`,
+        },
+        {
+          role: 'user',
+          content: `Perform a comprehensive, in-depth analysis of the following ${categoryLabel} news from the last 24 hours. Write as much detail as possible — this will be read by professional investors.
+
+News articles:
+${newsList}
+
+Respond with ONLY a JSON object:
+{
+  "summary": "Comprehensive executive summary (8-12 sentences) covering all major market movements, key catalysts, institutional activity, regulatory developments, and technical factors. Must be in ${lang}.",
+  "highlights": ["Detailed key point 1", "Detailed key point 2", "...up to 10 points"],
+  "sentiment": "BULLISH",
+  "sectionAnalysis": [
+    {
+      "title": "Section title (e.g., Market Trends, Regulatory Impact, Technical Analysis, Sector Breakdown, Institutional Flows)",
+      "content": "Detailed multi-paragraph analysis (5-10 sentences per section). Cover causes, implications, historical context, and future projections. Must be in ${lang}."
+    }
+  ],
+  "marketOutlook": "Detailed forward-looking market outlook (5-8 sentences). Include short-term (1-2 weeks), medium-term (1-3 months) perspectives, key levels to watch, and potential catalysts. Must be in ${lang}.",
+  "riskFactors": ["Detailed risk factor 1 with explanation", "...up to 8 risk factors"]
+}
+
+Rules:
+- ALL text content must be in ${lang}
+- summary: 8-12 sentences minimum, comprehensive executive overview
+- highlights: 8-10 detailed bullet points (each 30-80 chars)
+- sentiment: one of BULLISH, BEARISH, NEUTRAL, MIXED
+- sectionAnalysis: 4-6 sections, each with 5-10 sentences of deep analysis
+- marketOutlook: detailed forward-looking analysis with specific levels and timeframes
+- riskFactors: 5-8 specific risk factors with explanations (each 30-100 chars)
+- Write with the depth and detail expected in a professional investment research report
+- Return ONLY the JSON object, nothing else`,
+        },
+      ],
+      temperature: 0.7,
+      max_tokens: 4096,
+    });
+
+    let text = (response.choices[0]?.message?.content ?? '').trim();
+    // Qwen 모델의 <think> 태그 제거 / Strip Qwen model's <think> tags
+    text = text.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+    this.logger.log(`Groq raw response length: ${text.length}`);
+    const jsonStr = text.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
+    const parsed = JSON.parse(jsonStr);
+
+    const validSentiments = ['BULLISH', 'BEARISH', 'NEUTRAL', 'MIXED'];
+    return {
+      summary: typeof parsed.summary === 'string' && parsed.summary.length > 0 ? parsed.summary.slice(0, 2000) : 'Analysis completed.',
+      highlights: Array.isArray(parsed.highlights)
+        ? parsed.highlights.filter((h: unknown) => typeof h === 'string' && (h as string).length > 0).slice(0, 10).map((h: string) => h.slice(0, 120))
+        : [],
+      sentiment: validSentiments.includes(parsed.sentiment) ? parsed.sentiment : 'NEUTRAL',
+      sectionAnalysis: Array.isArray(parsed.sectionAnalysis)
+        ? parsed.sectionAnalysis
+            .filter((s: any) => typeof s?.title === 'string' && typeof s?.content === 'string' && s.content.length > 0)
+            .slice(0, 8)
+            .map((s: any) => ({ title: s.title.slice(0, 100), content: s.content.slice(0, 3000) }))
+        : undefined,
+      marketOutlook: typeof parsed.marketOutlook === 'string' && parsed.marketOutlook.length > 0 ? parsed.marketOutlook.slice(0, 2000) : undefined,
+      riskFactors: Array.isArray(parsed.riskFactors)
+        ? parsed.riskFactors.filter((r: unknown) => typeof r === 'string' && (r as string).length > 0).slice(0, 8).map((r: string) => r.slice(0, 150))
+        : undefined,
+    };
+  }
+
+  /**
+   * Gemini AI를 활용한 뉴스 요약
+   * Generate news summary using Gemini AI
+   */
+  private async getGeminiNewsSummary(
+    category: string,
+    newsItems: { title: string; summary: string | null; source: string; publishedAt: string | null }[],
+    locale: string = 'ko',
+  ): Promise<{ summary: string; highlights: string[]; sentiment: string }> {
+    const categoryLabel = category === 'CRYPTO' ? 'Cryptocurrency' : category === 'DOMESTIC_STOCK' ? 'Korean Stocks' : 'Global Stocks';
+    // 프롬프트 인젝션 방지: 제목/요약에서 제어 문자 제거 / Strip control chars to prevent prompt injection
+    const sanitize = (s: string) => s.replace(/[\r\n\t]/g, ' ').slice(0, 200);
+    const newsList = newsItems.slice(0, 30).map((n, i) => `${i + 1}. [${sanitize(n.source)}] ${sanitize(n.title)}${n.summary ? ` — ${sanitize(n.summary)}` : ''}`).join('\n');
+    const lang = locale === 'ko' ? 'Korean' : 'English';
+
+    const prompt = `You are a financial news analyst. Analyze the following ${categoryLabel} news from the last 24 hours and provide a market summary.
+
+News articles:
+${newsList}
+
+Respond with ONLY a JSON object (no markdown, no code blocks):
+{
+  "summary": "2-4 sentence comprehensive market summary in ${lang}. Cover key trends, major events, and overall market direction.",
+  "highlights": ["Key point 1", "Key point 2", "Key point 3"],
+  "sentiment": "BULLISH"
+}
+
+Rules:
+- summary: Must be in ${lang}, 2-4 sentences, comprehensive market overview
+- highlights: 3-5 key bullet points in ${lang}, max 60 chars each
+- sentiment: one of BULLISH, BEARISH, NEUTRAL, MIXED
+- Focus on market impact and investor implications
+- Return ONLY JSON`;
+
+    const result = await this.model!.generateContent(prompt);
+    const text = result.response.text().trim();
+    const jsonStr = text.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
+    const parsed = JSON.parse(jsonStr);
+
+    const validSentiments = ['BULLISH', 'BEARISH', 'NEUTRAL', 'MIXED'];
+    return {
+      summary: typeof parsed.summary === 'string' ? parsed.summary.slice(0, 500) : 'Analysis completed.',
+      highlights: Array.isArray(parsed.highlights)
+        ? parsed.highlights.filter((h: unknown) => typeof h === 'string').slice(0, 5).map((h: string) => h.slice(0, 80))
+        : [],
+      sentiment: validSentiments.includes(parsed.sentiment) ? parsed.sentiment : 'NEUTRAL',
+    };
+  }
+
+  /**
+   * 규칙 기반 뉴스 요약 (AI 미사용 시 폴백)
+   * Rule-based news summary (fallback when AI unavailable)
+   */
+  private getRuleBasedNewsSummary(
+    _category: string,
+    newsItems: { title: string; summary: string | null; source: string; publishedAt: string | null }[],
+    locale: string = 'ko',
+  ): { summary: string; highlights: string[]; sentiment: string } {
+    const sourceSet = new Set(newsItems.map((n) => n.source));
+    const summary = locale === 'ko'
+      ? `최근 24시간 동안 ${sourceSet.size}개 출처에서 ${newsItems.length}건의 뉴스가 수집되었습니다. AI 분석 기능이 비활성화 상태이므로 상세 분석은 제공되지 않습니다.`
+      : `${newsItems.length} articles collected from ${sourceSet.size} sources in the last 24 hours. Detailed analysis is unavailable as AI is disabled.`;
+    return {
+      summary,
+      highlights: newsItems.slice(0, 3).map((n) => n.title.slice(0, 60)),
+      sentiment: 'NEUTRAL',
     };
   }
 
