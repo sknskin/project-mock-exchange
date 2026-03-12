@@ -100,10 +100,10 @@ export default function SpotlightSearch({ isOpen, onClose, assets, onLoginRequir
   return (
     <div className="fixed inset-0 z-[70] flex items-start justify-center pt-[15vh] sm:pt-[20vh]">
       {/* 오버레이 / Overlay */}
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-modal-backdrop" onClick={onClose} />
 
       {/* 모달 / Modal */}
-      <div className="relative w-[90vw] max-w-[560px] bg-bg-primary border border-border rounded-2xl shadow-2xl overflow-hidden" role="dialog" aria-modal="true">
+      <div className="relative w-[90vw] max-w-[560px] bg-bg-primary border border-border rounded-2xl shadow-2xl overflow-hidden animate-modal-content" role="dialog" aria-modal="true">
         {/* 검색 입력란 / Search input */}
         <div className="flex items-center gap-3 px-5 py-4 border-b border-border">
           <Search className="w-5 h-5 text-text-quaternary shrink-0" />

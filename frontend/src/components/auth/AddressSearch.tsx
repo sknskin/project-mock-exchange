@@ -128,9 +128,9 @@ export default function AddressSearch({
       {/* Address search: Portal to body (avoids parent overflow/stacking context clipping) */}
       {showEmbed && createPortal(
         <>
-          <div className="fixed inset-0 z-[60] bg-black/60" onClick={() => setShowEmbed(false)} />
+          <div className="fixed inset-0 z-[60] bg-black/60 animate-modal-backdrop" onClick={() => setShowEmbed(false)} />
           <div className="fixed inset-0 z-[61] flex items-center justify-center pointer-events-none px-4">
-            <div className="relative w-full max-w-[500px] rounded-2xl shadow-2xl pointer-events-auto bg-bg-primary border border-border overflow-hidden">
+            <div className="relative w-full max-w-[500px] rounded-2xl shadow-2xl pointer-events-auto bg-bg-primary border border-border overflow-hidden animate-modal-content">
               <div className="flex items-center justify-between px-4 py-3 border-b border-border">
                 <span className="text-[14px] font-bold text-text-primary">{t('auth.register.addressSearch')}</span>
                 <button

@@ -75,10 +75,10 @@ export default function OrderSheet({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" role="dialog" aria-modal="true" aria-labelledby="order-sheet-title" ref={modalRef}>
       <div
-        className="absolute inset-0 bg-black/50"
+        className="absolute inset-0 bg-black/50 animate-modal-backdrop"
         onClick={onClose}
       />
-      <div className="relative bg-bg-elevated rounded-2xl w-full max-w-[400px] mx-4 max-h-[85vh] overflow-y-auto">
+      <div className="relative bg-bg-elevated rounded-2xl w-full max-w-[400px] mx-4 max-h-[85vh] overflow-y-auto animate-modal-content">
         {/* 헤더 / Header */}
         <div className="flex items-center justify-between px-6 pt-5 pb-3">
           <h3 id="order-sheet-title" className="text-[18px] font-bold text-text-primary">

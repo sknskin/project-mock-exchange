@@ -282,8 +282,8 @@ export default function NotificationBell() {
       {/* 승인/반려 알림 모달 — 헤더 stacking context에서 벗어나도록 portal 사용 */}
       {modalNotification && createPortal(
         <div className="fixed inset-0 z-[60] flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setModalNotification(null)} />
-          <div className="relative bg-bg-primary border border-border rounded-2xl p-6 w-[340px] max-w-[calc(100vw-2rem)] shadow-2xl">
+          <div className="absolute inset-0 bg-black/60 animate-modal-backdrop" onClick={() => setModalNotification(null)} />
+          <div className="relative bg-bg-primary border border-border rounded-2xl p-6 w-[340px] max-w-[calc(100vw-2rem)] shadow-2xl animate-modal-content">
             <h3 className={cn(
               'text-[16px] font-bold text-center',
               modalNotification.type === 'REGISTRATION_APPROVED' ? 'text-accent' : 'text-danger',

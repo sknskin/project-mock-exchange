@@ -56,9 +56,9 @@ export default function ContentModal({ isOpen, onClose, title, content, type }: 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" role="dialog" aria-modal="true" aria-labelledby="content-modal-title" ref={modalRef}>
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm cursor-pointer" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm cursor-pointer animate-modal-backdrop" onClick={onClose} />
 
-      <div className="relative w-full h-full md:h-auto md:max-w-[960px] md:max-h-[85vh] bg-bg-primary md:rounded-2xl border border-border flex flex-col overflow-hidden shadow-2xl max-w-[100vw]">
+      <div className="relative w-full h-full md:h-auto md:max-w-[960px] md:max-h-[85vh] bg-bg-primary md:rounded-2xl border border-border flex flex-col overflow-hidden shadow-2xl max-w-[100vw] animate-modal-content">
         {/* 헤더 / Header */}
         <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-border shrink-0">
           <h2 id="content-modal-title" className="text-[15px] sm:text-[17px] font-bold text-text-primary truncate mr-2">{title}</h2>

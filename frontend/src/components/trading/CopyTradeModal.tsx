@@ -114,10 +114,10 @@ export default function CopyTradeModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* 배경 오버레이 / Background overlay */}
-      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/60 animate-modal-backdrop" onClick={onClose} />
 
       {/* 모달 콘텐츠 / Modal content */}
-      <div className="relative bg-bg-primary border border-border rounded-2xl p-6 w-[420px] max-w-[calc(100vw-2rem)] shadow-2xl">
+      <div className="relative bg-bg-primary border border-border rounded-2xl p-6 w-[420px] max-w-[calc(100vw-2rem)] shadow-2xl animate-modal-content">
         {/* 닫기 버튼 / Close button */}
         <button
           onClick={onClose}

@@ -180,10 +180,10 @@ export default function LoginSmsModal({
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center px-4 overscroll-none" role="dialog" aria-modal="true" aria-labelledby="login-sms-modal-title" ref={modalRef}>
       {/* 오버레이 — 클릭/터치해도 닫히지 않음 / Overlay — click/touch does NOT close */}
-      <div className="absolute inset-0 bg-black/60" onTouchMove={(e) => e.preventDefault()} />
+      <div className="absolute inset-0 bg-black/60 animate-modal-backdrop" onTouchMove={(e) => e.preventDefault()} />
 
       {/* 모달 본체 / Modal body */}
-      <div className="relative bg-bg-primary border border-border rounded-2xl w-full max-w-[360px] shadow-2xl">
+      <div className="relative bg-bg-primary border border-border rounded-2xl w-full max-w-[360px] shadow-2xl animate-modal-content">
         {/* X 닫기 버튼 / X close button */}
         <button
           onClick={onClose}
