@@ -72,7 +72,7 @@ function AssetListItem({ asset, rank, isWatchlisted, onToggleWatchlist }: AssetL
         e.preventDefault();
         router.push(`/asset/${asset.symbol}`);
       }}
-      className="flex items-center h-[56px] hover:bg-bg-secondary/60 transition-colors rounded-lg -mx-3 px-3 cursor-pointer"
+      className="flex items-center h-[56px] hover:bg-bg-secondary/60 active:bg-bg-secondary/80 transition-colors rounded-lg -mx-3 px-3 cursor-pointer"
     >
       {/* 순위 / Rank */}
       <span className="w-6 sm:w-8 text-center text-[13px] text-text-quaternary tabular-nums shrink-0 mr-1 sm:mr-1.5">

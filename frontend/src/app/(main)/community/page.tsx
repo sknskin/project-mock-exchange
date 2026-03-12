@@ -41,6 +41,7 @@ import {
   Paperclip,
   Lock,
   Copy,
+  X,
 } from 'lucide-react';
 import type { TranslationKey } from '@/lib/i18n';
 import type { LeaderboardEntry, CommunityStrategy } from '@/types';
@@ -558,8 +559,13 @@ function CommunityPage() {
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 placeholder={t('community.post.searchPlaceholder')}
-                className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-bg-secondary border border-border/50 text-[13px] text-text-primary placeholder:text-text-quaternary focus:outline-none focus:border-accent/50"
+                className="w-full pl-9 pr-9 py-2.5 rounded-xl bg-bg-secondary border border-border/50 text-[13px] text-text-primary placeholder:text-text-quaternary focus:outline-none focus:border-accent/50"
               />
+              {searchInput && (
+                <button onClick={() => setSearchInput('')} className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 text-text-quaternary hover:text-text-primary transition-colors" aria-label="Clear search">
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </div>
 
             {/* 게시글 목록 / Post list */}

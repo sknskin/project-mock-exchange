@@ -23,7 +23,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { cn, formatQuantity, formatDate, formatPriceDisplay, formatCurrencyDisplay } from '@/lib/format';
 import { useAuthStore } from '@/stores/auth';
 import { useToastStore } from '@/stores/toast';
-import { Search, ChevronDown, ClipboardList, Check, BarChart, LayoutDashboard, Activity, Download } from 'lucide-react';
+import { Search, ChevronDown, ClipboardList, Check, BarChart, LayoutDashboard, Activity, Download, X } from 'lucide-react';
 import { exportToCSV } from '@/lib/export';
 import type { TranslationKey } from '@/lib/i18n';
 import type { Order } from '@/types';
@@ -494,8 +494,13 @@ export default function OrdersPage() {
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
                   placeholder={t('orders.searchSymbol')}
-                  className="w-full bg-bg-secondary border border-border rounded-xl pl-9 pr-4 py-2.5 text-[14px] text-text-primary placeholder:text-text-quaternary focus:outline-none focus:border-accent/60 transition-colors"
+                  className="w-full bg-bg-secondary border border-border rounded-xl pl-9 pr-9 py-2.5 text-[14px] text-text-primary placeholder:text-text-quaternary focus:outline-none focus:border-accent/60 transition-colors"
                 />
+                {searchInput && (
+                  <button onClick={() => setSearchInput('')} className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 text-text-quaternary hover:text-text-primary transition-colors" aria-label="Clear search">
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
               </div>
               {/* Status filter – custom dropdown */}
               <StatusDropdown
@@ -676,8 +681,13 @@ export default function OrdersPage() {
                   value={tradeSearch}
                   onChange={(e) => setTradeSearch(e.target.value)}
                   placeholder={t('orders.searchSymbol')}
-                  className="w-full bg-bg-secondary border border-border rounded-xl pl-9 pr-4 py-2.5 text-[14px] text-text-primary placeholder:text-text-quaternary focus:outline-none focus:border-accent/60 transition-colors"
+                  className="w-full bg-bg-secondary border border-border rounded-xl pl-9 pr-9 py-2.5 text-[14px] text-text-primary placeholder:text-text-quaternary focus:outline-none focus:border-accent/60 transition-colors"
                 />
+                {tradeSearch && (
+                  <button onClick={() => setTradeSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 text-text-quaternary hover:text-text-primary transition-colors" aria-label="Clear search">
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
               </div>
               <div className="flex shrink-0 bg-bg-secondary border border-border rounded-xl overflow-hidden">
                 {(['all', 'BUY', 'SELL'] as const).map((side) => (

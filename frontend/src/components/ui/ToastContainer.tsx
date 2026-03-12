@@ -9,6 +9,7 @@
  */
 'use client';
 
+import { X } from 'lucide-react';
 import { useToastStore, type ToastType } from '@/stores/toast';
 
 const STYLE_MAP: Record<ToastType, string> = {
@@ -30,12 +31,14 @@ export default function ToastContainer() {
 
   if (toasts.length === 0) return null;
 
+  const removeToast = useToastStore((s) => s.removeToast);
+
   return (
     <div className="fixed bottom-24 sm:bottom-20 left-1/2 -translate-x-1/2 z-[100] flex flex-col items-center gap-2.5 pointer-events-none w-[calc(100%-2rem)] sm:w-auto">
       {toasts.map((toast) => (
         <div
           key={toast.id}
-          className={`animate-toast-fade flex items-center gap-2.5 border rounded-xl shadow-lg px-5 py-3 sm:px-6 sm:py-3.5 text-sm sm:text-[15px] font-semibold max-w-full sm:max-w-md ${STYLE_MAP[toast.type]}`}
+          className={`pointer-events-auto animate-toast-fade flex items-center gap-2.5 border rounded-xl shadow-lg px-5 py-3 sm:px-6 sm:py-3.5 text-sm sm:text-[15px] font-semibold max-w-full sm:max-w-md ${STYLE_MAP[toast.type]}`}
         >
           <svg
             className="w-5 h-5 sm:w-[22px] sm:h-[22px] shrink-0"
@@ -46,7 +49,14 @@ export default function ToastContainer() {
           >
             <path strokeLinecap="round" strokeLinejoin="round" d={ICON_MAP[toast.type]} />
           </svg>
-          <span className="break-words">{toast.message}</span>
+          <span className="break-words flex-1">{toast.message}</span>
+          <button
+            onClick={() => removeToast(toast.id)}
+            className="shrink-0 p-0.5 rounded-md opacity-50 hover:opacity-100 transition-opacity"
+            aria-label="Close"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
       ))}
     </div>
