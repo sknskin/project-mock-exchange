@@ -14,6 +14,7 @@ import { cn, formatPriceDisplay, formatPercent } from '@/lib/format';
 import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useScrollLock } from '@/hooks/useScrollLock';
 import type { Asset } from '@/types';
 
 interface SpotlightSearchProps {
@@ -54,17 +55,15 @@ export default function SpotlightSearch({ isOpen, onClose, assets, onLoginRequir
 
   const displayList = query.trim() ? searchResults : top5;
 
-  // 모달 열릴 때 포커스 + 배경 스크롤 방지 / Focus on open + lock body scroll
+  useScrollLock(isOpen);
+
+  // 모달 열릴 때 포커스 / Focus on open
   useEffect(() => {
     if (isOpen) {
       setQuery('');
       setSelectedIndex(0);
-      document.body.style.overflow = 'hidden';
       setTimeout(() => inputRef.current?.focus(), 50);
-    } else {
-      document.body.style.overflow = '';
     }
-    return () => { document.body.style.overflow = ''; };
   }, [isOpen]);
 
   // ESC 키 닫기 + 키보드 네비게이션 / ESC close + keyboard navigation

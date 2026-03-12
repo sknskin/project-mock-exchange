@@ -12,6 +12,7 @@ import { createPortal } from 'react-dom';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useScrollLock } from '@/hooks/useScrollLock';
 
 // 주소 검색 Props / Address Search Props
 interface AddressSearchProps {
@@ -86,24 +87,7 @@ export default function AddressSearch({
     setShowEmbed(true);
   }, [loadScript]);
 
-  // 모달 열릴 때 배경 스크롤 완전 차단 (iOS 포함) / Fully lock body scroll (iOS safe)
-  useEffect(() => {
-    if (!showEmbed) return;
-    const scrollY = window.scrollY;
-    document.body.style.position = 'fixed';
-    document.body.style.top = `-${scrollY}px`;
-    document.body.style.left = '0';
-    document.body.style.right = '0';
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.position = '';
-      document.body.style.top = '';
-      document.body.style.left = '';
-      document.body.style.right = '';
-      document.body.style.overflow = '';
-      window.scrollTo(0, scrollY);
-    };
-  }, [showEmbed]);
+  useScrollLock(showEmbed);
 
   useEffect(() => {
     if (!showEmbed || !embedRef.current || !window.daum?.Postcode) return;

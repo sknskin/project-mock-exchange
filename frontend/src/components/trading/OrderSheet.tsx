@@ -11,6 +11,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import OrderForm from './OrderForm';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
+import { useScrollLock } from '@/hooks/useScrollLock';
 import { cn } from '@/lib/format';
 import { X } from 'lucide-react';
 
@@ -60,15 +61,13 @@ export default function OrderSheet({
     [onClose],
   );
 
+  useScrollLock(isOpen);
+
   useEffect(() => {
     if (isOpen) {
       document.addEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'hidden';
     }
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = '';
-    };
+    return () => { document.removeEventListener('keydown', handleKeyDown); };
   }, [isOpen, handleKeyDown]);
 
   if (!isOpen) return null;

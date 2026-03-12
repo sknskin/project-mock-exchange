@@ -15,6 +15,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth';
 import { useSettingsStore } from '@/stores/settings';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useScrollLock } from '@/hooks/useScrollLock';
 import { cn } from '@/lib/format';
 import { LogOut, Search, Menu, X, Megaphone, Newspaper, Users, BarChart3, LayoutDashboard, Briefcase, ClipboardList, Trophy, ChevronDown, User, Sun, Moon, Globe, HelpCircle, Settings, Activity, FileText } from 'lucide-react';
 import dynamic from 'next/dynamic';
@@ -86,10 +87,7 @@ export default function Header() {
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [userMenuOpen]);
-  useEffect(() => {
-    document.body.style.overflow = mobileMenuOpen ? 'hidden' : '';
-    return () => { document.body.style.overflow = ''; };
-  }, [mobileMenuOpen]);
+  useScrollLock(mobileMenuOpen);
 
   // 각 페이지에서 커스텀 이벤트로 모바일 메뉴를 열 수 있도록 리스너 등록
   // Allow pages to open mobile menu via custom event

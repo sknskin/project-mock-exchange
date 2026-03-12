@@ -11,6 +11,7 @@ import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { Bell, X } from 'lucide-react';
+import { useScrollLock } from '@/hooks/useScrollLock';
 import {
   useNotifications,
   useUnreadCount,
@@ -112,6 +113,8 @@ export default function NotificationBell() {
     };
   }, [open]);
 
+  useScrollLock(!!modalNotification);
+
   // ESC 키로 모달 닫기 (Close modal on ESC)
   useEffect(() => {
     if (!modalNotification) return;
@@ -119,7 +122,7 @@ export default function NotificationBell() {
       if (e.key === 'Escape') setModalNotification(null);
     };
     document.addEventListener('keydown', handleKey);
-    return () => document.removeEventListener('keydown', handleKey);
+    return () => { document.removeEventListener('keydown', handleKey); };
   }, [modalNotification]);
 
   /** 벨 클릭 시 드롭다운 토글 + 데이터 새로고침

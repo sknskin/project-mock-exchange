@@ -9,6 +9,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useScrollLock } from '@/hooks/useScrollLock';
 import { useCopyTradeConfig, useStartCopyTrade, useUpdateCopyTrade, useStopCopyTrade } from '@/hooks/useCopyTrade';
 import { cn, formatPercent } from '@/lib/format';
 import { X, Copy, AlertTriangle } from 'lucide-react';
@@ -63,6 +64,8 @@ export default function CopyTradeModal({
       setStopLossPercent(existingConfig.stopLossPercent ? Number(existingConfig.stopLossPercent) : '');
     }
   }, [existingConfig]);
+
+  useScrollLock(isOpen);
 
   // ESC 키로 모달 닫기 / Close modal on ESC
   useEffect(() => {

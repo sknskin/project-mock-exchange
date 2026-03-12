@@ -12,6 +12,7 @@ import { createPortal } from 'react-dom';
 import { X, Trash2, Bell, ArrowUp, ArrowDown } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
+import { useScrollLock } from '@/hooks/useScrollLock';
 import { usePriceAlerts, useCreatePriceAlert, useDeletePriceAlert } from '@/hooks/usePriceAlert';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
@@ -75,6 +76,8 @@ export default function PriceAlertModal({ isOpen, onClose, symbol, currentPrice 
     if (isKRW(symbol)) return wantKRW ? '₩' : '$';
     return wantKRW ? '₩' : '$';
   })();
+
+  useScrollLock(isOpen);
 
   // ESC 키로 닫기 / Close on Escape key
   useEffect(() => {

@@ -11,6 +11,7 @@ import { useEffect, useCallback, useRef } from 'react';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/format';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
+import { useScrollLock } from '@/hooks/useScrollLock';
 
 interface BottomSheetProps {
   isOpen: boolean;
@@ -35,20 +36,18 @@ export default function BottomSheet({
     [onClose],
   );
 
+  useScrollLock(isOpen);
+
   useEffect(() => {
     if (isOpen) {
       document.addEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'hidden';
       // 첫 번째 input에 자동 포커스 (Auto-focus first input)
       requestAnimationFrame(() => {
         const input = contentRef.current?.querySelector('input');
         if (input) input.focus();
       });
     }
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = '';
-    };
+    return () => { document.removeEventListener('keydown', handleKeyDown); };
   }, [isOpen, handleKeyDown]);
 
   if (!isOpen) return null;

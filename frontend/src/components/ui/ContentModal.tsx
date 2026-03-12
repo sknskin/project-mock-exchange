@@ -13,6 +13,7 @@ import remarkGfm from 'remark-gfm';
 import { X } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
+import { useScrollLock } from '@/hooks/useScrollLock';
 
 /* 테이블을 스크롤 가능한 래퍼로 감싸기 (Wrap table in scrollable wrapper for mobile) */
 function TableWrapper(props: ComponentPropsWithoutRef<'table'>) {
@@ -43,23 +44,12 @@ export default function ContentModal({ isOpen, onClose, title, content, type }: 
     [onClose],
   );
 
+  useScrollLock(isOpen);
+
   useEffect(() => {
     if (!isOpen) return;
     document.addEventListener('keydown', handleKeyDown);
-    // 모바일에서도 배경 스크롤 완전 차단 (Block background scroll on mobile too)
-    const scrollY = window.scrollY;
-    document.body.style.overflow = 'hidden';
-    document.body.style.position = 'fixed';
-    document.body.style.top = `-${scrollY}px`;
-    document.body.style.width = '100%';
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = '';
-      document.body.style.position = '';
-      document.body.style.top = '';
-      document.body.style.width = '';
-      window.scrollTo(0, scrollY);
-    };
+    return () => { document.removeEventListener('keydown', handleKeyDown); };
   }, [isOpen, handleKeyDown]);
 
   if (!isOpen) return null;
