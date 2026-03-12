@@ -250,7 +250,7 @@ export class AnnouncementProxyController {
   @Post(':id/view')
   @Public()
   @UseGuards(ThrottlerGuard)
-  @Throttle({ default: { ttl: 60000, limit: 10 } })
+  @Throttle({ default: { ttl: 60000, limit: 60 } })
   @ApiOperation({ summary: '조회수 증가', description: '공지사항의 조회수를 1 증가시킵니다. 인증 불필요' })
   @ApiParam({ name: 'id', description: '공지사항 ID' })
   @ApiResponse({ status: 200, description: '조회수 증가 성공' })

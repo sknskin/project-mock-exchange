@@ -47,7 +47,8 @@ interface MarketSignal {
   riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
 }
 
-// AI 시그널 데이터 조회 훅 (5분마다 갱신) / AI signals query hook (refreshes every 5 min)
+// AI 시그널 데이터 조회 훅 (1시간마다 갱신 — 백엔드 캐시 TTL과 동기화)
+// AI signals query hook (refreshes every 1 hour — matches backend cache TTL)
 function useAiSignals() {
   return useQuery<MarketSignal[]>({
     queryKey: ['ai-signals'],
@@ -55,8 +56,8 @@ function useAiSignals() {
       const { data } = await api.get('/api/ai/signals');
       return data;
     },
-    staleTime: 5 * 60 * 1000,
-    refetchInterval: 5 * 60 * 1000,
+    staleTime: 60 * 60 * 1000,
+    refetchInterval: 60 * 60 * 1000,
   });
 }
 

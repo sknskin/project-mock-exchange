@@ -8,6 +8,7 @@
 'use client';
 
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import { ChevronDown } from 'lucide-react';
 import AssetListItem from './AssetListItem';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { Asset } from '@/types';
@@ -51,6 +52,7 @@ export default function AssetList({ assets, period, onPeriodChange, mainTab = 'r
   const [category, setCategory] = useState('all');
   const [sort, setSort] = useState<SortKey>('volume');
   const [page, setPage] = useState(1);
+  const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
 
   const categoryTabs = [
     { key: 'all', label: t('filter.all') },
@@ -219,55 +221,94 @@ export default function AssetList({ assets, period, onPeriodChange, mainTab = 'r
     <div>
       {/* 필터 + 테이블 헤더 sticky 영역 / Sticky filter + table header area */}
       <div className="sticky top-[60px] z-30 bg-bg-primary">
-        {/* 필터 / Filters */}
-        <div className="pt-4 pb-3 flex flex-col lg:flex-row lg:items-center gap-2">
-          {/* 카테고리 그룹 / Category group */}
-          <div className="flex items-center gap-1.5 bg-bg-secondary/50 rounded-xl px-1.5 py-1.5 overflow-x-auto scrollbar-hide w-fit shrink-0">
-            {categoryTabs.map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => handleCategoryChange(tab.key)}
-                className={cn(
-                  'h-[32px] px-4 text-[13px] font-semibold rounded-lg transition-colors whitespace-nowrap shrink-0',
-                  category === tab.key ? pillActive : pillInactive,
-                )}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
+        {/* 필터 — 데스크톱: 인라인, 모바일: 드롭다운 / Filters — desktop: inline, mobile: dropdown */}
 
-          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
-            {/* 정렬 그룹 / Sort group — 실시간 차트 탭에서만 표시 */}
+        {/* 모바일 드롭다운 토글 / Mobile dropdown toggle */}
+        <button
+          onClick={() => setMobileFilterOpen((v) => !v)}
+          className="lg:hidden flex items-center justify-between w-full pt-4 pb-3 group"
+        >
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="bg-accent/10 text-accent text-[12px] font-bold rounded-md px-2 py-0.5 shrink-0">
+              {categoryTabs.find((c) => c.key === category)?.label}
+            </span>
             {mainTab === 'realtime' && (
-              <div className="flex items-center gap-1 bg-bg-secondary/50 rounded-xl px-1.5 py-1.5 overflow-x-auto scrollbar-hide w-fit shrink-0">
+              <span className="bg-accent/10 text-accent text-[12px] font-bold rounded-md px-2 py-0.5 shrink-0">
+                {sortOptions.find((s) => s.key === sort)?.label}
+              </span>
+            )}
+            {mainTab !== 'popular' && (
+              <span className="bg-accent/10 text-accent text-[12px] font-bold rounded-md px-2 py-0.5 shrink-0">
+                {periodOptions.find((p) => p.key === period)?.label}
+              </span>
+            )}
+          </div>
+          <ChevronDown className={cn('w-4 h-4 text-text-quaternary transition-transform shrink-0 ml-2', mobileFilterOpen && 'rotate-180')} />
+        </button>
+
+        {/* 모바일 드롭다운 패널 — 각 필터 그룹이 한 줄씩 / Mobile dropdown panel — each filter group on its own row */}
+        {mobileFilterOpen && (
+          <div className="lg:hidden flex flex-col gap-2 pb-3">
+            {/* 카테고리 / Category */}
+            <div className="flex items-center gap-1.5 bg-bg-secondary/50 rounded-xl px-1.5 py-1.5 overflow-x-auto scrollbar-hide">
+              {categoryTabs.map((tab) => (
+                <button key={tab.key} onClick={() => handleCategoryChange(tab.key)}
+                  className={cn('h-[32px] px-3.5 text-[13px] font-semibold rounded-lg transition-colors whitespace-nowrap shrink-0', category === tab.key ? pillActive : pillInactive)}>
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+            {/* 정렬 / Sort */}
+            {mainTab === 'realtime' && (
+              <div className="flex items-center gap-1 bg-bg-secondary/50 rounded-xl px-1.5 py-1.5 overflow-x-auto scrollbar-hide">
                 {sortOptions.map((opt) => (
-                  <button
-                    key={opt.key}
-                    onClick={() => handleSortChange(opt.key)}
-                    className={cn(
-                      'h-[32px] px-3.5 text-[13px] font-medium transition-colors whitespace-nowrap rounded-lg shrink-0',
-                      sort === opt.key ? pillActive : pillInactive,
-                    )}
-                  >
+                  <button key={opt.key} onClick={() => handleSortChange(opt.key)}
+                    className={cn('h-[32px] px-3 text-[13px] font-medium transition-colors whitespace-nowrap rounded-lg shrink-0', sort === opt.key ? pillActive : pillInactive)}>
                     {opt.label}
                   </button>
                 ))}
               </div>
             )}
-
-            {/* 기간 그룹 / Period group — 인기종목 탭에서는 숨김 */}
+            {/* 기간 / Period */}
             {mainTab !== 'popular' && (
-              <div className="flex items-center gap-0.5 bg-bg-secondary/50 rounded-xl px-1.5 py-1.5 overflow-x-auto scrollbar-hide w-fit shrink-0">
+              <div className="flex items-center gap-0.5 bg-bg-secondary/50 rounded-xl px-1.5 py-1.5 overflow-x-auto scrollbar-hide">
                 {periodOptions.map((opt) => (
-                  <button
-                    key={opt.key}
-                    onClick={() => onPeriodChange(opt.key)}
-                    className={cn(
-                      'h-[32px] px-2.5 text-[13px] font-medium transition-colors whitespace-nowrap rounded-lg shrink-0',
-                      period === opt.key ? pillActive : pillInactive,
-                    )}
-                  >
+                  <button key={opt.key} onClick={() => onPeriodChange(opt.key)}
+                    className={cn('h-[32px] px-2.5 text-[13px] font-medium transition-colors whitespace-nowrap rounded-lg shrink-0', period === opt.key ? pillActive : pillInactive)}>
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 데스크톱 인라인 필터 / Desktop inline filters */}
+        <div className="hidden lg:flex pt-4 pb-3 items-center gap-2">
+          <div className="flex items-center gap-1.5 bg-bg-secondary/50 rounded-xl px-1.5 py-1.5 shrink-0">
+            {categoryTabs.map((tab) => (
+              <button key={tab.key} onClick={() => handleCategoryChange(tab.key)}
+                className={cn('h-[32px] px-4 text-[13px] font-semibold rounded-lg transition-colors whitespace-nowrap shrink-0', category === tab.key ? pillActive : pillInactive)}>
+                {tab.label}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+            {mainTab === 'realtime' && (
+              <div className="flex items-center gap-1 bg-bg-secondary/50 rounded-xl px-1.5 py-1.5 shrink-0">
+                {sortOptions.map((opt) => (
+                  <button key={opt.key} onClick={() => handleSortChange(opt.key)}
+                    className={cn('h-[32px] px-3.5 text-[13px] font-medium transition-colors whitespace-nowrap rounded-lg shrink-0', sort === opt.key ? pillActive : pillInactive)}>
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            )}
+            {mainTab !== 'popular' && (
+              <div className="flex items-center gap-0.5 bg-bg-secondary/50 rounded-xl px-1.5 py-1.5 shrink-0">
+                {periodOptions.map((opt) => (
+                  <button key={opt.key} onClick={() => onPeriodChange(opt.key)}
+                    className={cn('h-[32px] px-2.5 text-[13px] font-medium transition-colors whitespace-nowrap rounded-lg shrink-0', period === opt.key ? pillActive : pillInactive)}>
                     {opt.label}
                   </button>
                 ))}

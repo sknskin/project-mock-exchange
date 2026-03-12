@@ -9,7 +9,7 @@
 
 import { memo, useEffect, useRef, useState } from 'react';
 
-const DURATION = 450; // ms
+const DURATION = 400; // ms
 
 /** 단일 자릿수 슬롯 — CSS transition 기반 부드러운 슬라이드
  * Single digit slot — smooth slide via CSS transitions */
@@ -17,15 +17,37 @@ function Digit({ char, direction }: { char: string; direction: 'up' | 'down' | '
   const [display, setDisplay] = useState({ current: char, previous: char });
   const [phase, setPhase] = useState<'idle' | 'animating'>('idle');
   const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
+  // 애니메이션 중 도착한 최신 값을 버퍼링 / Buffer latest value arriving mid-animation
+  const pendingRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (char === display.current) return;
+    if (char === display.current) {
+      pendingRef.current = null;
+      return;
+    }
+    // 애니메이션 진행 중이면 버퍼에만 저장하고 리턴 — state 변경 없이 key 유지
+    // During animation, buffer only — no state change keeps key stable
+    if (phase === 'animating') {
+      pendingRef.current = char;
+      return;
+    }
+    pendingRef.current = null;
     setDisplay((prev) => ({ previous: prev.current, current: char }));
     setPhase('animating');
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => setPhase('idle'), DURATION);
     return () => { if (timeoutRef.current) clearTimeout(timeoutRef.current); };
-  }, [char, display.current]);
+  }, [char, display.current, phase]);
+
+  // 애니메이션 종료 시 버퍼된 값으로 즉시 전환 (애니메이션 없이)
+  // On animation end, snap to buffered value (no animation)
+  useEffect(() => {
+    if (phase === 'idle' && pendingRef.current !== null && pendingRef.current !== display.current) {
+      const p = pendingRef.current;
+      pendingRef.current = null;
+      setDisplay({ current: p, previous: p });
+    }
+  }, [phase, display.current]);
 
   // 숫자가 아닌 문자(콤마, 점, 통화기호 등)는 애니메이션 없이 렌더
   // Non-digit chars (comma, dot, currency symbols) render without animation
@@ -48,15 +70,12 @@ function Digit({ char, direction }: { char: string; direction: 'up' | 'down' | '
           transition: animating
             ? `transform ${DURATION}ms cubic-bezier(0.22, 1, 0.36, 1), opacity ${DURATION}ms ease-out`
             : 'none',
-          transform: animating ? 'translateY(0)' : 'translateY(0)',
+          transform: 'translateY(0)',
           opacity: 1,
-          ...(animating ? {} : {}),
         }}
-        // 애니메이션 시작 시 초기 위치 설정을 위해 key 사용
         key={`cur-${display.current}-${display.previous}`}
         ref={(el) => {
           if (el && animating) {
-            // 강제 초기 위치 적용 후 다음 프레임에서 전환
             el.style.transition = 'none';
             el.style.transform = isUp ? 'translateY(100%)' : 'translateY(-100%)';
             el.style.opacity = '0';
