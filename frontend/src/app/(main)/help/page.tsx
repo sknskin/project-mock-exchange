@@ -72,6 +72,8 @@ import {
   Gauge,
   FileCheck,
   Download,
+  Sparkles,
+  Globe,
 } from 'lucide-react';
 import type { TranslationKey } from '@/lib/i18n';
 
@@ -442,6 +444,7 @@ export default function HelpPage() {
         { icon: <Search className="w-4 h-4" />, text: 'help.dashboard.search' },
         { icon: <MousePointerClick className="w-4 h-4" />, text: 'help.dashboard.detail' },
         { icon: <BarChart className="w-4 h-4" />, text: 'help.dashboard.marketInfo' },
+        { icon: <Globe className="w-4 h-4" />, text: 'help.dashboard.marquee' },
       ],
     },
     assetDetail: {
@@ -519,6 +522,7 @@ export default function HelpPage() {
       description: 'help.news.desc',
       items: [
         { icon: <Filter className="w-4 h-4" />, text: 'help.news.category' },
+        { icon: <Sparkles className="w-4 h-4" />, text: 'help.news.aiAnalysis' },
         { icon: <Link className="w-4 h-4" />, text: 'help.news.link' },
         { icon: <RefreshCw className="w-4 h-4" />, text: 'help.news.refresh' },
       ],

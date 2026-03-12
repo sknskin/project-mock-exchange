@@ -366,6 +366,83 @@ function DashboardMarketInfoIllust() {
   );
 }
 
+function DashboardMarqueeIllust() {
+  return (
+    <ScreenFrame>
+      {/* Marquee bar */}
+      <RoughRect x={20} y={60} w={620} h={44} fill="#1e1e24" stroke="#444" sw={1.5} />
+      {/* Index cards inside marquee */}
+      <RoughRect x={30} y={68} w={120} h={28} fill="#222228" stroke="#444" sw={1} />
+      <SketchText x={38} y={80} size={7} fill="#888">S&P 500</SketchText>
+      <SketchText x={38} y={90} size={9} fill="#fff">5,870</SketchText>
+      <SketchText x={90} y={90} size={7} fill="#22c55e">+0.5%</SketchText>
+      <RoughRect x={160} y={68} w={120} h={28} fill="#222228" stroke="#444" sw={1} />
+      <SketchText x={168} y={80} size={7} fill="#888">NASDAQ</SketchText>
+      <SketchText x={168} y={90} size={9} fill="#fff">18,420</SketchText>
+      <SketchText x={225} y={90} size={7} fill="#ef4444">-0.3%</SketchText>
+      <RoughRect x={290} y={68} w={120} h={28} fill="#222228" stroke="#444" sw={1} />
+      <SketchText x={298} y={80} size={7} fill="#888">KOSPI</SketchText>
+      <SketchText x={298} y={90} size={9} fill="#fff">2,680</SketchText>
+      <SketchText x={350} y={90} size={7} fill="#22c55e">+0.2%</SketchText>
+      <RoughRect x={420} y={68} w={120} h={28} fill="#222228" stroke="#444" sw={1} />
+      <SketchText x={428} y={80} size={7} fill="#888">Gold</SketchText>
+      <SketchText x={428} y={90} size={9} fill="#fff">$2,950</SketchText>
+      <SketchText x={485} y={90} size={7} fill="#22c55e">+1.1%</SketchText>
+      <RoughRect x={550} y={68} w={85} h={28} fill="#222228" stroke="#444" sw={1} />
+      <SketchText x={558} y={80} size={7} fill="#888">BTC</SketchText>
+      <SketchText x={558} y={90} size={9} fill="#fff">$87K</SketchText>
+      {/* Scroll arrows */}
+      <SketchText x={10} y={85} size={11} fill="#555">‹</SketchText>
+      <SketchText x={642} y={85} size={11} fill="#555">›</SketchText>
+      {/* Rest of page (faded) */}
+      <RoughRect x={20} y={115} w={620} h={24} fill="#1a1a1e" stroke="#333" sw={1} />
+      <RoughRect x={20} y={145} w={620} h={24} fill="#1a1a1e" stroke="#333" sw={1} />
+      {/* Highlight + label */}
+      <RoughRect x={15} y={55} w={630} h={55} fill="none" stroke="#ef4444" sw={2.5} />
+      <RoughArrow x1={330} y1={180} x2={330} y2={270} />
+      <RedLabel x={150} y={290}>36개 글로벌 지수 실시간 마키 — 클릭 시 상세 모달</RedLabel>
+    </ScreenFrame>
+  );
+}
+
+function NewsAiAnalysisIllust() {
+  return (
+    <ScreenFrame>
+      {/* News page header */}
+      <SketchText x={25} y={70} size={12} fill="#ccc">뉴스</SketchText>
+      {/* Category tabs */}
+      <RoughRect x={20} y={80} w={70} h={24} fill="#7c7cff" stroke="#7c7cff" sw={1} />
+      <SketchText x={30} y={96} size={8} fill="#fff">암호화폐</SketchText>
+      <RoughRect x={95} y={80} w={70} h={24} fill="#222" stroke="#444" sw={1} />
+      <SketchText x={105} y={96} size={8}>국내주식</SketchText>
+      <RoughRect x={170} y={80} w={70} h={24} fill="#222" stroke="#444" sw={1} />
+      <SketchText x={180} y={96} size={8}>해외주식</SketchText>
+      {/* AI Analysis button */}
+      <RoughRect x={530} y={80} w={105} h={24} fill="#7c7cff22" stroke="#7c7cff" sw={1.5} />
+      <SketchText x={555} y={96} size={9} fill="#7c7cff">✦ AI 분석</SketchText>
+      {/* AI modal overlay */}
+      <RoughRect x={100} y={120} w={450} h={250} fill="#222228" stroke="#555" sw={2} />
+      <SketchText x={120} y={145} size={11} fill="#7c7cff">AI 뉴스 분석</SketchText>
+      {/* Summary */}
+      <SketchText x={120} y={170} size={9} fill="#888">시장 요약</SketchText>
+      <RoughRect x={120} y={176} w={410} h={30} fill="#1a1a1e" stroke="#444" sw={1} />
+      <SketchText x={130} y={195} size={8}>비트코인 강세 흐름 지속, 기관 매수세 유입...</SketchText>
+      {/* Sentiment badge */}
+      <SketchText x={120} y={225} size={9} fill="#888">시장 심리</SketchText>
+      <RoughRect x={120} y={232} w={55} h={18} fill="#22c55e22" stroke="#22c55e" sw={1} />
+      <SketchText x={130} y={244} size={8} fill="#22c55e">강세</SketchText>
+      {/* Key highlights */}
+      <SketchText x={120} y={268} size={9} fill="#888">핵심 포인트</SketchText>
+      <SketchText x={130} y={285} size={8}>• 기관 투자자 비트코인 매집 가속화</SketchText>
+      <SketchText x={130} y={298} size={8}>• ETF 자금 유입 역대 최고치 경신</SketchText>
+      {/* Highlight box */}
+      <RoughRect x={525} y={75} w={115} h={34} fill="none" stroke="#ef4444" sw={2.5} />
+      <RoughArrow x1={580} y1={115} x2={325} y2={130} />
+      <RedLabel x={200} y={380}>AI가 뉴스를 종합 분석 — 시장 심리, 핵심 포인트</RedLabel>
+    </ScreenFrame>
+  );
+}
+
 /* ─── 자산 상세 기능별 일러스트레이션 / Asset Detail feature illustrations ─── */
 function AssetDetailBuySellIllust() {
   return (
@@ -2292,6 +2369,7 @@ export const illustrationMap: Record<string, Record<number, () => React.ReactNod
     5: () => <DashboardSearchIllust />,
     6: () => <DashboardDetailIllust />,
     7: () => <DashboardMarketInfoIllust />,
+    8: () => <DashboardMarqueeIllust />,
   },
   assetDetail: {
     0: () => <AssetDetailBuySellIllust />,
@@ -2335,8 +2413,9 @@ export const illustrationMap: Record<string, Record<number, () => React.ReactNod
   },
   news: {
     0: () => <NewsCategoryIllust />,
-    1: () => <NewsLinkIllust />,
-    2: () => <NewsRefreshIllust />,
+    1: () => <NewsAiAnalysisIllust />,
+    2: () => <NewsLinkIllust />,
+    3: () => <NewsRefreshIllust />,
   },
   chat: {
     0: () => <ChatDmIllust />,
@@ -2407,6 +2486,7 @@ export const tipMap: Record<string, Record<number, TranslationKey[]>> = {
     5: ['help.dashboard.search.tip1', 'help.dashboard.search.tip2'],
     6: ['help.dashboard.detail.tip1', 'help.dashboard.detail.tip2'],
     7: ['help.dashboard.marketInfo.tip1', 'help.dashboard.marketInfo.tip2'],
+    8: ['help.dashboard.marquee.tip1', 'help.dashboard.marquee.tip2'],
   },
   assetDetail: {
     0: ['help.assetDetail.buySell.tip1', 'help.assetDetail.buySell.tip2'],
@@ -2450,8 +2530,9 @@ export const tipMap: Record<string, Record<number, TranslationKey[]>> = {
   },
   news: {
     0: ['help.news.category.tip1', 'help.news.category.tip2'],
-    1: ['help.news.link.tip1', 'help.news.link.tip2'],
-    2: ['help.news.refresh.tip1', 'help.news.refresh.tip2'],
+    1: ['help.news.aiAnalysis.tip1', 'help.news.aiAnalysis.tip2'],
+    2: ['help.news.link.tip1', 'help.news.link.tip2'],
+    3: ['help.news.refresh.tip1', 'help.news.refresh.tip2'],
   },
   chat: {
     0: ['help.chat.dm.tip1', 'help.chat.dm.tip2'],
