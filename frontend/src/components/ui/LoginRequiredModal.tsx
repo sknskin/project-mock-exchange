@@ -11,6 +11,7 @@ import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
+import { useScrollLock } from '@/hooks/useScrollLock';
 import { LogIn } from 'lucide-react';
 
 interface LoginRequiredModalProps {
@@ -31,19 +32,16 @@ export default function LoginRequiredModal({
   const router = useRouter();
   const modalRef = useRef<HTMLDivElement>(null);
   useFocusTrap(modalRef, isOpen);
+  useScrollLock(isOpen);
 
-  // ESC 키로 닫기 + 배경 스크롤 방지 / Close on Escape key + lock body scroll
+  // ESC 키로 닫기 / Close on Escape key
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
     document.addEventListener('keydown', handleKeyDown);
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = '';
-    };
+    return () => { document.removeEventListener('keydown', handleKeyDown); };
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;
@@ -57,10 +55,10 @@ export default function LoginRequiredModal({
       ref={modalRef}
     >
       {/* 오버레이 / Overlay */}
-      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/60 animate-modal-backdrop" onClick={onClose} />
 
       {/* 모달 본체 / Modal body */}
-      <div className="relative bg-bg-primary border border-border rounded-2xl p-6 w-[min(360px,calc(100vw-2rem))] shadow-2xl">
+      <div className="relative bg-bg-primary border border-border rounded-2xl p-6 w-[min(360px,calc(100vw-2rem))] shadow-2xl animate-modal-content">
         <div className="flex justify-center mb-4">
           <div className="w-12 h-12 rounded-full bg-accent/15 border border-accent/30 flex items-center justify-center">
             <LogIn className="w-6 h-6 text-accent" />

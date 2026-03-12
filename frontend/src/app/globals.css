@@ -413,23 +413,32 @@ nextjs-portal,
     filter: invert(1);
   }
 
-  /* 시장 지수 마키 – 푸터 마키와 동일 로직, 느린 속도 + 호버 시 일시정지 */
-  /* Market index marquee – same logic as footer, slower speed + pause on hover */
+  /* 시장 지수 마키 – JS로 호버 일시정지/드래그/휠 스크롤 처리 */
+  /* Market index marquee – hover pause, drag, and wheel scroll handled by JS */
   .animate-marquee-index {
     display: flex;
     width: max-content;
     will-change: transform;
-    animation: marquee 120s linear infinite;
+    animation: marquee 180s linear infinite;
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
     user-select: none;
   }
-  .marquee-pause-on-hover:hover .animate-marquee-index {
-    animation-play-state: paused;
+
+  /* ─── 모달 애니메이션 / Modal animations ─── */
+  @keyframes modal-backdrop-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
   }
-  /* 호버 시 휠 스크롤 힌트 커서 / Wheel scroll hint cursor on hover */
-  .marquee-pause-on-hover:hover {
-    cursor: ew-resize;
+  @keyframes modal-content-in {
+    from { opacity: 0; transform: scale(0.97) translateY(8px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  .animate-modal-backdrop {
+    animation: modal-backdrop-in 0.2s ease-out both;
+  }
+  .animate-modal-content {
+    animation: modal-content-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   /* 가격 변동 플래시: 상승=빨간 배경, 하락=파란 배경 → 1초 후 사라짐 */
