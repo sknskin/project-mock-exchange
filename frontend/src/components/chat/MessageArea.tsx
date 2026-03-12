@@ -132,18 +132,34 @@ export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeave
   const markReadRef = useRef(markRead);
   markReadRef.current = markRead;
 
-  // 마운트 시 및 새 메시지 도착 시 읽음 처리 (Mark as read on mount and when new messages arrive)
+  // 마운트 시 및 새 메시지 도착 시 읽음 처리 — 디바운스 적용 (Mark as read on mount and new messages — debounced)
+  const markReadTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
   useEffect(() => {
     if (roomId && messages.length > lastMarkedLengthRef.current) {
       lastMarkedLengthRef.current = messages.length;
-      markReadRef.current.mutate(roomId);
+      if (markReadTimerRef.current) clearTimeout(markReadTimerRef.current);
+      markReadTimerRef.current = setTimeout(() => {
+        markReadRef.current.mutate(roomId);
+      }, 300);
     }
   }, [roomId, messages.length]);
 
-  // 새 메시지 시 자동 스크롤 (Auto-scroll on new message)
+  // 새 메시지 시 자동 스크롤 — 무한 스크롤(이전 메시지 로드) 시에는 스크롤하지 않음
+  // Auto-scroll on new message — skip during infinite scroll (loading older messages)
+  const isLoadingOlderRef = useRef(false);
+  useEffect(() => {
+    if (isFetchingNextPage) {
+      isLoadingOlderRef.current = true;
+    }
+  }, [isFetchingNextPage]);
+
   useEffect(() => {
     if (messages.length > prevMessageCountRef.current) {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      // 이전 메시지 로드 시에는 스크롤하지 않음 / Don't scroll when loading older messages
+      if (!isLoadingOlderRef.current) {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }
+      isLoadingOlderRef.current = false;
     }
     prevMessageCountRef.current = messages.length;
   }, [messages.length]);

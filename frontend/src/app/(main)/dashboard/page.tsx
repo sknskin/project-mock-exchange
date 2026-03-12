@@ -7,7 +7,7 @@
  */
 'use client';
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef, startTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMarketPrices, useAssets, usePeriodChanges } from '@/hooks/useMarket';
 import { useWebSocket } from '@/hooks/useWebSocket';
@@ -39,8 +39,10 @@ export default function DashboardPage() {
   const { t } = useTranslation();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
-  // 실시간 WebSocket 가격 업데이트 저장소 / Live WebSocket price update store
+  // 실시간 WebSocket 가격 업데이트 저장소 (500ms 배치 적용) / Live WebSocket price update store (500ms batching)
   const [livePrices, setLivePrices] = useState<Record<string, PriceUpdate>>({});
+  const pendingPricesRef = useRef<Record<string, PriceUpdate>>({});
+  const flushTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   // 메인 탭 상태 (실시간, 인기, 급상승, 관심종목) / Main tab state (realtime, popular, trending, watchlist)
   const [activeMainTab, setActiveMainTab] = useState('realtime');
   // 기간 필터 (실시간, 1일, 1주 등) / Period filter (realtime, 1d, 1w, etc.)
@@ -49,6 +51,11 @@ export default function DashboardPage() {
   const [spotlightOpen, setSpotlightOpen] = useState(false);
   // 로그인 필요 모달 상태 / Login required modal state
   const [loginModalOpen, setLoginModalOpen] = useState(false);
+
+  // WebSocket 배치 타이머 정리 / Cleanup WebSocket batch timer
+  useEffect(() => {
+    return () => { if (flushTimerRef.current) clearTimeout(flushTimerRef.current); };
+  }, []);
 
   // / 키 또는 헤더 검색 클릭으로 스포트라이트 열기
   // Open spotlight via / key or header search click
@@ -137,9 +144,22 @@ export default function DashboardPage() {
 
   // WebSocket 구독 심볼 목록 추출 / Extract symbol list for WebSocket subscription
   const symbols = useMemo(() => assets.map((a) => a.symbol), [assets]);
-  // WebSocket 실시간 가격 콜백 / WebSocket real-time price callback
+  // WebSocket 실시간 가격 콜백 — 500ms 배치로 과도한 렌더 방지
+  // WebSocket real-time price callback — batches updates every 500ms to prevent excessive re-renders
   const handlePriceUpdate = useCallback((update: PriceUpdate) => {
-    setLivePrices((prev) => ({ ...prev, [update.symbol]: update }));
+    pendingPricesRef.current[update.symbol] = update;
+    if (!flushTimerRef.current) {
+      flushTimerRef.current = setTimeout(() => {
+        const batch = pendingPricesRef.current;
+        pendingPricesRef.current = {};
+        flushTimerRef.current = undefined;
+        // startTransition: 가격 업데이트를 낮은 우선순위로 처리 → 입력 등 사용자 상호작용이 먼저 처리됨
+        // startTransition: process price updates at low priority → user interactions (typing, etc.) take precedence
+        startTransition(() => {
+          setLivePrices((prev) => ({ ...prev, ...batch }));
+        });
+      }, 2000);
+    }
   }, []);
   useWebSocket(symbols, handlePriceUpdate);
 

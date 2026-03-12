@@ -72,8 +72,23 @@ export default function ChatPanel() {
     e.preventDefault();
   }, [isPinned, position, size]);
 
+  // rAF 기반 쓰로틀링으로 드래그/리사이즈 성능 최적화
+  // Throttle drag/resize with requestAnimationFrame for smooth 60fps updates
+  const rafRef = useRef<number>(0);
+  const pendingMoveRef = useRef<{ x: number; y: number; w?: number; h?: number } | null>(null);
+
   useEffect(() => {
     if (!interacting) return;
+
+    const applyUpdate = () => {
+      const p = pendingMoveRef.current;
+      if (!p) return;
+      pendingMoveRef.current = null;
+      if (p.w !== undefined && p.h !== undefined) {
+        setSize({ width: p.w, height: p.h });
+      }
+      setPosition({ x: p.x, y: p.y });
+    };
 
     const onMouseMove = (e: MouseEvent) => {
       const d = dragRef.current;
@@ -83,8 +98,8 @@ export default function ChatPanel() {
 
       if (d.mode === 'move') {
         const newX = Math.max(0, Math.min(window.innerWidth - size.width, d.origX + dx));
-        const newY = Math.max(0, Math.min(window.innerHeight - 100, d.origY + dy)); // 100px = minimum visible panel area
-        setPosition({ x: newX, y: newY });
+        const newY = Math.max(0, Math.min(window.innerHeight - 100, d.origY + dy));
+        pendingMoveRef.current = { x: newX, y: newY };
       } else {
         let newW = d.origW;
         let newH = d.origH;
@@ -104,16 +119,22 @@ export default function ChatPanel() {
           newY = d.origY + dh;
         }
 
-        // 뷰포트 클램프 (Viewport clamp)
         newX = Math.max(0, newX);
         newY = Math.max(0, newY);
+        pendingMoveRef.current = { x: newX, y: newY, w: newW, h: newH };
+      }
 
-        setSize({ width: newW, height: newH });
-        setPosition({ x: newX, y: newY });
+      if (!rafRef.current) {
+        rafRef.current = requestAnimationFrame(() => {
+          rafRef.current = 0;
+          applyUpdate();
+        });
       }
     };
 
     const onMouseUp = () => {
+      if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = 0; }
+      if (pendingMoveRef.current) { applyUpdate(); }
       dragRef.current = null;
       setInteracting(false);
     };
@@ -123,6 +144,7 @@ export default function ChatPanel() {
     return () => {
       document.removeEventListener('mousemove', onMouseMove);
       document.removeEventListener('mouseup', onMouseUp);
+      if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = 0; }
     };
   }, [interacting, size, setPosition, setSize]);
 

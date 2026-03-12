@@ -7,7 +7,7 @@
  */
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback, memo } from 'react';
 import { Trash2, Shield } from 'lucide-react';
 import { cn } from '@/lib/format';
 import { useDeleteMessage } from '@/hooks/useChat';
@@ -43,7 +43,7 @@ function formatTime(dateString: string) {
 
 /** 메시지 버블 — 본인/상대/시스템/관리자 스타일 분기 및 삭제 기능
  * Message bubble — style varies by sender role with delete support */
-export default function MessageBubble({ message, isMine, showSender, locale: _locale, userRole }: MessageBubbleProps) {
+const MessageBubble = memo(function MessageBubble({ message, isMine, showSender, locale: _locale, userRole }: MessageBubbleProps) {
   const { t } = useTranslation();
   const deleteMessage = useDeleteMessage();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -60,10 +60,15 @@ export default function MessageBubble({ message, isMine, showSender, locale: _lo
 
   /** 메시지 삭제 요청 처리
    * Handle message deletion */
-  const handleDelete = async () => {
+  const handleDelete = useCallback(async () => {
     await deleteMessage.mutateAsync({ roomId: message.roomId, messageId: message.id });
     setShowDeleteConfirm(false);
-  };
+  }, [deleteMessage, message.roomId, message.id]);
+
+  const openDeleteConfirm = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowDeleteConfirm(true);
+  }, []);
 
   return (
     <>
@@ -113,7 +118,7 @@ export default function MessageBubble({ message, isMine, showSender, locale: _lo
               </div>
               {canDelete && (
                 <button
-                  onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(true); }}
+                  onClick={openDeleteConfirm}
                   disabled={deleteMessage.isPending}
                   title={t('chat.deleteMessage')}
                   className={cn(
@@ -154,4 +159,6 @@ export default function MessageBubble({ message, isMine, showSender, locale: _lo
       />
     </>
   );
-}
+});
+
+export default MessageBubble;

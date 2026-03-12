@@ -87,6 +87,14 @@ interface ChatState {
 
 const saved = typeof window !== 'undefined' ? loadPanelLayout() : { position: null, size: { width: DEFAULT_W, height: DEFAULT_H } };
 
+// localStorage 저장 디바운스 — 드래그/리사이즈 중 과도한 쓰기 방지
+// Debounced localStorage save — prevents excessive writes during drag/resize
+let saveTimer: ReturnType<typeof setTimeout> | null = null;
+function debouncedSave(position: ChatPosition | null, size: ChatSize) {
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => savePanelLayout(position, size), 300);
+}
+
 export const useChatStore = create<ChatState>()((set, get) => ({
   isOpen: false,
   isPinned: false,
@@ -106,12 +114,12 @@ export const useChatStore = create<ChatState>()((set, get) => ({
   setView: (view: ChatView) => set({ view }),
   setPosition: (pos: ChatPosition) => {
     set({ position: pos });
-    savePanelLayout(pos, get().size);
+    debouncedSave(pos, get().size);
   },
   setSize: (size: ChatSize) => {
     const clamped = { width: Math.max(MIN_W, size.width), height: Math.max(MIN_H, size.height) };
     set({ size: clamped });
-    savePanelLayout(get().position, clamped);
+    debouncedSave(get().position, clamped);
   },
   togglePin: () =>
     set((state) => {

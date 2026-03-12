@@ -7,7 +7,7 @@
  */
 'use client';
 
-import { useState, useCallback, useMemo, use } from 'react';
+import { useState, useCallback, useMemo, use, startTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAssetPrice, useCandlesticks, useOrderBook, useRecentTrades } from '@/hooks/useMarket';
 import { useWebSocket } from '@/hooks/useWebSocket';
@@ -122,7 +122,7 @@ export default function AssetDetailPage({
 
   const handlePriceUpdate = useCallback((update: PriceUpdate) => {
     if (update.symbol === symbol) {
-      setLivePrice(update);
+      startTransition(() => { setLivePrice(update); });
     }
   }, [symbol]);
 

@@ -7,7 +7,7 @@
  */
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { ArrowLeft, Search, X, Check, PanelRightOpen } from 'lucide-react';
 import { useChatStore } from '@/stores/chat';
 import { useCreateRoom, useSearchUsers } from '@/hooks/useChat';
@@ -40,9 +40,9 @@ export default function CreateRoomModal() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  const filteredResults = searchResults?.filter(
+  const filteredResults = useMemo(() => searchResults?.filter(
     (u) => u.id !== user?.id && !selectedUsers.some((s) => s.id === u.id),
-  );
+  ), [searchResults, user?.id, selectedUsers]);
 
   const isGroup = selectedUsers.length > 1;
 

@@ -170,7 +170,9 @@ function bindListeners(socket: Socket, qc: QueryClient) {
       return;
     }
 
-    qc.invalidateQueries({ queryKey: ['chat-messages'] });
+    if (data.roomId) {
+      qc.invalidateQueries({ queryKey: ['chat-messages', data.roomId] });
+    }
     qc.invalidateQueries({ queryKey: ['chat-rooms'] });
     const me = useAuthStore.getState().user;
     if (data.senderId && me?.id === data.senderId) return;
@@ -190,8 +192,10 @@ function bindListeners(socket: Socket, qc: QueryClient) {
     });
   });
 
-  socket.on('chat:read', () => {
-    qc.invalidateQueries({ queryKey: ['chat-messages'] });
+  socket.on('chat:read', (data: { roomId?: string }) => {
+    if (data?.roomId) {
+      qc.invalidateQueries({ queryKey: ['chat-messages', data.roomId] });
+    }
     qc.invalidateQueries({ queryKey: ['chat-rooms'] });
   });
 
@@ -220,9 +224,11 @@ function bindListeners(socket: Socket, qc: QueryClient) {
   });
 
   // 참여자 변경 (Participant update – invite/leave/kick)
-  socket.on('chat:participant-update', () => {
+  socket.on('chat:participant-update', (data: { roomId?: string }) => {
     qc.invalidateQueries({ queryKey: ['chat-rooms'] });
-    qc.invalidateQueries({ queryKey: ['chat-messages'] });
+    if (data?.roomId) {
+      qc.invalidateQueries({ queryKey: ['chat-messages', data.roomId] });
+    }
   });
 
   // 채팅방 퇴장 (Kicked from chat room)
