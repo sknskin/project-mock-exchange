@@ -9,6 +9,12 @@ export type Locale = 'ko' | 'en';
 
 const translations = {
   ko: {
+    // Common
+    'common.justRefreshed': '방금 갱신',
+    'common.secondsAgo': '{n}초 전 갱신',
+    'common.autoRefreshInterval': '{n}초 주기 자동 갱신',
+    'common.refresh': '새로고침',
+
     // Header
     'nav.home': '홈',
     'nav.dashboard': '대시보드',
@@ -1067,8 +1073,8 @@ const translations = {
     'portfolio.refreshing': '갱신 중...',
     'portfolio.autoRefresh': '10초 주기 자동 갱신',
     'portfolio.justNow': '방금 갱신',
-    'portfolio.secondsAgo': '{n}초 전',
-    'portfolio.minutesAgo': '{n}분 전',
+    'portfolio.secondsAgo': '{n}초 전 갱신',
+    'portfolio.minutesAgo': '{n}분 전 갱신',
     'portfolio.withdrawConfirmTitle': '출금 확인',
     'portfolio.withdrawConfirmMessage': '${amount}을 출금하시겠습니까?',
 
@@ -1133,6 +1139,19 @@ const translations = {
     'news.dateFilter.24h': '최근 24시간',
     'news.dateFilter.7d': '최근 7일',
     'news.dateFilter.30d': '최근 30일',
+    'news.aiAnalysis': 'AI 분석',
+    'news.aiAnalysis.title': 'AI 뉴스 분석',
+    'news.aiAnalysis.loading': '뉴스를 분석하고 있습니다...',
+    'news.aiAnalysis.summary': '시장 요약',
+    'news.aiAnalysis.highlights': '핵심 포인트',
+    'news.aiAnalysis.sentiment': '시장 심리',
+    'news.aiAnalysis.sentiment.BULLISH': '강세',
+    'news.aiAnalysis.sentiment.BEARISH': '약세',
+    'news.aiAnalysis.sentiment.NEUTRAL': '중립',
+    'news.aiAnalysis.sentiment.MIXED': '혼조',
+    'news.aiAnalysis.noData': '분석할 뉴스 데이터가 없습니다',
+    'news.aiAnalysis.error': '분석 중 오류가 발생했습니다',
+    'news.aiAnalysis.close': '닫기',
 
     // Stats
     'stats.popularAssetsDonut': '거래량 비중',
@@ -2009,6 +2028,12 @@ const translations = {
     'connection.retrying': '연결 중...',
   },
   en: {
+    // Common
+    'common.justRefreshed': 'Just updated',
+    'common.secondsAgo': '{n}s ago',
+    'common.autoRefreshInterval': 'Auto-refresh every {n}s',
+    'common.refresh': 'Refresh',
+
     // Header
     'nav.home': 'Home',
     'nav.dashboard': 'Dashboard',
@@ -3133,6 +3158,19 @@ const translations = {
     'news.dateFilter.24h': 'Last 24h',
     'news.dateFilter.7d': 'Last 7 days',
     'news.dateFilter.30d': 'Last 30 days',
+    'news.aiAnalysis': 'AI Analysis',
+    'news.aiAnalysis.title': 'AI News Analysis',
+    'news.aiAnalysis.loading': 'Analyzing news...',
+    'news.aiAnalysis.summary': 'Market Summary',
+    'news.aiAnalysis.highlights': 'Key Highlights',
+    'news.aiAnalysis.sentiment': 'Market Sentiment',
+    'news.aiAnalysis.sentiment.BULLISH': 'Bullish',
+    'news.aiAnalysis.sentiment.BEARISH': 'Bearish',
+    'news.aiAnalysis.sentiment.NEUTRAL': 'Neutral',
+    'news.aiAnalysis.sentiment.MIXED': 'Mixed',
+    'news.aiAnalysis.noData': 'No news data available for analysis',
+    'news.aiAnalysis.error': 'Error occurred during analysis',
+    'news.aiAnalysis.close': 'Close',
 
     // Stats
     'stats.popularAssetsDonut': 'Volume Distribution',

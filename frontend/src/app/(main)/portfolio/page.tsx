@@ -7,7 +7,7 @@
  */
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import Link from 'next/link';
 import AuthGuard from '@/components/layout/AuthGuard';
 import BalanceCard from '@/components/portfolio/BalanceCard';
@@ -21,13 +21,14 @@ import BottomSheet from '@/components/ui/BottomSheet';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import Skeleton from '@/components/ui/Skeleton';
 import ServiceError from '@/components/ui/ServiceError';
+import RefreshControl from '@/components/ui/RefreshControl';
 import { usePortfolioValuation, useDeposit, useWithdraw } from '@/hooks/usePortfolio';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn, formatCurrency, formatDollar, formatCurrencyDisplay, formatPercent } from '@/lib/format';
 import { useToastStore } from '@/stores/toast';
-import { Briefcase, ShoppingCart, LayoutDashboard, Download, RefreshCw, TrendingUp, TrendingDown } from 'lucide-react';
+import { Briefcase, ShoppingCart, LayoutDashboard, Download, TrendingUp, TrendingDown } from 'lucide-react';
 import { exportToCSV } from '@/lib/export';
 
 type PortfolioTab = 'overview' | 'analytics';
@@ -35,15 +36,12 @@ type PortfolioTab = 'overview' | 'analytics';
 export default function PortfolioPage() {
   const { t } = useTranslation();
   // 포트폴리오 평가액 조회 — 잔고, 보유 종목, 수익률 포함 / Portfolio valuation — includes balance, holdings, returns
-  const { data: portfolio, isLoading, error: portfolioError, refetch, dataUpdatedAt } = usePortfolioValuation();
+  const { data: portfolio, isLoading, error: portfolioError, refetch } = usePortfolioValuation();
   const { query: { data: rateData } } = useExchangeRate();
   const { display: currencyMode } = useCurrencyDisplay();
 
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const handleRefresh = useCallback(async () => {
-    setIsRefreshing(true);
-    await Promise.all([refetch(), new Promise((r) => setTimeout(r, 1000))]);
-    setIsRefreshing(false);
+    await refetch();
   }, [refetch]);
 
   // 입금/출금 뮤테이션 및 BottomSheet 상태 / Deposit/withdraw mutations and BottomSheet state
@@ -58,24 +56,6 @@ export default function PortfolioPage() {
   // 탭 전환 — overview(잔고+보유) vs analytics(차트 분석) / Tab switch — overview (balance+holdings) vs analytics (charts)
   const [activeTab, setActiveTabRaw] = useState<PortfolioTab>('overview');
   const setActiveTab = useCallback((v: PortfolioTab) => { setActiveTabRaw(v); window.scrollTo({ top: 0, behavior: 'smooth' }); }, []);
-
-  /**
-   * 마지막 갱신 시간 표시 — 분 단위 갱신이므로 60초 간격으로 충분
-   * Last updated display — minute-level granularity, so 60s interval is sufficient
-   */
-  const [now, setNow] = useState(Date.now());
-  useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now()), 60_000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const lastUpdatedText = (() => {
-    if (!dataUpdatedAt) return '';
-    const diff = Math.floor((now - dataUpdatedAt) / 1000);
-    if (diff < 3) return t('portfolio.justNow');
-    if (diff < 60) return t('portfolio.secondsAgo').replace('{n}', String(diff));
-    return t('portfolio.minutesAgo').replace('{n}', String(Math.floor(diff / 60)));
-  })();
 
   const rate = rateData?.rate ?? 0;
 
@@ -144,29 +124,7 @@ export default function PortfolioPage() {
             <Briefcase className="w-5 h-5 text-accent" />
             <h1 className="text-[20px] font-extrabold text-text-primary">{t('nav.portfolio')}</h1>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="hidden sm:inline text-[11px] text-text-quaternary">
-              {t('portfolio.autoRefresh')}
-            </span>
-            {lastUpdatedText && (
-              <span className="text-[11px] text-text-quaternary tabular-nums">
-                {lastUpdatedText}
-              </span>
-            )}
-            <button
-              onClick={handleRefresh}
-              disabled={isRefreshing}
-              className={cn(
-                'flex items-center justify-center gap-2 h-10 min-w-[120px] px-4 rounded-xl text-[13px] font-semibold transition-all duration-150 border btn-outline',
-                isRefreshing
-                  ? 'border-border text-text-quaternary cursor-not-allowed'
-                  : 'border-accent/30 text-accent hover:bg-accent/10',
-              )}
-            >
-              <RefreshCw className={cn('w-4 h-4 shrink-0', isRefreshing && 'animate-spin')} />
-              {t('portfolio.refresh')}
-            </button>
-          </div>
+          <RefreshControl intervalSeconds={10} onRefresh={handleRefresh} />
         </div>
         {/* 탭 네비게이션 / Tab Navigation */}
         <div className="flex gap-1 border-b border-border/60 mb-2">
