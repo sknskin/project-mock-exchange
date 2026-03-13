@@ -28,10 +28,9 @@ const ICON_MAP: Record<ToastType, string> = {
 
 export default function ToastContainer() {
   const toasts = useToastStore((s) => s.toasts);
+  const removeToast = useToastStore((s) => s.removeToast);
 
   if (toasts.length === 0) return null;
-
-  const removeToast = useToastStore((s) => s.removeToast);
 
   return (
     <div className="fixed bottom-24 sm:bottom-20 left-1/2 -translate-x-1/2 z-[100] flex flex-col items-center gap-2.5 pointer-events-none w-[calc(100%-2rem)] sm:w-auto">

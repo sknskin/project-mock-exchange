@@ -132,6 +132,7 @@ export default function LeaderboardPage() {
 
   // 팔로우 상태 훅 / Follow state hooks
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const currentUser = useAuthStore((s) => s.user);
   const { data: followingData } = useFollowing();
   const followTrader = useFollowTrader();
   const unfollowTrader = useUnfollowTrader();
@@ -146,12 +147,14 @@ export default function LeaderboardPage() {
   /** 팔로우/언팔로우 토글 / Toggle follow/unfollow */
   const toggleFollow = useCallback((userId: string) => {
     if (!isAuthenticated) return;
+    // 자기 자신 팔로우 불가 / Cannot follow yourself
+    if (currentUser && currentUser.id === userId) return;
     if (followedUserIds.has(userId)) {
       unfollowTrader.mutate(userId);
     } else {
       followTrader.mutate(userId);
     }
-  }, [isAuthenticated, followedUserIds, followTrader, unfollowTrader]);
+  }, [isAuthenticated, currentUser, followedUserIds, followTrader, unfollowTrader]);
 
   // 기간 필터 탭 / Period filter tabs
   const periodTabs = useMemo(
@@ -226,7 +229,7 @@ export default function LeaderboardPage() {
         el.style.transform = `translateY(${delta}px)`;
         // 리플로우 강제 / force reflow
         void el.offsetHeight;
-        el.style.transition = 'transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+        el.style.transition = 'transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
         el.style.transform = 'translateY(0)';
       }
     });

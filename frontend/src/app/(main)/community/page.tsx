@@ -404,11 +404,15 @@ function CommunityPage() {
 
   /** 트레이더 팔로우/언팔로우 토글 — 실제 API 호출
    * Toggle trader follow/unfollow — real API call */
+  const currentUser = useAuthStore((s) => s.user);
+
   const toggleFollow = useCallback((userId: string) => {
     if (!isAuthenticated) {
       showLoginModal();
       return;
     }
+    // 자기 자신 팔로우 불가 / Cannot follow yourself
+    if (currentUser && currentUser.id === userId) return;
     // anon_ ID는 팔로우 불가 / Cannot follow anonymized IDs
     if (userId.startsWith('anon_')) return;
     if (followedUserIds.has(userId)) {
@@ -416,7 +420,7 @@ function CommunityPage() {
     } else {
       followTrader.mutate(userId);
     }
-  }, [isAuthenticated, followedUserIds, followTrader, unfollowTrader, showLoginModal]);
+  }, [isAuthenticated, currentUser, followedUserIds, followTrader, unfollowTrader, showLoginModal]);
 
   /** 트레이더 탭 클릭 핸들러 — 비로그인 시 로그인 모달 표시
    * Traders tab click handler — shows login modal for non-authenticated users */

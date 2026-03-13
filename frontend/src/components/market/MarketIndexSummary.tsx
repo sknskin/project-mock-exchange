@@ -113,7 +113,7 @@ export default function MarketIndexSummary() {
   const rafRef = useRef<number>(0);
   const dragRef = useRef<{ startX: number; startPos: number } | null>(null);
   const lastXRef = useRef(0);
-  const [hovered, setHovered] = useState(false);
+  const [_hovered, setHovered] = useState(false);
   // 드래그 감지 — 클릭 vs 드래그 구분 / Drag detection — distinguish click vs drag
   const didDragRef = useRef(false);
 

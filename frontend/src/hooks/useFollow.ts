@@ -222,7 +222,20 @@ export function useBatchFollowCounts(userIds: string[]) {
     queryFn: async () => {
       if (userIds.length === 0) return {};
       const { data } = await api.post('/api/follow/batch-counts', { userIds });
-      return data.data ?? data;
+      const raw = data.data ?? data;
+      // 서버 응답이 { userId: { followingCount, followerCount } } 형태이므로 followerCount만 추출
+      // Server returns { userId: { followingCount, followerCount } }, extract followerCount only
+      const result: Record<string, number> = {};
+      for (const [id, val] of Object.entries(raw)) {
+        if (typeof val === 'number') {
+          result[id] = val;
+        } else if (val && typeof val === 'object' && 'followerCount' in (val as Record<string, unknown>)) {
+          result[id] = (val as { followerCount: number }).followerCount;
+        } else {
+          result[id] = 0;
+        }
+      }
+      return result;
     },
     // userIds가 비어있으면 쿼리 비활성화 / Disable query when userIds is empty
     enabled: userIds.length > 0,
