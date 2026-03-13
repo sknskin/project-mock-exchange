@@ -26,7 +26,7 @@ interface SpotlightSearchProps {
 
 /** 스포트라이트 검색 모달 — macOS Spotlight 스타일 종목 검색
  * Spotlight search modal — macOS Spotlight-style asset search */
-export default function SpotlightSearch({ isOpen, onClose, assets, onLoginRequired: _onLoginRequired }: SpotlightSearchProps) {
+export default function SpotlightSearch({ isOpen, onClose, assets }: SpotlightSearchProps) {
   const router = useRouter();
   const { t } = useTranslation();
   const { display } = useCurrencyDisplay();

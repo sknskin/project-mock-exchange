@@ -21,7 +21,7 @@ export default function MainError({
   const { t } = useTranslation();
 
   useEffect(() => {
-    console.error('[MainErrorBoundary]', error);
+    if (process.env.NODE_ENV === 'development') console.error('[MainErrorBoundary]', error);
   }, [error]);
 
   return (

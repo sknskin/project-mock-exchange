@@ -47,7 +47,7 @@ type SortKey = 'volume' | 'change_desc' | 'change_asc';
 
 /** 자산 목록 — 카테고리/정렬/기간 필터가 적용된 종목 리스트
  * Asset list — filterable by category, sort, and period */
-export default function AssetList({ assets, period, onPeriodChange, mainTab = 'realtime', onLoginRequired: _onLoginRequired, watchlistSymbols, onToggleWatchlist }: AssetListProps) {
+export default function AssetList({ assets, period, onPeriodChange, mainTab = 'realtime', watchlistSymbols, onToggleWatchlist }: AssetListProps) {
   const { t } = useTranslation();
   const [category, setCategory] = useState('all');
   const [sort, setSort] = useState<SortKey>('volume');

@@ -21,6 +21,7 @@ import { JwtAuthGuard } from '../../infrastructure/config/jwt-auth.guard';
 import { CurrentUser } from '../../infrastructure/config/current-user.decorator';
 import { UserDto } from '@virtuex/common';
 import { PrismaService } from '../../infrastructure/persistence/prisma/prisma.service';
+import { NotificationType } from '../../../generated/prisma';
 import { InternalAuthGuard } from '../../common/guards/internal-auth.guard';
 
 @UseGuards(InternalAuthGuard)
@@ -42,7 +43,7 @@ export class NotificationController {
     const notification = await this.prisma.notification.create({
       data: {
         userId: body.userId,
-        type: (body.type as any) || 'GENERAL',
+        type: (body.type as NotificationType) ?? NotificationType.GENERAL,
         title: body.title,
         message: body.message,
         link: body.link,

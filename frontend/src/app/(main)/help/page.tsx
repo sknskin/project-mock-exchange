@@ -422,7 +422,6 @@ export default function HelpPage() {
   // 일반 탭/관리자 탭 분리 — 사이드바에서 구분선으로 나뉨 / Separate normal/admin tabs — divided by separator in sidebar
   const normalTabs = tabs.filter((tab) => !tab.adminOnly);
   const adminTabs = tabs.filter((tab) => tab.adminOnly && isAdmin);
-  const _visibleTabs = tabs.filter((tab) => !tab.adminOnly || isAdmin);
 
   /**
    * 각 탭의 콘텐츠 정의 — 아이콘, 제목, 설명, 기능 목록(items)

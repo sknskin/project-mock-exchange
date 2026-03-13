@@ -21,7 +21,7 @@ export default function AuthError({
   const { t } = useTranslation();
 
   useEffect(() => {
-    console.error('[AuthErrorBoundary]', error);
+    if (process.env.NODE_ENV === 'development') console.error('[AuthErrorBoundary]', error);
   }, [error]);
 
   return (
