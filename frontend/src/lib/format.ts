@@ -174,11 +174,18 @@ export function isKRW(symbol: string): boolean {
   return symbol.endsWith('.KS');
 }
 
-/** KRW 포맷 (정수 + '원')
- * KRW format (integer + '원' suffix) */
+/** KRW 포맷 — 1원 이상은 정수, 1원 미만은 소수점 유지 (소액 암호화폐 대응)
+ * KRW format — integers for ≥1, decimals for <1 (supports small-cap crypto conversions) */
 function formatKRWPrice(price: number): string {
   if (!Number.isFinite(price)) return '0원';
   const locale = getLocale();
+  // 1원 미만: 소수점 표시 (ex. SHIB $0.000006 × 1400 ≈ 0.008원)
+  // Sub-1-won: show decimals (e.g., SHIB $0.000006 × 1400 ≈ ₩0.008)
+  if (Math.abs(price) > 0 && Math.abs(price) < 1) {
+    const digits = Math.abs(price) >= 0.01 ? 2 : Math.abs(price) >= 0.001 ? 3 : 4;
+    if (locale === 'en') return '₩' + price.toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+    return price.toLocaleString('ko-KR', { minimumFractionDigits: digits, maximumFractionDigits: digits }) + '원';
+  }
   if (locale === 'en') return '₩' + price.toLocaleString('en-US', { maximumFractionDigits: 0 });
   return price.toLocaleString('ko-KR', { maximumFractionDigits: 0 }) + '원';
 }
@@ -219,7 +226,8 @@ export function formatPriceDisplay(
     return formatKRWPrice(price);
   }
   if (wantKRW && exchangeRate) {
-    return formatKRWPrice(Math.round(price * exchangeRate));
+    const krwPrice = price * exchangeRate;
+    return formatKRWPrice(krwPrice >= 1 ? Math.round(krwPrice) : krwPrice);
   }
   return formatUSDPrice(price);
 }
@@ -250,8 +258,15 @@ export function formatAmountDisplay(
     return sign + Math.round(amount).toLocaleString('ko-KR') + '원';
   }
   if (wantKRW && exchangeRate) {
-    const converted = Math.round(amount * exchangeRate);
+    const raw = amount * exchangeRate;
+    const converted = Math.abs(raw) >= 1 ? Math.round(raw) : raw;
     const locale = getLocale();
+    if (Math.abs(converted) > 0 && Math.abs(converted) < 1) {
+      const digits = Math.abs(converted) >= 0.01 ? 2 : Math.abs(converted) >= 0.001 ? 3 : 4;
+      const sign = converted >= 0 ? '+' : '';
+      if (locale === 'en') return (converted >= 0 ? '+₩' : '-₩') + Math.abs(converted).toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+      return sign + converted.toLocaleString('ko-KR', { minimumFractionDigits: digits, maximumFractionDigits: digits }) + '원';
+    }
     if (locale === 'en') {
       const s = converted >= 0 ? '+₩' : '-₩';
       return s + Math.abs(converted).toLocaleString('en-US');
