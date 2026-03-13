@@ -52,51 +52,31 @@ export class ChatService {
       orderBy: { updatedAt: 'desc' },
     });
 
-    // N+1 쿼리 방지: 배치로 집계 (Prevent N+1: batch aggregate counts)
+    // 단일 raw 쿼리로 방별 안읽음 수를 집계 (N+1 제거)
+    // Single raw query to aggregate unread counts per room (eliminates N+1)
     const roomIds = rooms.map((r) => r.id);
 
-    const [totalCounts, readCounts, sentCounts] = await Promise.all([
-      this.prisma.message.groupBy({
-        by: ['roomId'],
-        where: { roomId: { in: roomIds } },
-        _count: true,
-      }),
-      this.prisma.readReceipt.groupBy({
-        by: ['messageId'],
-        where: { userId, message: { roomId: { in: roomIds } } },
-        _count: true,
-      }).then(async (receipts) => {
-        // messageId → roomId 매핑을 위해 메시지 조회 (Map messageId → roomId)
-        if (receipts.length === 0) return new Map<string, number>();
-        const msgIds = receipts.map((r) => r.messageId);
-        const msgs = await this.prisma.message.findMany({
-          where: { id: { in: msgIds } },
-          select: { id: true, roomId: true },
-        });
-        const msgToRoom = new Map(msgs.map((m) => [m.id, m.roomId]));
-        const roomReadMap = new Map<string, number>();
-        for (const r of receipts) {
-          const rid = msgToRoom.get(r.messageId);
-          if (rid) roomReadMap.set(rid, (roomReadMap.get(rid) || 0) + r._count);
-        }
-        return roomReadMap;
-      }),
-      this.prisma.message.groupBy({
-        by: ['roomId'],
-        where: { roomId: { in: roomIds }, senderId: userId },
-        _count: true,
-      }),
-    ]);
+    const unreadRows = roomIds.length > 0
+      ? await this.prisma.$queryRaw<{ room_id: string; unread: bigint }[]>`
+          SELECT m."room_id" AS room_id,
+                 COUNT(*) FILTER (
+                   WHERE m."sender_id" != ${userId}::uuid
+                     AND NOT EXISTS (
+                       SELECT 1 FROM "read_receipts" rr
+                       WHERE rr."message_id" = m.id AND rr."user_id" = ${userId}::uuid
+                     )
+                 )::bigint AS unread
+          FROM "messages" m
+          WHERE m."room_id" = ANY(${roomIds}::uuid[])
+          GROUP BY m."room_id"
+        `
+      : [];
 
-    const totalMap = new Map(totalCounts.map((c) => [c.roomId, c._count]));
-    const sentMap = new Map(sentCounts.map((c) => [c.roomId, c._count]));
+    const unreadMap = new Map(unreadRows.map((r) => [r.room_id, Number(r.unread)]));
 
     const roomsWithUnread = rooms.map((room) => {
       const lastMessage = room.messages[0] || null;
-      const total = totalMap.get(room.id) || 0;
-      const read = readCounts.get(room.id) || 0;
-      const sent = sentMap.get(room.id) || 0;
-      const unreadCount = Math.max(0, total - read - sent);
+      const unreadCount = unreadMap.get(room.id) || 0;
 
       return {
         id: room.id,

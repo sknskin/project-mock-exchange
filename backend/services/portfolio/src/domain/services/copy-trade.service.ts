@@ -295,7 +295,9 @@ export class CopyTradeService {
     const originalQty = new Decimal(tradeData.quantity);
     const price = new Decimal(tradeData.price);
 
-    for (const config of configs) {
+    // 병렬 처리 — 각 팔로워의 카피 트레이딩을 동시에 실행하여 지연 최소화
+    // Parallel processing — execute copy trades for all followers concurrently to minimize latency
+    await Promise.allSettled(configs.map(async (config) => {
       try {
         // 스케일링된 수량 계산 / Calculate scaled quantity
         const scaleRatio = new Decimal(config.scaleRatio.toString());
@@ -371,7 +373,7 @@ export class CopyTradeService {
             this.logger.warn(
               `Copy trade skipped: follower=${config.followerId.substring(0, 8)}..., trader=${traderId.substring(0, 8)}..., symbol=${tradeData.symbol}, reason=${budgetCheckResult.reason}`,
             );
-            continue;
+            return;
           }
         }
 
@@ -422,7 +424,7 @@ export class CopyTradeService {
           this.logger.warn(
             `Copy trade order failed: follower=${config.followerId.substring(0, 8)}..., trader=${traderId.substring(0, 8)}..., symbol=${tradeData.symbol}, reason=${reason}`,
           );
-          continue;
+          return;
         }
 
         // 성공 시 실행 기록 생성 (BUY의 경우 totalInvested는 이미 트랜잭션에서 갱신됨)
@@ -456,7 +458,7 @@ export class CopyTradeService {
           `Unexpected error processing copy trade for follower ${config.followerId.substring(0, 8)}...: ${error?.message}`,
         );
       }
-    }
+    }));
   }
 
   /**
@@ -475,37 +477,24 @@ export class CopyTradeService {
     targetUserId: string,
     maxDepth: number,
   ): Promise<boolean> {
-    let currentLevel = [startUserId];
-    const visited = new Set<string>([startUserId]);
-
-    for (let depth = 0; depth < maxDepth; depth++) {
-      if (currentLevel.length === 0) break;
-
-      // startUserId가 팔로워로서 카피하고 있는 트레이더 목록 조회
-      // Find all traders that current-level users are following
-      const configs = await this.prisma.copyTradeConfig.findMany({
-        where: {
-          followerId: { in: currentLevel },
-          isActive: true,
-        },
-        select: { traderId: true },
-      });
-
-      const nextLevel: string[] = [];
-      for (const config of configs) {
-        if (config.traderId === targetUserId) {
-          return true; // 순환 발견 / Cycle detected
-        }
-        if (!visited.has(config.traderId)) {
-          visited.add(config.traderId);
-          nextLevel.push(config.traderId);
-        }
-      }
-
-      currentLevel = nextLevel;
-    }
-
-    return false;
+    // 재귀 CTE로 단일 쿼리에서 순환 탐지 — depth별 순차 쿼리 제거
+    // Single recursive CTE query for cycle detection — eliminates per-depth sequential queries
+    const result = await this.prisma.$queryRaw<{ found: boolean }[]>`
+      WITH RECURSIVE copy_chain AS (
+        SELECT "traderId"::uuid AS user_id, 1 AS depth
+        FROM "CopyTradeConfig"
+        WHERE "followerId" = ${startUserId}::uuid AND "isActive" = true
+        UNION ALL
+        SELECT c."traderId"::uuid, cc.depth + 1
+        FROM "CopyTradeConfig" c
+        JOIN copy_chain cc ON c."followerId" = cc.user_id
+        WHERE c."isActive" = true AND cc.depth < ${maxDepth}
+      )
+      SELECT EXISTS(
+        SELECT 1 FROM copy_chain WHERE user_id = ${targetUserId}::uuid
+      ) AS found
+    `;
+    return result[0]?.found ?? false;
   }
 
   /**

@@ -86,8 +86,18 @@ export class MarketDataService implements OnModuleInit {
         }
       }
 
-      if (newCount > 0) {
-        this.logger.log(`Loaded ${newCount} new assets from DB (total: ${this.assets.length})`);
+      // 비활성화된 자산을 메모리에서 제거 — 메모리 누적 방지
+      // Remove deactivated assets from memory — prevents gradual memory growth
+      const activeSymbols = new Set(dbAssets.map((a) => a.symbol));
+      const removedCount = this.assets.length;
+      this.assets = this.assets.filter((a) => activeSymbols.has(a.symbol));
+      const removedDiff = removedCount - this.assets.length;
+      for (const sym of [...this.assetSymbols]) {
+        if (!activeSymbols.has(sym)) this.assetSymbols.delete(sym);
+      }
+
+      if (newCount > 0 || removedDiff > 0) {
+        this.logger.log(`Asset refresh: +${newCount} new, -${removedDiff} removed (total: ${this.assets.length})`);
       }
     } catch (error) {
       this.logger.error('Failed to refresh assets from DB', error);
@@ -477,24 +487,21 @@ export class MarketDataService implements OnModuleInit {
         const symbols = aggregated.filter((a) => a._count > 0).map((a) => a.symbol);
         if (symbols.length === 0) continue;
 
-        // Batch query: fetch first and last candles for all symbols at once
-        const [firstCandles, lastCandles] = await Promise.all([
-          this.prisma.candlestick.findMany({
-            where: { symbol: { in: symbols }, interval: '1m', openTime: { gte: periodStart, lt: periodEnd } },
-            orderBy: { openTime: 'asc' },
-            distinct: ['symbol'],
-            select: { symbol: true, openPrice: true },
-          }),
-          this.prisma.candlestick.findMany({
-            where: { symbol: { in: symbols }, interval: '1m', openTime: { gte: periodStart, lt: periodEnd } },
-            orderBy: { openTime: 'desc' },
-            distinct: ['symbol'],
-            select: { symbol: true, closePrice: true },
-          }),
-        ]);
+        // 단일 윈도우 함수 쿼리로 첫/마지막 캔들의 open/close 가격을 조회 (2개 쿼리 → 1개)
+        // Single window function query to fetch first/last candle open/close prices (2 queries → 1)
+        const openCloseRows = await this.prisma.$queryRaw<{ symbol: string; open_price: any; close_price: any }[]>`
+          SELECT DISTINCT ON (symbol) symbol,
+            FIRST_VALUE("open_price") OVER (PARTITION BY symbol ORDER BY "open_time" ASC) AS open_price,
+            FIRST_VALUE("close_price") OVER (PARTITION BY symbol ORDER BY "open_time" DESC) AS close_price
+          FROM candlesticks
+          WHERE symbol = ANY(${symbols}::text[])
+            AND interval = '1m'
+            AND "open_time" >= ${periodStart}
+            AND "open_time" < ${periodEnd}
+        `;
 
-        const firstMap = new Map(firstCandles.map((c) => [c.symbol, c.openPrice]));
-        const lastMap = new Map(lastCandles.map((c) => [c.symbol, c.closePrice]));
+        const firstMap = new Map(openCloseRows.map((r) => [r.symbol, r.open_price]));
+        const lastMap = new Map(openCloseRows.map((r) => [r.symbol, r.close_price]));
 
         for (const agg of aggregated) {
           if (agg._count === 0) continue;

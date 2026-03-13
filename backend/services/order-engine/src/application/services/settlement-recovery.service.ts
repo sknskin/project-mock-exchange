@@ -62,7 +62,9 @@ export class SettlementRecoveryService implements OnModuleInit, OnModuleDestroy 
 
     this.logger.log(`[RECOVERY] Processing ${pendings.length} pending settlement(s)...`);
 
-    for (const ps of pendings) {
+    // 병렬 처리 — 독립적인 정산 건을 동시에 재시도하여 총 처리 시간 최소화
+    // Parallel processing — retry independent settlements concurrently to minimize total processing time
+    await Promise.allSettled(pendings.map(async (ps) => {
       const endpoint = ps.side === 'BUY' ? 'settle-buy' : 'settle-sell';
       try {
         await axios.post(
@@ -103,6 +105,6 @@ export class SettlementRecoveryService implements OnModuleInit, OnModuleDestroy 
           this.logger.warn(`[RECOVERY_RETRY] ${ps.side} trade ${ps.tradeId} retry ${newRetries}/${SettlementRecoveryService.MAX_RETRIES}: ${message}`);
         }
       }
-    }
+    }));
   }
 }

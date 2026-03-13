@@ -180,63 +180,20 @@ export class NewsService implements OnModuleInit {
     );
   }
 
-  /** 특정 카테고리의 RSS 피드를 스크래핑하고 DB에 저장합니다
-   * Scrape RSS feeds for a category and save to database */
+  /** 특정 카테고리의 RSS 피드를 스크래핑하고 DB에 저장합니다 (동시 3개 피드 제한)
+   * Scrape RSS feeds for a category and save to database (max 3 concurrent feeds) */
   async scrapeByCategory(category: NewsCategory) {
     const feeds = RSS_FEEDS.filter((f) => f.category === category);
     let totalInserted = 0;
 
-    for (const feed of feeds) {
-      try {
-        const parsed = await this.parser.parseURL(feed.url);
-        const items = (parsed.items || []).slice(0, 50);
-
-        for (const item of items) {
-          if (!item.link || !item.title) continue;
-
-          // 관련성 필터링 (Relevance filtering for non-dedicated sources)
-          if (!SKIP_FILTER_SOURCES.has(feed.source)) {
-            const text = `${item.title} ${item.contentSnippet || ''}`;
-            if (!RELEVANCE_KEYWORDS[category].test(text)) continue;
-          }
-
-          try {
-            const safeTitle = stripHtml(item.title);
-            const safeSummary = item.contentSnippet
-              ? stripHtml(item.contentSnippet).slice(0, 500)
-              : null;
-
-            await this.prisma.news.upsert({
-              where: { sourceUrl: item.link },
-              update: {
-                title: safeTitle,
-                summary: safeSummary,
-                publishedAt: item.pubDate
-                  ? new Date(item.pubDate)
-                  : null,
-                scrapedAt: new Date(),
-              },
-              create: {
-                category,
-                title: safeTitle,
-                summary: safeSummary,
-                sourceUrl: item.link,
-                source: feed.source,
-                imageUrl: item.enclosure?.url || null,
-                publishedAt: item.pubDate
-                  ? new Date(item.pubDate)
-                  : null,
-              },
-            });
-            totalInserted++;
-          } catch (e) {
-            this.logger.warn(`News item processing failed: ${e instanceof Error ? e.message : e}`);
-          }
-        }
-      } catch (error) {
-        this.logger.warn(
-          `Failed to scrape ${feed.source} (${feed.url}): ${error}`,
-        );
+    // 동시 요청 수를 3개로 제한하여 외부 서버 과부하 방지
+    // Limit to 3 concurrent requests to avoid overwhelming external servers
+    const CONCURRENCY = 3;
+    for (let i = 0; i < feeds.length; i += CONCURRENCY) {
+      const batch = feeds.slice(i, i + CONCURRENCY);
+      const results = await Promise.allSettled(batch.map((feed) => this.scrapeFeed(feed, category)));
+      for (const result of results) {
+        if (result.status === 'fulfilled') totalInserted += result.value;
       }
     }
 
@@ -251,6 +208,60 @@ export class NewsService implements OnModuleInit {
       `Scraped ${totalInserted} items for category: ${category}`,
     );
     return totalInserted;
+  }
+
+  /** 개별 RSS 피드를 스크래핑합니다
+   * Scrape a single RSS feed */
+  private async scrapeFeed(feed: RssFeedConfig, category: NewsCategory): Promise<number> {
+    let inserted = 0;
+    const RELEVANCE = RELEVANCE_KEYWORDS[category];
+    const skipFilter = SKIP_FILTER_SOURCES.has(feed.source);
+
+    try {
+      const parsed = await this.parser.parseURL(feed.url);
+      const items = (parsed.items || []).slice(0, 50);
+
+      for (const item of items) {
+        if (!item.link || !item.title) continue;
+
+        if (!skipFilter) {
+          const text = `${item.title} ${item.contentSnippet || ''}`;
+          if (!RELEVANCE.test(text)) continue;
+        }
+
+        try {
+          const safeTitle = stripHtml(item.title);
+          const safeSummary = item.contentSnippet
+            ? stripHtml(item.contentSnippet).slice(0, 500)
+            : null;
+
+          await this.prisma.news.upsert({
+            where: { sourceUrl: item.link },
+            update: {
+              title: safeTitle,
+              summary: safeSummary,
+              publishedAt: item.pubDate ? new Date(item.pubDate) : null,
+              scrapedAt: new Date(),
+            },
+            create: {
+              category,
+              title: safeTitle,
+              summary: safeSummary,
+              sourceUrl: item.link,
+              source: feed.source,
+              imageUrl: item.enclosure?.url || null,
+              publishedAt: item.pubDate ? new Date(item.pubDate) : null,
+            },
+          });
+          inserted++;
+        } catch (e) {
+          this.logger.warn(`News item processing failed: ${e instanceof Error ? e.message : e}`);
+        }
+      }
+    } catch (error) {
+      this.logger.warn(`Failed to scrape ${feed.source} (${feed.url}): ${error}`);
+    }
+    return inserted;
   }
 
   /** 카테고리별 뉴스 목록을 페이징하여 조회합니다
