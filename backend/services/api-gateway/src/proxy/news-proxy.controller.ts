@@ -5,12 +5,13 @@
  * @file News Proxy Controller
  * @description Proxies news API requests from API Gateway to Market Data service
  */
-import { Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
+import { Controller, Get, HttpException, Post, Req, Res, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { Request, Response } from 'express';
 import { ProxyService } from './proxy.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AdminRolesGuard } from '../auth/admin-roles.guard';
+import { CacheTTL } from '../config/cache.interceptor';
 
 // 뉴스 목록은 공개, 스크래핑 관리는 인증 필수 / News listing is public, scraping management requires auth
 @ApiTags('News')
@@ -21,18 +22,21 @@ export class NewsProxyController {
   /** 뉴스 목록 조회를 market-data로 프록시
    * Proxy news list to market-data service */
   @Get()
+  @CacheTTL(60)
   @ApiOperation({ summary: '뉴스 목록 조회', description: '카테고리, 페이지, 개수 기준으로 뉴스 목록을 조회합니다.' })
   @ApiQuery({ name: 'category', required: false, description: '뉴스 카테고리' })
   @ApiQuery({ name: 'page', required: false, description: '페이지 번호' })
   @ApiQuery({ name: 'limit', required: false, description: '페이지당 항목 수' })
   @ApiResponse({ status: 200, description: '뉴스 목록 조회 성공' })
-  async list(@Req() req: Request, @Res() res: Response) {
+  async list(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const result = await this.proxyService.forward('market-data', {
       method: 'GET',
       url: '/news',
       params: req.query,
     });
-    return res.status(result.status).json(result.data);
+    res.status(result.status);
+    if (result.status >= 400) throw new HttpException(result.data as Record<string, any>, result.status);
+    return result.data;
   }
 
   /** 뉴스 스크래핑 상태 조회를 market-data로 프록시

@@ -21,6 +21,8 @@ import { Server, Socket } from 'socket.io';
 
 /** 인증되지 않은 클라이언트당 최대 구독 채널 수 (Max subscriptions per unauthenticated client) */
 const MAX_ANON_SUBSCRIPTIONS = 5;
+/** 인증된 클라이언트당 최대 구독 채널 수 (Max subscriptions per authenticated client) */
+const MAX_AUTH_SUBSCRIPTIONS = 100;
 /** IP당 최대 익명 연결 수 (Max anonymous connections per IP) */
 const MAX_ANON_CONNECTIONS_PER_IP = 10;
 
@@ -137,8 +139,8 @@ export class PriceGateway implements OnGatewayConnection, OnGatewayDisconnect, O
   }
 
   private canSubscribe(client: Socket): boolean {
-    if (client.data.authenticated) return true;
     const count = this.clientSubscriptions.get(client.id) || 0;
+    if (client.data.authenticated) return count < MAX_AUTH_SUBSCRIPTIONS;
     return count < MAX_ANON_SUBSCRIPTIONS;
   }
 

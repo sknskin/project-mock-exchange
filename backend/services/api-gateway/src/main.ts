@@ -11,6 +11,7 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
+import compression from 'compression';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './config/all-exceptions.filter';
 import { LoggingInterceptor } from './config/logging.interceptor';
@@ -30,6 +31,8 @@ async function bootstrap() {
 
   app.useBodyParser('json', { limit: '10mb' });
   app.useBodyParser('urlencoded', { limit: '10mb', extended: true });
+  // Gzip/Deflate 응답 압축 — 대역폭 30-50% 절감 / Response compression — reduces bandwidth 30-50%
+  app.use(compression({ threshold: 1024 }));
   app.use(
     helmet({
       contentSecurityPolicy: {

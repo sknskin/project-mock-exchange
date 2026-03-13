@@ -6,9 +6,10 @@
  * @description Integrates Auth, Proxy, Health, and WebSocket Gateway modules
  */
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { TtlCacheInterceptor } from './config/cache.interceptor';
 import { TerminusModule } from '@nestjs/terminus';
 import { AuthModule } from './auth/auth.module';
 import { ProxyModule } from './proxy/proxy.module';
@@ -47,6 +48,7 @@ import { RequestIdMiddleware } from './middleware/request-id.middleware';
   controllers: [HealthController],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_INTERCEPTOR, useClass: TtlCacheInterceptor },
   ],
 })
 export class AppModule implements NestModule {

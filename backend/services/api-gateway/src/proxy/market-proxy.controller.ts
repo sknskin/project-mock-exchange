@@ -5,10 +5,11 @@
  * @file Market Proxy Controller
  * @description Proxies market data requests from API Gateway to Market Data service
  */
-import { Controller, Get, Param, Query, Res } from '@nestjs/common';
+import { Controller, Get, HttpException, Param, Query, Res } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { Response } from 'express';
 import { ProxyService } from './proxy.service';
+import { CacheTTL } from '../config/cache.interceptor';
 
 @ApiTags('Market')
 @Controller('api/market')
@@ -18,14 +19,17 @@ export class MarketProxyController {
   /** 거래 가능 자산 목록 조회를 market-data로 프록시
    * Proxy asset list to market-data service */
   @Get('assets')
+  @CacheTTL(30)
   @ApiOperation({ summary: '자산 목록 조회', description: '거래 가능한 전체 자산(종목) 목록을 반환합니다' })
   @ApiResponse({ status: 200, description: '자산 목록 반환' })
-  async getAssets(@Res() res: Response) {
+  async getAssets(@Res({ passthrough: true }) res: Response) {
     const result = await this.proxyService.forward('market-data', {
       method: 'GET',
       url: '/market/assets',
     });
-    return res.status(result.status).json(result.data);
+    res.status(result.status);
+    if (result.status >= 400) throw new HttpException(result.data as Record<string, any>, result.status);
+    return result.data;
   }
 
   /** 전체 자산 현재가 조회를 market-data로 프록시
@@ -44,16 +48,19 @@ export class MarketProxyController {
   /** 기간별 가격 변동률 조회를 market-data로 프록시
    * Proxy period price changes to market-data service */
   @Get('prices/period-changes')
+  @CacheTTL(10)
   @ApiOperation({ summary: '기간별 등락률 조회', description: '지정 기간 동안의 가격 변동률을 반환합니다' })
   @ApiQuery({ name: 'period', description: '기간 (1d, 1w, 1m, 3m, 6m, 1y)' })
   @ApiResponse({ status: 200, description: '기간별 등락률 반환' })
-  async getPeriodChanges(@Query('period') period: string, @Res() res: Response) {
+  async getPeriodChanges(@Query('period') period: string, @Res({ passthrough: true }) res: Response) {
     const result = await this.proxyService.forward('market-data', {
       method: 'GET',
       url: '/market/prices/period-changes',
       params: { period },
     });
-    return res.status(result.status).json(result.data);
+    res.status(result.status);
+    if (result.status >= 400) throw new HttpException(result.data as Record<string, any>, result.status);
+    return result.data;
   }
 
   /** 개별 종목 현재가 조회를 market-data로 프록시
