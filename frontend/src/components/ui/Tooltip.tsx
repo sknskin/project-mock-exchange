@@ -8,6 +8,7 @@
 'use client';
 
 import { useState, useRef, useCallback, type ReactNode } from 'react';
+import { cn } from '@/lib/format';
 
 // 툴팁 Props / Tooltip Props
 interface TooltipProps {
@@ -46,12 +47,15 @@ export default function Tooltip({ label, delay = 1000, children }: TooltipProps)
   return (
     <span className="relative inline-flex" onMouseEnter={show} onMouseLeave={hide}>
       {children}
-      {/* 조건부 렌더링: 가시 상태일 때만 절대 위치 툴팁 표시 / Conditional render: absolute-positioned tooltip only when visible */}
-      {visible && (
-        <span className="absolute left-1/2 -translate-x-1/2 top-full mt-1.5 px-2 py-1 rounded-md bg-bg-elevated border border-border text-[11px] font-medium text-text-secondary whitespace-nowrap shadow-lg z-50 pointer-events-none">
-          {label}
-        </span>
-      )}
+      {/* CSS 트랜지션으로 부드러운 표시/숨김 / Smooth show/hide via CSS transition */}
+      <span
+        className={cn(
+          'absolute left-1/2 -translate-x-1/2 top-full mt-1.5 px-2 py-1 rounded-md bg-bg-elevated border border-border text-[11px] font-medium text-text-secondary whitespace-nowrap shadow-lg z-50 pointer-events-none transition-opacity duration-200',
+          visible ? 'opacity-100' : 'opacity-0',
+        )}
+      >
+        {label}
+      </span>
     </span>
   );
 }

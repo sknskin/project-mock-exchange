@@ -83,7 +83,7 @@ function StatusDropdown({
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-1.5 z-50 min-w-[140px] bg-bg-secondary border border-border rounded-xl shadow-2xl overflow-hidden">
+        <div className="absolute right-0 top-full mt-1.5 z-50 min-w-[140px] bg-bg-secondary border border-border rounded-xl shadow-2xl overflow-hidden animate-dropdown-in">
           {options.map((opt) => (
             <button
               key={opt.key}
@@ -607,14 +607,14 @@ export default function OrdersPage() {
                             <div className="flex items-center gap-1.5 shrink-0">
                               <button
                                 onClick={() => startEditing(order)}
-                                className="px-2 py-1 text-[10px] md:text-[11px] font-medium text-text-tertiary border border-border rounded-md hover:text-accent hover:border-accent/50 transition-colors whitespace-nowrap"
+                                className="px-2.5 py-1.5 min-h-[36px] sm:min-h-0 sm:py-1 text-[11px] md:text-[11px] font-medium text-text-tertiary border border-border rounded-md hover:text-accent hover:border-accent/50 transition-colors whitespace-nowrap"
                               >
                                 {t('orders.modify')}
                               </button>
                               <button
                                 onClick={() => setCancelTargetId(order.id)}
                                 disabled={cancelOrder.isPending}
-                                className="px-2 py-1 text-[10px] md:text-[11px] font-medium text-fall border border-fall/30 rounded-md hover:bg-fall/10 transition-colors whitespace-nowrap"
+                                className="px-2.5 py-1.5 min-h-[36px] sm:min-h-0 sm:py-1 text-[11px] md:text-[11px] font-medium text-fall border border-fall/30 rounded-md hover:bg-fall/10 transition-colors whitespace-nowrap"
                               >
                                 {t('orders.cancel')}
                               </button>

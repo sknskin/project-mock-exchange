@@ -397,6 +397,7 @@ export default function HelpPage() {
   const isAdmin = user?.role === 'SYSTEM' || user?.role === 'ADMIN';
   const [activeTab, setActiveTabRaw] = useState('dashboard');
   const setActiveTab = useCallback((v: string) => { setActiveTabRaw(v); window.scrollTo({ top: 0, behavior: 'smooth' }); }, []);
+  const [mobileTabOpen, setMobileTabOpen] = useState(false);
 
   // 탭 목록 — adminOnly: true인 탭은 관리자에게만 표시 / Tab list — tabs with adminOnly: true only shown to admins
   const tabs: { key: string; label: TranslationKey; icon: React.ReactNode; adminOnly?: boolean }[] = [
@@ -651,13 +652,72 @@ export default function HelpPage() {
         <h1 className="text-[20px] font-extrabold text-text-primary">{t('help.title')}</h1>
       </div>
 
-      <div className="flex overflow-x-auto scrollbar-hide items-center gap-1 pb-4">
+      {/* 모바일: 드롭다운 / Mobile: dropdown */}
+      <div className="sm:hidden pb-4">
+        <button
+          onClick={() => setMobileTabOpen((v) => !v)}
+          className="flex items-center justify-between w-full px-4 py-3 rounded-xl bg-bg-secondary border border-border/50"
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            {tabs.find((t) => t.key === activeTab)?.icon}
+            <span className="text-[14px] font-semibold text-text-primary truncate">{t(tabs.find((tab) => tab.key === activeTab)?.label ?? 'help.tab.dashboard')}</span>
+          </div>
+          <ChevronDown className={cn('w-4 h-4 text-text-quaternary transition-transform duration-200 shrink-0 ml-2', mobileTabOpen && 'rotate-180')} />
+        </button>
+        <div
+          className={cn(
+            'overflow-hidden transition-[max-height,opacity] duration-300 ease-in-out',
+            mobileTabOpen ? 'max-h-[520px] opacity-100' : 'max-h-0 opacity-0',
+          )}
+        >
+          <div className="mt-2 py-2 bg-bg-secondary rounded-xl border border-border/50 space-y-0.5 max-h-[480px] overflow-y-auto">
+            {normalTabs.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => { setActiveTab(tab.key); setMobileTabOpen(false); }}
+                className={cn(
+                  'flex items-center gap-2 w-full px-4 py-2.5 text-[13px] font-medium transition-colors',
+                  activeTab === tab.key
+                    ? 'bg-accent/10 text-accent font-bold'
+                    : 'text-text-secondary hover:bg-bg-tertiary/50',
+                )}
+              >
+                {tab.icon}
+                {t(tab.label)}
+              </button>
+            ))}
+            {adminTabs.length > 0 && (
+              <>
+                <div className="h-px bg-border/60 mx-3 my-1" />
+                {adminTabs.map((tab) => (
+                  <button
+                    key={tab.key}
+                    onClick={() => { setActiveTab(tab.key); setMobileTabOpen(false); }}
+                    className={cn(
+                      'flex items-center gap-2 w-full px-4 py-2.5 text-[13px] font-medium transition-colors',
+                      activeTab === tab.key
+                        ? 'bg-accent/10 text-accent font-bold'
+                        : 'text-text-secondary hover:bg-bg-tertiary/50',
+                    )}
+                  >
+                    {tab.icon}
+                    {t(tab.label)}
+                  </button>
+                ))}
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* 데스크톱: 가로 스크롤 탭 / Desktop: horizontal scroll tabs */}
+      <div className="hidden sm:flex overflow-x-auto scrollbar-hide items-center gap-1 pb-4">
         {normalTabs.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
             className={cn(
-              'flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[12px] sm:text-[13px] font-medium transition-colors shrink-0',
+              'flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[13px] font-medium transition-colors shrink-0',
               activeTab === tab.key
                 ? 'bg-accent/15 text-accent font-bold'
                 : 'text-text-quaternary hover:text-text-tertiary hover:bg-bg-secondary/50',
@@ -675,7 +735,7 @@ export default function HelpPage() {
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
                 className={cn(
-                  'flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[12px] sm:text-[13px] font-medium transition-colors border border-accent/20 shrink-0 whitespace-nowrap',
+                  'flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[13px] font-medium transition-colors border border-accent/20 shrink-0 whitespace-nowrap',
                   activeTab === tab.key
                     ? 'bg-accent/15 text-accent font-bold'
                     : 'text-text-quaternary hover:text-text-tertiary hover:bg-bg-secondary/50',
