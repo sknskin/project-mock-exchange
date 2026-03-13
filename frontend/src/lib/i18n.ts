@@ -724,6 +724,9 @@ const translations = {
     'admin.audit.viewReport': '보고서 보기',
     'admin.audit.noReports': '감사 보고서가 없습니다',
     'admin.audit.download': '다운로드',
+    'admin.audit.filterAll': '전체',
+    'admin.audit.filterGeneral': '일반감사',
+    'admin.audit.filterPerformance': '성능감사',
 
     // Admin Nav
     'nav.settings': '시스템 설정',
@@ -2749,6 +2752,9 @@ const translations = {
     'admin.audit.viewReport': 'View Report',
     'admin.audit.noReports': 'No audit reports available',
     'admin.audit.download': 'Download',
+    'admin.audit.filterAll': 'All',
+    'admin.audit.filterGeneral': 'General Audit',
+    'admin.audit.filterPerformance': 'Performance Audit',
 
     // Admin Nav
     'nav.settings': 'Settings',

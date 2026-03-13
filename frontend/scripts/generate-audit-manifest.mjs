@@ -14,8 +14,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPORT_DIR = join(__dirname, '..', 'public', 'docs', 'report');
 const MANIFEST_PATH = join(REPORT_DIR, 'manifest.json');
 
-const PDF_PATTERN = /^audit-report-(\d+)\.pdf$/;
-const MD_ONLY_PATTERN = /^audit-report-(\d+)\.md$/;
+const PDF_PATTERN = /^(audit-report|perf-audit)-(\d+)\.pdf$/;
+const MD_ONLY_PATTERN = /^(audit-report|perf-audit)-(\d+)\.md$/;
 
 function extractDateFromMd(mdPath) {
   try {
@@ -47,23 +47,33 @@ for (const file of files) {
   const match = file.match(PDF_PATTERN);
   if (!match) continue;
 
-  const num = parseInt(match[1], 10);
-  pdfNums.add(num);
+  const prefix = match[1]; // 'audit-report' or 'perf-audit'
+  const num = parseInt(match[2], 10);
+  const key = `${prefix}-${num}`;
+  pdfNums.add(key);
   const pdfPath = join(REPORT_DIR, file);
-  const mdPath = join(REPORT_DIR, `audit-report-${num}.md`);
+  const mdPath = join(REPORT_DIR, `${prefix}-${num}.md`);
 
   // MD에서 날짜와 라벨 추출, 실패 시 파일 수정일 사용
   const date = extractDateFromMd(mdPath) ||
     statSync(pdfPath).mtime.toISOString().split('T')[0];
   const label = extractLabelFromMd(mdPath) ||
-    `VirtuEx 시스템 감사 보고서 (${num}차)`;
+    (prefix === 'perf-audit'
+      ? `VirtuEx 성능 개선 감사 보고서 (${num}차)`
+      : `VirtuEx 시스템 감사 보고서 (${num}차)`);
+
+  // 성능 감사는 일반 감사 뒤에 정렬 (perf: 10000+N, audit: N)
+  const order = (prefix === 'perf-audit' ? 10000 : 0) + num;
+
+  const type = prefix === 'perf-audit' ? 'performance' : 'general';
 
   reports.push({
     name: file,
     path: `/docs/report/${file}`,
     label,
     date,
-    order: num,
+    type,
+    order,
   });
 }
 
@@ -72,21 +82,29 @@ for (const file of files) {
   const match = file.match(MD_ONLY_PATTERN);
   if (!match) continue;
 
-  const num = parseInt(match[1], 10);
-  if (pdfNums.has(num)) continue; // PDF가 이미 있으면 건너뛰기
+  const prefix = match[1];
+  const num = parseInt(match[2], 10);
+  const key = `${prefix}-${num}`;
+  if (pdfNums.has(key)) continue; // PDF가 이미 있으면 건너뛰기
 
   const mdPath = join(REPORT_DIR, file);
   const date = extractDateFromMd(mdPath) ||
     statSync(mdPath).mtime.toISOString().split('T')[0];
   const label = extractLabelFromMd(mdPath) ||
-    `VirtuEx 시스템 감사 보고서 (${num}차)`;
+    (prefix === 'perf-audit'
+      ? `VirtuEx 성능 개선 감사 보고서 (${num}차)`
+      : `VirtuEx 시스템 감사 보고서 (${num}차)`);
+
+  const order = (prefix === 'perf-audit' ? 10000 : 0) + num;
+  const type = prefix === 'perf-audit' ? 'performance' : 'general';
 
   reports.push({
     name: file,
     path: `/docs/report/${file}`,
     label,
     date,
-    order: num,
+    type,
+    order,
   });
 }
 

@@ -20,7 +20,11 @@ interface ReportItem {
   path: string;
   label: string;
   date: string;
+  type?: 'general' | 'performance';
 }
+
+// 필터 타입 / Filter type
+type AuditFilter = 'all' | 'general' | 'performance';
 
 /** 관리자 감사 보고서 페이지 컴포넌트 — PDF 보고서 목록 조회/다운로드/열기
  * Admin audit report page component — view, download, and open PDF reports */
@@ -31,6 +35,7 @@ export default function AdminAuditPage() {
   const [reports, setReports] = useState<ReportItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [mdModal, setMdModal] = useState<{ title: string; content: string } | null>(null);
+  const [filter, setFilter] = useState<AuditFilter>('all');
 
   // manifest.json에서 보고서 목록 로드 / Load report list from manifest.json
   useEffect(() => {
@@ -81,9 +86,30 @@ export default function AdminAuditPage() {
         </h1>
       </div>
 
-      <p className="text-[13px] text-text-tertiary mb-6">
+      <p className="text-[13px] text-text-tertiary mb-4">
         {t('admin.audit.desc')}
       </p>
+
+      {/* 필터 탭 / Filter tabs */}
+      <div className="flex gap-2 mb-5">
+        {([
+          { key: 'all' as AuditFilter, label: t('admin.audit.filterAll') },
+          { key: 'general' as AuditFilter, label: t('admin.audit.filterGeneral') },
+          { key: 'performance' as AuditFilter, label: t('admin.audit.filterPerformance') },
+        ]).map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setFilter(tab.key)}
+            className={`px-3.5 py-1.5 rounded-lg text-[13px] font-medium transition-colors ${
+              filter === tab.key
+                ? 'bg-accent text-white'
+                : 'bg-bg-secondary text-text-secondary hover:bg-bg-tertiary'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
       {/* Report list */}
       <div className="space-y-3">
@@ -96,7 +122,14 @@ export default function AdminAuditPage() {
             {t('admin.audit.noReports')}
           </div>
         ) : (
-          reports.map((report) => (
+          reports
+          .filter((r) => {
+            if (filter === 'all') return true;
+            // type 필드가 없는 경우 파일명에서 추론 / Infer type from filename if type field missing
+            const rType = r.type || (r.name.startsWith('perf-audit') ? 'performance' : 'general');
+            return rType === filter;
+          })
+          .map((report) => (
             <div
               key={report.name}
               className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-bg-secondary rounded-2xl px-4 py-3.5 sm:px-5 sm:py-4"

@@ -101,15 +101,17 @@ const args = process.argv.slice(2);
 const force = args.includes('--force');
 const targetNum = args.find((a) => /^\d+$/.test(a));
 
-const mdFiles = readdirSync(REPORT_DIR).filter((f) => /^audit-report-\d+\.md$/.test(f));
+const mdFiles = readdirSync(REPORT_DIR).filter((f) => /^(audit-report|perf-audit)-\d+\.md$/.test(f));
 
 let converted = 0;
 for (const mdFile of mdFiles) {
-  const num = mdFile.match(/(\d+)/)[1];
+  const mdMatch = mdFile.match(/^(audit-report|perf-audit)-(\d+)\.md$/);
+  const prefix = mdMatch[1];
+  const num = mdMatch[2];
   if (targetNum && num !== targetNum) continue;
 
   const mdPath = join(REPORT_DIR, mdFile);
-  const pdfPath = join(REPORT_DIR, `audit-report-${num}.pdf`);
+  const pdfPath = join(REPORT_DIR, `${prefix}-${num}.pdf`);
 
   // 기존 PDF가 진짜 PDF인지 확인 / Check if existing PDF is a real PDF
   let needsConvert = force || !existsSync(pdfPath);
@@ -122,7 +124,7 @@ for (const mdFile of mdFiles) {
 
   if (!needsConvert) continue;
 
-  console.log(`  Converting: ${mdFile} → audit-report-${num}.pdf`);
+  console.log(`  Converting: ${mdFile} → ${prefix}-${num}.pdf`);
   await generatePdf(mdPath, pdfPath);
   converted++;
 }
