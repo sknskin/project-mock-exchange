@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation';
 import { FileText, Eye, Calendar, Download, Loader2 } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuthStore } from '@/stores/auth';
+import ContentModal from '@/components/ui/ContentModal';
 
 // 감사 보고서 항목 타입 / Audit report item type
 interface ReportItem {
@@ -29,6 +30,7 @@ export default function AdminAuditPage() {
   const user = useAuthStore((s) => s.user);
   const [reports, setReports] = useState<ReportItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [mdModal, setMdModal] = useState<{ title: string; content: string } | null>(null);
 
   // manifest.json에서 보고서 목록 로드 / Load report list from manifest.json
   useEffect(() => {
@@ -50,9 +52,15 @@ export default function AdminAuditPage() {
     return null;
   }
 
-  // 새 탭에서 PDF 보기 / View PDF in new tab
-  const handleView = (report: ReportItem) => {
-    window.open(report.path, '_blank');
+  // PDF는 새 탭, MD는 모달로 보기 / PDF in new tab, MD in modal
+  const handleView = async (report: ReportItem) => {
+    if (report.name.endsWith('.md')) {
+      const res = await fetch(report.path);
+      const content = await res.text();
+      setMdModal({ title: report.label, content });
+    } else {
+      window.open(report.path, '_blank');
+    }
   };
 
   // 프로그래매틱 다운로드 — 임시 <a> 태그 생성으로 download 속성 활용 / Programmatic download — creates temporary <a> tag to use download attribute
@@ -131,6 +139,17 @@ export default function AdminAuditPage() {
           ))
         )}
       </div>
+
+      {/* MD 보고서 모달 / MD report modal */}
+      {mdModal && (
+        <ContentModal
+          isOpen={!!mdModal}
+          onClose={() => setMdModal(null)}
+          title={mdModal.title}
+          content={mdModal.content}
+          type="markdown"
+        />
+      )}
     </div>
   );
 }
