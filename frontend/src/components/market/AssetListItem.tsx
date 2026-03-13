@@ -8,7 +8,7 @@
 'use client';
 
 import React, { useRef, useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { cn, formatPriceDisplay, formatPercent, formatAmountDisplay, formatVolumeDisplay } from '@/lib/format';
 import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
@@ -42,7 +42,6 @@ function getSymbolColor(symbol: string): string {
 /** 자산 목록 아이템 — 순위, 가격, 등락률, 거래대금 등 표시
  * Asset list item — displays rank, price, change, volume, etc. */
 function AssetListItem({ asset, rank, isWatchlisted, onToggleWatchlist }: AssetListItemProps) {
-  const router = useRouter();
   const { t } = useTranslation();
   const isRise = asset.changePercent > 0;
   const isFall = asset.changePercent < 0;
@@ -66,12 +65,8 @@ function AssetListItem({ asset, rank, isWatchlisted, onToggleWatchlist }: AssetL
   }, [asset.currentPrice]);
 
   return (
-    <a
+    <Link
       href={`/asset/${asset.symbol}`}
-      onClick={(e) => {
-        e.preventDefault();
-        router.push(`/asset/${asset.symbol}`);
-      }}
       className="flex items-center h-[56px] hover:bg-bg-secondary/60 active:bg-bg-secondary/80 transition-colors rounded-lg -mx-3 px-3 cursor-pointer"
     >
       {/* 순위 / Rank */}
@@ -179,7 +174,7 @@ function AssetListItem({ asset, rank, isWatchlisted, onToggleWatchlist }: AssetL
       <span className="w-[80px] lg:w-[90px] text-right text-[13px] text-text-tertiary tabular-nums hidden md:block shrink-0">
         {formatVolumeDisplay((asset.currentPrice * (asset.volume ?? 0)), asset.symbol, display, rate)}
       </span>
-    </a>
+    </Link>
   );
 }
 

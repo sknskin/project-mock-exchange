@@ -10,7 +10,7 @@
 'use client';
 
 import React from 'react';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import {
   LineChart,
   Line,
@@ -562,8 +562,6 @@ export function ContentTab({
   announcements, announcementChartData, likeStats, likeChartData,
   popularAnnouncements, participationRate, t,
 }: ContentTabProps) {
-  const router = useRouter();
-
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       {/* 요약 카드 / Summary cards */}
@@ -617,9 +615,9 @@ export function ContentTab({
         {popularAnnouncements && popularAnnouncements.length > 0 ? (
           <div className="space-y-2">
             {popularAnnouncements.map((a: AnyData, i: number) => (
-              <button
+              <Link
                 key={a.id}
-                onClick={() => router.push(`/announcements/${a.id}`)}
+                href={`/announcements/${a.id}`}
                 className="flex items-center gap-3 w-full text-left px-2 py-1.5 rounded-lg hover:bg-bg-tertiary transition-colors"
               >
                 <span className="text-[13px] font-bold text-text-quaternary w-5 shrink-0 text-center">{i + 1}</span>
@@ -630,7 +628,7 @@ export function ContentTab({
                   )}
                   <span>{a.commentCount} {t('stats.comments')}</span>
                 </span>
-              </button>
+              </Link>
             ))}
           </div>
         ) : (
@@ -643,9 +641,9 @@ export function ContentTab({
         {likeStats?.topLikedAnnouncements && likeStats.topLikedAnnouncements.length > 0 ? (
           <div className="space-y-2">
             {likeStats.topLikedAnnouncements.map((a: AnyData, i: number) => (
-              <button
+              <Link
                 key={a.id}
-                onClick={() => router.push(`/announcements/${a.id}`)}
+                href={`/announcements/${a.id}`}
                 className="flex items-center gap-3 w-full text-left px-2 py-1.5 rounded-lg hover:bg-bg-tertiary transition-colors"
               >
                 <span className="text-[13px] font-bold text-text-quaternary w-5 shrink-0 text-center">{i + 1}</span>
@@ -653,7 +651,7 @@ export function ContentTab({
                 <span className="text-[12px] text-text-quaternary shrink-0 flex items-center gap-0.5">
                   <Heart className="w-3 h-3" /> {a.likeCount ?? 0}
                 </span>
-              </button>
+              </Link>
             ))}
           </div>
         ) : (

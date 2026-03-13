@@ -7,7 +7,7 @@
  */
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { X, Plus, PanelRightOpen, Check } from 'lucide-react';
 import { useChatStore } from '@/stores/chat';
 import { useChatRooms, useLeaveRoom, useRenameRoom } from '@/hooks/useChat';
@@ -60,7 +60,7 @@ interface ContextMenu {
 
 /** 채팅방 목록 — DM/그룹 방 표시 및 컨텍스트 메뉴 제공
  * Room list — displays DM/group rooms with context menu */
-export default function RoomList() {
+function RoomListInner() {
   const { t, locale } = useTranslation();
   const { closeChat, openRoom, setView, togglePin, isPinned, backToList } = useChatStore();
   const user = useAuthStore((s) => s.user);
@@ -309,3 +309,6 @@ export default function RoomList() {
     </div>
   );
 }
+
+const RoomList = React.memo(RoomListInner);
+export default RoomList;

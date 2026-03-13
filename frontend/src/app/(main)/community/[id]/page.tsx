@@ -9,6 +9,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import DOMPurify from 'isomorphic-dompurify';
 import api from '@/lib/api';
 import ConfirmModal from '@/components/ui/ConfirmModal';
@@ -323,9 +324,9 @@ export default function CommunityPostDetailPage() {
       <div className="pb-16">
         {/* Back button + title */}
         <div className="py-6 flex items-center gap-3 h-[88px]">
-          <button onClick={() => router.push('/community')} className="flex items-center justify-center w-8 h-8 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-secondary transition-colors">
+          <Link href="/community" className="flex items-center justify-center w-8 h-8 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-secondary transition-colors">
             <ArrowLeft className="w-4 h-4" />
-          </button>
+          </Link>
           <h1 className="text-[20px] font-extrabold text-text-primary">
             {t('community.discussions')} {locale === 'ko' ? '상세' : 'Detail'}
           </h1>
@@ -356,13 +357,13 @@ export default function CommunityPostDetailPage() {
             {(isAuthor || isAdmin) && (
               <div className="ml-auto flex items-center gap-1.5 shrink-0">
                 {isAuthor && (
-                  <button
-                    onClick={() => router.push(`/community/new?edit=${id}`)}
+                  <Link
+                    href={`/community/new?edit=${id}`}
                     className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[12px] font-semibold text-text-secondary border border-border hover:bg-bg-tertiary hover:text-text-primary transition-colors"
                   >
                     <Pencil className="w-3 h-3" />
                     {t('community.post.update')}
-                  </button>
+                  </Link>
                 )}
                 <button
                   onClick={() => setShowDeleteModal(true)}

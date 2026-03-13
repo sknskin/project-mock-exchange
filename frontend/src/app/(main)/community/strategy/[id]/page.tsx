@@ -9,6 +9,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import { useAuthStore } from '@/stores/auth';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -216,9 +217,9 @@ export default function StrategyDetailPage() {
     <div className="pb-16">
       {/* 뒤로 가기 + 제목 / Back button + title */}
       <div className="py-6 flex items-center gap-3 h-[88px]">
-        <button onClick={() => router.push('/community?tab=strategies')} className="flex items-center justify-center w-8 h-8 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-secondary transition-colors">
+        <Link href="/community?tab=strategies" className="flex items-center justify-center w-8 h-8 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-secondary transition-colors">
           <ArrowLeft className="w-4 h-4" />
-        </button>
+        </Link>
         <h1 className="text-[20px] font-extrabold text-text-primary">
           {t('strategy.detail')}
         </h1>
@@ -263,13 +264,13 @@ export default function StrategyDetailPage() {
           {(isAuthor || isAdmin) && (
             <div className="ml-auto flex items-center gap-1.5 shrink-0">
               {isAuthor && (
-                <button
-                  onClick={() => router.push(`/community/strategy/new?edit=${id}`)}
+                <Link
+                  href={`/community/strategy/new?edit=${id}`}
                   className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[12px] font-semibold text-text-secondary border border-border hover:bg-bg-tertiary hover:text-text-primary transition-colors"
                 >
                   <Pencil className="w-3 h-3" />
                   {t('strategy.edit')}
-                </button>
+                </Link>
               )}
               <button
                 onClick={() => setShowDeleteModal(true)}

@@ -59,7 +59,10 @@ export class UserController {
   async search(
     @Query('q') q: string,
     @Query('excludeIds') excludeIds?: string,
+    @Query('cursor') cursor?: string,
+    @Query('limit') limit?: string,
   ) {
+    const take = Math.min(Math.max(1, parseInt(limit || '30', 10) || 30), 50);
     const where: Record<string, unknown> = {
       isActive: true,
       approvalStatus: 'APPROVED',
@@ -88,11 +91,14 @@ export class UserController {
         name: true,
       },
       orderBy: { username: 'asc' },
-      // 채팅 초대 시 전체 사용자 목록이 보이도록 충분히 큰 제한값 설정
-      // Set large enough limit so all users are visible when inviting to chat
-      take: 200,
+      take: take + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     });
 
-    return { success: true, data: users };
+    const hasMore = users.length > take;
+    const items = hasMore ? users.slice(0, take) : users;
+    const nextCursor = hasMore ? items[items.length - 1].id : null;
+
+    return { success: true, data: items, nextCursor };
   }
 }

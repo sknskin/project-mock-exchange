@@ -62,6 +62,8 @@ model User {
 
   @@index([isActive, approvalStatus])
   @@index([role])
+  @@index([username])
+  @@index([name])
   @@map("users")
 }
 

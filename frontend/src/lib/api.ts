@@ -88,8 +88,9 @@ api.interceptors.response.use(
           authStore.logout();
         }
         if (typeof window !== 'undefined') {
-          // App Router 소프트 네비게이션 — React 상태 유지 / Soft navigation — preserves React state
-          window.location.assign('/login');
+          // 인증 실패 시 로그인 페이지로 하드 리다이렉트 (인터셉터에서는 Router 접근 불가)
+          // Hard redirect to login on auth failure (Router is inaccessible from interceptor)
+          window.location.replace('/login');
         }
         return Promise.reject(refreshError);
       } finally {

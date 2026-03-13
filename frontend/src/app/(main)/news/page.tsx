@@ -152,8 +152,11 @@ export default function NewsPage() {
     setAiResult(null);
     setAiModalOpen(true);
     try {
-      // 24시간 뉴스를 별도 조회 / Fetch 24h news separately for analysis
-      const { data: newsData } = await api.get('/api/news', { params: { category: activeTab, page: 1, limit: 200 } });
+      // 뉴스 조회와 AI 분석 요청을 병렬로 시작 — 워터폴 제거
+      // Start news fetch and AI analysis in parallel — eliminates waterfall
+      const newsPromise = api.get('/api/news', { params: { category: activeTab, page: 1, limit: 200 } });
+
+      const { data: newsData } = await newsPromise;
       const items = newsData?.data?.items ?? newsData?.items ?? [];
       const allItems = items as { title: string; summary: string | null; source: string; publishedAt: string | null; scrapedAt: string }[];
       const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);

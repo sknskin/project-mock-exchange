@@ -709,26 +709,27 @@ export default function HelpPage() {
         </div>
       </div>
 
-      {/* 데스크톱: 가로 스크롤 탭 / Desktop: horizontal scroll tabs */}
-      <div className="hidden sm:flex overflow-x-auto scrollbar-hide items-center gap-1 pb-4">
-        {normalTabs.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={cn(
-              'flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[13px] font-medium transition-colors shrink-0',
-              activeTab === tab.key
-                ? 'bg-accent/15 text-accent font-bold'
-                : 'text-text-quaternary hover:text-text-tertiary hover:bg-bg-secondary/50',
-            )}
-          >
-            {tab.icon}
-            {t(tab.label)}
-          </button>
-        ))}
+      {/* 데스크톱: 일반 탭 + 관리자 탭(줄바꿈) / Desktop: normal tabs + admin tabs (wrapped to next line) */}
+      <div className="hidden sm:block pb-4">
+        <div className="flex flex-wrap items-center gap-1">
+          {normalTabs.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={cn(
+                'flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[13px] font-medium transition-colors shrink-0',
+                activeTab === tab.key
+                  ? 'bg-accent/15 text-accent font-bold'
+                  : 'text-text-quaternary hover:text-text-tertiary hover:bg-bg-secondary/50',
+              )}
+            >
+              {tab.icon}
+              {t(tab.label)}
+            </button>
+          ))}
+        </div>
         {adminTabs.length > 0 && (
-          <>
-            <div className="w-px h-5 bg-border/60 mx-1" />
+          <div className="flex flex-wrap items-center gap-1 mt-2 pt-2 border-t border-border/40">
             {adminTabs.map((tab) => (
               <button
                 key={tab.key}
@@ -744,7 +745,7 @@ export default function HelpPage() {
                 {t(tab.label)}
               </button>
             ))}
-          </>
+          </div>
         )}
       </div>
 

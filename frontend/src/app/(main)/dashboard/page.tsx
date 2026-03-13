@@ -39,7 +39,7 @@ export default function DashboardPage() {
   const { t } = useTranslation();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
-  // 실시간 WebSocket 가격 업데이트 저장소 (500ms 배치 적용) / Live WebSocket price update store (500ms batching)
+  // 실시간 WebSocket 가격 업데이트 저장소 (500ms 배치) / Live WebSocket price update store (500ms batching)
   const [livePrices, setLivePrices] = useState<Record<string, PriceUpdate>>({});
   const pendingPricesRef = useRef<Record<string, PriceUpdate>>({});
   const flushTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -158,7 +158,7 @@ export default function DashboardPage() {
         startTransition(() => {
           setLivePrices((prev) => ({ ...prev, ...batch }));
         });
-      }, 2000);
+      }, 500);
     }
   }, []);
   useWebSocket(symbols, handlePriceUpdate);
