@@ -170,12 +170,15 @@ function bindListeners(socket: Socket, qc: QueryClient) {
       return;
     }
 
-    if (data.roomId) {
+    const me = useAuthStore.getState().user;
+    const isOwnMessage = data.senderId && me?.id === data.senderId;
+    // 자신의 메시지는 useSendMessage에서 이미 캐시 업데이트했으므로 메시지 캐시 무효화 생략
+    // Skip message cache invalidation for own messages — useSendMessage already updated cache
+    if (data.roomId && !isOwnMessage) {
       qc.invalidateQueries({ queryKey: ['chat-messages', data.roomId] });
     }
     qc.invalidateQueries({ queryKey: ['chat-rooms'] });
-    const me = useAuthStore.getState().user;
-    if (data.senderId && me?.id === data.senderId) return;
+    if (isOwnMessage) return;
 
     // 시스템 메시지 (초대/퇴장/강퇴) — 별도 토스트가 이미 존재하므로 스킵
     // System messages (invite/leave/kick) — skip toast since separate events handle them

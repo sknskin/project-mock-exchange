@@ -7,7 +7,7 @@
  */
 'use client';
 
-import { Fragment, useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import React, { Fragment, useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { ArrowLeft, UserPlus, LogOut, Users, PanelRightOpen, X, Ban, Trash2, Search } from 'lucide-react';
 import { useChatStore } from '@/stores/chat';
 import { useChatMessages, useSendMessage, useMarkRoomRead, useChatRooms, useKickFromRoom, useDeleteRoom } from '@/hooks/useChat';
@@ -68,7 +68,7 @@ interface MessageAreaProps {
 
 /** 메시지 영역 — 메시지 목록, 무한 스크롤, 검색, 참여자 관리 등 핵심 채팅 UI
  * Message area — core chat UI with message list, infinite scroll, search, participant management */
-export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeaveRoom, emitTyping }: MessageAreaProps) {
+function MessageAreaInner({ roomId, joinRoom, leaveSocketRoom, onLeaveRoom, emitTyping }: MessageAreaProps) {
   const { t, locale } = useTranslation();
   const backToList = useChatStore((s) => s.backToList);
   const togglePin = useChatStore((s) => s.togglePin);
@@ -100,7 +100,9 @@ export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeave
   const handleTyping = useCallback(() => emitTyping(roomId), [roomId, emitTyping]);
 
   const room: ChatRoom | undefined = rooms?.find((r) => r.id === roomId);
-  const messages = useMemo(() => data?.pages.flatMap((p) => p.items) ?? [], [data?.pages]);
+  // pages[0]=최신, pages[N]=과거 → 역순으로 이어붙여야 시간순(오래된→최신) 표시
+  // pages[0]=newest, pages[N]=oldest → reverse before flatMap for chronological order
+  const messages = useMemo(() => data?.pages.slice().reverse().flatMap((p) => p.items) ?? [], [data?.pages]);
 
   const filteredMessages = useMemo(() => {
     if (!searchQuery.trim()) return messages;
@@ -537,3 +539,6 @@ export default function MessageArea({ roomId, joinRoom, leaveSocketRoom, onLeave
     </div>
   );
 }
+
+const MessageArea = React.memo(MessageAreaInner);
+export default MessageArea;
