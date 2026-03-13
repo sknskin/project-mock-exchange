@@ -23,6 +23,7 @@ import axios from 'axios';
 import { OrderAggregate } from '../../domain/aggregates/order.aggregate';
 import { MatchingEngineService, MatchResult } from '../../domain/services/matching-engine.service';
 import { PrismaService } from '../../infrastructure/persistence/prisma/prisma.service';
+import { SystemSettingsClient } from '../../infrastructure/settings/system-settings.client';
 import { Prisma } from '../../../generated/prisma';
 
 export interface PlaceOrderParams {
@@ -55,6 +56,7 @@ export class OrderService {
     private readonly matchingEngine: MatchingEngineService,
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
+    private readonly systemSettings: SystemSettingsClient,
   ) {
     this.marketDataUrl = this.config.getOrThrow<string>('MARKET_DATA_URL');
     this.portfolioUrl = this.config.getOrThrow<string>('PORTFOLIO_URL');
@@ -113,6 +115,156 @@ export class OrderService {
     return price.mul(rate);
   }
 
+  /**
+   * 사용자의 당일 실현 손실을 계산합니다 (KRW 기준).
+   * Calculate user's realized loss today (in KRW).
+   */
+  private async getDailyRealizedLoss(userId: string): Promise<Decimal> {
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    // 오늘 매도한 거래 내역 조회 / Fetch today's sell trades
+    const sellTrades = await this.prisma.tradeRead.findMany({
+      where: {
+        sellerId: userId,
+        executedAt: { gte: todayStart },
+      },
+    });
+
+    let totalLoss = new Decimal(0);
+    for (const trade of sellTrades) {
+      // 매수 평균가 대비 매도가 손실 추정 — 매도가 < 매수가인 경우만
+      // Estimate loss: if sell price < buy avg price
+      const buyTrades = await this.prisma.tradeRead.findMany({
+        where: { buyerId: userId, symbol: trade.symbol },
+        orderBy: { executedAt: 'desc' },
+        take: 10,
+      });
+      if (buyTrades.length === 0) continue;
+
+      const avgBuyPrice = buyTrades.reduce((sum, t) => sum.plus(t.price), new Decimal(0)).div(buyTrades.length);
+      const sellPrice = new Decimal(trade.price.toString());
+      if (sellPrice.lt(avgBuyPrice)) {
+        const lossPerUnit = avgBuyPrice.minus(sellPrice);
+        const lossKrw = await this.toKrw(lossPerUnit.mul(trade.quantity), trade.symbol);
+        totalLoss = totalLoss.plus(lossKrw);
+      }
+    }
+    return totalLoss;
+  }
+
+  /**
+   * 사용자의 포트폴리오 총 가치를 조회합니다 (KRW).
+   * Get user's total portfolio value (KRW).
+   */
+  private async getPortfolioValue(userId: string): Promise<Decimal> {
+    try {
+      const { data: response } = await axios.get<{ success: boolean; data: { totalPortfolioValue: string } }>(
+        `${this.portfolioUrl}/portfolio/valuation`,
+        {
+          headers: { 'x-user-id': userId, 'x-internal-token': this.internalToken },
+          timeout: 3000,
+        },
+      );
+      return new Decimal(response.data.totalPortfolioValue);
+    } catch {
+      return new Decimal(0);
+    }
+  }
+
+  /**
+   * 시스템 설정 기반 주문 사전 검증
+   * Pre-validate order against system settings (trading enabled, limits, market hours, risk)
+   */
+  private async validateSystemSettings(params: PlaceOrderParams): Promise<void> {
+    const settings = await this.systemSettings.getSettings();
+
+    // 1) 유지보수 모드 / Maintenance mode
+    if (settings.systemStatusMaintenanceMode) {
+      throw new BadRequestException('시스템 점검 중입니다. 잠시 후 다시 시도해주세요. (System is under maintenance)');
+    }
+
+    // 2) 거래 활성화 여부 / Trading enabled
+    if (!settings.systemStatusTradingEnabled) {
+      throw new BadRequestException('현재 거래가 중지되었습니다. (Trading is currently disabled)');
+    }
+
+    // 3) 시장 시간 확인 / Market hours check
+    const now = new Date();
+    const day = now.getDay(); // 0=일, 6=토
+    const isWeekend = day === 0 || day === 6;
+
+    if (isWeekend && !settings.marketHoursWeekendTradingEnabled) {
+      throw new BadRequestException('주말 거래가 허용되지 않습니다. (Weekend trading is disabled)');
+    }
+
+    const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+    const openTime = settings.marketHoursMarketOpenTime;
+    const closeTime = settings.marketHoursMarketCloseTime;
+
+    if (openTime !== '00:00' || closeTime !== '23:59') {
+      if (currentTime < openTime || currentTime > closeTime) {
+        throw new BadRequestException(
+          `거래 시간이 아닙니다 (${openTime}~${closeTime}). (Outside market hours)`,
+        );
+      }
+    }
+
+    // 4) 주문 수량 제한 / Order quantity limits
+    const qty = Number(params.quantity);
+    if (qty < settings.tradingLimitsMinOrderQty) {
+      throw new BadRequestException(
+        `최소 주문 수량은 ${settings.tradingLimitsMinOrderQty}입니다. (Minimum order quantity: ${settings.tradingLimitsMinOrderQty})`,
+      );
+    }
+    if (qty > settings.tradingLimitsMaxOrderQty) {
+      throw new BadRequestException(
+        `최대 주문 수량은 ${settings.tradingLimitsMaxOrderQty}입니다. (Maximum order quantity: ${settings.tradingLimitsMaxOrderQty})`,
+      );
+    }
+
+    // 5) 사용자별 미체결 주문 수 제한 / Max open orders per user
+    const openOrderCount = await this.prisma.orderRead.count({
+      where: {
+        userId: params.userId,
+        status: { in: ['PLACED', 'PARTIALLY_FILLED', 'PENDING'] },
+      },
+    });
+    if (openOrderCount >= settings.tradingLimitsMaxOpenOrdersPerUser) {
+      throw new BadRequestException(
+        `미체결 주문이 최대 한도(${settings.tradingLimitsMaxOpenOrdersPerUser})에 도달했습니다. (Max open orders reached)`,
+      );
+    }
+
+    // 6) 단일 주문 최대 금액 제한 / Max single order value (KRW)
+    if (params.price) {
+      const orderValue = new Decimal(params.price).mul(params.quantity);
+      const orderValueKrw = await this.toKrw(orderValue, params.symbol);
+
+      if (orderValueKrw.gt(settings.riskManagementMaxSingleOrderValue)) {
+        throw new BadRequestException(
+          `단일 주문 최대 금액(${settings.riskManagementMaxSingleOrderValue.toLocaleString()}원)을 초과했습니다. (Exceeds max single order value)`,
+        );
+      }
+    }
+
+    // 7) 일일 손실 한도 확인 / Daily loss limit check
+    if (settings.riskManagementDailyLossLimitPercent < 100) {
+      const dailyLoss = await this.getDailyRealizedLoss(params.userId);
+      if (dailyLoss.gt(0)) {
+        const portfolio = await this.getPortfolioValue(params.userId);
+        if (portfolio.gt(0)) {
+          const lossPercent = dailyLoss.div(portfolio).mul(100);
+          if (lossPercent.gte(settings.riskManagementDailyLossLimitPercent)) {
+            throw new BadRequestException(
+              `일일 손실 한도(${settings.riskManagementDailyLossLimitPercent}%)에 도달하여 추가 주문이 제한됩니다. (Daily loss limit reached)`,
+            );
+          }
+        }
+      }
+    }
+  }
+
   /** 주문을 생성하고 매칭 엔진을 통해 체결합니다
    * Place an order and execute through the matching engine */
   async placeOrder(params: PlaceOrderParams): Promise<{
@@ -124,6 +276,9 @@ export class OrderService {
     if (!this.matchingEngine.isReady()) {
       throw new BadRequestException('Order engine is initializing. Please try again in a moment.');
     }
+
+    // 0.5 시스템 설정 기반 사전 검증 / Pre-validate against system settings
+    await this.validateSystemSettings(params);
 
     // 1. 멱등성 사전 검사 (빠른 경로) / Idempotency pre-check (fast path)
     // 주의: 이 검사만으로는 TOCTOU 경쟁 조건이 있으므로, 아래 projectOrderPlaced에서
@@ -152,10 +307,12 @@ export class OrderService {
     const quantity = new Decimal(params.quantity);
     const totalCost = executionPrice.mul(quantity);
 
-    // 4. 매수 주문 시 자금 예약 (KRW 변환), 매도 주문 시 보유량 검증
-    // For BUY orders reserve funds (converted to KRW), for SELL orders validate holdings
+    // 4. 매수 주문 시 자금 예약 (KRW 변환 + 수수료 포함), 매도 주문 시 보유량 검증
+    // For BUY orders reserve funds (converted to KRW + fee buffer), for SELL orders validate holdings
     if (params.side === 'BUY') {
-      const reserveKrw = await this.toKrw(totalCost, params.symbol);
+      const settings = await this.systemSettings.getSettings();
+      const feeRate = new Decimal(settings.tradingFeesTakerFee).div(100);
+      const reserveKrw = await this.toKrw(totalCost.mul(Decimal.add(1, feeRate)), params.symbol);
       await this.reserveFunds(params.userId, reserveKrw.toString(), 'pending');
     } else {
       // 매도 주문: 보유량 검증 + 보유량 예약 (이중 매도 방지)
@@ -1025,7 +1182,17 @@ export class OrderService {
   private async settleTrade(fill: MatchResult): Promise<void> {
     // USD 가격을 KRW로 변환 / Convert USD price to KRW for portfolio settlement
     const krwPrice = await this.toKrw(new Decimal(fill.matchedPrice), fill.symbol);
-    const priceForPortfolio = krwPrice.toString();
+
+    // 거래 수수료 적용 — 메이커/테이커 수수료율에 따라 정산 가격 조정
+    // Apply trading fees — adjust settlement price based on maker/taker fee rates
+    const settings = await this.systemSettings.getSettings();
+    const makerFeeRate = new Decimal(settings.tradingFeesMakerFee).div(100);
+    const takerFeeRate = new Decimal(settings.tradingFeesTakerFee).div(100);
+
+    // 매수자: 테이커 수수료 적용 (가격 상승) / Buyer: taker fee (price increases)
+    const buyerPrice = krwPrice.mul(Decimal.add(1, takerFeeRate)).toFixed(8);
+    // 매도자: 메이커 수수료 적용 (가격 하락) / Seller: maker fee (price decreases)
+    const sellerPrice = krwPrice.mul(Decimal.sub(1, makerFeeRate)).toFixed(8);
 
     // 매수자 정산 / Settle buyer side
     const MARKET_MAKER_ID = '00000000-0000-0000-0000-000000000000';
@@ -1037,7 +1204,7 @@ export class OrderService {
             {
               symbol: fill.symbol,
               quantity: fill.matchedQuantity,
-              price: priceForPortfolio,
+              price: buyerPrice,
               tradeId: fill.tradeId,
             },
             { headers: { 'x-user-id': fill.buyerId, 'x-internal-token': this.internalToken }, timeout: this.httpTimeout },
@@ -1049,9 +1216,7 @@ export class OrderService {
         this.logger.error(
           `[SETTLE_FAILED] Buy settlement failed for trade ${fill.tradeId}, buyer=${fill.buyerId.substring(0, 8)}...: ${message}`,
         );
-        // 미정산 큐에 저장하여 복구 서비스가 재시도하도록 함
-        // Save to pending queue so recovery service can retry
-        await this.enqueuePendingSettlement(fill.tradeId, 'BUY', fill.buyerId, fill.symbol, fill.matchedQuantity, priceForPortfolio, message);
+        await this.enqueuePendingSettlement(fill.tradeId, 'BUY', fill.buyerId, fill.symbol, fill.matchedQuantity, buyerPrice, message);
       }
     }
 
@@ -1064,7 +1229,7 @@ export class OrderService {
             {
               symbol: fill.symbol,
               quantity: fill.matchedQuantity,
-              price: priceForPortfolio,
+              price: sellerPrice,
               tradeId: fill.tradeId,
             },
             { headers: { 'x-user-id': fill.sellerId, 'x-internal-token': this.internalToken }, timeout: this.httpTimeout },
@@ -1076,11 +1241,13 @@ export class OrderService {
         this.logger.error(
           `[SETTLE_FAILED] Sell settlement failed for trade ${fill.tradeId}, seller=${fill.sellerId.substring(0, 8)}...: ${message}`,
         );
-        // 미정산 큐에 저장하여 복구 서비스가 재시도하도록 함
-        // Save to pending queue so recovery service can retry
-        await this.enqueuePendingSettlement(fill.tradeId, 'SELL', fill.sellerId, fill.symbol, fill.matchedQuantity, priceForPortfolio, message);
+        await this.enqueuePendingSettlement(fill.tradeId, 'SELL', fill.sellerId, fill.symbol, fill.matchedQuantity, sellerPrice, message);
       }
     }
+
+    this.logger.debug(
+      `[FEE] Trade ${fill.tradeId}: buyer pays ${buyerPrice}, seller receives ${sellerPrice} (maker=${settings.tradingFeesMakerFee}%, taker=${settings.tradingFeesTakerFee}%)`,
+    );
   }
 
   /**

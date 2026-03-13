@@ -26,6 +26,7 @@ import {
 import { UserEntity } from '../../domain/entities/user.entity';
 import { ResidentNumber } from '../../domain/value-objects/resident-number.vo';
 import { SmsVerificationService } from './sms-verification.service';
+import { SettingsService } from './settings.service';
 import { PrismaService } from '../../infrastructure/persistence/prisma/prisma.service';
 import { REDIS_CLIENT } from '../../infrastructure/redis/redis.module';
 
@@ -43,11 +44,36 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly prisma: PrismaService,
     private readonly smsVerificationService: SmsVerificationService,
+    private readonly settingsService: SettingsService,
     @Inject(REDIS_CLIENT) private readonly redis: Redis,
   ) {
     this.SALT_ROUNDS = this.configService.get<number>('SALT_ROUNDS', 12);
     this.LOGIN_SESSION_TTL = this.configService.get<number>('LOGIN_SESSION_TTL', 180);
     this.LOGIN_MAX_ATTEMPTS = this.configService.get<number>('LOGIN_MAX_ATTEMPTS', 5);
+  }
+
+  /** 세션 보안 설정 캐시 (30초 TTL) / Session security settings cache (30s TTL) */
+  private sessionSettingsCache: { sessionTimeoutMinutes: number; maxLoginAttempts: number; fetchedAt: number } | null = null;
+
+  /**
+   * DB에서 세션 보안 설정을 동적으로 조회 (캐시 적용)
+   * Dynamically fetch session security settings from DB (with cache)
+   */
+  private async getSessionSecuritySettings(): Promise<{ sessionTimeoutMinutes: number; maxLoginAttempts: number }> {
+    const now = Date.now();
+    if (this.sessionSettingsCache && now - this.sessionSettingsCache.fetchedAt < 30_000) {
+      return this.sessionSettingsCache;
+    }
+
+    try {
+      const all = await this.settingsService.getAll();
+      const sessionTimeoutMinutes = Number(all['sessionSecurity.sessionTimeoutMinutes']) || this.LOGIN_SESSION_TTL;
+      const maxLoginAttempts = Number(all['sessionSecurity.maxLoginAttempts']) || this.LOGIN_MAX_ATTEMPTS;
+      this.sessionSettingsCache = { sessionTimeoutMinutes, maxLoginAttempts, fetchedAt: now };
+      return { sessionTimeoutMinutes, maxLoginAttempts };
+    } catch {
+      return { sessionTimeoutMinutes: this.LOGIN_SESSION_TTL, maxLoginAttempts: this.LOGIN_MAX_ATTEMPTS };
+    }
   }
 
   /** 회원가입 처리 — 중복 확인, SMS 인증 확인, 주민번호 암호화 후 사용자 생성
@@ -234,13 +260,14 @@ export class AuthService {
     }
 
     // 로그인 세션 생성 + SMS 인증 발송 / Create login session + send SMS verification
+    const securitySettings = await this.getSessionSecuritySettings();
     const sessionId = randomBytes(20).toString('hex');
     const sessionKey = `login:session:${sessionId}`;
     await this.redis.set(
       sessionKey,
-      JSON.stringify({ userId: user.id, phone: user.phone, attemptsLeft: this.LOGIN_MAX_ATTEMPTS }),
+      JSON.stringify({ userId: user.id, phone: user.phone, attemptsLeft: securitySettings.maxLoginAttempts }),
       'EX',
-      this.LOGIN_SESSION_TTL,
+      securitySettings.sessionTimeoutMinutes * 60,
     );
 
     await this.smsVerificationService.sendVerificationCode(user.phone);
@@ -276,7 +303,8 @@ export class AuthService {
     await this.smsVerificationService.sendVerificationCode(session.phone);
 
     // 세션 TTL 갱신 — 재전송 시 만료 시간 연장 / Renew session TTL — extend expiry on resend
-    await this.redis.expire(sessionKey, this.LOGIN_SESSION_TTL);
+    const securitySettings = await this.getSessionSecuritySettings();
+    await this.redis.expire(sessionKey, securitySettings.sessionTimeoutMinutes * 60);
 
     const maskedPhone = this.maskPhone(session.phone);
     this.logger.log(`Login SMS resent for session: ${sessionId}`);
@@ -535,7 +563,8 @@ export class AuthService {
     const session = this.safeParseSession<{ userId: string; phone: string; attemptsLeft: number; verified: boolean }>(raw, sessionKey);
     await this.smsVerificationService.sendVerificationCode(session.phone);
     // 세션 TTL 갱신 — 재전송 시 만료 시간 연장 / Renew session TTL — extend expiry on resend
-    await this.redis.expire(sessionKey, this.LOGIN_SESSION_TTL);
+    const resetSecuritySettings = await this.getSessionSecuritySettings();
+    await this.redis.expire(sessionKey, resetSecuritySettings.sessionTimeoutMinutes * 60);
 
     const maskedPhone = this.maskPhone(session.phone);
     this.logger.log(`Password reset SMS resent for session: ${sessionId}`);
@@ -564,13 +593,14 @@ export class AuthService {
       throw new UnauthorizedException('계정이 잠금 처리되었습니다.');
     }
 
+    const resetSettings = await this.getSessionSecuritySettings();
     const sessionId = randomBytes(20).toString('hex');
     const sessionKey = `reset:session:${sessionId}`;
     await this.redis.set(
       sessionKey,
-      JSON.stringify({ userId: user.id, phone: user.phone, attemptsLeft: this.LOGIN_MAX_ATTEMPTS, verified: false }),
+      JSON.stringify({ userId: user.id, phone: user.phone, attemptsLeft: resetSettings.maxLoginAttempts, verified: false }),
       'EX',
-      this.LOGIN_SESSION_TTL,
+      resetSettings.sessionTimeoutMinutes * 60,
     );
 
     await this.smsVerificationService.sendVerificationCode(user.phone);

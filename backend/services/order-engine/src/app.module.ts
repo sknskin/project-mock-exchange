@@ -16,6 +16,7 @@ import { OrderService } from './application/services/order.service';
 import { SettlementRecoveryService } from './application/services/settlement-recovery.service';
 import { OrderController } from './presentation/controllers/order.controller';
 import { HealthController } from './health/health.controller';
+import { SystemSettingsClient } from './infrastructure/settings/system-settings.client';
 
 @Module({
   imports: [
@@ -43,6 +44,6 @@ import { HealthController } from './health/health.controller';
     }),
   ],
   controllers: [OrderController, HealthController],
-  providers: [MatchingEngineService, OrderService, SettlementRecoveryService],
+  providers: [MatchingEngineService, OrderService, SettlementRecoveryService, SystemSettingsClient],
 })
 export class AppModule {}
