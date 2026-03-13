@@ -55,7 +55,7 @@ export default function BottomSheet({
   return (
     <div className="fixed inset-0 z-50 sm:flex sm:items-center sm:justify-center" role="dialog" aria-modal="true" aria-labelledby={title ? 'bottomsheet-title' : undefined}>
       <div
-        className="absolute inset-0 bg-black/50"
+        className="absolute inset-0 bg-black/50 animate-modal-backdrop"
         onClick={onClose}
       />
       {/* 모달: 모바일은 하단, 데스크톱은 flex 중앙 정렬 */}
@@ -97,11 +97,11 @@ export default function BottomSheet({
           to { opacity: 1; transform: scale(1); }
         }
         .animate-bottomsheet-in {
-          animation: bottomsheet-slide-up 0.2s ease-out both;
+          animation: bottomsheet-slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
         }
         @media (min-width: 640px) {
           .animate-bottomsheet-in {
-            animation: bottomsheet-scale-in 0.2s ease-out both;
+            animation: bottomsheet-scale-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
           }
         }
       `}</style>

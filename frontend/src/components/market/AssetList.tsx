@@ -243,12 +243,15 @@ export default function AssetList({ assets, period, onPeriodChange, mainTab = 'r
               </span>
             )}
           </div>
-          <ChevronDown className={cn('w-4 h-4 text-text-quaternary transition-transform shrink-0 ml-2', mobileFilterOpen && 'rotate-180')} />
+          <ChevronDown className={cn('w-4 h-4 text-text-quaternary transition-transform duration-200 shrink-0 ml-2', mobileFilterOpen && 'rotate-180')} />
         </button>
 
-        {/* 모바일 드롭다운 패널 — 각 필터 그룹이 한 줄씩 / Mobile dropdown panel — each filter group on its own row */}
-        {mobileFilterOpen && (
-          <div className="lg:hidden flex flex-col gap-2 pb-3">
+        {/* 모바일 드롭다운 패널 — 부드러운 펼침/접힘 애니메이션 / Mobile dropdown panel — smooth expand/collapse animation */}
+        <div className={cn(
+          'lg:hidden overflow-hidden transition-[max-height,opacity] duration-300 ease-in-out',
+          mobileFilterOpen ? 'max-h-[300px] opacity-100' : 'max-h-0 opacity-0',
+        )}>
+          <div className="flex flex-col gap-2 pb-3">
             {/* 카테고리 / Category */}
             <div className="flex items-center gap-1.5 bg-bg-secondary/50 rounded-xl px-1.5 py-1.5 overflow-x-auto scrollbar-hide">
               {categoryTabs.map((tab) => (
@@ -281,7 +284,7 @@ export default function AssetList({ assets, period, onPeriodChange, mainTab = 'r
               </div>
             )}
           </div>
-        )}
+        </div>
 
         {/* 데스크톱 인라인 필터 / Desktop inline filters */}
         <div className="hidden lg:flex pt-4 pb-3 items-center gap-2">

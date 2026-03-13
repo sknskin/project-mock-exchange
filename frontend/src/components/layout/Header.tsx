@@ -378,7 +378,7 @@ export default function Header() {
       {/* Mobile side menu: flex column layout to prevent scrolling */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-50 nav:hidden">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setMobileMenuOpen(false)} />
+          <div className="absolute inset-0 bg-black/60 animate-modal-backdrop" onClick={() => setMobileMenuOpen(false)} />
           <div className="absolute top-0 right-0 w-[280px] md:w-[340px] h-full max-h-[100dvh] bg-bg-primary border-l border-border animate-slide-in-right flex flex-col">
             {/* 헤더 / Header */}
             <div className="flex items-center justify-between px-5 h-[52px] border-b border-border shrink-0">
@@ -483,7 +483,7 @@ export default function Header() {
           </div>
           <style jsx>{`
             @keyframes slide-in-right { from { transform: translateX(100%); } to { transform: translateX(0); } }
-            .animate-slide-in-right { animation: slide-in-right 0.2s ease-out; }
+            .animate-slide-in-right { animation: slide-in-right 0.25s cubic-bezier(0.16, 1, 0.3, 1); }
             @media (prefers-reduced-motion: reduce) {
               .animate-slide-in-right { animation: none; }
             }
