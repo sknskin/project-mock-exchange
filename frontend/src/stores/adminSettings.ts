@@ -141,8 +141,8 @@ export const useAdminSettingsStore = create<AdminSettingsState>()(
         weekendTradingEnabled: false,
       },
       riskManagement: {
-        maxSingleOrderValue: 50_000_000,
-        dailyLossLimitPercent: 10,
+        maxSingleOrderValue: 500_000_000,
+        dailyLossLimitPercent: 50,
         marginCallThreshold: 30,
       },
       notificationSettings: {

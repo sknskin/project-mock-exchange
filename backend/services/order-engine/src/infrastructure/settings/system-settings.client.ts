@@ -45,7 +45,7 @@ const DEFAULTS: SystemSettings = {
   marketHoursMarketOpenTime: '00:00',
   marketHoursMarketCloseTime: '23:59',
   marketHoursWeekendTradingEnabled: true,
-  riskManagementMaxSingleOrderValue: 100000000,
+  riskManagementMaxSingleOrderValue: 500000000,
   riskManagementDailyLossLimitPercent: 50,
   riskManagementMarginCallThreshold: 30,
   systemStatusTradingEnabled: true,
