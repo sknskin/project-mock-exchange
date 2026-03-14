@@ -1,5 +1,6 @@
 {
   "name": "@virtuex/portfolio",
+  "description": "VirtuEx Portfolio Service - holdings, valuation, and performance tracking",
   "version": "0.1.0",
   "private": true,
   "scripts": {

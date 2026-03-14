@@ -1,5 +1,6 @@
 {
   "name": "@virtuex/web",
+  "description": "VirtuEx Frontend - Next.js trading platform UI",
   "version": "0.1.0",
   "private": true,
   "scripts": {

@@ -1,5 +1,6 @@
 {
   "name": "@virtuex/chat",
+  "description": "VirtuEx Chat Service - real-time messaging and chat room management",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -23,6 +24,7 @@
     "@nestjs/core": "^11.0.0",
     "@nestjs/cqrs": "^11.0.0",
     "@nestjs/platform-express": "^11.0.0",
+    "@nestjs/schedule": "^5.0.0",
     "@nestjs/terminus": "^11.0.0",
     "reflect-metadata": "^0.2.2",
     "@prisma/client": "^6.3.0",

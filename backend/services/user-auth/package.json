@@ -1,5 +1,6 @@
 {
   "name": "@virtuex/user-auth",
+  "description": "VirtuEx User Auth Service - authentication and user management",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -29,6 +30,7 @@
     "@nestjs/jwt": "^11.0.0",
     "@nestjs/passport": "^11.0.0",
     "@nestjs/platform-express": "^11.0.0",
+    "@nestjs/schedule": "^5.0.0",
     "@nestjs/terminus": "^11.0.0",
     "@prisma/client": "^6.3.0",
     "@virtuex/common": "workspace:*",

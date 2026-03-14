@@ -1,5 +1,6 @@
 {
   "name": "@virtuex/market-data",
+  "description": "VirtuEx Market Data Service - real-time pricing, candlesticks, and news",
   "version": "0.1.0",
   "private": true,
   "scripts": {

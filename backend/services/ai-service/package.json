@@ -1,5 +1,6 @@
 {
   "name": "@virtuex/ai-service",
+  "description": "VirtuEx AI Service - AI-powered market analysis and insights",
   "version": "0.1.0",
   "private": true,
   "scripts": {

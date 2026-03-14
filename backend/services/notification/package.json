@@ -1,5 +1,6 @@
 {
   "name": "@virtuex/notification",
+  "description": "VirtuEx Notification Service - email and in-app notification delivery",
   "version": "0.1.0",
   "private": true,
   "scripts": {

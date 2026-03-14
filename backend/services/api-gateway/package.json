@@ -1,5 +1,6 @@
 {
   "name": "@virtuex/api-gateway",
+  "description": "VirtuEx API Gateway - HTTP/WebSocket routing, auth, and rate limiting",
   "version": "0.1.0",
   "private": true,
   "scripts": {

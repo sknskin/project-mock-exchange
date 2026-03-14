@@ -1,5 +1,6 @@
 {
   "name": "@virtuex/order-engine",
+  "description": "VirtuEx Order Engine Service - order matching and trade execution",
   "version": "0.1.0",
   "private": true,
   "scripts": {
