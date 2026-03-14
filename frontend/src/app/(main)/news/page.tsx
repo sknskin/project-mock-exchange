@@ -239,6 +239,24 @@ export default function NewsPage() {
             </button>
           ))}
         </div>
+        {/* AI 분석 버튼 — 탭 섹션 최우측 / AI Analysis button — rightmost in tab section */}
+        <button
+          onClick={handleAiAnalysis}
+          disabled={aiLoading}
+          className={cn(
+            'flex items-center justify-center gap-2 h-10 min-w-[120px] px-4 rounded-xl text-[13px] font-semibold transition-all duration-150 border shrink-0 ml-auto mb-1',
+            aiLoading
+              ? 'border-border text-text-quaternary cursor-not-allowed'
+              : 'border-accent/30 text-accent hover:bg-accent/10',
+          )}
+        >
+          {aiLoading ? (
+            <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+          ) : (
+            <Sparkles className="w-4 h-4 shrink-0" />
+          )}
+          {t('news.aiAnalysis')}
+        </button>
       </div>
 
       {/* Search + Date filter + AI Analysis */}
@@ -273,24 +291,6 @@ export default function NewsPage() {
               {opt.label}
             </button>
           ))}
-          {/* AI 분석 버튼 / AI Analysis button */}
-          <button
-            onClick={handleAiAnalysis}
-            disabled={aiLoading}
-            className={cn(
-              'flex items-center justify-center gap-2 h-10 min-w-[120px] px-4 rounded-xl text-[13px] font-semibold transition-all duration-150 border shrink-0 ml-1',
-              aiLoading
-                ? 'border-border text-text-quaternary cursor-not-allowed'
-                : 'border-accent/30 text-accent hover:bg-accent/10',
-            )}
-          >
-            {aiLoading ? (
-              <Loader2 className="w-4 h-4 animate-spin shrink-0" />
-            ) : (
-              <Sparkles className="w-4 h-4 shrink-0" />
-            )}
-            {t('news.aiAnalysis')}
-          </button>
         </div>
       </div>
 
