@@ -195,6 +195,16 @@ export default function OrderForm({
     const usdLimitPrice = toUsdPrice(parseFloat(price), symbol, currencyMode, rate);
     const usdTriggerPrice = toUsdPrice(parseFloat(triggerPrice || '0'), symbol, currencyMode, rate);
 
+    // 수량·가격 범위 검증 — 비정상 값 서버 전송 방지
+    // Bounds check on quantity/price — prevent submitting unreasonable values to server
+    if (parsedQty <= 0 || !Number.isFinite(parsedQty)) return;
+    if (orderType === 'LIMIT') {
+      if (usdLimitPrice <= 0 || usdLimitPrice >= 1e9 || !Number.isFinite(usdLimitPrice)) return;
+    }
+    if (isConditional) {
+      if (usdTriggerPrice <= 0 || usdTriggerPrice >= 1e9 || !Number.isFinite(usdTriggerPrice)) return;
+    }
+
     try {
       await placeOrder.mutateAsync({
         symbol,
@@ -286,7 +296,8 @@ export default function OrderForm({
               onClick={() => {
                 if (isBuy && portfolio && displayCurrentPrice > 0) {
                   const maxQty = portfolio.cashBalance / displayCurrentPrice;
-                  setQuantity((maxQty * pct / 100).toFixed(8).replace(/\.?0+$/, ''));
+                  const factor = pct === 100 ? 0.99 : 1;
+                  setQuantity((maxQty * pct / 100 * factor).toFixed(8).replace(/\.?0+$/, ''));
                 } else if (!isBuy && holdingQty > 0) {
                   setQuantity((holdingQty * pct / 100).toFixed(8).replace(/\.?0+$/, ''));
                 }
