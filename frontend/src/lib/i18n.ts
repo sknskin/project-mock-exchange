@@ -228,6 +228,7 @@ const translations = {
     'leaderboard.rankDown': '하락',
     'leaderboard.rankSame': '변동없음',
     'leaderboard.absolutePnl': '절대수익',
+    'leaderboard.investedOnly': '투자자만',
 
     // Portfolio (additional)
     'portfolio.totalAssets': '총 자산',
@@ -981,6 +982,8 @@ const translations = {
     'orders.emptyAll': '주문 내역이 없습니다.\n대시보드에서 첫 주문을 시작해 보세요.',
     'orders.emptyTrades': '아직 체결된 주문이 없습니다.\n대시보드에서 거래를 시작해 보세요.',
     'orders.goToDashboard': '대시보드로 이동',
+    /** 거래 시작 CTA 버튼 / Start trading CTA button */
+    'orders.startTrading': '거래 시작하기',
 
     // Trade Analysis
     'orders.analysis': '분석',
@@ -1155,6 +1158,16 @@ const translations = {
     'news.aiAnalysis.noData': '분석할 뉴스 데이터가 없습니다',
     'news.aiAnalysis.error': '분석 중 오류가 발생했습니다',
     'news.aiAnalysis.close': '닫기',
+
+    // Dashboard AI
+    'dashboard.aiAnalysis': 'AI 분석',
+    'dashboard.aiAnalysis.title': 'AI 시장 분석',
+    'dashboard.aiAnalysis.loading': '시장을 분석하고 있습니다...',
+    'dashboard.aiAnalysis.summary': '시장 종합 분석',
+    'dashboard.aiAnalysis.highlights': '핵심 포인트',
+    'dashboard.aiAnalysis.sentiment': '시장 심리',
+    'dashboard.aiAnalysis.noData': '분석할 시장 데이터가 없습니다',
+    'dashboard.aiAnalysis.error': '분석 중 오류가 발생했습니다',
 
     // Stats
     'stats.popularAssetsDonut': '거래량 비중',
@@ -1510,6 +1523,18 @@ const translations = {
     'notification.empty': '알림이 없습니다',
     'notification.markAllRead': '모두 읽음',
     'notification.new': '새 알림',
+    'notification.type.TRADE': '주문 체결',
+    'notification.type.PRICE_ALERT': '가격 알림',
+    'notification.type.ANNOUNCEMENT_NEW': '새 공지사항',
+    'notification.type.ANNOUNCEMENT_UPDATED': '공지사항 업데이트',
+    'notification.type.CHAT_MESSAGE': '새 메시지',
+    'notification.type.REGISTRATION_APPROVED': '가입 승인',
+    'notification.type.REGISTRATION_REJECTED': '가입 반려',
+    'notification.msg.orderFilled': '{side} 주문이 체결되었습니다',
+    'notification.msg.buy': '매수',
+    'notification.msg.sell': '매도',
+    'notification.msg.priceAbove': '{symbol} 가격이 목표가 이상에 도달했습니다',
+    'notification.msg.priceBelow': '{symbol} 가격이 목표가 이하에 도달했습니다',
 
     // Pagination
     'pagination.first': '처음',
@@ -1917,6 +1942,10 @@ const translations = {
     'community.tradersLoginRequired': '트레이더 정보는 로그인 후 확인할 수 있습니다.\n로그인 페이지로 이동하시겠습니까?',
     'community.strategyLoginRequired': '전략 상세 내용은 로그인 후 확인할 수 있습니다.\n로그인 페이지로 이동하시겠습니까?',
 
+    // 에디터 (Editor)
+    'editor.invalidImageType': 'JPG, PNG, GIF, WebP 이미지만 업로드할 수 있습니다.',
+    'editor.imageTooLarge': '이미지 크기는 5MB를 초과할 수 없습니다.',
+
     // 전략 공유 (Strategy Sharing)
     'strategy.title': '전략 공유',
     'strategy.write': '전략 작성',
@@ -2256,6 +2285,7 @@ const translations = {
     'leaderboard.rankDown': 'Down',
     'leaderboard.rankSame': 'No change',
     'leaderboard.absolutePnl': 'Abs. PnL',
+    'leaderboard.investedOnly': 'Invested only',
 
     // Portfolio (additional)
     'portfolio.totalAssets': 'Total Assets',
@@ -3009,6 +3039,8 @@ const translations = {
     'orders.emptyAll': 'No order history yet.\nStart your first order from the dashboard.',
     'orders.emptyTrades': 'No trade history yet.\nStart trading from the dashboard.',
     'orders.goToDashboard': 'Go to Dashboard',
+    /** 거래 시작 CTA 버튼 / Start trading CTA button */
+    'orders.startTrading': 'Start Trading',
 
     // Trade Analysis
     'orders.analysis': 'Analysis',
@@ -3183,6 +3215,16 @@ const translations = {
     'news.aiAnalysis.noData': 'No news data available for analysis',
     'news.aiAnalysis.error': 'Error occurred during analysis',
     'news.aiAnalysis.close': 'Close',
+
+    // Dashboard AI
+    'dashboard.aiAnalysis': 'AI Analysis',
+    'dashboard.aiAnalysis.title': 'AI Market Analysis',
+    'dashboard.aiAnalysis.loading': 'Analyzing the market...',
+    'dashboard.aiAnalysis.summary': 'Market Overview',
+    'dashboard.aiAnalysis.highlights': 'Key Highlights',
+    'dashboard.aiAnalysis.sentiment': 'Market Sentiment',
+    'dashboard.aiAnalysis.noData': 'No market data available for analysis',
+    'dashboard.aiAnalysis.error': 'Error occurred during analysis',
 
     // Stats
     'stats.popularAssetsDonut': 'Volume Distribution',
@@ -3538,6 +3580,18 @@ const translations = {
     'notification.empty': 'No notifications',
     'notification.markAllRead': 'Mark all read',
     'notification.new': 'New',
+    'notification.type.TRADE': 'Order Filled',
+    'notification.type.PRICE_ALERT': 'Price Alert',
+    'notification.type.ANNOUNCEMENT_NEW': 'New Announcement',
+    'notification.type.ANNOUNCEMENT_UPDATED': 'Announcement Updated',
+    'notification.type.CHAT_MESSAGE': 'New Message',
+    'notification.type.REGISTRATION_APPROVED': 'Registration Approved',
+    'notification.type.REGISTRATION_REJECTED': 'Registration Rejected',
+    'notification.msg.orderFilled': '{side} order has been filled',
+    'notification.msg.buy': 'Buy',
+    'notification.msg.sell': 'Sell',
+    'notification.msg.priceAbove': '{symbol} price reached above target',
+    'notification.msg.priceBelow': '{symbol} price reached below target',
 
     // Pagination
     'pagination.first': 'First',
@@ -3944,6 +3998,10 @@ const translations = {
     'community.strategyWriteButton': 'Write Strategy',
     'community.tradersLoginRequired': 'Trader information requires login.\nWould you like to go to the login page?',
     'community.strategyLoginRequired': 'Strategy details require login.\nWould you like to go to the login page?',
+
+    // Editor
+    'editor.invalidImageType': 'Only JPG, PNG, GIF, WebP images are allowed.',
+    'editor.imageTooLarge': 'Image size cannot exceed 5MB.',
 
     // Strategy Sharing
     'strategy.title': 'Strategy Sharing',

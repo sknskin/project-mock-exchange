@@ -13,9 +13,9 @@ import { useMarketPrices, useAssets, usePeriodChanges } from '@/hooks/useMarket'
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuthStore } from '@/stores/auth';
+import { useSettingsStore } from '@/stores/settings';
+import { useScrollLock } from '@/hooks/useScrollLock';
 import { useWatchlist, useAddWatchlist, useRemoveWatchlist } from '@/hooks/useWatchlist';
-import dynamic from 'next/dynamic';
-const AiInsights = dynamic(() => import('@/components/trading/AiInsights'), { ssr: false });
 import AssetList from '@/components/market/AssetList';
 import MarketIndexSummary from '@/components/market/MarketIndexSummary';
 import MarketTicker from '@/components/market/MarketTicker';
@@ -25,8 +25,23 @@ import ConfirmModal from '@/components/ui/ConfirmModal';
 import { AssetListSkeleton } from '@/components/ui/Skeleton';
 import ServiceError from '@/components/ui/ServiceError';
 import { cn } from '@/lib/format';
-import { Search } from 'lucide-react';
+import { Search, Sparkles, Loader2, X } from 'lucide-react';
+import api from '@/lib/api';
 import type { Asset, AssetInfo, PriceUpdate } from '@/types';
+
+const SENTIMENT_COLOR: Record<string, string> = {
+  BULLISH: 'text-green-500 bg-green-500/10',
+  BEARISH: 'text-red-500 bg-red-500/10',
+  NEUTRAL: 'text-text-tertiary bg-bg-secondary',
+  MIXED: 'text-yellow-500 bg-yellow-500/10',
+};
+
+const SENTIMENT_KEY: Record<string, string> = {
+  BULLISH: 'news.aiAnalysis.sentiment.BULLISH',
+  BEARISH: 'news.aiAnalysis.sentiment.BEARISH',
+  NEUTRAL: 'news.aiAnalysis.sentiment.NEUTRAL',
+  MIXED: 'news.aiAnalysis.sentiment.MIXED',
+};
 
 /** 마켓 대시보드 페이지 컴포넌트 — 실시간 시세, 종목 목록, AI 분석
  * Market dashboard page component — real-time prices, asset list, and AI insights */
@@ -51,6 +66,13 @@ export default function DashboardPage() {
   const [spotlightOpen, setSpotlightOpen] = useState(false);
   // 로그인 필요 모달 상태 / Login required modal state
   const [loginModalOpen, setLoginModalOpen] = useState(false);
+  // AI 분석 상태 / AI analysis state
+  const locale = useSettingsStore((s) => s.locale);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiResult, setAiResult] = useState<{ summary: string; highlights: string[]; sentiment: string; sectionAnalysis?: { title: string; content: string }[] } | null>(null);
+  const [aiError, setAiError] = useState(false);
+  const [aiModalOpen, setAiModalOpen] = useState(false);
+  useScrollLock(aiModalOpen);
 
   // WebSocket 배치 타이머 정리 / Cleanup WebSocket batch timer
   useEffect(() => {
@@ -120,6 +142,48 @@ export default function DashboardPage() {
     { key: 'trending', label: t('market.trending') },
     { key: 'watchlist', label: t('market.watchlist') },
   ];
+
+  /** AI 시장 분석 핸들러 / AI market analysis handler */
+  const handleAiAnalysis = useCallback(async () => {
+    if (aiLoading) return;
+    setAiLoading(true);
+    setAiError(false);
+    setAiResult(null);
+    setAiModalOpen(true);
+    try {
+      const { data: newsData } = await api.get('/api/news', { params: { category: 'CRYPTO', page: 1, limit: 200 } });
+      const items = newsData?.data?.items ?? newsData?.items ?? [];
+      const allItems = items as { title: string; summary: string | null; source: string; publishedAt: string | null; scrapedAt: string }[];
+      const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const recentItems = allItems
+        .filter((item) => new Date(item.publishedAt || item.scrapedAt) >= cutoff && item.title && item.source)
+        .slice(0, 50)
+        .map((item) => ({ title: item.title, summary: item.summary || undefined, source: item.source, publishedAt: item.publishedAt || undefined }));
+
+      if (!recentItems.length) {
+        setAiResult(null);
+        setAiLoading(false);
+        return;
+      }
+
+      const { data: result } = await api.post('/api/ai/news-summary', {
+        category: 'CRYPTO',
+        newsItems: recentItems,
+        locale,
+      }, { timeout: 60000 });
+      const raw = result?.data ?? result;
+      const parsed = raw?.summary ? raw : raw?.data ?? raw;
+      if (parsed && typeof parsed.summary === 'string' && parsed.summary.length > 0) {
+        setAiResult(parsed);
+      } else {
+        setAiResult(null);
+      }
+    } catch {
+      setAiError(true);
+    } finally {
+      setAiLoading(false);
+    }
+  }, [aiLoading, locale]);
 
   // 종목명/유형 빠른 조회를 위한 심볼 맵 / Symbol-to-info map for fast lookup
   const assetMap = useMemo(() => {
@@ -264,7 +328,7 @@ export default function DashboardPage() {
             )}
           </button>
         ))}
-        {/* 데이터 출처 배지 — 데스크탑에서만 표시 / Data source badges — desktop only */}
+        {/* 데이터 출처 배지 + AI 분석 버튼 — 데스크탑에서만 표시 / Data source badges + AI button — desktop only */}
         <span className="ml-auto mb-2.5 hidden md:inline-flex items-center gap-2 shrink-0">
           <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/20">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -274,7 +338,42 @@ export default function DashboardPage() {
             <span className="w-1.5 h-1.5 rounded-full bg-rise animate-pulse" />
             <span className="text-[10px] font-semibold text-rise/80">{t('filter.stock')}: {t('market.simulatedData')}</span>
           </span>
+          <button
+            onClick={handleAiAnalysis}
+            disabled={aiLoading}
+            className={cn(
+              'flex items-center justify-center gap-2 h-10 min-w-[120px] px-4 rounded-xl text-[13px] font-semibold transition-all duration-150 border shrink-0 ml-1',
+              aiLoading
+                ? 'border-border text-text-quaternary cursor-not-allowed'
+                : 'border-accent/30 text-accent hover:bg-accent/10',
+            )}
+          >
+            {aiLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+            ) : (
+              <Sparkles className="w-4 h-4 shrink-0" />
+            )}
+            {t('dashboard.aiAnalysis')}
+          </button>
         </span>
+        {/* AI 분석 버튼 — 모바일 / AI button — mobile */}
+        <button
+          onClick={handleAiAnalysis}
+          disabled={aiLoading}
+          className={cn(
+            'md:hidden flex items-center justify-center gap-1.5 ml-auto mb-2.5 px-3 py-2 rounded-xl text-[12px] font-semibold transition-all duration-150 border shrink-0',
+            aiLoading
+              ? 'border-border text-text-quaternary cursor-not-allowed'
+              : 'border-accent/30 text-accent hover:bg-accent/10',
+          )}
+        >
+          {aiLoading ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />
+          ) : (
+            <Sparkles className="w-3.5 h-3.5 shrink-0" />
+          )}
+          {t('dashboard.aiAnalysis')}
+        </button>
       </div>
 
       {/* 종목 목록 — 로딩 시 스켈레톤, 완료 시 AssetList / Asset list — skeleton on loading, AssetList when ready */}
@@ -291,11 +390,6 @@ export default function DashboardPage() {
           onToggleWatchlist={handleToggleWatchlist}
         />
       )}
-
-      {/* AI 분석 / AI Insights */}
-      <div className="mt-8">
-        <AiInsights />
-      </div>
 
       {/* 스포트라이트 검색 모달 / Spotlight search modal */}
       <SpotlightSearch
@@ -314,6 +408,97 @@ export default function DashboardPage() {
         message={t('modal.loginRequiredMessage')}
         confirmLabel={t('modal.loginConfirm')}
       />
+
+      {/* AI 시장 분석 모달 / AI Market Analysis Modal */}
+      {aiModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="dashboard-ai-title">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-modal-backdrop" onClick={() => !aiLoading && setAiModalOpen(false)} />
+          <div className="relative w-full max-w-3xl bg-bg-primary border border-border rounded-2xl shadow-xl max-h-[90vh] flex flex-col overflow-hidden animate-modal-content">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-accent" />
+                <h2 id="dashboard-ai-title" className="text-[16px] font-bold text-text-primary">
+                  {t('dashboard.aiAnalysis.title')}
+                </h2>
+              </div>
+              <button onClick={() => !aiLoading && setAiModalOpen(false)} aria-label="Close" className="p-1.5 rounded-lg hover:bg-bg-secondary transition-colors">
+                <X className="w-4.5 h-4.5 text-text-quaternary" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto overscroll-contain p-5 sm:p-6">
+              {aiLoading ? (
+                <div className="flex flex-col items-center gap-4 py-16">
+                  <Loader2 className="w-8 h-8 text-accent animate-spin" />
+                  <p className="text-[14px] text-text-tertiary">{t('dashboard.aiAnalysis.loading')}</p>
+                  <p className="text-[12px] text-text-quaternary">{locale === 'ko' ? '심층 분석 중입니다. 잠시만 기다려주세요...' : 'Performing deep analysis. Please wait...'}</p>
+                </div>
+              ) : aiError ? (
+                <div className="text-center py-12">
+                  <p className="text-[14px] text-red-500">{t('dashboard.aiAnalysis.error')}</p>
+                </div>
+              ) : !aiResult ? (
+                <div className="text-center py-12">
+                  <p className="text-[14px] text-text-quaternary">{t('dashboard.aiAnalysis.noData')}</p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  <div className="flex items-center gap-3">
+                    <span className="text-[13px] font-medium text-text-tertiary">{t('dashboard.aiAnalysis.sentiment')}</span>
+                    <span className={cn('px-3 py-1 rounded-full text-[12px] font-bold', SENTIMENT_COLOR[aiResult.sentiment] ?? SENTIMENT_COLOR.NEUTRAL)}>
+                      {t((SENTIMENT_KEY[aiResult.sentiment] ?? SENTIMENT_KEY.NEUTRAL) as never)}
+                    </span>
+                  </div>
+
+                  <div className="p-4 rounded-xl bg-bg-secondary/50 border border-border/50">
+                    <h3 className="text-[13px] font-bold text-accent mb-2.5">{t('dashboard.aiAnalysis.summary')}</h3>
+                    <p className="text-[14px] text-text-primary leading-[1.8] whitespace-pre-line">{aiResult.summary}</p>
+                  </div>
+
+                  {aiResult.highlights && aiResult.highlights.length > 0 && (
+                    <div>
+                      <h3 className="text-[13px] font-bold text-text-secondary mb-3">{t('dashboard.aiAnalysis.highlights')}</h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {aiResult.highlights.map((h, i) => (
+                          <div key={i} className="flex items-start gap-2.5 p-3 rounded-lg bg-bg-secondary/30 border border-border/30">
+                            <span className="text-accent font-bold text-[13px] mt-0.5 shrink-0">{i + 1}</span>
+                            <span className="text-[13px] text-text-primary leading-relaxed">{h}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {aiResult.sectionAnalysis && aiResult.sectionAnalysis.length > 0 && (
+                    <div className="space-y-4">
+                      {aiResult.sectionAnalysis.map((section, i) => (
+                        <div key={i} className="border border-border/50 rounded-xl overflow-hidden">
+                          <div className="px-4 py-2.5 bg-bg-secondary/50 border-b border-border/50">
+                            <h3 className="text-[13px] font-bold text-text-primary">{section.title}</h3>
+                          </div>
+                          <div className="px-4 py-3">
+                            <p className="text-[13px] text-text-secondary leading-[1.9] whitespace-pre-line">{section.content}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end px-5 py-3 border-t border-border shrink-0">
+              <button
+                onClick={() => setAiModalOpen(false)}
+                disabled={aiLoading}
+                className="px-5 py-2 rounded-xl text-[13px] font-semibold text-text-secondary hover:bg-bg-secondary transition-colors"
+              >
+                {t('news.aiAnalysis.close')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
