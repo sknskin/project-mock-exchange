@@ -14,10 +14,10 @@ import { X } from 'lucide-react';
 import { useToastStore, type ToastType } from '@/stores/toast';
 
 const STYLE_MAP: Record<ToastType, string> = {
-  default: 'border-border bg-bg-elevated text-text-primary',
-  info:    'border-success/40 bg-success/10 text-success',
-  error:   'border-rise/40 bg-rise/10 text-rise',
-  success: 'border-fall/40 bg-fall/10 text-fall',
+  default: 'border-blue-500/40 bg-blue-500/10 text-blue-400',
+  info:    'border-blue-500/40 bg-blue-500/10 text-blue-400',
+  error:   'border-red-500/40 bg-red-500/10 text-red-400',
+  success: 'border-blue-500/40 bg-blue-500/10 text-blue-400',
 };
 
 const ICON_MAP: Record<ToastType, string> = {
@@ -34,7 +34,7 @@ function ToastContainer() {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed bottom-24 sm:bottom-20 left-1/2 -translate-x-1/2 z-[100] flex flex-col items-center gap-2.5 pointer-events-none w-[calc(100%-2rem)] sm:w-auto">
+    <div className="fixed bottom-20 sm:bottom-4 right-0 sm:right-4 z-[100] flex flex-col items-end gap-2.5 pointer-events-none w-full sm:w-auto sm:max-w-sm px-3 sm:px-0">
       {toasts.map((toast) => (
         <div
           key={toast.id}

@@ -40,18 +40,21 @@ const ICON_MAP: Record<LiveToastCategory, typeof MessageSquare> = {
   'registration-request': UserCog,
 };
 
-// 카테고리별 색상 클래스 매핑 / Color class mapping per toast category
+// 카테고리별 색상 클래스 매핑 — 통일 규칙:
+// 채팅=회색, 주문/거래=초록, 오류/거부=빨강, 등록/성공/공지=파랑
+// Color class mapping — unified rules:
+// Chat=gray, Trade/Order=green, Error/Reject=red, Registration/Success/Announcement=blue
 const COLOR_MAP: Record<LiveToastCategory, string> = {
-  'chat-message': 'border-accent/40 bg-accent/10 text-accent',
-  'chat-invited': 'border-accent/40 bg-accent/10 text-accent',
-  'chat-kicked': 'border-rise/40 bg-rise/10 text-rise',
-  trade: 'border-success/40 bg-success/10 text-success',
-  'price-alert': 'border-warning/40 bg-warning/10 text-warning',
-  'announcement-new': 'border-accent/40 bg-accent/10 text-accent',
-  'announcement-updated': 'border-accent/40 bg-accent/10 text-accent',
-  'registration-approved': 'border-success/40 bg-success/10 text-success',
-  'registration-rejected': 'border-rise/40 bg-rise/10 text-rise',
-  'registration-request': 'border-accent/40 bg-accent/10 text-accent',
+  'chat-message': 'border-gray-500/40 bg-gray-500/10 text-gray-400',
+  'chat-invited': 'border-gray-500/40 bg-gray-500/10 text-gray-400',
+  'chat-kicked': 'border-red-500/40 bg-red-500/10 text-red-400',
+  trade: 'border-green-500/40 bg-green-500/10 text-green-400',
+  'price-alert': 'border-blue-500/40 bg-blue-500/10 text-blue-400',
+  'announcement-new': 'border-blue-500/40 bg-blue-500/10 text-blue-400',
+  'announcement-updated': 'border-blue-500/40 bg-blue-500/10 text-blue-400',
+  'registration-approved': 'border-blue-500/40 bg-blue-500/10 text-blue-400',
+  'registration-rejected': 'border-red-500/40 bg-red-500/10 text-red-400',
+  'registration-request': 'border-blue-500/40 bg-blue-500/10 text-blue-400',
 };
 
 export default function LiveToastContainer() {
