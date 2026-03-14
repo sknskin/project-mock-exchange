@@ -7,7 +7,7 @@
  */
 'use client';
 
-import { useEffect, useCallback, useRef, type ComponentPropsWithoutRef } from 'react';
+import { memo, useEffect, useCallback, useRef, type ComponentPropsWithoutRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { X } from 'lucide-react';
@@ -32,7 +32,7 @@ interface ContentModalProps {
   type: 'markdown' | 'iframe';
 }
 
-export default function ContentModal({ isOpen, onClose, title, content, type }: ContentModalProps) {
+function ContentModal({ isOpen, onClose, title, content, type }: ContentModalProps) {
   const { t } = useTranslation();
   const modalRef = useRef<HTMLDivElement>(null);
   useFocusTrap(modalRef, isOpen);
@@ -99,3 +99,5 @@ export default function ContentModal({ isOpen, onClose, title, content, type }: 
     </div>
   );
 }
+
+export default memo(ContentModal);

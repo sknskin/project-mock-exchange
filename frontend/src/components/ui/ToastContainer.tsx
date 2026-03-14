@@ -9,6 +9,7 @@
  */
 'use client';
 
+import { memo } from 'react';
 import { X } from 'lucide-react';
 import { useToastStore, type ToastType } from '@/stores/toast';
 
@@ -26,7 +27,7 @@ const ICON_MAP: Record<ToastType, string> = {
   success: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
 };
 
-export default function ToastContainer() {
+function ToastContainer() {
   const toasts = useToastStore((s) => s.toasts);
   const removeToast = useToastStore((s) => s.removeToast);
 
@@ -61,3 +62,5 @@ export default function ToastContainer() {
     </div>
   );
 }
+
+export default memo(ToastContainer);

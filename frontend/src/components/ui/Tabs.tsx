@@ -7,6 +7,7 @@
  */
 'use client';
 
+import { memo } from 'react';
 import { cn } from '@/lib/format';
 
 // 개별 탭 항목 타입 / Individual tab item type
@@ -35,7 +36,7 @@ interface TabsProps {
   variant?: 'default' | 'pill';
 }
 
-export default function Tabs({
+function Tabs({
   tabs,
   activeTab,
   onChange,
@@ -86,3 +87,5 @@ export default function Tabs({
     </div>
   );
 }
+
+export default memo(Tabs);

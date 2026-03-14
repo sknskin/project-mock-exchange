@@ -239,26 +239,9 @@ export default function NewsPage() {
             </button>
           ))}
         </div>
-        {/* AI 분석 버튼 / AI Analysis button */}
-        <button
-          onClick={handleAiAnalysis}
-          disabled={aiLoading}
-          className={cn(
-            'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-semibold transition-colors shrink-0',
-            'bg-accent/10 text-accent hover:bg-accent/20',
-            aiLoading && 'opacity-60 cursor-not-allowed',
-          )}
-        >
-          {aiLoading ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-          ) : (
-            <Sparkles className="w-3.5 h-3.5" />
-          )}
-          {t('news.aiAnalysis')}
-        </button>
       </div>
 
-      {/* Search + Date filter */}
+      {/* Search + Date filter + AI Analysis */}
       <div className="flex flex-col sm:flex-row gap-2 mb-5">
         <div className="relative flex-1 min-w-0">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-quaternary pointer-events-none" />
@@ -290,6 +273,24 @@ export default function NewsPage() {
               {opt.label}
             </button>
           ))}
+          {/* AI 분석 버튼 / AI Analysis button */}
+          <button
+            onClick={handleAiAnalysis}
+            disabled={aiLoading}
+            className={cn(
+              'flex items-center justify-center gap-2 h-10 min-w-[120px] px-4 rounded-xl text-[13px] font-semibold transition-all duration-150 border shrink-0 ml-1',
+              aiLoading
+                ? 'border-border text-text-quaternary cursor-not-allowed'
+                : 'border-accent/30 text-accent hover:bg-accent/10',
+            )}
+          >
+            {aiLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+            ) : (
+              <Sparkles className="w-4 h-4 shrink-0" />
+            )}
+            {t('news.aiAnalysis')}
+          </button>
         </div>
       </div>
 

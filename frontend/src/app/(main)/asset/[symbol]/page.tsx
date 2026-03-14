@@ -158,7 +158,7 @@ export default function AssetDetailPage({
   };
 
   return (
-    <div className="pb-32">
+    <div className="pb-4">
       {/* 헤더 / Header */}
       <div className="flex items-center gap-3 py-6 h-[88px]">
         <Link href="/dashboard" className="flex items-center justify-center w-8 h-8 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-secondary transition-colors">
@@ -482,9 +482,9 @@ export default function AssetDetailPage({
         cancelLabel={t('modal.cancel')}
       />
 
-      {/* 고정 매수/매도 바 — 화면 하단에 항상 표시 / Sticky buy/sell bar — always visible at bottom */}
-      <div className="fixed bottom-16 sm:bottom-0 left-0 right-0 z-40 bg-bg-primary/95 backdrop-blur-sm border-t border-border safe-bottom px-4 py-3">
-        <div className="max-w-screen-lg mx-auto flex gap-3">
+      {/* 고정 매수/매도 바 — 스크롤 시 하단 고정, 푸터 직전까지만 / Sticky buy/sell bar — sticks to bottom, stops above footer */}
+      <div className="sticky bottom-0 left-0 right-0 z-40 bg-bg-primary/95 backdrop-blur-sm border-t border-border safe-bottom px-4 py-3 pb-8 lg:bottom-0 bottom-[56px] mb-2">
+        <div className="flex gap-3">
           <button
             onClick={() => handleBuySell('BUY')}
             className="flex-1 h-12 text-[15px] font-bold text-white bg-rise rounded-xl hover:bg-rise/90 transition-colors"

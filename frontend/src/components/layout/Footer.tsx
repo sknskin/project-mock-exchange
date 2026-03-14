@@ -7,7 +7,7 @@
  */
 'use client';
 
-import { useCallback, useState } from 'react';
+import { memo, useCallback, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import NextLink from 'next/link';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -46,7 +46,7 @@ interface Toast {
 
 let toastId = 0;
 
-export default function Footer() {
+function Footer() {
   const pathname = usePathname();
   const { t } = useTranslation();
   const isPinned = useChatStore((s) => s.isPinned);
@@ -194,3 +194,5 @@ export default function Footer() {
     </footer>
   );
 }
+
+export default memo(Footer);

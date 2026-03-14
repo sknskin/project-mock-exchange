@@ -9,7 +9,7 @@ VirtuEx(VirtuEx)는 실시간 모의 주식/암호화폐 거래 플랫폼입니�
 ## 사전 요구사항
 
 - **Docker Desktop** (실행 중이어야 함)
-- **Node.js** 18+ (`node -v`로 확인)
+- **Node.js** 20+ (`node -v`로 확인)
 - **pnpm** (`npm install -g pnpm`)
 
 > **주의**: 로컬에 PostgreSQL이 5432 포트로 실행 중이면 Docker 컨테이너와 포트 충돌이 발생합니다.

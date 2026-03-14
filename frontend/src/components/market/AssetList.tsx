@@ -226,7 +226,7 @@ export default function AssetList({ assets, period, onPeriodChange, mainTab = 'r
         {/* 모바일 드롭다운 토글 / Mobile dropdown toggle */}
         <button
           onClick={() => setMobileFilterOpen((v) => !v)}
-          className="lg:hidden flex items-center justify-between w-full pt-4 pb-3 group"
+          className="lg:hidden flex items-center w-full pt-4 pb-3 group"
         >
           <div className="flex items-center gap-1.5 min-w-0">
             <span className="bg-accent/10 text-accent text-[12px] font-bold rounded-md px-2 py-0.5 shrink-0">
@@ -323,7 +323,9 @@ export default function AssetList({ assets, period, onPeriodChange, mainTab = 'r
         {/* 테이블 헤더 (기간에 따라 라벨 변경) / Table header (labels change by period) */}
         <div className="flex items-center pt-3 pb-2.5 text-[11px] md:text-[12px] text-text-quaternary font-medium -mx-3 px-3 border-b border-border/60">
         <span className="w-6 sm:w-8 text-center shrink-0 mr-2 sm:mr-3">{t('table.rank')}</span>
-        <span className="w-[120px] sm:w-[160px] md:w-[180px] lg:w-[200px] shrink-0 truncate">
+        {/* 별표(관심종목) 아이콘 너비만큼 오프셋 — 종목명이 아이콘이 아닌 이름 위에 정렬되도록 */}
+        {/* Offset by watchlist star icon width — aligns header above the name, not the star */}
+        <span className="w-[120px] sm:w-[160px] md:w-[180px] lg:w-[200px] shrink-0 truncate ml-7 sm:ml-8">
           {t('table.name')} · <span className="text-text-quaternary/70">{timeStr}</span>
         </span>
         <div className="flex-1 min-w-2" />

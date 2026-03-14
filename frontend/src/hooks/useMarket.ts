@@ -26,12 +26,12 @@ export function useMarketPrices() {
       const { data } = await api.get('/api/market/prices');
       return data.data ?? data;
     },
-    // WebSocket이 실시간 업데이트를 처리; REST 폴링은 백업용
-    // WebSocket handles real-time updates; REST polling serves as a fallback
-    refetchInterval: 30_000,
+    // B-H-02: WebSocket이 실시간 업데이트를 처리; REST 폴링은 5분 주기 백업 전용
+    // B-H-02: WebSocket handles real-time updates; REST polling is a 5-min fallback only
+    refetchInterval: 300_000,
     // REST 폴링 데이터가 WebSocket 실시간 데이터를 덮어쓰지 않도록 stale 시간 설정
     // Prevent REST polling from overwriting WebSocket real-time data
-    staleTime: 25_000,
+    staleTime: 290_000,
   });
 }
 
@@ -49,9 +49,10 @@ export function useAssetPrice(symbol: string) {
       const { data } = await api.get(`/api/market/prices/${symbol}`);
       return data.data ?? data;
     },
-    // WebSocket이 실시간 업데이트를 처리; REST 폴링은 백업용
-    // WebSocket handles real-time updates; REST polling serves as a fallback
-    refetchInterval: 30_000,
+    // B-H-02: WebSocket이 실시간 업데이트를 처리; REST 폴링은 5분 주기 백업 전용
+    // B-H-02: WebSocket handles real-time updates; REST polling is a 5-min fallback only
+    refetchInterval: 300_000,
+    staleTime: 290_000,
     enabled: !!symbol,
   });
 }
@@ -234,9 +235,10 @@ export function useOrderBook(symbol: string) {
       const { data } = await api.get(`/api/orders/book/${symbol}`);
       return data.data ?? data;
     },
-    // WebSocket이 실시간 업데이트를 처리; REST 폴링은 백업용
-    // WebSocket handles real-time updates; REST polling serves as a fallback
-    refetchInterval: 30_000,
+    // B-H-02: WebSocket이 실시간 업데이트를 처리; REST 폴링은 5분 주기 백업 전용
+    // B-H-02: WebSocket handles real-time updates; REST polling is a 5-min fallback only
+    refetchInterval: 300_000,
+    staleTime: 290_000,
     enabled: !!symbol,
     // 호가 데이터가 없을 경우 재시도하지 않음 (빈 오더북은 정상)
     // Don't retry when no order book data (empty order book is normal)
@@ -309,9 +311,10 @@ export function useRecentTrades(symbol: string, enabled: boolean = true) {
         timestamp: String(t.executedAt ?? ''),
       }));
     },
-    // WebSocket이 실시간 업데이트를 처리; REST 폴링은 백업용
-    // WebSocket handles real-time updates; REST polling serves as a fallback
-    refetchInterval: 30_000,
+    // B-H-02: WebSocket이 실시간 업데이트를 처리; REST 폴링은 5분 주기 백업 전용
+    // B-H-02: WebSocket handles real-time updates; REST polling is a 5-min fallback only
+    refetchInterval: 300_000,
+    staleTime: 290_000,
     enabled: !!symbol && enabled,
   });
 }

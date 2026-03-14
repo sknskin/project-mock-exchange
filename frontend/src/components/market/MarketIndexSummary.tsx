@@ -90,6 +90,7 @@ function MiniSparkline({ data, isRise }: { data: number[]; isRise: boolean }) {
       ref={canvasRef}
       className="w-[50px] h-[24px]"
       style={{ width: 50, height: 24 }}
+      aria-label="Sparkline chart"
     />
   );
 }

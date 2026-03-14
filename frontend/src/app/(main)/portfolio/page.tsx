@@ -8,11 +8,14 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import AuthGuard from '@/components/layout/AuthGuard';
 import BalanceCard from '@/components/portfolio/BalanceCard';
 import HoldingCard from '@/components/portfolio/HoldingCard';
-import PortfolioAnalytics from '@/components/portfolio/PortfolioAnalytics';
+// C-H-01: PortfolioAnalytics 동적 임포트 — 초기 번들 크기 절감
+// C-H-01: Dynamic import for PortfolioAnalytics — reduces initial bundle size
+const PortfolioAnalytics = dynamic(() => import('@/components/portfolio/PortfolioAnalytics'), { ssr: false });
 import PortfolioHistoryChart from '@/components/portfolio/PortfolioHistoryChart';
 import ExchangeRateBar from '@/components/market/ExchangeRateBar';
 import Button from '@/components/ui/Button';

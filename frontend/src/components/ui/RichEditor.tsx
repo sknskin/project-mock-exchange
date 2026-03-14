@@ -9,6 +9,8 @@
 
 import { useRef, useEffect } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
+import { useToastStore } from '@/stores/toast';
+import { useTranslation } from '@/hooks/useTranslation';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
 import Underline from '@tiptap/extension-underline';
@@ -42,6 +44,8 @@ interface RichEditorProps {
 
 export default function RichEditor({ content, onChange, placeholder }: RichEditorProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const addToast = useToastStore((s) => s.addToast);
+  const { t } = useTranslation();
 
   const editor = useEditor({
     extensions: [
@@ -87,12 +91,12 @@ export default function RichEditor({ content, onChange, placeholder }: RichEdito
     const file = e.target.files?.[0];
     if (!file || !editor) return;
     if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-      alert('JPG, PNG, GIF, WebP 이미지만 업로드할 수 있습니다.\nOnly JPG, PNG, GIF, WebP images are allowed.');
+      addToast(t('editor.invalidImageType'), 'error');
       e.target.value = '';
       return;
     }
     if (file.size > MAX_IMAGE_SIZE) {
-      alert('이미지 크기는 5MB를 초과할 수 없습니다.\nImage size cannot exceed 5MB.');
+      addToast(t('editor.imageTooLarge'), 'error');
       e.target.value = '';
       return;
     }

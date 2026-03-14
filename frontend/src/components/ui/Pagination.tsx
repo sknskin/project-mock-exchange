@@ -7,6 +7,7 @@
  */
 'use client';
 
+import { memo } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/format';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
@@ -33,7 +34,7 @@ interface PaginationProps {
   onLimitChange?: (limit: number) => void;
 }
 
-export default function Pagination({
+function Pagination({
   page,
   totalPages,
   total,
@@ -166,3 +167,5 @@ export default function Pagination({
     </div>
   );
 }
+
+export default memo(Pagination);

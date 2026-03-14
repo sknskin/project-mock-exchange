@@ -7,7 +7,7 @@
  */
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { memo, useEffect, useRef } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { useScrollLock } from '@/hooks/useScrollLock';
@@ -24,7 +24,7 @@ interface ConfirmModalProps {
   loading?: boolean;
 }
 
-export default function ConfirmModal({
+function ConfirmModal({
   isOpen,
   onClose,
   onConfirm,
@@ -91,3 +91,5 @@ export default function ConfirmModal({
     </div>
   );
 }
+
+export default memo(ConfirmModal);

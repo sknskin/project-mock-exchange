@@ -655,12 +655,13 @@ export default function OrdersPage() {
                   <p className="text-text-quaternary text-[14px] whitespace-pre-line">
                     {t('orders.emptyAll')}
                   </p>
+                  {/* UX-L-02: 주문 내역 빈 상태 CTA — 거래 페이지로 이동 / Order history empty state CTA — navigate to trading page */}
                   <Link
                     href="/dashboard"
-                    className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 text-[13px] font-semibold text-accent bg-accent/10 rounded-lg hover:bg-accent/20 transition-colors"
+                    className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 text-[13px] font-semibold text-white bg-accent rounded-lg hover:bg-accent/90 transition-colors"
                   >
-                    <LayoutDashboard className="w-3.5 h-3.5" />
-                    {t('orders.goToDashboard')}
+                    <Activity className="w-3.5 h-3.5" />
+                    {t('orders.startTrading')}
                   </Link>
                 </div>
               ) : (

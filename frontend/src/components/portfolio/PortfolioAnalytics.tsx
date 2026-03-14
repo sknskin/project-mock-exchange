@@ -53,6 +53,24 @@ const CHART_COLORS = [
   '#EC4899', '#06B6D4', '#F59E0B', '#6366F1', '#10B981',
 ];
 
+/**
+ * A-M-01: Recharts 인라인 스타일 상수 — 렌더링마다 새 객체 생성 방지
+ * A-M-01: Recharts inline style constants — prevent new object creation on every render
+ */
+const TOOLTIP_CONTENT_STYLE: React.CSSProperties = {
+  backgroundColor: '#1E1E24',
+  border: '1px solid rgba(255,255,255,0.08)',
+  borderRadius: '8px',
+  fontSize: '12px',
+  color: '#ECECEC',
+};
+
+const CHART_GRID_STROKE = 'rgba(255,255,255,0.05)';
+const CHART_AXIS_TICK = { fontSize: 11, fill: '#6B7683' };
+const CHART_AXIS_LINE = { stroke: 'rgba(255,255,255,0.08)' };
+const CHART_REFERENCE_LINE_STROKE = 'rgba(255,255,255,0.15)';
+const CHART_LINE_ACTIVE_DOT = { r: 4, fill: '#3182F6', stroke: '#1E1E24', strokeWidth: 2 };
+
 /** 포트폴리오 분석 — 자산 배분, 손익, 위험 지표 등 종합 분석 대시보드
  * Portfolio analytics — comprehensive dashboard with allocation, P&L, risk metrics */
 export default function PortfolioAnalytics({ portfolio }: PortfolioAnalyticsProps) {
@@ -362,13 +380,7 @@ export default function PortfolioAnalytics({ portfolio }: PortfolioAnalyticsProp
                     ))}
                   </Pie>
                   <Tooltip
-                    contentStyle={{
-                      backgroundColor: '#1E1E24',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      borderRadius: '8px',
-                      fontSize: '12px',
-                      color: '#ECECEC',
-                    }}
+                    contentStyle={TOOLTIP_CONTENT_STYLE}
                     formatter={(value?: number) => [fmt(value ?? 0), '']}
                   />
                 </PieChart>
@@ -802,13 +814,7 @@ export default function PortfolioAnalytics({ portfolio }: PortfolioAnalyticsProp
                 <XAxis type="number" hide domain={[0, 100]} />
                 <YAxis type="category" hide />
                 <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#1E1E24',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: '8px',
-                    fontSize: '12px',
-                    color: '#ECECEC',
-                  }}
+                  contentStyle={TOOLTIP_CONTENT_STYLE}
                   formatter={(value?: number, name?: string) => [`${(value ?? 0).toFixed(1)}%`, name ?? '']}
                 />
                 {compositionData.map((item) => (
@@ -860,28 +866,22 @@ export default function PortfolioAnalytics({ portfolio }: PortfolioAnalyticsProp
           <div className="w-full h-[200px]">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={dailyPnlData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID_STROKE} />
                 <XAxis
                   dataKey="date"
-                  tick={{ fontSize: 11, fill: '#6B7683' }}
-                  axisLine={{ stroke: 'rgba(255,255,255,0.08)' }}
+                  tick={CHART_AXIS_TICK}
+                  axisLine={CHART_AXIS_LINE}
                   tickLine={false}
                 />
                 <YAxis
-                  tick={{ fontSize: 11, fill: '#6B7683' }}
+                  tick={CHART_AXIS_TICK}
                   axisLine={false}
                   tickLine={false}
                   tickFormatter={yAxisTickFmt}
                 />
-                <ReferenceLine y={0} stroke="rgba(255,255,255,0.15)" strokeDasharray="3 3" />
+                <ReferenceLine y={0} stroke={CHART_REFERENCE_LINE_STROKE} strokeDasharray="3 3" />
                 <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#1E1E24',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: '8px',
-                    fontSize: '12px',
-                    color: '#ECECEC',
-                  }}
+                  contentStyle={TOOLTIP_CONTENT_STYLE}
                   formatter={(value?: number) => [fmt(value ?? 0), t('portfolio.analytics.totalPnl')]}
                   labelFormatter={(label) => label}
                 />
@@ -891,7 +891,7 @@ export default function PortfolioAnalytics({ portfolio }: PortfolioAnalyticsProp
                   stroke="#3182F6"
                   strokeWidth={2}
                   dot={false}
-                  activeDot={{ r: 4, fill: '#3182F6', stroke: '#1E1E24', strokeWidth: 2 }}
+                  activeDot={CHART_LINE_ACTIVE_DOT}
                   isAnimationActive={false}
                 />
               </LineChart>
