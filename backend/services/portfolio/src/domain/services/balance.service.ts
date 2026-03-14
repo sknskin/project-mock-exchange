@@ -453,17 +453,25 @@ export class BalanceService {
 
       const reserved = new Decimal(account.reservedCash.toString());
 
+      // 정산 금액이 예약 금액을 소폭 초과하는 경우 허용 (toFixed 반올림 오차 보정, 1원 이하)
+      // Allow tiny overshoot where settlement cost exceeds reserved due to toFixed rounding (≤ 1 KRW)
+      let deductAmount = totalCost;
       if (reserved.lt(totalCost)) {
-        throw new BadRequestException(
-          `Insufficient reserved funds for buy settlement: reserved ${reserved.toFixed(8)}, required ${totalCost.toFixed(8)}`,
-        );
+        const diff = totalCost.minus(reserved);
+        if (diff.lte(1)) {
+          deductAmount = reserved;
+        } else {
+          throw new BadRequestException(
+            `Insufficient reserved funds for buy settlement: reserved ${reserved.toFixed(8)}, required ${totalCost.toFixed(8)}`,
+          );
+        }
       }
 
       // 예약 현금 차감 / Deduct reserved cash
       const updatedAccount = await tx.account.update({
         where: { userId },
         data: {
-          reservedCash: reserved.minus(totalCost).toFixed(8),
+          reservedCash: reserved.minus(deductAmount).toFixed(8),
         },
       });
 
@@ -840,6 +848,7 @@ export class BalanceService {
       totalCash: string;
       totalPortfolioValue: string;
       pnlPercent: string;
+      hasTraded: boolean;
     }[]
   > {
     /** 전체 계좌 조회 — totalValue 기준 정렬은 보유자산 가치 포함 후 수행
@@ -850,7 +859,7 @@ export class BalanceService {
 
     // 배치 조회: 보유 자산, 입출금 집계, 실현 손익을 한 번에 처리
     // Batch queries: fetch holdings, deposit/withdraw aggregates, and realized P&L
-    const [allHoldings, depositAggs, withdrawAggs] = await Promise.all([
+    const [allHoldings, depositAggs, withdrawAggs, tradeAggs] = await Promise.all([
       this.prisma.holding.findMany({
         where: { userId: { in: userIds } },
       }),
@@ -863,6 +872,13 @@ export class BalanceService {
         by: ['userId'],
         where: { userId: { in: userIds }, type: 'WITHDRAWAL' },
         _sum: { cashDelta: true },
+      }),
+      // 거래 이력 존재 여부 조회 (BUY/SELL/RESERVE 트랜잭션)
+      // Check if user has any trade history (BUY/SELL/RESERVE transactions)
+      this.prisma.transaction.groupBy({
+        by: ['userId'],
+        where: { userId: { in: userIds }, type: { in: ['BUY', 'SELL', 'RESERVE'] } },
+        _count: true,
       }),
     ]);
 
@@ -881,11 +897,13 @@ export class BalanceService {
     // 유저별 입출금/실현손익 맵 구성 / Build deposit/withdraw/realized P&L maps per user
     const depositMap = new Map(depositAggs.map((d) => [d.userId, d._sum.cashDelta]));
     const withdrawMap = new Map(withdrawAggs.map((w) => [w.userId, w._sum?.cashDelta]));
+    // 거래 이력 있는 유저 집합 / Set of users who have traded
+    const tradedUsersSet = new Set(tradeAggs.map((t) => t.userId));
 
     // USD 시장가를 KRW로 변환 / Convert USD market prices to KRW
     const exchangeRate = await this.getExchangeRate();
 
-    const results: { userId: string; totalValue: Decimal; netDeposit: Decimal }[] = [];
+    const results: { userId: string; totalValue: Decimal; netDeposit: Decimal; hasTraded: boolean }[] = [];
 
     for (const account of accounts) {
       const holdings = holdingsByUser.get(account.userId) || [];
@@ -931,6 +949,7 @@ export class BalanceService {
         userId: account.userId,
         totalValue,
         netDeposit,
+        hasTraded: tradedUsersSet.has(account.userId) || holdings.length > 0,
       });
     }
 
@@ -950,6 +969,7 @@ export class BalanceService {
         totalCash: r.totalValue.toFixed(8),
         totalPortfolioValue: r.totalValue.toFixed(8),
         pnlPercent: pnlPercent.toFixed(3),
+        hasTraded: r.hasTraded,
       };
     });
   }

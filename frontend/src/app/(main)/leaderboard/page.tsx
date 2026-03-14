@@ -187,9 +187,9 @@ export default function LeaderboardPage() {
     // 입금 없는 사용자 제외 + userId 중복 제거 / Exclude zero-deposit users + deduplicate by userId
     const active = leaderboard.filter((e) => e.totalValue > 0);
     const unique = [...new Map(active.map((e) => [e.id, e])).values()];
-    // 투자 여부 필터: 체크 시 pnlPercent !== 0 인 사용자만 (실제 거래를 한 사용자)
-    // Investment filter: when checked, only users with pnlPercent !== 0 (users who actually traded)
-    const filtered = investedOnly ? unique.filter((e) => e.pnlPercent !== 0) : unique;
+    // 투자 여부 필터: 체크 시 실제 거래 이력이 있는 사용자만 표시 (hasTraded 기반)
+    // Investment filter: when checked, only users who actually traded (based on hasTraded flag)
+    const filtered = investedOnly ? unique.filter((e) => e.hasTraded) : unique;
     const sorted = filtered.sort((a, b) => {
       if (sortMode === 'return') return b.pnlPercent - a.pnlPercent;
       if (sortMode === 'absolute') {

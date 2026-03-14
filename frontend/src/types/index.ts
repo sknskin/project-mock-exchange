@@ -220,6 +220,7 @@ export interface LeaderboardEntry {
   name?: string;
   totalValue: number;
   pnlPercent: number;
+  hasTraded: boolean;
 }
 
 // 체결 내역 / Trade record

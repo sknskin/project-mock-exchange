@@ -46,11 +46,11 @@ export function useLeaderboard(options?: UseLeaderboardOptions) {
     queryFn: async () => {
       // period와 sortBy는 향후 백엔드 지원 시 쿼리 파라미터로 전달 예정
       // period and sortBy will be passed as query params when backend supports them
-      const { data } = await api.get('/api/portfolio/leaderboard');
+      const { data } = await api.get('/api/portfolio/leaderboard', { params: { limit: 100 } });
 
       // 백엔드 응답 구조가 다양할 수 있으므로 data.data 또는 data 자체를 사용
       // Backend response structure may vary, so use data.data or data itself
-      const raw: { rank: number; id?: string; userId?: string; isMe?: boolean; username?: string; name?: string; totalPortfolioValue?: number; totalValue?: number; pnlPercent?: number }[] = data.data ?? data;
+      const raw: { rank: number; id?: string; userId?: string; isMe?: boolean; username?: string; name?: string; totalPortfolioValue?: number; totalValue?: number; pnlPercent?: number; hasTraded?: boolean }[] = data.data ?? data;
 
       // 백엔드 필드명 차이를 정규화 (id/userId, totalPortfolioValue/totalValue 등)
       // Normalize different backend field names (id/userId, totalPortfolioValue/totalValue, etc.)
@@ -62,6 +62,7 @@ export function useLeaderboard(options?: UseLeaderboardOptions) {
         name: e.name || '',
         totalValue: Number(e.totalPortfolioValue || e.totalValue || 0),
         pnlPercent: Number(e.pnlPercent || 0),
+        hasTraded: !!e.hasTraded,
       }));
     },
     // 10초마다 자동 리페치하여 순위 변동을 실시간에 가깝게 반영
