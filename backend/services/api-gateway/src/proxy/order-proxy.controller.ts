@@ -111,13 +111,13 @@ export class OrderProxyController {
         // 알림을 DB에 영구 저장 (Persist notification to DB)
         const sideLabel = isBuy ? 'Buy' : 'Sell';
         const title = `${sideLabel} ${symbol}`;
-        const message = `${totalQty} @ ${avgPrice.toFixed(2)} - ${filledStatus === 'FILLED' ? 'Filled' : 'Partially Filled'}`;
+        const message = `${sideLabel} order for ${symbol} has been ${filledStatus === 'FILLED' ? 'filled' : 'partially filled'}`;
         await this.proxyService.forward('user-auth', {
           method: 'POST',
           url: '/notifications',
           data: {
             userId,
-            type: 'GENERAL',
+            type: 'TRADE',
             title,
             message,
             link: `/orders`,

@@ -24,6 +24,7 @@ import { cn } from '@/lib/format';
 import { useChatStore } from '@/stores/chat';
 import { useSettingsStore, type NotificationPrefs } from '@/stores/settings';
 import type { NotificationItem } from '@/types';
+import type { TranslationKey } from '@/lib/i18n';
 
 const DROPDOWN_LIMIT = 50;
 
@@ -72,6 +73,41 @@ function getRelativeTime(dateString: string, locale: string): string {
     return isKo ? `${diffDays}일 전` : `${diffDays}d ago`;
   }
   return date.toLocaleDateString();
+}
+
+/** 알림 타입별 번역된 제목 반환 (Translated title by notification type) */
+const NOTIFICATION_TYPE_KEYS: Record<string, TranslationKey> = {
+  TRADE: 'notification.type.TRADE',
+  PRICE_ALERT: 'notification.type.PRICE_ALERT',
+  ANNOUNCEMENT_NEW: 'notification.type.ANNOUNCEMENT_NEW',
+  ANNOUNCEMENT_UPDATED: 'notification.type.ANNOUNCEMENT_UPDATED',
+  CHAT_MESSAGE: 'notification.type.CHAT_MESSAGE',
+  REGISTRATION_APPROVED: 'notification.type.REGISTRATION_APPROVED',
+  REGISTRATION_REJECTED: 'notification.type.REGISTRATION_REJECTED',
+};
+
+/** 알림 메시지 번역 — 백엔드 영문 메시지를 한국어로 변환
+ * Translate notification message — converts backend English to Korean */
+function translateMessage(message: string, locale: string): string {
+  if (locale !== 'ko') return message;
+  // 매수/매도 체결 패턴 (Buy/Sell order filled pattern)
+  const tradeMatch = message.match(/^(Buy|Sell)\s+order\s+(?:for\s+)?(\S+)\s+(?:has been\s+)?(?:filled|executed)/i);
+  if (tradeMatch) {
+    const side = tradeMatch[1].toLowerCase() === 'buy' ? '매수' : '매도';
+    const symbol = tradeMatch[2];
+    return `${symbol} ${side} 주문이 체결되었습니다`;
+  }
+  // 가격 알림 패턴 (Price alert pattern)
+  const priceMatch = message.match(/^(\S+)\s+price\s+(?:reached|hit|crossed)\s+(above|below)/i);
+  if (priceMatch) {
+    const symbol = priceMatch[1];
+    const direction = priceMatch[2].toLowerCase() === 'above' ? '이상' : '이하';
+    return `${symbol} 가격이 목표가 ${direction}에 도달했습니다`;
+  }
+  // 가입 승인/반려 (Registration approved/rejected)
+  if (/registration.*approved/i.test(message)) return '회원가입이 승인되었습니다. 이제 모든 기능을 이용하실 수 있습니다.';
+  if (/registration.*rejected/i.test(message)) return '회원가입이 반려되었습니다. 관리자에게 문의해 주세요.';
+  return message;
 }
 
 export default function NotificationBell() {
@@ -252,10 +288,12 @@ export default function NotificationBell() {
                               : 'font-bold text-text-primary',
                           )}
                         >
-                          {notification.title}
+                          {NOTIFICATION_TYPE_KEYS[notification.type]
+                            ? t(NOTIFICATION_TYPE_KEYS[notification.type])
+                            : notification.title}
                         </p>
                         <p className="text-[12px] text-text-tertiary mt-0.5 line-clamp-2 leading-relaxed">
-                          {notification.message}
+                          {translateMessage(notification.message, locale)}
                         </p>
                         <p className="text-[11px] text-text-quaternary mt-1">
                           {getRelativeTime(notification.createdAt, locale)}
@@ -288,11 +326,13 @@ export default function NotificationBell() {
               'text-[16px] font-bold text-center',
               modalNotification.type === 'REGISTRATION_APPROVED' ? 'text-accent' : 'text-danger',
             )}>
-              {modalNotification.title}
+              {NOTIFICATION_TYPE_KEYS[modalNotification.type]
+                ? t(NOTIFICATION_TYPE_KEYS[modalNotification.type])
+                : modalNotification.title}
             </h3>
             <div className="mt-4 space-y-2">
               {(() => {
-                const msg = modalNotification.message;
+                const msg = translateMessage(modalNotification.message, locale);
                 // 200자 이하 짧은 메시지는 문장 단위 줄바꿈 / Split short messages by sentence
                 // 정규식: 한국어 문장 끝(다. 요. 등) 또는 !/?  뒤의 공백에서만 줄바꿈
                 // 날짜 마침표(2026. 3. 6.)에서는 줄바꿈하지 않음 (숫자 뒤 마침표는 매칭하지 않음)
