@@ -5,7 +5,7 @@
  * @file API Gateway Health Controller
  * @description Provides liveness, readiness, startup probe endpoints and internal service health proxy
  */
-import { Controller, Get, Param, Req, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Param, Req, NotFoundException, Logger } from '@nestjs/common';
 import { Request } from 'express';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { HealthCheck, HealthCheckService, HealthIndicatorResult } from '@nestjs/terminus';
@@ -15,6 +15,8 @@ import { ProxyService } from '../proxy/proxy.service';
 @ApiTags('Health')
 @Controller('api/health')
 export class HealthController {
+  private readonly logger = new Logger(HealthController.name);
+
   constructor(
     private health: HealthCheckService,
     private proxyService: ProxyService,
@@ -144,7 +146,9 @@ export class HealthController {
         if (res.status >= 200 && res.status < 300) {
           stats = res.data;
         }
-      } catch { /* stats are optional */ }
+      } catch (e) {
+        this.logger.debug?.(`Stats collection failed: ${e instanceof Error ? e.message : 'unknown'}`);
+      }
     }
 
     return {

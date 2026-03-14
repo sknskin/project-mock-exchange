@@ -8,10 +8,11 @@
 import { Module } from '@nestjs/common';
 import { ChatController } from './chat.controller';
 import { ChatService } from './chat.service';
+import { DataRetentionService } from './data-retention.service';
 
 @Module({
   controllers: [ChatController],
-  providers: [ChatService],
+  providers: [ChatService, DataRetentionService],
   exports: [ChatService],
 })
 export class ChatModule {}

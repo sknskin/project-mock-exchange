@@ -17,6 +17,7 @@ import { PriceCacheService } from './infrastructure/redis/price-cache.service';
 import { PriceProducerService } from './infrastructure/kafka/price-producer.service';
 import { MarketDataService } from './application/services/market-data.service';
 import { NewsService } from './application/services/news.service';
+import { DataRetentionService } from './application/services/data-retention.service';
 import { MarketController } from './presentation/controllers/market.controller';
 import { NewsController } from './presentation/controllers/news.controller';
 import { HealthController } from './health/health.controller';
@@ -44,6 +45,7 @@ import { HealthController } from './health/health.controller';
     PriceProducerService,
     MarketDataService,
     NewsService,
+    DataRetentionService,
   ],
 })
 export class AppModule {}

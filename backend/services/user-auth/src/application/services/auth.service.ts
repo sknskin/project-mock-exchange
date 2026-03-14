@@ -255,7 +255,8 @@ export class AuthService {
 
     const isValid = await bcrypt.compare(password, user.passwordHash);
     if (!isValid) {
-      this.logger.warn(`Login failed (invalid password) for: ${user.email}`);
+      const masked = user.email.replace(/^(.)(.*)(@.*)$/, '$1***$3');
+      this.logger.warn(`Login failed (invalid password) for: ${masked}`);
       throw new UnauthorizedException('이메일 또는 비밀번호가 올바르지 않습니다.');
     }
 

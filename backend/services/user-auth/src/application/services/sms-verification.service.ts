@@ -54,11 +54,14 @@ export class SmsVerificationService {
     await this.redis.set(key, code, 'EX', this.CODE_TTL);
     await this.redis.del(`sms:attempts:${phone}`);
 
-    // 모의: 실제 SMS 대신 콘솔에 인증코드 출력 / Mock: log code to console instead of sending real SMS
-    if (process.env.NODE_ENV === 'production') {
-      this.logger.log(`[MOCK SMS] Verification code sent to ${phone}: ****${code.slice(-2)}`);
-    } else {
+    // 모의: 실제 SMS 대신 콘솔에 인증코드 출력 — 개발 환경에서만 전체 코드 노출
+    // Mock: log code to console instead of sending real SMS — full code only in development
+    if (process.env.NODE_ENV === 'development') {
       this.logger.log(`[MOCK SMS] Verification code for ${phone}: ${code}`);
+    } else {
+      // staging/production에서는 코드 마스킹 — 보안상 전체 코드 노출 방지
+      // Mask code in staging/production — prevent full code exposure for security
+      this.logger.log(`[MOCK SMS] Verification code sent to ${phone}: ****${code.slice(-2)}`);
     }
   }
 

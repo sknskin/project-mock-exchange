@@ -170,4 +170,24 @@ export class PriceGateway implements OnGatewayConnection, OnGatewayDisconnect, O
       timestamp: Date.now(),
     });
   }
+
+  /**
+   * G-H-01: 여러 심볼의 가격 업데이트를 단일 이벤트로 일괄 전송합니다.
+   * 클라이언트가 'price:batch' 이벤트를 구독하면 N개의 개별 이벤트 대신
+   * 1개의 배치 이벤트로 수신하여 네트워크 오버헤드를 줄일 수 있습니다.
+   *
+   * G-H-01: Broadcasts multiple symbol price updates in a single event.
+   * Clients subscribing to 'price:batch' receive 1 batched event instead of N individual ones,
+   * reducing network overhead.
+   */
+  broadcastPriceBatch(updates: { symbol: string; data: unknown }[]) {
+    if (updates.length === 0) return;
+    this.server.emit('price:batch', {
+      updates: updates.map((u) => ({
+        channel: `prices:${u.symbol}`,
+        data: u.data,
+      })),
+      timestamp: Date.now(),
+    });
+  }
 }

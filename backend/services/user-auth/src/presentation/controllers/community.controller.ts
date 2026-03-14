@@ -158,6 +158,31 @@ export class CommunityController {
       throw new NotFoundException('Post not found');
     }
 
+    // MEMBERS_ONLY 게시글: 인증되지 않은 사용자에게는 댓글 비공개 처리
+    // MEMBERS_ONLY posts: hide comments from unauthenticated users
+    if (post.visibility === 'MEMBERS_ONLY' && !userId) {
+      return {
+        success: true,
+        data: {
+          id: post.id,
+          title: post.title,
+          content: post.content,
+          category: post.category,
+          visibility: post.visibility,
+          authorId: post.authorId,
+          authorName: post.authorName,
+          viewCount: post.viewCount,
+          createdAt: post.createdAt,
+          updatedAt: post.updatedAt,
+          likeCount: post._count.likes,
+          liked: false,
+          attachments: post.attachments,
+          comments: [],
+          membersOnly: true,
+        },
+      };
+    }
+
     const comments = post.comments.map((comment) => ({
       id: comment.id,
       content: comment.content,
@@ -495,7 +520,9 @@ export class CommunityController {
         fileName,
         originalName: body.originalName,
         mimeType: body.mimeType,
-        size: body.size,
+        // 실제 디코딩된 파일 크기 사용 — body.size는 클라이언트 제공값이므로 신뢰 불가
+        // Use actual decoded buffer size — body.size is client-supplied and cannot be trusted
+        size: bufferData.length,
       },
     });
 

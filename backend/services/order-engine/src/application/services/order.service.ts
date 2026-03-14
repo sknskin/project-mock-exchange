@@ -131,15 +131,29 @@ export class OrderService {
       },
     });
 
+    if (sellTrades.length === 0) return new Decimal(0);
+
+    // D-H-02: 매도 종목별 매수 거래를 일괄 조회하여 N+1 쿼리 패턴 제거
+    // D-H-02: Batch-load buy trades per symbol to eliminate N+1 query pattern
+    const sellSymbols = [...new Set(sellTrades.map((t) => t.symbol))];
+    const allBuyTrades = await this.prisma.tradeRead.findMany({
+      where: { buyerId: userId, symbol: { in: sellSymbols } },
+      orderBy: { executedAt: 'desc' },
+    });
+
+    // 종목별 매수 거래 맵 구성 (최근 10건씩) / Build buy trades map per symbol (last 10 each)
+    const buyTradesBySymbol = new Map<string, typeof allBuyTrades>();
+    for (const bt of allBuyTrades) {
+      const list = buyTradesBySymbol.get(bt.symbol) || [];
+      if (list.length < 10) list.push(bt);
+      buyTradesBySymbol.set(bt.symbol, list);
+    }
+
     let totalLoss = new Decimal(0);
     for (const trade of sellTrades) {
       // 매수 평균가 대비 매도가 손실 추정 — 매도가 < 매수가인 경우만
       // Estimate loss: if sell price < buy avg price
-      const buyTrades = await this.prisma.tradeRead.findMany({
-        where: { buyerId: userId, symbol: trade.symbol },
-        orderBy: { executedAt: 'desc' },
-        take: 10,
-      });
+      const buyTrades = buyTradesBySymbol.get(trade.symbol) || [];
       if (buyTrades.length === 0) continue;
 
       const avgBuyPrice = buyTrades.reduce((sum, t) => sum.plus(t.price), new Decimal(0)).div(buyTrades.length);
@@ -861,7 +875,12 @@ export class OrderService {
           triggeredCount++;
         } catch (error: unknown) {
           const message = error instanceof Error ? error.message : String(error);
-          this.logger.error(`Failed to execute triggered order ${order.orderId}: ${message}`);
+          // 트리거 주문 실행 실패 — 주문 ID, 심볼, 방향, 사용자 ID를 포함하여 디버깅 지원
+          // Triggered order execution failed — include order ID, symbol, side, user ID for debugging
+          this.logger.error(
+            `Failed to execute triggered order ${order.orderId}: ${message}`,
+            { orderId: order.orderId, symbol: order.symbol, side: order.side, userId: order.userId, triggerPrice: order.triggerPrice },
+          );
         }
       }
     }

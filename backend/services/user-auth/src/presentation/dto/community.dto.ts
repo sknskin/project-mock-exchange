@@ -5,7 +5,7 @@
  * @file Community Board DTOs
  * @description Data Transfer Objects for validating community post/comment requests
  */
-import { IsString, IsNotEmpty, IsOptional, MaxLength, IsIn } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, MaxLength, MinLength, IsIn, ValidateIf } from 'class-validator';
 
 export class CreatePostDto {
   @IsString()
@@ -20,6 +20,7 @@ export class CreatePostDto {
 
   @IsString()
   @IsOptional()
+  @IsIn(['FREE', 'INFO', 'QUESTION', 'STRATEGY', 'ANALYSIS', 'PROOF'])
   category?: string;
 
   @IsString()
@@ -31,14 +32,19 @@ export class CreatePostDto {
 export class UpdatePostDto {
   @IsString()
   @IsOptional()
+  @ValidateIf((o) => o.title !== undefined)
+  @MinLength(2)
   title?: string;
 
   @IsString()
   @IsOptional()
+  @ValidateIf((o) => o.content !== undefined)
+  @MinLength(2)
   content?: string;
 
   @IsString()
   @IsOptional()
+  @IsIn(['FREE', 'INFO', 'QUESTION', 'STRATEGY', 'ANALYSIS', 'PROOF'])
   category?: string;
 
   @IsString()
@@ -50,6 +56,7 @@ export class UpdatePostDto {
 export class CreateCommentDto {
   @IsString()
   @IsNotEmpty()
+  @MinLength(2)
   content: string;
 
   @IsString()

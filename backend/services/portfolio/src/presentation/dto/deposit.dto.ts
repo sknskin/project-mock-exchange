@@ -9,6 +9,7 @@ import { IsNotEmpty, IsNumber, IsPositive, Max } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class DepositDto {
+  /** 입금 금액 (양수, 최대 10억) / Deposit amount (positive, max 1 billion) */
   @IsNotEmpty()
   @IsNumber()
   @IsPositive()

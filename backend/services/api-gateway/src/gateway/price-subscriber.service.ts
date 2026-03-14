@@ -30,6 +30,9 @@ export class PriceSubscriberService implements OnModuleInit, OnModuleDestroy {
   private subscriber: Redis;
 
   private alertsBySymbol = new Map<string, CachedAlert[]>();
+  // 심볼별 마지막 가격 알림 확인 시각 — 틱마다 확인하지 않도록 초당 1회 제한
+  // Last price alert check timestamp per symbol — throttle to at most once per second per symbol
+  private lastAlertCheckBySymbol = new Map<string, number>();
   private alertRefreshInterval: ReturnType<typeof setInterval> | null = null;
   private alertRefreshTimeout: ReturnType<typeof setTimeout> | null = null;
   private consecutiveFailures = 0;
@@ -37,6 +40,14 @@ export class PriceSubscriberService implements OnModuleInit, OnModuleDestroy {
   private static readonly BASE_INTERVAL_MS = 30_000;   // 기본 30초 간격 (base 30s interval)
   private readonly userAuthUrl: string;
   private readonly internalToken: string;
+
+  /** G-H-01: 가격 업데이트를 일괄 처리하기 위한 버퍼
+   * G-H-01: Buffer for batching price broadcasts */
+  private priceBatchBuffer = new Map<string, unknown>();
+  private batchFlushTimer: ReturnType<typeof setTimeout> | null = null;
+  /** G-H-01: 배치 플러시 주기 (100ms) — 심볼별 개별 emit 대신 일괄 전송
+   * G-H-01: Batch flush interval (100ms) — batched emit instead of per-symbol */
+  private static readonly BATCH_FLUSH_MS = 100;
 
   constructor(
     private readonly configService: ConfigService,
@@ -56,14 +67,17 @@ export class PriceSubscriberService implements OnModuleInit, OnModuleDestroy {
     this.subscriber = new Redis(redisUrl);
     this.subscriber.on('error', (err) => this.logger.error('Redis subscriber error', err));
 
-    // 패턴 구독으로 모든 종목의 가격 채널을 한 번에 구독
-    // Pattern subscribe to all price channels at once
+    // G-H-01: 패턴 구독으로 모든 종목의 가격 채널을 한 번에 구독하고, 버퍼에 축적 후 일괄 브로드캐스트
+    // G-H-01: Pattern subscribe to all price channels; buffer updates and flush as batch
     this.subscriber.on('pmessage', (_pattern: string, channel: string, message: string) => {
       try {
         const priceData = JSON.parse(message);
         const symbol = channel.replace('prices:', '');
-        this.priceGateway.broadcastPrice(symbol, priceData);
+        // 가격 알림은 즉시 확인 (실시간 조건 충족 판단) / Check alerts immediately (real-time condition check)
         this.checkPriceAlerts(symbol, priceData.price);
+        // 브로드캐스트는 버퍼에 축적 / Buffer broadcast for batching
+        this.priceBatchBuffer.set(symbol, priceData);
+        this.scheduleBatchFlush();
       } catch (err) {
         this.logger.error(`Failed to parse price message: ${err}`);
       }
@@ -79,9 +93,48 @@ export class PriceSubscriberService implements OnModuleInit, OnModuleDestroy {
     this.scheduleNextRefresh();
   }
 
+  /**
+   * G-H-01: 배치 플러시 타이머를 예약합니다. 이미 예약된 경우 중복 예약하지 않습니다.
+   * G-H-01: Schedules a batch flush timer. Skips if one is already scheduled.
+   */
+  private scheduleBatchFlush() {
+    if (this.batchFlushTimer) return;
+    this.batchFlushTimer = setTimeout(() => {
+      this.flushPriceBatch();
+      this.batchFlushTimer = null;
+    }, PriceSubscriberService.BATCH_FLUSH_MS);
+  }
+
+  /**
+   * G-H-01: 버퍼에 축적된 가격 업데이트를 일괄 브로드캐스트합니다.
+   * 개별 emit 대신 하나의 'price:batch' 이벤트로 묶어서 전송하고,
+   * 기존 개별 채널 구독 호환을 위해 per-symbol emit도 유지합니다.
+   *
+   * G-H-01: Flushes buffered price updates as a batch broadcast.
+   * Sends a single 'price:batch' event and maintains per-symbol emit for backward compatibility.
+   */
+  private flushPriceBatch() {
+    if (this.priceBatchBuffer.size === 0) return;
+    // 개별 심볼 채널로도 전송 (기존 클라이언트 호환) / Per-symbol emit for backward compatibility
+    for (const [symbol, priceData] of this.priceBatchBuffer) {
+      this.priceGateway.broadcastPrice(symbol, priceData);
+    }
+    // 일괄 이벤트로도 전송 — 클라이언트가 배치 수신 최적화 가능
+    // Batch event — clients can optimize by handling batch updates
+    this.priceGateway.broadcastPriceBatch(
+      Array.from(this.priceBatchBuffer.entries()).map(([symbol, data]) => ({ symbol, data })),
+    );
+    this.priceBatchBuffer.clear();
+  }
+
   /** Redis 구독 해제 및 알림 갱신 인터벌 정리
    * Unsubscribe from Redis and clear alert refresh interval */
   async onModuleDestroy() {
+    if (this.batchFlushTimer) {
+      clearTimeout(this.batchFlushTimer);
+    }
+    // 종료 전 남은 배치 플러시 / Flush remaining batch before shutdown
+    this.flushPriceBatch();
     if (this.alertRefreshInterval) {
       clearInterval(this.alertRefreshInterval);
     }
@@ -152,11 +205,18 @@ export class PriceSubscriberService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  /** 현재가로 가격 알림 조건 충족 여부를 확인하고 트리거 처리
-   * Check if current price meets alert conditions and process triggers */
+  /** 현재가로 가격 알림 조건 충족 여부를 확인하고 트리거 처리 — 심볼당 초당 1회 제한
+   * Check if current price meets alert conditions and process triggers — throttled to once/sec/symbol */
   private checkPriceAlerts(symbol: string, price: number) {
     const alerts = this.alertsBySymbol.get(symbol);
     if (!alerts || alerts.length === 0) return;
+
+    // 심볼당 초당 1회로 제한 — 매 틱마다 확인하면 CPU 낭비
+    // Throttle to once per second per symbol — checking every tick wastes CPU
+    const now = Date.now();
+    const lastCheck = this.lastAlertCheckBySymbol.get(symbol) || 0;
+    if (now - lastCheck < 1000) return;
+    this.lastAlertCheckBySymbol.set(symbol, now);
 
     const triggered: CachedAlert[] = [];
     const remaining: CachedAlert[] = [];
@@ -233,25 +293,50 @@ export class PriceSubscriberService implements OnModuleInit, OnModuleDestroy {
         timestamp: new Date().toISOString(),
       });
 
-      // 알림을 DB에 영구 저장 (Persist notification to DB)
-      await axios.post(
-        `${this.userAuthUrl}/notifications`,
-        {
-          userId: alert.userId,
-          type: 'PRICE_ALERT',
-          title,
-          message,
-          link: `/asset/${alert.symbol}`,
-        },
-        {
-          timeout: 5000,
-          headers: { 'x-internal-token': this.internalToken },
-        },
-      ).catch((e) => this.logger.warn(`Failed to persist notification for alert ${alert.id}`, e.message));
+      // 알림을 DB에 영구 저장 — 실패 시 최대 2회 재시도 (지수 백오프)
+      // Persist notification to DB — retry up to 2 times on failure (exponential backoff)
+      const notificationPayload = {
+        userId: alert.userId,
+        type: 'PRICE_ALERT',
+        title,
+        message,
+        link: `/asset/${alert.symbol}`,
+      };
+      let notifSaved = false;
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          await axios.post(
+            `${this.userAuthUrl}/notifications`,
+            notificationPayload,
+            {
+              timeout: 5000,
+              headers: { 'x-internal-token': this.internalToken },
+            },
+          );
+          notifSaved = true;
+          break;
+        } catch (e) {
+          const errMsg = e instanceof Error ? e.message : String(e);
+          if (attempt < 3) {
+            // 재시도 전 지수 백오프 대기 / Exponential backoff before retry
+            await new Promise((r) => setTimeout(r, attempt * 500));
+            this.logger.warn(`Notification persist attempt ${attempt}/3 failed for alert ${alert.id}, retrying: ${errMsg}`);
+          } else {
+            // 최종 실패 — ERROR 레벨로 기록하여 모니터링 대시보드에서 감지 가능하도록 함
+            // Final failure — log at ERROR level so monitoring dashboards can detect it
+            this.logger.error(`Failed to persist notification for alert ${alert.id} after 3 attempts: ${errMsg}`);
+          }
+        }
+      }
 
-      this.logger.log(`Price alert triggered: ${alert.symbol} ${alert.condition} ${alert.targetPrice} for user ${alert.userId}`);
+      this.logger.log(`Price alert triggered: ${alert.symbol} ${alert.condition} ${alert.targetPrice} for user ${alert.userId} (notifSaved=${notifSaved})`);
     } catch (error) {
-      this.logger.error(`Failed to handle triggered alert ${alert.id}`, error);
+      // 가격 알림 처리 전체 실패 — ERROR 레벨로 기록 (알림 ID, 심볼, 사용자 ID 포함)
+      // Full alert handling failure — log at ERROR level (with alert ID, symbol, user ID)
+      this.logger.error(
+        `Failed to handle triggered alert ${alert.id} (symbol=${alert.symbol}, userId=${alert.userId})`,
+        error instanceof Error ? error.stack : error,
+      );
     }
   }
 }

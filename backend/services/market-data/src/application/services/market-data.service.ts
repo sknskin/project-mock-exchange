@@ -97,7 +97,9 @@ export class MarketDataService implements OnModuleInit {
       }
 
       if (newCount > 0 || removedDiff > 0) {
-        this.logger.log(`Asset refresh: +${newCount} new, -${removedDiff} removed (total: ${this.assets.length})`);
+        // 자산 갱신 결과를 DEBUG 레벨로 기록 — 5분마다 반복되므로 INFO 레벨에서는 로그 노이즈 발생
+        // Log asset refresh at DEBUG level — runs every 5 min, INFO would be too noisy
+        this.logger.debug(`Asset refresh: +${newCount} new, -${removedDiff} removed (total: ${this.assets.length})`);
       }
     } catch (error) {
       this.logger.error('Failed to refresh assets from DB', error);
@@ -417,37 +419,34 @@ export class MarketDataService implements OnModuleInit {
     return clamped;
   }
 
-  /** 1분 캔들스틱을 upsert하고 고가/저가를 갱신합니다
-   * Upsert 1-minute candlesticks and update high/low */
+  /** 1분 캔들스틱을 일괄 upsert하고 고가/저가를 갱신합니다
+   * Batch upsert 1-minute candlesticks and update high/low */
   private async updateCandlesticks(ticks: PriceTick[]) {
     const now = new Date();
     const minuteStart = new Date(now);
     minuteStart.setSeconds(0, 0);
     const minuteEnd = new Date(minuteStart.getTime() + 60000);
 
-    for (const tick of ticks) {
-      try {
-        const vol = this.clampDecimal(tick.volume);
-        // C-04 Fix: 단일 원자적 SQL로 캔들 생성/갱신 + 고가/저가 조건부 갱신을 수행합니다.
-        // 두 단계(upsert + raw SQL)로 분리하면 race condition이 발생할 수 있으므로
-        // INSERT ... ON CONFLICT로 한 번에 처리합니다.
-        //
-        // C-04 Fix: Single atomic SQL for candle create/update with conditional high/low.
-        // A two-step (upsert + raw SQL) approach is prone to race conditions between
-        // concurrent ticks. Using INSERT ... ON CONFLICT handles it in one statement.
-        await this.prisma.$executeRaw`
-          INSERT INTO "Candlestick" ("symbol", "interval", "openPrice", "highPrice", "lowPrice", "closePrice", "volume", "openTime", "closeTime")
-          VALUES (${tick.symbol}, '1m', ${tick.price}, ${tick.price}, ${tick.price}, ${tick.price}, ${vol}, ${minuteStart}, ${minuteEnd})
-          ON CONFLICT ("symbol", "interval", "openTime")
-          DO UPDATE SET
-            "closePrice" = ${tick.price},
-            "volume" = ${vol},
-            "highPrice" = GREATEST("Candlestick"."highPrice", ${tick.price}),
-            "lowPrice"  = LEAST("Candlestick"."lowPrice", ${tick.price})
-        `;
-      } catch (error) {
-        this.logger.error(`Failed to update candlestick for ${tick.symbol}`, error);
-      }
+    // F-H-01: 개별 INSERT 대신 $transaction으로 일괄 처리하여 DB 왕복 횟수를 줄입니다
+    // F-H-01: Batch via $transaction instead of individual INSERTs to reduce DB round-trips
+    try {
+      await this.prisma.$transaction(
+        ticks.map((tick) => {
+          const vol = this.clampDecimal(tick.volume);
+          return this.prisma.$executeRaw`
+            INSERT INTO "Candlestick" ("symbol", "interval", "openPrice", "highPrice", "lowPrice", "closePrice", "volume", "openTime", "closeTime")
+            VALUES (${tick.symbol}, '1m', ${tick.price}, ${tick.price}, ${tick.price}, ${tick.price}, ${vol}, ${minuteStart}, ${minuteEnd})
+            ON CONFLICT ("symbol", "interval", "openTime")
+            DO UPDATE SET
+              "closePrice" = ${tick.price},
+              "volume" = ${vol},
+              "highPrice" = GREATEST("Candlestick"."highPrice", ${tick.price}),
+              "lowPrice"  = LEAST("Candlestick"."lowPrice", ${tick.price})
+          `;
+        }),
+      );
+    } catch (error) {
+      this.logger.error('Failed to batch update candlesticks', error);
     }
   }
 
@@ -503,39 +502,46 @@ export class MarketDataService implements OnModuleInit {
         const firstMap = new Map(openCloseRows.map((r) => [r.symbol, r.open_price]));
         const lastMap = new Map(openCloseRows.map((r) => [r.symbol, r.close_price]));
 
-        for (const agg of aggregated) {
-          if (agg._count === 0) continue;
+        // F-H-02: 심볼별 개별 upsert 대신 $transaction으로 일괄 처리하여 DB 왕복 감소
+        // F-H-02: Batch upserts via $transaction instead of per-symbol to reduce DB round-trips
+        const upsertOps = aggregated
+          .filter((agg) => agg._count > 0)
+          .map((agg) => {
+            const firstOpenPrice = firstMap.get(agg.symbol);
+            const lastClosePrice = lastMap.get(agg.symbol);
+            if (!firstOpenPrice || !lastClosePrice) return null;
 
-          const firstOpenPrice = firstMap.get(agg.symbol);
-          const lastClosePrice = lastMap.get(agg.symbol);
-          if (!firstOpenPrice || !lastClosePrice) continue;
-
-          await this.prisma.candlestick.upsert({
-            where: {
-              symbol_interval_openTime: {
+            return this.prisma.candlestick.upsert({
+              where: {
+                symbol_interval_openTime: {
+                  symbol: agg.symbol,
+                  interval: name,
+                  openTime: periodStart,
+                },
+              },
+              create: {
                 symbol: agg.symbol,
                 interval: name,
+                openPrice: firstOpenPrice,
+                highPrice: agg._max.highPrice!,
+                lowPrice: agg._min.lowPrice!,
+                closePrice: lastClosePrice,
+                volume: agg._sum.volume ?? 0,
                 openTime: periodStart,
+                closeTime: periodEnd,
               },
-            },
-            create: {
-              symbol: agg.symbol,
-              interval: name,
-              openPrice: firstOpenPrice,
-              highPrice: agg._max.highPrice!,
-              lowPrice: agg._min.lowPrice!,
-              closePrice: lastClosePrice,
-              volume: agg._sum.volume ?? 0,
-              openTime: periodStart,
-              closeTime: periodEnd,
-            },
-            update: {
-              highPrice: agg._max.highPrice!,
-              lowPrice: agg._min.lowPrice!,
-              closePrice: lastClosePrice,
-              volume: agg._sum.volume ?? 0,
-            },
-          });
+              update: {
+                highPrice: agg._max.highPrice!,
+                lowPrice: agg._min.lowPrice!,
+                closePrice: lastClosePrice,
+                volume: agg._sum.volume ?? 0,
+              },
+            });
+          })
+          .filter((op): op is NonNullable<typeof op> => op !== null);
+
+        if (upsertOps.length > 0) {
+          await this.prisma.$transaction(upsertOps);
         }
       } catch (error) {
         this.logger.error(`Failed to aggregate ${name} candlesticks`, error);

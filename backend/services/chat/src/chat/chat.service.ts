@@ -32,8 +32,11 @@ export class ChatService {
         },
       },
       include: {
+        // 참여자 수 제한 — 대규모 그룹에서 무제한 로딩 방지 (최대 50명)
+        // Limit participants — prevent unlimited loading in large groups (max 50)
         participants: {
           where: { leftAt: null },
+          take: 50,
           select: { id: true, userId: true, username: true, name: true, joinedAt: true },
         },
         messages: {

@@ -8,6 +8,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { CqrsModule } from '@nestjs/cqrs';
+import { ScheduleModule } from '@nestjs/schedule';
 import { TerminusModule } from '@nestjs/terminus';
 import { HealthController } from './health/health.controller';
 import { PrismaModule } from './prisma/prisma.module';
@@ -24,6 +25,7 @@ import { ChatModule } from './chat/chat.module';
       ],
     }),
     CqrsModule.forRoot(),
+    ScheduleModule.forRoot(),
     TerminusModule,
     PrismaModule,
     ChatModule,

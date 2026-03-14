@@ -24,6 +24,29 @@ interface CircuitBreakerState {
 const CIRCUIT_BREAKER_THRESHOLD = 5;       // 연속 실패 횟수 (consecutive failures to open)
 const CIRCUIT_BREAKER_COOLDOWN_MS = 30000; // 쿨다운 시간 30초 (cooldown before half-open retry)
 
+/**
+ * I-H-01: 서비스별 기본 타임아웃 설정 (밀리초).
+ * 시세 조회처럼 빠른 응답이 필요한 서비스는 짧은 타임아웃을,
+ * 주문 처리나 AI처럼 느릴 수 있는 서비스는 긴 타임아웃을 적용합니다.
+ *
+ * I-H-01: Default timeouts per service (milliseconds).
+ * Fast-response services like market-data get shorter timeouts,
+ * while potentially slow services like order-engine and ai-service get longer ones.
+ */
+const SERVICE_TIMEOUTS: Record<string, number> = {
+  'market-data': 3000,     // 시세 조회는 빠른 응답 필요 / Market data needs fast response
+  'user-auth': 5000,       // 인증 기본값 / Auth default
+  'order-engine': 10000,   // 주문 처리는 DB 트랜잭션 포함 / Order processing includes DB transactions
+  'portfolio': 5000,       // 포트폴리오 조회 / Portfolio queries
+  'notification': 5000,    // 알림 발송 / Notification delivery
+  'chat': 5000,            // 채팅 / Chat
+  'ai-service': 30000,     // AI 응답은 LLM 호출로 느릴 수 있음 / AI responses may be slow due to LLM calls
+};
+
+/** I-H-01: 기본 타임아웃 (서비스별 설정이 없을 때 사용)
+ * I-H-01: Default timeout when no service-specific setting exists */
+const DEFAULT_TIMEOUT_MS = 5000;
+
 @Injectable()
 export class ProxyService {
   private readonly logger = new Logger(ProxyService.name);
@@ -55,11 +78,15 @@ export class ProxyService {
     };
 
     for (const [name, baseURL] of Object.entries(services)) {
+      // I-H-01: 서비스별 타임아웃 적용 — 환경 변수로 오버라이드 가능
+      // I-H-01: Apply per-service timeout — overridable via environment variable
+      const envTimeout = this.configService.get<number>(`PROXY_TIMEOUT_${name.toUpperCase().replace(/-/g, '_')}`);
+      const timeout = envTimeout || SERVICE_TIMEOUTS[name] || DEFAULT_TIMEOUT_MS;
       this.clients.set(
         name,
         axios.create({
           baseURL,
-          timeout: 5000,
+          timeout,
           headers: {
             'Content-Type': 'application/json',
             'x-internal-token': internalToken,
@@ -69,11 +96,18 @@ export class ProxyService {
     }
   }
 
-  /** 대상 마이크로서비스로 HTTP 요청을 전달하고 응답을 반환
-   * Forward HTTP request to target microservice and return response */
+  /**
+   * 대상 마이크로서비스로 HTTP 요청을 전달하고 응답을 반환합니다.
+   * I-H-01: 선택적 timeoutMs 파라미터로 요청별 타임아웃을 오버라이드할 수 있습니다.
+   *
+   * Forwards HTTP request to target microservice and returns response.
+   * I-H-01: Optional timeoutMs parameter allows per-request timeout override.
+   */
   async forward(
     service: string,
     config: AxiosRequestConfig,
+    /** I-H-01: 요청별 타임아웃 오버라이드 (밀리초) / Per-request timeout override (ms) */
+    timeoutMs?: number,
   ): Promise<{ status: number; data: unknown; headers?: Record<string, string> }> {
     const client = this.clients.get(service);
     if (!client) {
@@ -88,6 +122,11 @@ export class ProxyService {
     const reqId = (config.headers as Record<string, string>)?.['x-request-id'];
     if (reqId) {
       config.headers = { ...config.headers, 'x-request-id': reqId };
+    }
+
+    // I-H-01: 요청별 타임아웃이 지정되면 config에 적용 / Apply per-request timeout if specified
+    if (timeoutMs) {
+      config.timeout = timeoutMs;
     }
 
     try {
@@ -130,7 +169,7 @@ export class ProxyService {
         }
       }
       this.recordFailure(service);
-      this.logger.error(`Proxy error to ${service}: ${error instanceof Error ? error.message : 'unknown'}`);
+      this.logger.error(`Proxy error to ${service} [${config.method} ${config.url}]: ${error instanceof Error ? error.message : 'unknown'}`);
       throw new BadGatewayException('An internal error occurred. Please try again later.');
     }
   }

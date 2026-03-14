@@ -25,23 +25,29 @@ export interface TradeData {
 }
 
 /**
- * 슬리피지 허용 비율 상수 (2%)
- * Slippage tolerance constant (2%) — configurable for future expansion
- * TODO: Move to config/env variable for per-environment tuning
+ * 카피 트레이딩 기본 상수값 — ConfigService / 환경 변수로 재정의 가능
+ * Copy trading default constants — overridable via ConfigService / environment variables
  */
-const SLIPPAGE_TOLERANCE = 0.02;
-
-/**
- * 팔로워당 최대 카피 트레이딩 대상 수
- * Maximum number of copy trade targets per follower
- */
-const MAX_COPY_TRADE_TARGETS = 10;
+const COPY_TRADE_DEFAULTS = {
+  /** 슬리피지 허용 비율 (2%) / Slippage tolerance (2%) */
+  SLIPPAGE_TOLERANCE: 0.02,
+  /** 팔로워당 최대 카피 트레이딩 대상 수 / Max copy trade targets per follower */
+  MAX_COPY_TRADE_TARGETS: 10,
+  /** 순환 참조 탐지 최대 깊이 / Max depth for cycle detection */
+  MAX_CYCLE_DEPTH: 5,
+  /** 주문 전송 타임아웃 (ms) / Order request timeout (ms) */
+  ORDER_TIMEOUT_MS: 5000,
+} as const;
 
 @Injectable()
 export class CopyTradeService {
   private readonly logger = new Logger(CopyTradeService.name);
   private readonly orderEngineUrl: string;
   private readonly internalToken: string;
+  private readonly slippageTolerance: number;
+  private readonly maxCopyTradeTargets: number;
+  private readonly maxCycleDepth: number;
+  private readonly orderTimeoutMs: number;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -52,6 +58,22 @@ export class CopyTradeService {
       'http://localhost:3004',
     );
     this.internalToken = this.config.get<string>('INTERNAL_SERVICE_SECRET', '');
+    this.slippageTolerance = this.config.get<number>(
+      'COPY_TRADE_SLIPPAGE_TOLERANCE',
+      COPY_TRADE_DEFAULTS.SLIPPAGE_TOLERANCE,
+    );
+    this.maxCopyTradeTargets = this.config.get<number>(
+      'COPY_TRADE_MAX_TARGETS',
+      COPY_TRADE_DEFAULTS.MAX_COPY_TRADE_TARGETS,
+    );
+    this.maxCycleDepth = this.config.get<number>(
+      'COPY_TRADE_MAX_CYCLE_DEPTH',
+      COPY_TRADE_DEFAULTS.MAX_CYCLE_DEPTH,
+    );
+    this.orderTimeoutMs = this.config.get<number>(
+      'COPY_TRADE_ORDER_TIMEOUT_MS',
+      COPY_TRADE_DEFAULTS.ORDER_TIMEOUT_MS,
+    );
   }
 
   /**
@@ -70,7 +92,7 @@ export class CopyTradeService {
 
     // 순환 참조 방지 — 대상 트레이더가 직접 또는 간접적으로 팔로워를 이미 카피 중인지 확인 (최대 5단계)
     // Circular reference prevention — check if the target trader already copies the follower directly or transitively (max depth 5)
-    const hasCycle = await this.detectCopyCycle(traderId, followerId, 5);
+    const hasCycle = await this.detectCopyCycle(traderId, followerId, this.maxCycleDepth);
     if (hasCycle) {
       throw new BadRequestException(
         'Circular copy trading detected: the target trader already copies you directly or indirectly',
@@ -92,8 +114,8 @@ export class CopyTradeService {
       where: { followerId, isActive: true },
     });
 
-    if (activeCount >= MAX_COPY_TRADE_TARGETS) {
-      throw new BadRequestException('Maximum 10 copy trade targets allowed');
+    if (activeCount >= this.maxCopyTradeTargets) {
+      throw new BadRequestException(`Maximum ${this.maxCopyTradeTargets} copy trade targets allowed`);
     }
 
     // 기존 비활성 설정이 있으면 재활성화, 없으면 새로 생성
@@ -311,7 +333,7 @@ export class CopyTradeService {
         const tradePrice = new Decimal(tradeData.price);
         if (!tradePrice.isZero()) {
           this.logger.debug(
-            `Slippage check: symbol=${tradeData.symbol}, tradePrice=${tradePrice.toFixed(8)}, tolerance=${SLIPPAGE_TOLERANCE * 100}%`,
+            `Slippage check: symbol=${tradeData.symbol}, tradePrice=${tradePrice.toFixed(8)}, tolerance=${this.slippageTolerance * 100}%`,
           );
         }
 
@@ -389,7 +411,7 @@ export class CopyTradeService {
               quantity: copiedQty.toFixed(8),
             },
             {
-              timeout: 5000,
+              timeout: this.orderTimeoutMs,
               headers: {
                 'Content-Type': 'application/json',
                 'x-user-id': config.followerId,

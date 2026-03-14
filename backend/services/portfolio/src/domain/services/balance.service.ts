@@ -71,6 +71,11 @@ export class BalanceService {
   private cachedExchangeRate: { rate: Decimal; fetchedAt: number } | null = null;
   private static readonly EXCHANGE_RATE_TTL_MS = 10 * 60 * 1000; // 10분
 
+  /** E-M-01: 시장 가격 인메모리 캐시 (5초 TTL) — 동일 요청 윈도우 내 중복 API 호출 방지
+   * E-M-01: In-memory market price cache (5s TTL) — prevents duplicate API calls within same request window */
+  private cachedMarketPrices: { data: Map<string, Decimal>; fetchedAt: number } | null = null;
+  private static readonly MARKET_PRICE_CACHE_TTL_MS = 5_000; // 5초
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
@@ -956,12 +961,36 @@ export class BalanceService {
    * Fetches all market prices from Market Data service in a single call.
    * Avoids N+1 queries by fetching the full price list rather than individual symbols.
    */
+  /**
+   * E-M-01: 시장 가격을 5초 인메모리 캐시와 함께 조회합니다.
+   * 동일 시간 윈도우 내 getPortfolioValuation + getLeaderboard 등 중복 호출을 방지합니다.
+   *
+   * E-M-01: Fetch market prices with 5-second in-memory cache.
+   * Prevents duplicate calls within the same time window (e.g., getPortfolioValuation + getLeaderboard).
+   */
   private async fetchMarketPrices(
     symbols: string[],
   ): Promise<Map<string, Decimal>> {
-    const priceMap = new Map<string, Decimal>();
-    if (symbols.length === 0) return priceMap;
+    if (symbols.length === 0) return new Map<string, Decimal>();
 
+    const now = Date.now();
+
+    // 캐시가 유효하면 요청한 심볼을 필터링하여 반환 / Return cached prices filtered to requested symbols
+    if (
+      this.cachedMarketPrices &&
+      now - this.cachedMarketPrices.fetchedAt < BalanceService.MARKET_PRICE_CACHE_TTL_MS
+    ) {
+      const filtered = new Map<string, Decimal>();
+      for (const sym of symbols) {
+        const price = this.cachedMarketPrices.data.get(sym);
+        if (price) filtered.set(sym, price);
+      }
+      return filtered;
+    }
+
+    // 캐시 미스 또는 만료 — 전체 가격 조회 후 캐시 갱신
+    // Cache miss or expired — fetch all prices and update cache
+    const priceMap = new Map<string, Decimal>();
     try {
       const response = await axios.get(`${this.marketDataUrl}/market/prices`, {
         timeout: 5000,
@@ -969,16 +998,31 @@ export class BalanceService {
       });
       if (response.data?.success && Array.isArray(response.data?.data)) {
         for (const tick of response.data.data) {
-          if (symbols.includes(tick.symbol)) {
-            priceMap.set(tick.symbol, new Decimal(tick.price));
-          }
+          priceMap.set(tick.symbol, new Decimal(tick.price));
         }
       }
+      // 전체 가격 맵을 캐시에 저장 / Store full price map in cache
+      this.cachedMarketPrices = { data: priceMap, fetchedAt: now };
     } catch (err) {
       this.logger.warn(`Failed to fetch market prices: ${err}`);
+      // 실패 시 만료된 캐시라도 반환 / Return stale cache on failure
+      if (this.cachedMarketPrices) {
+        const filtered = new Map<string, Decimal>();
+        for (const sym of symbols) {
+          const price = this.cachedMarketPrices.data.get(sym);
+          if (price) filtered.set(sym, price);
+        }
+        return filtered;
+      }
     }
 
-    return priceMap;
+    // 요청한 심볼만 필터링하여 반환 / Filter to requested symbols only
+    const filtered = new Map<string, Decimal>();
+    for (const sym of symbols) {
+      const price = priceMap.get(sym);
+      if (price) filtered.set(sym, price);
+    }
+    return filtered;
   }
 
   private toBalanceInfo(account: {

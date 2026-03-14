@@ -317,6 +317,7 @@ model CommunityPostLike {
 
   @@unique([userId, postId])
   @@index([postId])
+  @@index([userId])
   @@map("community_post_likes")
 }
 
@@ -367,6 +368,7 @@ model CommunityStrategyLike {
   strategy CommunityStrategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
 
   @@unique([userId, strategyId])
+  @@index([userId])
   @@map("community_strategy_likes")
 }
 
@@ -395,5 +397,6 @@ model CommunityCommentLike {
 
   @@unique([userId, commentId])
   @@index([commentId])
+  @@index([userId])
   @@map("community_comment_likes")
 }

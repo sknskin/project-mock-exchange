@@ -21,17 +21,20 @@ export class BinancePriceService implements OnModuleInit, OnModuleDestroy {
   private cache = new Map<string, { tick: PriceTick; receivedAt: number }>();
   private reconnectTimeout: NodeJS.Timeout | null = null;
   private reconnectDelay = 5000;
-  private readonly MAX_RECONNECT_DELAY = 30_000;
+  private readonly MAX_RECONNECT_DELAY = 300_000;
   private readonly STALE_THRESHOLD_MS = 10_000;
+  private parseFailures = 0;
   /** C-05: 캐시에서 오래된 항목을 제거하는 주기 (30초)
    * C-05: Interval for removing stale cache entries (30 seconds) */
   private readonly STALE_CLEANUP_MS = 30_000;
   private isShuttingDown = false;
 
+  /** 모듈 초기화 시 Binance WebSocket 연결 시작 / Start Binance WebSocket connection on module init */
   onModuleInit() {
     this.connect();
   }
 
+  /** 모듈 종료 시 WebSocket 연결 해제 및 리소스 정리 / Disconnect WebSocket and clean up resources on module destroy */
   onModuleDestroy() {
     this.isShuttingDown = true;
     this.disconnect();
@@ -109,8 +112,16 @@ export class BinancePriceService implements OnModuleInit, OnModuleDestroy {
           if (message.data) {
             this.handleTickerMessage(message.data);
           }
-        } catch {
-          // 파싱 실패 무시 / Ignore parse failures
+        } catch (err) {
+          // H-H-02: JSON 파싱 실패를 카운터 패턴으로 로깅 — 첫 번째와 매 100번째에 에러 상세 포함
+          // H-H-02: Log JSON parse failures with counter pattern — include error details on first and every 100th
+          this.parseFailures++;
+          if (this.parseFailures % 100 === 1) {
+            const preview = typeof raw === 'string' ? raw.slice(0, 80) : raw.toString().slice(0, 80);
+            this.logger.warn(
+              `WebSocket JSON parse failure #${this.parseFailures}: ${err instanceof Error ? err.message : err} | preview: "${preview}..."`,
+            );
+          }
         }
       });
 
@@ -181,7 +192,7 @@ export class BinancePriceService implements OnModuleInit, OnModuleDestroy {
       this.connect();
     }, this.reconnectDelay);
 
-    // 지수 백오프 (최대 30초) / Exponential backoff (max 30s)
+    // 지수 백오프 (최대 5분) / Exponential backoff (max 5min)
     this.reconnectDelay = Math.min(
       this.reconnectDelay * 2,
       this.MAX_RECONNECT_DELAY,

@@ -23,12 +23,14 @@ describe('ChatGateway', () => {
     gateway = module.get<ChatGateway>(ChatGateway);
 
     // Mock the server
+    // G-H-02: server.sockets.sockets Map을 직접 사용하도록 변경 (fetchSockets 제거)
+    // G-H-02: Changed to use server.sockets.sockets Map directly (removed fetchSockets)
     gateway.server = {
       emit: jest.fn(),
       to: jest.fn().mockReturnValue({ emit: jest.fn() }),
-      in: jest.fn().mockReturnValue({
-        fetchSockets: jest.fn().mockResolvedValue([]),
-      }),
+      sockets: {
+        sockets: new Map(),
+      },
     } as unknown as Server;
   });
 

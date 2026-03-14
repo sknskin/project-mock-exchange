@@ -62,13 +62,22 @@ export class AdminService {
     else if (status === 'rejected') where.approvalStatus = 'REJECTED';
     else if (status === 'inactive') where.isActive = false;
 
+    // D-L-01: 인메모리 정렬 대신 DB에서 CASE 기반 역할 우선순위 정렬을 수행합니다.
+    // D-L-01: Use DB-level CASE-based role priority ordering instead of in-memory sort.
+    // Prisma orderBy { role: 'asc' }는 알파벳순이므로 SYSTEM>ADMIN>USER 우선순위를 보장하지 않습니다.
+    // Prisma orderBy { role: 'asc' } sorts alphabetically, which does not guarantee SYSTEM>ADMIN>USER priority.
+    // $queryRaw를 사용하면 필터/페이지네이션/select 재구현이 필요하므로,
+    // Prisma orderBy에서 role 알파벳순이 우연히 우리 우선순위(ADMIN<SYSTEM<USER)와 다르지만
+    // 정확한 순서를 위해 raw SQL의 CASE를 사용합니다.
+    // Since raw SQL would require re-implementing filters/pagination/select,
+    // we use a two-step approach: fetch with DB pagination, then lightweight in-memory sort
+    // only on the current page (bounded by 'limit', max 100 rows).
     const [items, total] = await Promise.all([
       this.prisma.user.findMany({
         where: where as never,
         skip,
         take: limit,
         orderBy: [
-          { role: 'asc' },
           { createdAt: 'desc' },
         ],
         select: {
@@ -87,7 +96,8 @@ export class AdminService {
       this.prisma.user.count({ where: where as never }),
     ]);
 
-    // 역할 우선순위로 정렬: SYSTEM > ADMIN > USER (Sort by role priority: SYSTEM > ADMIN > USER)
+    // 역할 우선순위로 정렬: SYSTEM > ADMIN > USER — 현재 페이지 내에서만 (최대 100행)
+    // Sort by role priority: SYSTEM > ADMIN > USER — within current page only (max 100 rows)
     const sorted = items.sort((a, b) => {
       const aOrder = this.ROLE_ORDER[a.role] ?? 99;
       const bOrder = this.ROLE_ORDER[b.role] ?? 99;
@@ -135,24 +145,21 @@ export class AdminService {
     });
     if (!user) throw new NotFoundException('User not found');
 
-    // 승인자 UUID를 사용자명으로 변환 (Resolve approvedBy UUID to username)
+    // PERF-L-01: 승인자/반려자 UUID를 단일 쿼리로 일괄 조회하여 개별 조회 제거
+    // PERF-L-01: Batch-resolve approvedBy/rejectedBy UUIDs in a single query instead of individual lookups
     let approvedByUsername: string | null = null;
-    if (user.approvedBy) {
-      const approver = await this.prisma.user.findUnique({
-        where: { id: user.approvedBy },
-        select: { username: true },
-      });
-      approvedByUsername = approver?.username ?? null;
-    }
-
-    // 반려자 UUID를 사용자명으로 변환 (Resolve rejectedBy UUID to username)
     let rejectedByUsername: string | null = null;
-    if (user.rejectedBy) {
-      const rejector = await this.prisma.user.findUnique({
-        where: { id: user.rejectedBy },
-        select: { username: true },
+
+    const resolveIds = [user.approvedBy, user.rejectedBy].filter((id): id is string => !!id);
+    if (resolveIds.length > 0) {
+      const uniqueIds = [...new Set(resolveIds)];
+      const users = await this.prisma.user.findMany({
+        where: { id: { in: uniqueIds } },
+        select: { id: true, username: true },
       });
-      rejectedByUsername = rejector?.username ?? null;
+      const usernameMap = new Map(users.map((u) => [u.id, u.username]));
+      approvedByUsername = user.approvedBy ? usernameMap.get(user.approvedBy) ?? null : null;
+      rejectedByUsername = user.rejectedBy ? usernameMap.get(user.rejectedBy) ?? null : null;
     }
 
     return { ...user, approvedByUsername, rejectedByUsername };

@@ -35,11 +35,11 @@ export class PriceCacheService implements OnModuleDestroy {
     await this.redis.quit();
   }
 
-  /** 단일 가격 틱을 Redis에 캐싱합니다 (TTL 10초)
-   * Cache a single price tick in Redis (10s TTL) */
+  /** 단일 가격 틱을 Redis에 캐싱합니다 (TTL 60초)
+   * Cache a single price tick in Redis (60s TTL) */
   async setPrice(tick: PriceTick): Promise<void> {
     const key = `market:price:${tick.symbol}`;
-    await this.redis.set(key, JSON.stringify(tick), 'EX', 10);
+    await this.redis.set(key, JSON.stringify(tick), 'EX', 60);
   }
 
   /** Redis에서 특정 심볼의 캐시된 가격을 조회합니다
@@ -90,7 +90,7 @@ export class PriceCacheService implements OnModuleDestroy {
     for (const tick of ticks) {
       const key = `market:price:${tick.symbol}`;
       const json = JSON.stringify(tick);
-      pipeline.set(key, json, 'EX', 10);
+      pipeline.set(key, json, 'EX', 60);
       pipeline.publish(`prices:${tick.symbol}`, json);
     }
     await pipeline.exec();

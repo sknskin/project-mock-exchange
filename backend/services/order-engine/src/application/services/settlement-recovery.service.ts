@@ -102,7 +102,11 @@ export class SettlementRecoveryService implements OnModuleInit, OnModuleDestroy 
         if (newRetries >= SettlementRecoveryService.MAX_RETRIES) {
           this.logger.error(`[RECOVERY_EXHAUSTED] ${ps.side} settlement for trade ${ps.tradeId} exceeded max retries — manual intervention required`);
         } else {
-          this.logger.warn(`[RECOVERY_RETRY] ${ps.side} trade ${ps.tradeId} retry ${newRetries}/${SettlementRecoveryService.MAX_RETRIES}: ${message}`);
+          if (newRetries >= 3) {
+            this.logger.warn(`[RECOVERY_RETRY] ${ps.side} trade ${ps.tradeId} retry ${newRetries}/${SettlementRecoveryService.MAX_RETRIES}: ${message}`);
+          } else {
+            this.logger.debug?.(`[RECOVERY_RETRY] ${ps.side} trade ${ps.tradeId} retry ${newRetries}/${SettlementRecoveryService.MAX_RETRIES}: ${message}`);
+          }
         }
       }
     }));

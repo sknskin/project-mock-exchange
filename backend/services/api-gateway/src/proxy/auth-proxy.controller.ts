@@ -329,6 +329,7 @@ export class AuthProxyController {
   /** TOTP 2FA 시크릿 키 생성을 user-auth로 프록시
    * Proxy TOTP 2FA setup to user-auth */
   @Post('totp/setup')
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
@@ -345,6 +346,7 @@ export class AuthProxyController {
   /** TOTP 2FA 활성화를 user-auth로 프록시
    * Proxy TOTP 2FA enable to user-auth */
   @Post('totp/enable')
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
@@ -362,6 +364,7 @@ export class AuthProxyController {
   /** TOTP 2FA 비활성화를 user-auth로 프록시
    * Proxy TOTP 2FA disable to user-auth */
   @Post('totp/disable')
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
@@ -379,6 +382,7 @@ export class AuthProxyController {
   /** TOTP 코드 검증을 user-auth로 프록시
    * Proxy TOTP code verification to user-auth */
   @Post('totp/verify')
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)

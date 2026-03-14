@@ -10,6 +10,30 @@ import { ConfigService } from '@nestjs/config';
 import { AssetConfig, PriceTick } from '../entities/asset.entity';
 
 /**
+ * H-H-01: 심볼별 가격 추적 상태를 하나의 구조체로 통합합니다.
+ * 기존 6개 Map(prices, openPrices24h, high24h, low24h, volumes, volatilityMultipliers)을
+ * 단일 Map<string, SymbolState>으로 통합하여 캐시 지역성과 메모리 효율을 개선합니다.
+ *
+ * H-H-01: Consolidates per-symbol tracking state into a single struct.
+ * Merges 6 separate Maps into one Map<string, SymbolState> for better cache locality
+ * and memory efficiency.
+ */
+interface SymbolState {
+  /** 현재 가격 / Current price */
+  price: number;
+  /** 24시간 시작 가격 / 24h opening price */
+  openPrice24h: number;
+  /** 24시간 고가 / 24h high price */
+  high24h: number;
+  /** 24시간 저가 / 24h low price */
+  low24h: number;
+  /** 누적 거래량 / Accumulated volume */
+  volume: number;
+  /** 변동성 이벤트 (활성 시) / Volatility event (when active) */
+  volatilityEvent: { multiplier: number; expiresAt: number } | null;
+}
+
+/**
  * 기하 브라운 운동(GBM)을 사용한 모의 가격 엔진.
  *
  * Simulated price engine using Geometric Brownian Motion (GBM).
@@ -27,14 +51,9 @@ import { AssetConfig, PriceTick } from '../entities/asset.entity';
 export class PriceEngineService {
   private readonly logger = new Logger(PriceEngineService.name);
 
-  private prices: Map<string, number> = new Map();
-  private openPrices24h: Map<string, number> = new Map();
-  private high24h: Map<string, number> = new Map();
-  private low24h: Map<string, number> = new Map();
-  private volumes: Map<string, number> = new Map();
-
-  // 변동성 이벤트: 극적인 가격 움직임을 위해 일시적으로 변동성 급등 / Volatility events: temporarily spike volatility for dramatic price action
-  private volatilityMultipliers: Map<string, { multiplier: number; expiresAt: number }> = new Map();
+  /** H-H-01: 심볼별 모든 추적 상태를 단일 Map으로 통합
+   * H-H-01: All per-symbol tracking state consolidated into a single Map */
+  private symbols: Map<string, SymbolState> = new Map();
 
   // 환경 변수로 설정 가능한 엔진 파라미터 / Engine parameters configurable via environment variables
   private readonly TICK_INTERVAL_MS: number;
@@ -68,11 +87,14 @@ export class PriceEngineService {
   /** 자산의 초기 가격 및 추적 상태를 설정합니다
    * Initialize asset price and tracking state */
   initializeAsset(config: AssetConfig): void {
-    this.prices.set(config.symbol, config.basePrice);
-    this.openPrices24h.set(config.symbol, config.basePrice);
-    this.high24h.set(config.symbol, config.basePrice);
-    this.low24h.set(config.symbol, config.basePrice);
-    this.volumes.set(config.symbol, 0);
+    this.symbols.set(config.symbol, {
+      price: config.basePrice,
+      openPrice24h: config.basePrice,
+      high24h: config.basePrice,
+      low24h: config.basePrice,
+      volume: 0,
+      volatilityEvent: null,
+    });
     this.logger.log(`Initialized ${config.symbol} at $${config.basePrice}`);
   }
 
@@ -82,24 +104,26 @@ export class PriceEngineService {
    * Trigger a volatility event for a symbol (2-4x normal volatility for 30s).
    */
   triggerVolatilityEvent(symbol: string): void {
+    const state = this.symbols.get(symbol);
+    if (!state) return;
     const multiplier = this.VOLATILITY_MULTIPLIER_MIN + Math.random() * (this.VOLATILITY_MULTIPLIER_MAX - this.VOLATILITY_MULTIPLIER_MIN);
-    this.volatilityMultipliers.set(symbol, {
+    state.volatilityEvent = {
       multiplier,
       expiresAt: Date.now() + this.VOLATILITY_EVENT_DURATION_MS,
-    });
+    };
     this.logger.warn(`Volatility event triggered for ${symbol}: ${multiplier.toFixed(1)}x for ${this.VOLATILITY_EVENT_DURATION_MS / 1000}s`);
   }
 
   /** 변동성 이벤트를 반영한 유효 변동성을 계산합니다
    * Calculate effective volatility considering volatility events */
   private getEffectiveVolatility(config: AssetConfig): number {
-    const event = this.volatilityMultipliers.get(config.symbol);
-    if (event && Date.now() < event.expiresAt) {
-      return config.volatility * event.multiplier;
+    const state = this.symbols.get(config.symbol);
+    if (!state || !state.volatilityEvent) return config.volatility;
+    if (Date.now() < state.volatilityEvent.expiresAt) {
+      return config.volatility * state.volatilityEvent.multiplier;
     }
-    if (event) {
-      this.volatilityMultipliers.delete(config.symbol);
-    }
+    // 만료된 변동성 이벤트 제거 / Clear expired volatility event
+    state.volatilityEvent = null;
     return config.volatility;
   }
 
@@ -109,10 +133,11 @@ export class PriceEngineService {
    * Generate next price tick using GBM model.
    */
   generateTick(config: AssetConfig): PriceTick {
-    const currentPrice = this.prices.get(config.symbol) || config.basePrice;
+    const state = this.symbols.get(config.symbol);
+    const currentPrice = state?.price || config.basePrice;
 
     // 랜덤 변동성 이벤트 / Random volatility events
-    if (Math.random() < this.VOLATILITY_EVENT_PROBABILITY && !this.volatilityMultipliers.has(config.symbol)) {
+    if (Math.random() < this.VOLATILITY_EVENT_PROBABILITY && (!state || !state.volatilityEvent)) {
       this.triggerVolatilityEvent(config.symbol);
     }
 
@@ -148,20 +173,18 @@ export class PriceEngineService {
     const movementFactor = Math.min(Math.abs(dS / currentPrice) * 50, 5);
     const randomNoise = 0.5 + Math.random();
     const volumeDelta = (baseVolume * movementFactor + baseVolume * 0.1 * randomNoise) * volatilityFactor;
-    const currentVolume = (this.volumes.get(config.symbol) || 0) + volumeDelta;
-    this.volumes.set(config.symbol, currentVolume);
+    const currentVolume = (state?.volume || 0) + volumeDelta;
 
-    // 가격 갱신 / Update price
-    this.prices.set(config.symbol, newPrice);
-
-    // 24시간 고가/저가 추적 / Track 24h high/low
-    const currentHigh = this.high24h.get(config.symbol) || newPrice;
-    const currentLow = this.low24h.get(config.symbol) || newPrice;
-    if (newPrice > currentHigh) this.high24h.set(config.symbol, newPrice);
-    if (newPrice < currentLow) this.low24h.set(config.symbol, newPrice);
+    // 상태 일괄 갱신 / Batch update state
+    if (state) {
+      state.price = newPrice;
+      state.volume = currentVolume;
+      if (newPrice > state.high24h) state.high24h = newPrice;
+      if (newPrice < state.low24h) state.low24h = newPrice;
+    }
 
     // 24시간 변동 / 24h change
-    const openPrice = this.openPrices24h.get(config.symbol) || config.basePrice;
+    const openPrice = state?.openPrice24h || config.basePrice;
     const change24h = newPrice - openPrice;
     const changePercent24h = (change24h / openPrice) * 100;
 
@@ -173,8 +196,8 @@ export class PriceEngineService {
       volume: this.roundPrice(currentVolume),
       change24h: this.roundPrice(change24h),
       changePercent24h: Math.round(changePercent24h * 100) / 100,
-      high24h: this.high24h.get(config.symbol) || newPrice,
-      low24h: this.low24h.get(config.symbol) || newPrice,
+      high24h: state?.high24h || newPrice,
+      low24h: state?.low24h || newPrice,
       timestamp: new Date(),
     };
   }
@@ -187,16 +210,19 @@ export class PriceEngineService {
    * On disconnect, GBM continues from last price for smooth transition.
    */
   updateFromExternal(symbol: string, tick: PriceTick): void {
-    this.prices.set(symbol, tick.price);
-    this.high24h.set(symbol, tick.high24h);
-    this.low24h.set(symbol, tick.low24h);
-    this.volumes.set(symbol, tick.volume);
+    const state = this.symbols.get(symbol);
+    if (state) {
+      state.price = tick.price;
+      state.high24h = tick.high24h;
+      state.low24h = tick.low24h;
+      state.volume = tick.volume;
+    }
   }
 
   /** 특정 심볼의 현재 가격을 반환합니다
    * Get current price for a symbol */
   getCurrentPrice(symbol: string): number | undefined {
-    return this.prices.get(symbol);
+    return this.symbols.get(symbol)?.price;
   }
 
   /**
@@ -205,12 +231,12 @@ export class PriceEngineService {
    * Reset 24h tracking (called periodically).
    */
   reset24hStats(symbol: string): void {
-    const current = this.prices.get(symbol);
-    if (current) {
-      this.openPrices24h.set(symbol, current);
-      this.high24h.set(symbol, current);
-      this.low24h.set(symbol, current);
-      this.volumes.set(symbol, 0);
+    const state = this.symbols.get(symbol);
+    if (state) {
+      state.openPrice24h = state.price;
+      state.high24h = state.price;
+      state.low24h = state.price;
+      state.volume = 0;
     }
   }
 

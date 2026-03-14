@@ -24,6 +24,10 @@ const MAX_MESSAGE_LENGTH = 2000;
   // WS 페이로드 크기 제한 — 대용량 메시지를 통한 메모리 소진 방지 (#17)
   // Limit WS payload size to prevent memory exhaustion via oversized messages
   maxHttpBufferSize: 16 * 1024, // 16 KB
+  // G-M-03: WebSocket 하트비트 설정 — 비활성 연결 자동 감지 및 정리
+  // G-M-03: WebSocket heartbeat — auto-detect and clean up inactive connections
+  pingInterval: 25000,
+  pingTimeout: 20000,
 })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit {
   @WebSocketServer()
@@ -35,6 +39,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
   private userSockets = new Map<string, Set<string>>();
   // 소켓ID -> 사용자ID (연결 해제 시 빠른 조회용) (socketId -> userId for quick lookup on disconnect)
   private socketUser = new Map<string, string>();
+  /** G-L-01: 타이핑 이벤트 서버측 쓰로틀 — userId:roomId별 마지막 전송 시각
+   * G-L-01: Server-side typing throttle — last emit timestamp per userId:roomId */
+  private typingThrottle = new Map<string, number>();
+  /** G-L-01: 타이핑 쓰로틀 간격 (2초) — 클라이언트 디바운스와 동일
+   * G-L-01: Typing throttle interval (2s) — matches client-side debounce */
+  private static readonly TYPING_THROTTLE_MS = 2000;
 
   constructor(private readonly jwtService: JwtService) {}
 
@@ -43,10 +53,29 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
       this.logger.error(`Chat WebSocket connection error: ${err.message}`);
     });
 
-    // 모든 수신 이벤트에 대해 content 필드 길이를 사전 검증 — 초과 시 빈 문자열로 잘라서 서비스 레이어에서 거부되도록 처리
-    // Pre-validate content length on all incoming events — truncate to empty if exceeded so service layer rejects
+    // G-M-01: 모든 수신 이벤트에 인증 및 유효성 검증 미들웨어를 적용합니다.
+    // 인증되지 않은 소켓의 이벤트를 조기 차단하고, content 필드 길이를 사전 검증합니다.
+    //
+    // G-M-01: Applies auth and validation middleware to all incoming events.
+    // Blocks unauthenticated socket events early and pre-validates content field length.
     server.use((socket, next) => {
-      socket.onAny((_event: string, ...args: unknown[]) => {
+      socket.onAny((event: string, ...args: unknown[]) => {
+        // G-M-01: 인증 필터 — userId가 없는 소켓의 이벤트는 에러 반환 후 무시
+        // G-M-01: Auth filter — reject events from sockets without userId
+        if (!socket.data?.userId) {
+          socket.emit('chat:error', { message: 'Not authenticated' });
+          return;
+        }
+
+        // G-M-01: 허용된 이벤트 화이트리스트 — 미등록 이벤트는 무시하여 공격 표면 축소
+        // G-M-01: Allowed event whitelist — ignore unregistered events to reduce attack surface
+        const allowedEvents = new Set([
+          'chat:join-room', 'chat:leave-room', 'chat:typing',
+          'presence:get-online',
+        ]);
+        if (!allowedEvents.has(event)) return;
+
+        // content 필드 길이 검증 / Validate content field length
         for (const arg of args) {
           if (arg && typeof arg === 'object' && 'content' in (arg as Record<string, unknown>)) {
             const content = (arg as { content: unknown }).content;
@@ -108,6 +137,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
         this.userSockets.delete(userId);
         // 모든 탭이 닫히면 오프라인 상태 브로드캐스트 (Broadcast offline status when all tabs closed)
         this.server.emit('presence:offline', { userId });
+        // G-L-01: 사용자의 모든 연결이 끊기면 타이핑 쓰로틀 엔트리 정리 — 메모리 누수 방지
+        // G-L-01: Clean up typing throttle entries when user fully disconnects — prevents memory leaks
+        for (const key of this.typingThrottle.keys()) {
+          if (key.startsWith(`${userId}:`)) {
+            this.typingThrottle.delete(key);
+          }
+        }
       }
       this.socketUser.delete(client.id);
     }
@@ -161,19 +197,36 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
     }
   }
 
+  /**
+   * G-L-01: 타이핑 이벤트에 서버측 쓰로틀을 적용합니다.
+   * 동일 userId:roomId 조합에서 2초 이내 중복 타이핑 이벤트를 무시하여
+   * 과도한 브로드캐스트를 방지합니다.
+   *
+   * G-L-01: Applies server-side throttle to typing events.
+   * Ignores duplicate typing events from the same userId:roomId within 2 seconds
+   * to prevent excessive broadcasts.
+   */
   @SubscribeMessage('chat:typing')
   handleTyping(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { roomId: string },
   ) {
     try {
-      if (data.roomId) {
-        client.to(`room:${data.roomId}`).emit('chat:typing', {
-          roomId: data.roomId,
-          userId: client.data.userId,
-          username: client.data.username,
-        });
-      }
+      if (!data.roomId || !client.data.userId) return;
+
+      // G-L-01: 서버측 쓰로틀 — 2초 이내 동일 사용자/방 조합의 중복 이벤트 무시
+      // G-L-01: Server-side throttle — ignore duplicate events from same user/room within 2s
+      const throttleKey = `${client.data.userId}:${data.roomId}`;
+      const now = Date.now();
+      const lastEmit = this.typingThrottle.get(throttleKey) || 0;
+      if (now - lastEmit < ChatGateway.TYPING_THROTTLE_MS) return;
+      this.typingThrottle.set(throttleKey, now);
+
+      client.to(`room:${data.roomId}`).emit('chat:typing', {
+        roomId: data.roomId,
+        userId: client.data.userId,
+        username: client.data.username,
+      });
     } catch (error) {
       this.logger.error(`Error handling typing: ${error instanceof Error ? error.message : 'unknown'}`);
     }
@@ -208,14 +261,22 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
     return Array.from(this.userSockets.keys());
   }
 
-  async joinUserToRoom(userId: string, roomId: string) {
-    const sockets = this.userSockets.get(userId);
-    if (sockets) {
-      for (const socketId of sockets) {
-        // server.in(socketId)으로 방 참가 명령 전송 (Use server.in(socketId) to emit join command)
-        const matchingSockets = await this.server.in(socketId).fetchSockets();
-        for (const s of matchingSockets) {
-          s.join(`room:${roomId}`);
+  /**
+   * G-H-02: fetchSockets() 대신 server.sockets.sockets Map에서 직접 소켓을 조회합니다.
+   * fetchSockets()는 어댑터를 통해 비동기 조회하므로 불필요한 오버헤드가 발생합니다.
+   * 로컬 서버의 sockets Map을 직접 참조하여 O(1) 접근으로 최적화합니다.
+   *
+   * G-H-02: Accesses sockets directly from server.sockets.sockets Map instead of fetchSockets().
+   * fetchSockets() queries through the adapter asynchronously, adding unnecessary overhead.
+   * Direct Map lookup provides O(1) access for local server sockets.
+   */
+  joinUserToRoom(userId: string, roomId: string) {
+    const socketIds = this.userSockets.get(userId);
+    if (socketIds) {
+      for (const socketId of socketIds) {
+        const socket = this.server.sockets.sockets.get(socketId);
+        if (socket) {
+          socket.join(`room:${roomId}`);
         }
       }
     }
