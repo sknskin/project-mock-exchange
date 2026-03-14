@@ -128,6 +128,7 @@ export default function LeaderboardPage() {
   const setPeriod = useCallback((v: LeaderboardPeriod) => { setPeriodRaw(v); window.scrollTo({ top: 0, behavior: 'smooth' }); }, []);
   const [sortMode, setSortMode] = useState<LeaderboardSortBy>('return');
 
+  const [investedOnly, setInvestedOnly] = useState(false);
   const { data: leaderboard, isLoading, refetch } = useLeaderboard({ period, sortBy: sortMode });
 
   // 팔로우 상태 훅 / Follow state hooks
@@ -183,9 +184,13 @@ export default function LeaderboardPage() {
    */
   const sortedLeaderboard = useMemo(() => {
     if (!leaderboard) return [];
+    // 입금 없는 사용자 제외 + userId 중복 제거 / Exclude zero-deposit users + deduplicate by userId
     const active = leaderboard.filter((e) => e.totalValue > 0);
     const unique = [...new Map(active.map((e) => [e.id, e])).values()];
-    const sorted = unique.sort((a, b) => {
+    // 투자 여부 필터: 체크 시 pnlPercent !== 0 인 사용자만 (실제 거래를 한 사용자)
+    // Investment filter: when checked, only users with pnlPercent !== 0 (users who actually traded)
+    const filtered = investedOnly ? unique.filter((e) => e.pnlPercent !== 0) : unique;
+    const sorted = filtered.sort((a, b) => {
       if (sortMode === 'return') return b.pnlPercent - a.pnlPercent;
       if (sortMode === 'absolute') {
         return calcAbsolutePnl(b.totalValue, b.pnlPercent) - calcAbsolutePnl(a.totalValue, a.pnlPercent);
@@ -193,7 +198,7 @@ export default function LeaderboardPage() {
       return b.totalValue - a.totalValue;
     });
     return sorted.map((entry, i) => ({ ...entry, rank: i + 1 }));
-  }, [leaderboard, sortMode]);
+  }, [leaderboard, sortMode, investedOnly]);
 
   // 현재 사용자 순위 강조 / Current user rank highlight
   const myEntry = sortedLeaderboard.find((e) => e.isMe);
@@ -280,6 +285,19 @@ export default function LeaderboardPage() {
       {!isLoading && leaderboard && leaderboard.length > 0 && (
         <div className="flex items-center justify-between gap-4 pb-3 flex-wrap">
           <div className="flex items-center gap-4">
+            <label className="flex items-center gap-2 cursor-pointer select-none group">
+              <div className="relative">
+                <input
+                  type="checkbox"
+                  checked={investedOnly}
+                  onChange={(e) => setInvestedOnly(e.target.checked)}
+                  className="peer sr-only"
+                />
+                <div className="w-[34px] h-[18px] rounded-full bg-border peer-checked:bg-accent transition-colors" />
+                <div className="absolute top-[2px] left-[2px] w-[14px] h-[14px] rounded-full bg-white shadow-sm transition-transform peer-checked:translate-x-[16px]" />
+              </div>
+              <span className="text-[12px] font-medium text-text-tertiary group-hover:text-text-secondary transition-colors">{t('leaderboard.investedOnly')}</span>
+            </label>
             <div className="flex items-center gap-1.5 text-[12px] text-text-tertiary">
               <Users className="w-3.5 h-3.5" />
               <span>{t('leaderboard.participants')} {sortedLeaderboard.length}</span>
