@@ -26,7 +26,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 // All endpoints require JWT auth — copy trading contains personal investment data
 @ApiTags('Copy Trading')
 @ApiBearerAuth()
-@Controller('api/portfolio/copy-trade')
+@Controller('api/copy-trade')
 @UseGuards(JwtAuthGuard)
 export class CopyTradeProxyController {
   constructor(private readonly proxyService: ProxyService) {}
