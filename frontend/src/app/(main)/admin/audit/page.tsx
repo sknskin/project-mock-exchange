@@ -20,11 +20,11 @@ interface ReportItem {
   path: string;
   label: string;
   date: string;
-  type?: 'general' | 'performance';
+  type?: 'general' | 'performance' | 'ux';
 }
 
 // 필터 타입 / Filter type
-type AuditFilter = 'all' | 'general' | 'performance';
+type AuditFilter = 'all' | 'general' | 'performance' | 'ux';
 
 /** 관리자 감사 보고서 페이지 컴포넌트 — PDF 보고서 목록 조회/다운로드/열기
  * Admin audit report page component — view, download, and open PDF reports */
@@ -96,6 +96,7 @@ export default function AdminAuditPage() {
           { key: 'all' as AuditFilter, label: t('admin.audit.filterAll') },
           { key: 'general' as AuditFilter, label: t('admin.audit.filterGeneral') },
           { key: 'performance' as AuditFilter, label: t('admin.audit.filterPerformance') },
+          { key: 'ux' as AuditFilter, label: t('admin.audit.filterUx') },
         ]).map((tab) => (
           <button
             key={tab.key}
@@ -126,7 +127,7 @@ export default function AdminAuditPage() {
           .filter((r) => {
             if (filter === 'all') return true;
             // type 필드가 없는 경우 파일명에서 추론 / Infer type from filename if type field missing
-            const rType = r.type || (r.name.startsWith('perf-audit') ? 'performance' : 'general');
+            const rType = r.type || (r.name.startsWith('perf-audit') ? 'performance' : r.name.startsWith('ux-audit') ? 'ux' : 'general');
             return rType === filter;
           })
           .map((report) => (
