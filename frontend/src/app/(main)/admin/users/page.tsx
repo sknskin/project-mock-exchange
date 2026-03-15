@@ -82,6 +82,14 @@ const STATUS_OPTIONS = [
   { key: 'inactive', labelKey: 'admin.users.filterInactive' as const },
 ];
 
+// ===== Role filter options =====
+const ROLE_OPTIONS = [
+  { key: '', labelKey: 'admin.users.filterAll' as const },
+  { key: 'SYSTEM', labelKey: 'admin.users.roleSystem' as const },
+  { key: 'ADMIN', labelKey: 'admin.users.roleAdmin' as const },
+  { key: 'USER', labelKey: 'admin.users.roleUser' as const },
+];
+
 // ===== 커스텀 상태 드롭다운 — 외부 클릭 닫기 포함 / Custom status dropdown — with outside click dismiss =====
 function StatusDropdown({
   value,
@@ -91,8 +99,8 @@ function StatusDropdown({
 }: {
   value: string;
   onChange: (v: string) => void;
-  options: typeof STATUS_OPTIONS;
-  t: (key: Parameters<ReturnType<typeof useTranslation>['t']>[0]) => string;
+  options: readonly { key: string; labelKey: any }[];
+  t: ReturnType<typeof useTranslation>['t'];
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -188,6 +196,7 @@ export default function AdminUsersPage() {
   const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
+  const [role, setRole] = useState('');
   const [searchInput, setSearchInput] = useState('');
 
   // Debounce search
@@ -207,7 +216,12 @@ export default function AdminUsersPage() {
     setPage(1);
   };
 
-  const { data, isLoading } = useAdminUsers({ page, limit, search: search || undefined, status: status || undefined });
+  const handleRoleChange = (newRole: string) => {
+    setRole(newRole);
+    setPage(1);
+  };
+
+  const { data, isLoading } = useAdminUsers({ page, limit, search: search || undefined, status: status || undefined, role: role || undefined });
 
   const users = data?.items ?? [];
   const total = data?.total ?? 0;
@@ -236,7 +250,14 @@ export default function AdminUsersPage() {
             className="w-full bg-bg-secondary border border-border rounded-xl pl-9 pr-4 py-2.5 text-[14px] text-text-primary placeholder:text-text-quaternary focus:outline-none focus:border-accent/60 transition-colors"
           />
         </div>
-        {/* Status filter – custom dropdown */}
+        {/* Role filter – custom dropdown / 역할 필터 드롭다운 */}
+        <StatusDropdown
+          value={role}
+          onChange={handleRoleChange}
+          options={ROLE_OPTIONS}
+          t={t}
+        />
+        {/* Status filter – custom dropdown / 상태 필터 드롭다운 */}
         <StatusDropdown
           value={status}
           onChange={handleStatusChange}

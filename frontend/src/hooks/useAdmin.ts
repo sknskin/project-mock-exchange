@@ -46,6 +46,7 @@ export function useAdminUsers(params: {
   limit: number;
   search?: string;
   status?: string;
+  role?: string;
 }) {
   return useQuery({
     queryKey: ['admin-users', params],
