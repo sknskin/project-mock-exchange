@@ -30,6 +30,7 @@ import {
   UserPlus,
   UserCheck,
   Copy,
+  AlertTriangle,
 } from 'lucide-react';
 
 /* ───────── 상수 / Constants ───────── */
@@ -145,17 +146,29 @@ export default function LeaderboardPage() {
   // 카피 트레이딩 모달 상태 / Copy trade modal state
   const [copyTradeTarget, setCopyTradeTarget] = useState<{ id: string; name: string; pnlPercent: number } | null>(null);
 
+  // 언팔로우 확인 모달 상태 / Unfollow confirm modal state
+  const [unfollowTarget, setUnfollowTarget] = useState<string | null>(null);
+
   /** 팔로우/언팔로우 토글 / Toggle follow/unfollow */
   const toggleFollow = useCallback((userId: string) => {
     if (!isAuthenticated) return;
     // 자기 자신 팔로우 불가 / Cannot follow yourself
     if (currentUser && currentUser.id === userId) return;
     if (followedUserIds.has(userId)) {
-      unfollowTrader.mutate(userId);
+      // 언팔로우 시 확인 모달 표시 / Show confirmation before unfollow
+      setUnfollowTarget(userId);
     } else {
       followTrader.mutate(userId);
     }
-  }, [isAuthenticated, currentUser, followedUserIds, followTrader, unfollowTrader]);
+  }, [isAuthenticated, currentUser, followedUserIds, followTrader]);
+
+  /** 언팔로우 확인 처리 / Confirm unfollow handler */
+  const confirmUnfollow = useCallback(() => {
+    if (unfollowTarget) {
+      unfollowTrader.mutate(unfollowTarget);
+      setUnfollowTarget(null);
+    }
+  }, [unfollowTarget, unfollowTrader]);
 
   // 기간 필터 탭 / Period filter tabs
   const periodTabs = useMemo(
@@ -499,9 +512,19 @@ export default function LeaderboardPage() {
                           )}
                         </button>
                         <button
-                          onClick={() => setCopyTradeTarget({ id: entry.id, name: displayName, pnlPercent: entry.pnlPercent })}
-                          className="p-1.5 rounded-lg text-text-quaternary hover:text-accent hover:bg-accent/10 transition-colors"
-                          title={t('copyTrade.title')}
+                          onClick={() => {
+                            // 자기 자신 카피트레이딩 방지 / Prevent self copy trading
+                            if (currentUser && currentUser.id === entry.id) return;
+                            setCopyTradeTarget({ id: entry.id, name: displayName, pnlPercent: entry.pnlPercent });
+                          }}
+                          className={cn(
+                            'p-1.5 rounded-lg transition-colors',
+                            currentUser && currentUser.id === entry.id
+                              ? 'text-text-quaternary/30 cursor-not-allowed'
+                              : 'text-text-quaternary hover:text-accent hover:bg-accent/10',
+                          )}
+                          title={currentUser && currentUser.id === entry.id ? t('follow.cannotCopyTradeSelf') : t('copyTrade.title')}
+                          disabled={!!(currentUser && currentUser.id === entry.id)}
                         >
                           <Copy className="w-3.5 h-3.5" />
                         </button>
@@ -521,5 +544,34 @@ export default function LeaderboardPage() {
         </div>
       )}
     </div>
+
+    {/* 언팔로우 확인 모달 / Unfollow Confirmation Modal */}
+    {unfollowTarget && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+        <div className="bg-bg-primary border border-border rounded-2xl p-6 w-full max-w-sm mx-4 shadow-xl">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center">
+              <AlertTriangle className="w-5 h-5 text-red-500" />
+            </div>
+            <h3 className="text-[16px] font-bold text-text-primary">{t('follow.unfollowConfirmTitle')}</h3>
+          </div>
+          <p className="text-[14px] text-text-secondary mb-6">{t('follow.unfollowConfirmMessage')}</p>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setUnfollowTarget(null)}
+              className="flex-1 h-10 rounded-xl bg-bg-secondary text-text-primary text-[13px] font-semibold hover:bg-bg-tertiary transition-colors"
+            >
+              {t('common.cancel')}
+            </button>
+            <button
+              onClick={confirmUnfollow}
+              className="flex-1 h-10 rounded-xl bg-red-500 text-white text-[13px] font-semibold hover:bg-red-600 transition-colors"
+            >
+              {t('follow.unfollow')}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
   );
 }

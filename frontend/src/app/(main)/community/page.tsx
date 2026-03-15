@@ -384,13 +384,16 @@ function CommunityPage() {
   const traderUserIds = useMemo(() => activeTraders.map((e) => e.id).filter((id) => !id.startsWith('anon_')), [activeTraders]);
   const { data: batchFollowCounts } = useBatchFollowCounts(traderUserIds);
 
-  /** 전략 글쓰기 자격 확인 — 수익률 5% 이상 또는 자산 상위 20%
-   * Check strategy write eligibility — return rate >= 5% or top 20% assets */
+  /** 전략 글쓰기 자격 확인 — 시스템관리자 무조건 허용, 일반 사용자는 수익률 5% 이상 또는 자산 상위 20%
+   * Check strategy write eligibility — always allowed for SYSTEM/ADMIN, otherwise return rate >= 5% or top 20% assets */
   const canWriteStrategy = useMemo(() => {
-    if (!isAuthenticated || !leaderboardData || leaderboardData.length === 0) return false;
+    if (!isAuthenticated) return false;
+    const userAuth = useAuthStore.getState().user;
+    // 시스템관리자/관리자는 무조건 글쓰기 가능 / SYSTEM/ADMIN can always write strategies
+    if (userAuth && (userAuth.role === 'SYSTEM' || userAuth.role === 'ADMIN')) return true;
+    if (!leaderboardData || leaderboardData.length === 0) return false;
     // 리더보드에서 현재 사용자 찾기 (isMe 플래그 또는 ID 매칭)
     // Find current user in leaderboard (via isMe flag or ID matching)
-    const userAuth = useAuthStore.getState().user;
     const userEntry = leaderboardData.find((e) => e.isMe || (userAuth && e.id === userAuth.id));
     if (!userEntry) return false;
     // 수익률 5% 이상 / Return rate >= 5%
@@ -406,6 +409,9 @@ function CommunityPage() {
    * Toggle trader follow/unfollow — real API call */
   const currentUser = useAuthStore((s) => s.user);
 
+  // 언팔로우 확인 모달 상태 / Unfollow confirm modal state
+  const [unfollowTarget, setUnfollowTarget] = useState<string | null>(null);
+
   const toggleFollow = useCallback((userId: string) => {
     if (!isAuthenticated) {
       showLoginModal();
@@ -416,11 +422,20 @@ function CommunityPage() {
     // anon_ ID는 팔로우 불가 / Cannot follow anonymized IDs
     if (userId.startsWith('anon_')) return;
     if (followedUserIds.has(userId)) {
-      unfollowTrader.mutate(userId);
+      // 언팔로우 시 확인 모달 표시 / Show confirmation before unfollow
+      setUnfollowTarget(userId);
     } else {
       followTrader.mutate(userId);
     }
-  }, [isAuthenticated, currentUser, followedUserIds, followTrader, unfollowTrader, showLoginModal]);
+  }, [isAuthenticated, currentUser, followedUserIds, followTrader, showLoginModal]);
+
+  /** 언팔로우 확인 처리 / Confirm unfollow handler */
+  const confirmUnfollow = useCallback(() => {
+    if (unfollowTarget) {
+      unfollowTrader.mutate(unfollowTarget);
+      setUnfollowTarget(null);
+    }
+  }, [unfollowTarget, unfollowTrader]);
 
   /** 트레이더 탭 클릭 핸들러 — 비로그인 시 로그인 모달 표시
    * Traders tab click handler — shows login modal for non-authenticated users */
@@ -814,6 +829,8 @@ function CommunityPage() {
                     onToggleFollow={() => toggleFollow(entry.id)}
                     onCopyTrade={() => {
                       if (!isAuthenticated) { showLoginModal(); return; }
+                      // 자기 자신 카피트레이딩 방지 / Prevent self copy trading
+                      if (currentUser && currentUser.id === entry.id) return;
                       setCopyTradeTarget({ id: entry.id, name: entry.name || entry.username || '-', pnlPercent: entry.pnlPercent });
                     }}
                     t={t}
@@ -834,5 +851,34 @@ function CommunityPage() {
           <ActivityFeed />
         )}
       </div>
+
+      {/* 언팔로우 확인 모달 / Unfollow Confirmation Modal */}
+      {unfollowTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-bg-primary border border-border rounded-2xl p-6 w-full max-w-sm mx-4 shadow-xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center">
+                <AlertTriangle className="w-5 h-5 text-red-500" />
+              </div>
+              <h3 className="text-[16px] font-bold text-text-primary">{t('follow.unfollowConfirmTitle')}</h3>
+            </div>
+            <p className="text-[14px] text-text-secondary mb-6">{t('follow.unfollowConfirmMessage')}</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setUnfollowTarget(null)}
+                className="flex-1 h-10 rounded-xl bg-bg-secondary text-text-primary text-[13px] font-semibold hover:bg-bg-tertiary transition-colors"
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                onClick={confirmUnfollow}
+                className="flex-1 h-10 rounded-xl bg-red-500 text-white text-[13px] font-semibold hover:bg-red-600 transition-colors"
+              >
+                {t('follow.unfollow')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
   );
 }

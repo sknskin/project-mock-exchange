@@ -731,6 +731,7 @@ const translations = {
     'admin.audit.filterAll': '전체',
     'admin.audit.filterGeneral': '일반감사',
     'admin.audit.filterPerformance': '성능감사',
+    'admin.audit.filterUx': 'UX개선',
 
     // Admin Nav
     'nav.settings': '시스템 설정',
@@ -1988,6 +1989,9 @@ const translations = {
     'follow.followSuccess': '팔로우했습니다',
     'follow.unfollowSuccess': '언팔로우했습니다',
     'follow.cannotFollowSelf': '자신을 팔로우할 수 없습니다',
+    'follow.unfollowConfirmTitle': '언팔로우 확인',
+    'follow.unfollowConfirmMessage': '정말 이 트레이더를 언팔로우하시겠습니까? 해당 트레이더의 거래 알림을 더 이상 받지 않게 됩니다.',
+    'follow.cannotCopyTradeSelf': '자신의 거래를 카피할 수 없습니다',
     'follow.notifyAll': '모든 거래',
     'follow.notifyBuyOnly': '매수만',
     'follow.notifySellOnly': '매도만',
@@ -2791,6 +2795,7 @@ const translations = {
     'admin.audit.filterAll': 'All',
     'admin.audit.filterGeneral': 'General Audit',
     'admin.audit.filterPerformance': 'Performance Audit',
+    'admin.audit.filterUx': 'UX Improvement',
 
     // Admin Nav
     'nav.settings': 'Settings',
@@ -4048,6 +4053,9 @@ const translations = {
     'follow.followSuccess': 'Followed successfully',
     'follow.unfollowSuccess': 'Unfollowed successfully',
     'follow.cannotFollowSelf': 'Cannot follow yourself',
+    'follow.unfollowConfirmTitle': 'Confirm Unfollow',
+    'follow.unfollowConfirmMessage': 'Are you sure you want to unfollow this trader? You will no longer receive trade notifications.',
+    'follow.cannotCopyTradeSelf': 'Cannot copy your own trades',
     'follow.notifyAll': 'All trades',
     'follow.notifyBuyOnly': 'Buy only',
     'follow.notifySellOnly': 'Sell only',
