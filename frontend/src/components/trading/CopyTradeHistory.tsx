@@ -140,7 +140,7 @@ export default function CopyTradeHistory() {
                     </td>
                     {/* 트레이더 / Trader */}
                     <td className="py-2.5 px-3 text-text-secondary font-medium truncate max-w-[120px]">
-                      {exec.traderName ?? '-'}
+                      {exec.traderName ?? exec.traderId?.slice(0, 8) ?? '-'}
                     </td>
                     {/* 종목 / Symbol */}
                     <td className="py-2.5 px-3 text-text-primary font-semibold">

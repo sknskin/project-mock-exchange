@@ -275,6 +275,7 @@ export class CopyTradeService {
     return {
       data: executions.map((e) => this.toExecutionResponse(e)),
       total,
+      totalPages: Math.ceil(total / limit),
       page,
       limit,
     };
