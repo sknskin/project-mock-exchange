@@ -328,7 +328,7 @@ export default function DashboardPage() {
             )}
           </button>
         ))}
-        {/* 데이터 출처 배지 + AI 분석 버튼 — 데스크탑에서만 표시 / Data source badges + AI button — desktop only */}
+        {/* 데이터 출처 배지 — 데스크탑에서만 표시 / Data source badges — desktop only */}
         <span className="ml-auto mb-2.5 hidden md:inline-flex items-center gap-2 shrink-0">
           <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/20">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -338,42 +338,7 @@ export default function DashboardPage() {
             <span className="w-1.5 h-1.5 rounded-full bg-rise animate-pulse" />
             <span className="text-[10px] font-semibold text-rise/80">{t('filter.stock')}: {t('market.simulatedData')}</span>
           </span>
-          <button
-            onClick={handleAiAnalysis}
-            disabled={aiLoading}
-            className={cn(
-              'flex items-center justify-center gap-2 h-10 min-w-[120px] px-4 rounded-xl text-[13px] font-semibold transition-all duration-150 border shrink-0 ml-1',
-              aiLoading
-                ? 'border-border text-text-quaternary cursor-not-allowed'
-                : 'border-accent/30 text-accent hover:bg-accent/10',
-            )}
-          >
-            {aiLoading ? (
-              <Loader2 className="w-4 h-4 animate-spin shrink-0" />
-            ) : (
-              <Sparkles className="w-4 h-4 shrink-0" />
-            )}
-            {t('dashboard.aiAnalysis')}
-          </button>
         </span>
-        {/* AI 분석 버튼 — 모바일 / AI button — mobile */}
-        <button
-          onClick={handleAiAnalysis}
-          disabled={aiLoading}
-          className={cn(
-            'md:hidden flex items-center justify-center gap-1.5 ml-auto mb-2.5 px-3 py-2 rounded-xl text-[12px] font-semibold transition-all duration-150 border shrink-0',
-            aiLoading
-              ? 'border-border text-text-quaternary cursor-not-allowed'
-              : 'border-accent/30 text-accent hover:bg-accent/10',
-          )}
-        >
-          {aiLoading ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />
-          ) : (
-            <Sparkles className="w-3.5 h-3.5 shrink-0" />
-          )}
-          {t('dashboard.aiAnalysis')}
-        </button>
       </div>
 
       {/* 종목 목록 — 로딩 시 스켈레톤, 완료 시 AssetList / Asset list — skeleton on loading, AssetList when ready */}
@@ -388,6 +353,25 @@ export default function DashboardPage() {
           onLoginRequired={() => setLoginModalOpen(true)}
           watchlistSymbols={watchlistSymbols}
           onToggleWatchlist={handleToggleWatchlist}
+          aiButton={
+            <button
+              onClick={handleAiAnalysis}
+              disabled={aiLoading}
+              className={cn(
+                'flex items-center justify-center gap-1.5 h-[34px] px-3.5 rounded-xl text-[13px] font-semibold transition-all duration-150 border shrink-0',
+                aiLoading
+                  ? 'border-border text-text-quaternary cursor-not-allowed'
+                  : 'border-accent/30 text-accent hover:bg-accent/10',
+              )}
+            >
+              {aiLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+              ) : (
+                <Sparkles className="w-4 h-4 shrink-0" />
+              )}
+              {t('dashboard.aiAnalysis')}
+            </button>
+          }
         />
       )}
 

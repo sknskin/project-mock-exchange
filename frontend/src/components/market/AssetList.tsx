@@ -39,6 +39,9 @@ interface AssetListProps {
   /** 관심종목 토글 콜백
    * Watchlist toggle callback */
   onToggleWatchlist?: (symbol: string) => void;
+  /** AI 분석 버튼 렌더 슬롯 (필터 우측 끝에 배치)
+   * AI analysis button render slot (placed at right end of filters) */
+  aiButton?: React.ReactNode;
 }
 
 const PAGE_SIZE = 50;
@@ -47,7 +50,7 @@ type SortKey = 'volume' | 'change_desc' | 'change_asc';
 
 /** 자산 목록 — 카테고리/정렬/기간 필터가 적용된 종목 리스트
  * Asset list — filterable by category, sort, and period */
-export default function AssetList({ assets, period, onPeriodChange, mainTab = 'realtime', watchlistSymbols, onToggleWatchlist }: AssetListProps) {
+export default function AssetList({ assets, period, onPeriodChange, mainTab = 'realtime', watchlistSymbols, onToggleWatchlist, aiButton }: AssetListProps) {
   const { t } = useTranslation();
   const [category, setCategory] = useState('all');
   const [sort, setSort] = useState<SortKey>('volume');
@@ -224,11 +227,8 @@ export default function AssetList({ assets, period, onPeriodChange, mainTab = 'r
         {/* 필터 — 데스크톱: 인라인, 모바일: 드롭다운 / Filters — desktop: inline, mobile: dropdown */}
 
         {/* 모바일 드롭다운 토글 / Mobile dropdown toggle */}
-        <button
-          onClick={() => setMobileFilterOpen((v) => !v)}
-          className="lg:hidden flex items-center w-full pt-4 pb-3 group"
-        >
-          <div className="flex items-center gap-1.5 min-w-0">
+        <div className="lg:hidden flex items-center w-full pt-4 pb-3 gap-2">
+          <div className="flex items-center gap-1.5 min-w-0 cursor-pointer" onClick={() => setMobileFilterOpen((v) => !v)}>
             <span className="bg-accent/10 text-accent text-[12px] font-bold rounded-md px-2 py-0.5 shrink-0">
               {categoryTabs.find((c) => c.key === category)?.label}
             </span>
@@ -242,9 +242,11 @@ export default function AssetList({ assets, period, onPeriodChange, mainTab = 'r
                 {periodOptions.find((p) => p.key === period)?.label}
               </span>
             )}
+            <ChevronDown className={cn('w-4 h-4 text-text-quaternary transition-transform duration-200 shrink-0 ml-1', mobileFilterOpen && 'rotate-180')} />
           </div>
-          <ChevronDown className={cn('w-4 h-4 text-text-quaternary transition-transform duration-200 shrink-0 ml-2', mobileFilterOpen && 'rotate-180')} />
-        </button>
+          {/* AI 분석 버튼 — 모바일 필터 행 우측 / AI button — mobile filter row right */}
+          {aiButton && <div className="ml-auto shrink-0">{aiButton}</div>}
+        </div>
 
         {/* 모바일 드롭다운 패널 — 부드러운 펼침/접힘 애니메이션 / Mobile dropdown panel — smooth expand/collapse animation */}
         <div className={cn(
@@ -318,6 +320,8 @@ export default function AssetList({ assets, period, onPeriodChange, mainTab = 'r
               </div>
             )}
           </div>
+          {/* AI 분석 버튼 — 필터 우측 끝 / AI analysis button — right end of filters */}
+          {aiButton && <div className="ml-auto shrink-0">{aiButton}</div>}
         </div>
 
         {/* 테이블 헤더 (기간에 따라 라벨 변경) / Table header (labels change by period) */}
