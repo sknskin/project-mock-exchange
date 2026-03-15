@@ -215,9 +215,9 @@ export default function InviteModal({ roomId, existingParticipantIds, onClose }:
               );
             })}
           </ul>
-        ) : debouncedQuery.length > 0 ? (
+        ) : (
           <p className="text-[12px] text-text-quaternary text-center py-4">{t('common.noData')}</p>
-        ) : null}
+        )}
       </div>
 
       {/* Invite button */}
