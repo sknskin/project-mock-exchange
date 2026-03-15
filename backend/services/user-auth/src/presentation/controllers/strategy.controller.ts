@@ -184,32 +184,39 @@ export class StrategyController {
     @Body() dto: CreateStrategyDto,
     @Headers('x-user-id') userId: string,
     @Headers('x-user-name') userName: string,
+    @Headers('x-user-role') userRole: string,
   ) {
     if (!userId) {
       throw new BadRequestException('x-user-id header is required');
     }
 
-    // 서버측 전략 작성 자격 검증 (#15)
-    // Server-side strategy write eligibility check (#15)
-    // 전체 자격 기준 (수익률 >= 5% 또는 상위 20% 자산)은 클라이언트에서 리더보드 데이터를 통해 검증됩니다.
-    // Full eligibility criteria (return rate >= 5% OR top 20% assets) is validated client-side via leaderboard data.
-    // 서버측 기본 가드: 가입 후 최소 1일이 경과한 사용자만 전략 작성 가능
-    // Server-side basic guard: only users who have been members for at least 1 day can create strategies
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: { createdAt: true },
-    });
+    // 시스템관리자/관리자는 모든 자격 제한 없이 전략 작성 가능
+    // SYSTEM/ADMIN users can create strategies without any restrictions
+    const isAdmin = userRole === 'SYSTEM' || userRole === 'ADMIN';
 
-    if (!user) {
-      throw new BadRequestException('User not found');
-    }
+    if (!isAdmin) {
+      // 서버측 전략 작성 자격 검증 (#15)
+      // Server-side strategy write eligibility check (#15)
+      // 전체 자격 기준 (수익률 >= 5% 또는 상위 20% 자산)은 클라이언트에서 리더보드 데이터를 통해 검증됩니다.
+      // Full eligibility criteria (return rate >= 5% OR top 20% assets) is validated client-side via leaderboard data.
+      // 서버측 기본 가드: 가입 후 최소 1일이 경과한 사용자만 전략 작성 가능
+      // Server-side basic guard: only users who have been members for at least 1 day can create strategies
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { createdAt: true },
+      });
 
-    const oneDayMs = 24 * 60 * 60 * 1000;
-    const membershipDuration = Date.now() - user.createdAt.getTime();
-    if (membershipDuration < oneDayMs) {
-      throw new ForbiddenException(
-        'You must be a member for at least 1 day before creating a strategy',
-      );
+      if (!user) {
+        throw new BadRequestException('User not found');
+      }
+
+      const oneDayMs = 24 * 60 * 60 * 1000;
+      const membershipDuration = Date.now() - user.createdAt.getTime();
+      if (membershipDuration < oneDayMs) {
+        throw new ForbiddenException(
+          'You must be a member for at least 1 day before creating a strategy',
+        );
+      }
     }
 
     const decodedName = userName ? decodeURIComponent(userName) : 'Unknown';
