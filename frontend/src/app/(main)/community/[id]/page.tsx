@@ -378,7 +378,7 @@ export default function CommunityPostDetailPage() {
           {/* Content — render as HTML from TipTap */}
           <div
             className="prose prose-sm prose-invert max-w-none text-[14px] text-text-secondary leading-relaxed min-h-[100px]"
-            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content, { ALLOWED_TAGS: ['p','br','strong','em','u','s','h1','h2','h3','h4','ul','ol','li','blockquote','img','a','code','pre','span','div','hr'], ALLOWED_ATTR: ['href','src','alt','class','target','rel','width','height'], FORBID_ATTR: ['onerror','onload','onclick','onmouseover'], ALLOW_DATA_ATTR: false }) }}
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content, { ALLOWED_TAGS: ['p','br','strong','em','u','s','h1','h2','h3','h4','ul','ol','li','blockquote','a','code','pre','span','div','hr'], ALLOWED_ATTR: ['href','alt','class','target','rel'], FORBID_ATTR: ['onerror','onload','onclick','onmouseover','src'], ALLOW_DATA_ATTR: false, ALLOW_UNKNOWN_PROTOCOLS: false, ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):)/i }) }}
           />
 
           {/* Attachments */}
