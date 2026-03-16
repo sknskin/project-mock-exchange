@@ -367,6 +367,10 @@ pnpm install --frozen-lockfile 2>/dev/null || pnpm install
 # --force: ignore turbo cache and rebuild everything
 npx turbo build --force
 
+# 빌드 과정에서 변경된 public 정적 파일을 git 커밋 상태로 복원
+# Restore public static files that may have been modified during build
+git checkout -- frontend/public/docs/report/manifest.json 2>/dev/null || true
+
 echo -e "  ${GREEN}✓${NC} 빌드 완료 / Build complete"
 
 # ─── 6. DB 마이그레이션 / Database migration ───
