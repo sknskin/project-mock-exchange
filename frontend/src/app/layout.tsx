@@ -55,10 +55,7 @@ export default function RootLayout({
             if (d.state && d.state.isAuthenticated) {
               var h = document.documentElement.dataset;
               h.authed = '1';
-              if (d.state.user) {
-                if (d.state.user.role) h.role = d.state.user.role;
-                if (d.state.user.username) h.username = d.state.user.username;
-              }
+              if (d.state.user && d.state.user.role) h.role = d.state.user.role;
             }
           } catch (e) {}
           try {
