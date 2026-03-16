@@ -632,6 +632,41 @@ export function useStatRegistrationsApproved(period: string, days: number) {
   });
 }
 
+/** 반려/비활성화 통계 (타임라인) 조회 훅
+ * Rejected/deactivated registration statistics (timeline) hook */
+export function useStatRegistrationsRejected(period: string, days: number) {
+  return useQuery({
+    queryKey: ['stat-registrations-rejected', period, days],
+    queryFn: async () => {
+      const { data } = await api.get('/api/statistics/registrations-rejected', {
+        params: { period, days },
+      });
+      return data.data as Array<{ date: string; rejected: number; deactivated: number }>;
+    },
+  });
+}
+
+/** 관리자용 주문 감사 로그 조회 훅
+ * Admin order audit log hook */
+export function useOrderAuditLog(page = 1, limit = 10, filters?: { symbol?: string; side?: string; search?: string }) {
+  return useQuery({
+    queryKey: ['order-audit-log', page, limit, filters?.symbol, filters?.side, filters?.search],
+    queryFn: async () => {
+      const { data } = await api.get('/api/orders/trades/admin-audit', {
+        params: { page, limit, symbol: filters?.symbol || undefined, side: filters?.side || undefined, search: filters?.search || undefined },
+      });
+      const res = data.data ?? data;
+      return {
+        trades: res.trades ?? [],
+        total: res.total ?? 0,
+        page: res.page ?? page,
+        limit: res.limit ?? 30,
+        totalPages: res.totalPages ?? 1,
+      };
+    },
+  });
+}
+
 /** 로그인 통계 (타임라인) 조회 훅
  * Login statistics (timeline) hook */
 export function useStatLogins(period: string, days: number) {

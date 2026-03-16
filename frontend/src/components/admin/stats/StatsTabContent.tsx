@@ -10,6 +10,7 @@
 'use client';
 
 import React from 'react';
+import Pagination from '@/components/ui/Pagination';
 import Link from 'next/link';
 import {
   LineChart,
@@ -235,6 +236,7 @@ interface UsersTabProps {
   trend: AnyData;
   registrations: AnyData;
   registrationsApproved: AnyData;
+  registrationsRejected?: AnyData;
   roleData: AnyData[];
   statusData: AnyData[];
   t: (key: TranslationKey) => string;
@@ -243,7 +245,7 @@ interface UsersTabProps {
 /** 회원 탭 — 가입 현황, 상태별 분포, 최근 가입자 목록
  * Users tab — registration trends, status distribution, recent registrations */
 export function UsersTab({
-  overview, trend, registrations, registrationsApproved,
+  overview, trend, registrations, registrationsApproved, registrationsRejected,
   roleData, statusData, t,
 }: UsersTabProps) {
   return (
@@ -278,25 +280,38 @@ export function UsersTab({
         )}
       </ChartCard>
 
-      {/* Approved Registrations Timeline */}
+      {/* 회원 현황 통합 그래프 — 승인/반려/비활성화 / Unified member status chart — approved/rejected/deactivated */}
       <ChartCard title={t('stats.registrationsApproved')} description={t('stats.desc.registrationsApproved')}>
-        {hasChartData(registrationsApproved) ? (
-          <ResponsiveContainer width="100%" height={280}>
-            <AreaChart data={registrationsApproved ?? []} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-              <defs>
-                <linearGradient id="registrationApprovedGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={CHART_COLORS.green} stopOpacity={0.25} />
-                  <stop offset="95%" stopColor={CHART_COLORS.green} stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
-              <XAxis dataKey="label" tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} interval="preserveStartEnd" tickFormatter={(v: string) => v.length > 8 ? v.slice(5) : v} />
-              <YAxis tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} />
-              <Tooltip content={<CustomTooltip />} />
-              <Area type="monotone" dataKey="count" name={t('stats.registrationsApproved')} stroke={CHART_COLORS.green} strokeWidth={2} fill="url(#registrationApprovedGrad)" dot={false} activeDot={{ r: 4, fill: CHART_COLORS.green }} />
-            </AreaChart>
-          </ResponsiveContainer>
-        ) : (
+        {hasChartData(registrationsApproved) ? (() => {
+          // 승인 데이터와 반려/비활성화 데이터를 label 기준으로 병합
+          // Merge approved data with rejected/deactivated data by label
+          const approvedMap = new Map((registrationsApproved ?? []).map((r: AnyData) => [r.label, r.count]));
+          const rejectedArr = Array.isArray(registrationsRejected) ? registrationsRejected : [];
+          const rejectedMap = new Map(rejectedArr.map((r: AnyData) => [r.date ?? r.label, { rejected: r.rejected ?? 0, deactivated: r.deactivated ?? 0 }]));
+          const allLabels = [...new Set([
+            ...(registrationsApproved ?? []).map((r: AnyData) => r.label as string),
+            ...rejectedArr.map((r: AnyData) => (r.date ?? r.label) as string),
+          ])].sort();
+          const merged = allLabels.map((label) => ({
+            label,
+            approved: approvedMap.get(label) ?? 0,
+            rejected: rejectedMap.get(label)?.rejected ?? 0,
+            deactivated: rejectedMap.get(label)?.deactivated ?? 0,
+          }));
+          return (
+            <ResponsiveContainer width="100%" height={280}>
+              <LineChart data={merged} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
+                <XAxis dataKey="label" tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} interval="preserveStartEnd" tickFormatter={(v: string) => v.length > 8 ? v.slice(5) : v} />
+                <YAxis tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} />
+                <Tooltip content={<CustomTooltip />} />
+                <Line type="monotone" dataKey="approved" name={t('stats.registrationsApproved')} stroke={CHART_COLORS.green} strokeWidth={2} dot={false} activeDot={{ r: 4, fill: CHART_COLORS.green }} />
+                <Line type="monotone" dataKey="rejected" name={t('stats.rejected')} stroke={CHART_COLORS.red} strokeWidth={2} dot={false} activeDot={{ r: 4, fill: CHART_COLORS.red }} />
+                <Line type="monotone" dataKey="deactivated" name={t('stats.deactivated')} stroke={CHART_COLORS.gray} strokeWidth={2} dot={false} activeDot={{ r: 4, fill: CHART_COLORS.gray }} />
+              </LineChart>
+            </ResponsiveContainer>
+          );
+        })() : (
           <EmptyChart />
         )}
       </ChartCard>
@@ -769,11 +784,19 @@ export function ChatTab({ chatStats, t }: ChatTabProps) {
 
 interface AuditTabProps {
   t: (key: TranslationKey) => string;
+  auditData?: { trades: AnyData[]; total: number; page: number; totalPages: number; limit?: number };
+  auditPage: number;
+  setAuditPage: (p: number) => void;
+  auditFilters: { symbol: string; side: string; search: string };
+  setAuditFilters: (f: { symbol: string; side: string; search: string }) => void;
+  onLimitChange?: (limit: number) => void;
 }
 
-/** 감사 탭 — 감사 로그 페이지 바로가기
- * Audit tab — link to audit log page */
-export function AuditTab({ t }: AuditTabProps) {
+/** 감사 탭 — 주문 감사 로그 실시간 조회
+ * Audit tab — real-time order audit log */
+export function AuditTab({ t, auditData, auditPage, setAuditPage, auditFilters, setAuditFilters, onLimitChange }: AuditTabProps) {
+  const trades = auditData?.trades ?? [];
+
   return (
     <div className="space-y-4">
       {/* Description */}
@@ -784,9 +807,20 @@ export function AuditTab({ t }: AuditTabProps) {
         </span>
       </div>
 
+      {/* 검색 / Search */}
+      <div className="p-[1px]">
+        <input
+          type="text"
+          value={auditFilters.search}
+          onChange={(e) => { setAuditFilters({ ...auditFilters, search: e.target.value }); setAuditPage(1); }}
+          placeholder={t('admin.stats.orderAudit.searchPlaceholder')}
+          maxLength={100}
+          className="w-full h-9 px-3.5 bg-bg-secondary border border-border rounded-xl text-[13px] text-text-primary placeholder:text-text-quaternary outline-none focus:border-accent/50 transition-colors"
+        />
+      </div>
+
       {/* Order audit table */}
       <div className="bg-bg-secondary rounded-2xl border border-border overflow-hidden">
-        {/* Desktop table */}
         <div className="hidden sm:block overflow-x-auto">
           <table className="w-full min-w-[800px]">
             <thead>
@@ -802,20 +836,64 @@ export function AuditTab({ t }: AuditTabProps) {
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td colSpan={8} className="px-4 py-20 text-center text-[14px] text-text-quaternary">
-                  {t('admin.stats.orderAudit.noData')}
-                </td>
-              </tr>
+              {trades.length > 0 ? trades.map((trade: AnyData) => (
+                <tr key={trade.id} className="border-b border-border/40 hover:bg-bg-tertiary/30">
+                  <td className="px-4 py-2.5 text-[12px] text-text-tertiary font-mono">{String(trade.id).slice(0, 8)}...</td>
+                  <td className="px-4 py-2.5 text-[12px] text-text-secondary">{trade.username ?? String(trade.userId).slice(0, 8)}</td>
+                  <td className="px-4 py-2.5 text-[12px] text-text-primary font-medium">{trade.symbol}</td>
+                  <td className="px-4 py-2.5 text-center">
+                    <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${trade.side === 'BUY' ? 'bg-rise/10 text-rise' : 'bg-fall/10 text-fall'}`}>
+                      {trade.side}
+                    </span>
+                  </td>
+                  <td className="px-4 py-2.5 text-[12px] text-text-primary text-right tabular-nums">{Number(trade.quantity).toLocaleString(undefined, { maximumFractionDigits: 6 })}</td>
+                  <td className="px-4 py-2.5 text-[12px] text-text-primary text-right tabular-nums">${Number(trade.price).toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                  <td className="px-4 py-2.5 text-center"><span className="px-2 py-0.5 rounded bg-success/10 text-success text-[11px] font-medium">{trade.status}</span></td>
+                  <td className="px-4 py-2.5 text-[11px] text-text-quaternary text-right">{new Date(trade.executedAt).toLocaleString()}</td>
+                </tr>
+              )) : (
+                <tr>
+                  <td colSpan={8} className="px-4 py-20 text-center text-[14px] text-text-quaternary">
+                    {t('admin.stats.orderAudit.noData')}
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
 
         {/* Mobile view */}
-        <div className="sm:hidden px-4 py-20 text-center text-[14px] text-text-quaternary">
-          {t('admin.stats.orderAudit.noData')}
+        <div className="sm:hidden space-y-2 p-3">
+          {trades.length > 0 ? trades.map((trade: AnyData) => (
+            <div key={trade.id} className="bg-bg-tertiary/30 rounded-xl p-3 space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-[13px] font-medium text-text-primary">{trade.symbol}</span>
+                <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${trade.side === 'BUY' ? 'bg-rise/10 text-rise' : 'bg-fall/10 text-fall'}`}>{trade.side}</span>
+              </div>
+              <div className="flex items-center justify-between text-[12px] text-text-tertiary">
+                <span>{trade.username ?? String(trade.userId).slice(0, 8)}</span>
+                <span className="tabular-nums">{Number(trade.quantity).toLocaleString(undefined, { maximumFractionDigits: 6 })} @ ${Number(trade.price).toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+              </div>
+              <div className="text-[11px] text-text-quaternary">{new Date(trade.executedAt).toLocaleString()}</div>
+            </div>
+          )) : (
+            <div className="px-4 py-20 text-center text-[14px] text-text-quaternary">{t('admin.stats.orderAudit.noData')}</div>
+          )}
         </div>
       </div>
+
+      {/* Pagination — 공지사항과 동일 스타일 / Same style as announcements */}
+      {auditData && auditData.totalPages > 0 && (
+        <Pagination
+          page={auditPage}
+          totalPages={auditData.totalPages}
+          total={auditData.total}
+          limit={auditData.limit ?? 10}
+          onPageChange={setAuditPage}
+          onLimitChange={(n) => { onLimitChange?.(n); setAuditPage(1); }}
+          limitOptions={[10, 50, 100]}
+        />
+      )}
     </div>
   );
 }

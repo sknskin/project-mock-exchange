@@ -17,6 +17,7 @@ import {
   useStatOverviewTrend,
   useStatRegistrations,
   useStatRegistrationsApproved,
+  useStatRegistrationsRejected,
   useStatLogins,
   useStatPageViews,
   useStatAnnouncements,
@@ -25,6 +26,7 @@ import {
   useStatPopularAnnouncements,
   useStatLikes,
   useStatChat,
+  useOrderAuditLog,
 } from '@/hooks/useAdmin';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuthStore } from '@/stores/auth';
@@ -111,12 +113,21 @@ export default function AdminStatsPage() {
   const { data: trend } = useStatOverviewTrend();
   const { data: registrations, isLoading: registrationsLoading } = useStatRegistrations(period, days);
   const { data: registrationsApproved } = useStatRegistrationsApproved(period, days);
+  const { data: registrationsRejected } = useStatRegistrationsRejected(period, days);
   const { data: logins } = useStatLogins(period, days);
   const { data: pageViews } = useStatPageViews(period, days);
   const { data: hourlyPageViews } = useStatPageViews('hourly', 1);
   const { data: announcements } = useStatAnnouncements(days);
   const { data: users } = useStatUsers();
   const { data: trading } = useStatTrading(days);
+  const [auditPage, setAuditPage] = useState(1);
+  const [auditLimit, setAuditLimit] = useState(10);
+  const [auditFilters, setAuditFilters] = useState({ symbol: '', side: '', search: '' });
+  const { data: auditData } = useOrderAuditLog(auditPage, auditLimit, {
+    symbol: auditFilters.symbol || undefined,
+    side: auditFilters.side || undefined,
+    search: auditFilters.search || undefined,
+  });
   const { data: popularAnnouncements } = useStatPopularAnnouncements();
   const { data: likeStats } = useStatLikes(days);
   const { data: chatStats } = useStatChat(days);
@@ -300,6 +311,7 @@ export default function AdminStatsPage() {
           trend={trend}
           registrations={registrations}
           registrationsApproved={registrationsApproved}
+          registrationsRejected={registrationsRejected}
           roleData={roleData}
           statusData={statusData}
           t={t}
@@ -346,7 +358,7 @@ export default function AdminStatsPage() {
       )}
 
       {tab === 'audit' && (
-        <AuditTab t={t} />
+        <AuditTab t={t} auditData={auditData} auditPage={auditPage} setAuditPage={setAuditPage} auditFilters={auditFilters} setAuditFilters={setAuditFilters} onLimitChange={(l) => { setAuditLimit(l); setAuditPage(1); }} />
       )}
     </div>
   );
