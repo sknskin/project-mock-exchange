@@ -143,12 +143,15 @@ export class OrderProxyController {
   @ApiResponse({ status: 200, description: '거래 통계 반환' })
   async tradingStats(
     @Query('days') days: string,
+    @Req() req: Request,
     @Res() res: Response,
   ) {
+    const userId = (req as Record<string, any>).user?.id;
     const result = await this.proxyService.forward('order-engine', {
       method: 'GET',
       url: '/orders/stats/trading',
       params: { days },
+      headers: { 'x-user-id': userId },
     });
     return res.status(result.status).json(result.data);
   }
