@@ -32,6 +32,9 @@ interface PaginationProps {
   /** 페이지당 항목 수 변경 콜백 (선택)
    * Per-page change callback (optional) */
   onLimitChange?: (limit: number) => void;
+  /** 건씩 보기 옵션 (기본: [10, 20, 50])
+   * Per-page options (default: [10, 20, 50]) */
+  limitOptions?: number[];
 }
 
 function Pagination({
@@ -41,6 +44,7 @@ function Pagination({
   limit,
   onPageChange,
   onLimitChange,
+  limitOptions = [10, 20, 50],
 }: PaginationProps) {
   const { t } = useTranslation();
 
@@ -83,7 +87,7 @@ function Pagination({
 
   const perPageEl = onLimitChange ? (
     <div className="flex items-center gap-1 bg-bg-secondary border border-border rounded-lg p-0.5">
-      {[10, 20, 50].map((n) => (
+      {limitOptions.map((n) => (
         <button
           key={n}
           onClick={() => onLimitChange(n)}
