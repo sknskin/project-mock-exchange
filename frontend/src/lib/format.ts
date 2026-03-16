@@ -163,6 +163,48 @@ export function formatVolume(volume: number): string {
   return volume.toLocaleString('ko-KR', { maximumFractionDigits: 0 });
 }
 
+/**
+ * 상대 시간 포맷: 최근 날짜는 "2시간 전", 오래된 날짜는 절대 날짜 표시
+ * Relative time format: recent dates show "2 hours ago", older dates show absolute date
+ *
+ * - 1분 미만: "방금 전" / "just now"
+ * - 1시간 미만: "N분 전" / "Nm ago"
+ * - 24시간 미만: "N시간 전" / "Nh ago"
+ * - 7일 미만: "N일 전" / "Nd ago"
+ * - 30일 미만: "N주 전" / "Nw ago"
+ * - 그 이상: 절대 날짜 (MM/DD or MM/DD/YYYY) / absolute date
+ */
+export function formatRelativeTime(dateStr: string, locale?: 'ko' | 'en'): string {
+  const loc = locale ?? getLocale();
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return '-';
+
+  const now = Date.now();
+  const diff = now - date.getTime();
+  const absDiff = Math.abs(diff);
+
+  const mins = Math.floor(absDiff / 60_000);
+  if (mins < 1) return loc === 'ko' ? '방금 전' : 'just now';
+  if (mins < 60) return loc === 'ko' ? `${mins}분 전` : `${mins}m ago`;
+
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return loc === 'ko' ? `${hours}시간 전` : `${hours}h ago`;
+
+  const days = Math.floor(hours / 24);
+  if (days < 7) return loc === 'ko' ? `${days}일 전` : `${days}d ago`;
+
+  const weeks = Math.floor(days / 7);
+  if (days < 30) return loc === 'ko' ? `${weeks}주 전` : `${weeks}w ago`;
+
+  // 오래된 날짜는 절대 포맷 / Older dates use absolute format
+  const thisYear = new Date().getFullYear();
+  const dateYear = date.getFullYear();
+  if (dateYear === thisYear) {
+    return date.toLocaleDateString(loc === 'ko' ? 'ko-KR' : 'en-US', { month: '2-digit', day: '2-digit' });
+  }
+  return date.toLocaleDateString(loc === 'ko' ? 'ko-KR' : 'en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
+}
+
 // 조건부 클래스명 결합 유틸리티 / Conditional class name join utility
 export function cn(...classes: (string | boolean | undefined | null)[]): string {
   return classes.filter(Boolean).join(' ');

@@ -15,7 +15,7 @@ import LoginRequiredModal from '@/components/ui/LoginRequiredModal';
 import { useLeaderboard } from '@/hooks/useLeaderboard';
 import { useAuthStore } from '@/stores/auth';
 import { useTranslation } from '@/hooks/useTranslation';
-import { cn, formatPercent, formatCurrencyDisplay } from '@/lib/format';
+import { cn, formatPercent, formatCurrencyDisplay, formatRelativeTime } from '@/lib/format';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
 import { useCommunityPosts } from '@/hooks/useCommunity';
@@ -143,6 +143,7 @@ function StrategyCard({
 function TraderCard({
   entry,
   isFollowed,
+  isCopyTrading,
   followerCount,
   onToggleFollow,
   onCopyTrade,
@@ -151,6 +152,7 @@ function TraderCard({
 }: {
   entry: LeaderboardEntry;
   isFollowed: boolean;
+  isCopyTrading: boolean;
   followerCount: number;
   onToggleFollow: () => void;
   onCopyTrade: () => void;
@@ -227,14 +229,19 @@ function TraderCard({
               </>
             )}
           </button>
-          {/* 카피 트레이딩 버튼 / Copy Trade button */}
+          {/* 카피 트레이딩 버튼 — 팔로우와 동일 스타일 / Copy Trade button — same style as follow */}
           <button
             onClick={onCopyTrade}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-bg-tertiary text-text-secondary hover:text-accent hover:bg-accent/10 transition-colors"
-            title={t('copyTrade.title')}
+            className={cn(
+              'flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-colors',
+              isCopyTrading
+                ? 'bg-bg-tertiary text-text-secondary'
+                : 'bg-accent/10 text-accent hover:bg-accent/20',
+            )}
+            title={isCopyTrading ? t('copyTrade.active') : t('copyTrade.title')}
           >
             <Copy className="w-3 h-3" />
-            {t('copyTrade.title')}
+            {isCopyTrading ? t('copyTrade.active') : t('copyTrade.title')}
           </button>
         </div>
         <span className="text-[11px] text-text-quaternary">
@@ -266,17 +273,8 @@ const CATEGORY_LABELS: Record<string, { ko: string; en: string }> = {
   PROOF: { ko: '인증', en: 'Proof' },
 };
 
-// 상대 시간 표시 유틸 (분/시간/일) / Relative time display utility (min/hour/day)
-function timeAgo(dateStr: string, locale: 'ko' | 'en'): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return locale === 'ko' ? '방금 전' : 'just now';
-  if (mins < 60) return locale === 'ko' ? `${mins}분 전` : `${mins}m ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return locale === 'ko' ? `${hours}시간 전` : `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  return locale === 'ko' ? `${days}일 전` : `${days}d ago`;
-}
+// 상대 시간 표시 — 공유 유틸 사용 / Relative time display — uses shared utility
+const timeAgo = formatRelativeTime;
 
 // HTML 태그 제거 유틸 (게시글 미리보기용) / Strip HTML tags utility (for post preview)
 function stripHtml(html: string): string {
@@ -896,6 +894,7 @@ function CommunityPage() {
                     key={entry.id}
                     entry={entry}
                     isFollowed={followedUserIds.has(entry.id)}
+                    isCopyTrading={copyTradingUserIds.has(entry.id)}
                     followerCount={batchFollowCounts?.[entry.id] ?? 0}
                     onToggleFollow={() => toggleFollow(entry.id)}
                     onCopyTrade={() => {

@@ -21,7 +21,7 @@ import {
   useDeleteStrategyComment,
 } from '@/hooks/useStrategy';
 import api from '@/lib/api';
-import { cn } from '@/lib/format';
+import { cn, formatRelativeTime } from '@/lib/format';
 import type { StrategyComment } from '@/types';
 import {
   ArrowLeft,
@@ -35,17 +35,8 @@ import {
   TrendingUp,
 } from 'lucide-react';
 
-// 상대 시간 표시 유틸 (분/시간/일) / Relative time display utility (min/hour/day)
-function timeAgo(dateStr: string, locale: 'ko' | 'en'): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return locale === 'ko' ? '방금 전' : 'just now';
-  if (mins < 60) return locale === 'ko' ? `${mins}분 전` : `${mins}m ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return locale === 'ko' ? `${hours}시간 전` : `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  return locale === 'ko' ? `${days}일 전` : `${days}d ago`;
-}
+// 상대 시간 표시 — 공유 유틸 사용 / Relative time display — uses shared utility
+const timeAgo = formatRelativeTime;
 
 /**
  * 댓글 아이템 컴포넌트 — 삭제, 답글(재귀적) 지원
