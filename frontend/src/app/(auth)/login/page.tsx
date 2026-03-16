@@ -19,6 +19,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import VirtuExLogo from '@/components/ui/VirtuExLogo';
 import api from '@/lib/api';
 import type { AxiosError } from 'axios';
+import { Eye, EyeOff } from 'lucide-react';
 
 /** 로그인 페이지 컴포넌트 — 이메일/아이디 + 비밀번호 + SMS 2FA 처리
  * Login page component — email/username + password + SMS 2FA flow */
@@ -30,6 +31,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const firstInputRef = useRef<HTMLInputElement>(null);
 
   // SMS 인증 모달 상태 / SMS verification modal state
@@ -112,14 +114,26 @@ export default function LoginPage() {
             englishOnly
             required
           />
-          <Input
-            type="password"
-            placeholder={t('auth.login.password')}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            englishOnly
-            required
-          />
+          <div className="relative">
+            <Input
+              type={showPassword ? 'text' : 'password'}
+              placeholder={t('auth.login.password')}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              englishOnly
+              required
+              className="pr-11"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((prev) => !prev)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-text-quaternary hover:text-text-secondary transition-colors"
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+              tabIndex={-1}
+            >
+              {showPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
+            </button>
+          </div>
 
           {error && (
             <p className="text-[13px] text-danger text-center py-1">{error}</p>
