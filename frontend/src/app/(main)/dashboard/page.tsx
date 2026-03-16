@@ -79,6 +79,18 @@ export default function DashboardPage() {
     return () => { if (flushTimerRef.current) clearTimeout(flushTimerRef.current); };
   }, []);
 
+  // AI 분석 모달 Escape 키 닫기 / Close AI modal on Escape key
+  useEffect(() => {
+    if (!aiModalOpen) return;
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !aiLoading) {
+        setAiModalOpen(false);
+      }
+    };
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, [aiModalOpen, aiLoading]);
+
   // / 키 또는 헤더 검색 클릭으로 스포트라이트 열기
   // Open spotlight via / key or header search click
   useEffect(() => {
