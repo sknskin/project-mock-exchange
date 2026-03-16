@@ -16,6 +16,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useCreatePost, useUpdatePost, useCommunityPost, useUploadCommunityAttachment } from '@/hooks/useCommunity';
 import { ArrowLeft, Send, Paperclip, X, Lock, Globe } from 'lucide-react';
 import { cn } from '@/lib/format';
+import { useToastStore } from '@/stores/toast';
 
 // TipTap 리치 에디터 동적 임포트 (SSR 비활성화) / Dynamic import of TipTap rich editor (SSR disabled)
 const RichEditor = dynamic(() => import('@/components/ui/RichEditor'), { ssr: false });
@@ -91,11 +92,25 @@ function CommunityNewPostContent() {
     setShowConfirm(false);
     if (!title.trim() || !content.trim()) return;
 
+    const failedFiles: string[] = [];
+
     if (isEditing) {
       await updatePost.mutateAsync({ id: editId!, title: title.trim(), content: content.trim(), category, visibility });
-      // Upload new files for edit
+      // Upload new files for edit — individual try-catch per file
       for (const file of files) {
-        await uploadAttachment.mutateAsync({ postId: editId!, file });
+        try {
+          await uploadAttachment.mutateAsync({ postId: editId!, file });
+        } catch {
+          failedFiles.push(file.name);
+        }
+      }
+      if (failedFiles.length > 0) {
+        useToastStore.getState().addToast(
+          locale === 'ko'
+            ? `파일 업로드 실패: ${failedFiles.join(', ')}`
+            : `Failed to upload: ${failedFiles.join(', ')}`,
+          'error',
+        );
       }
       router.push(`/community/${editId}`);
     } else {
@@ -103,7 +118,19 @@ function CommunityNewPostContent() {
       const newId = result?.data?.id;
       if (newId && files.length > 0) {
         for (const file of files) {
-          await uploadAttachment.mutateAsync({ postId: newId, file });
+          try {
+            await uploadAttachment.mutateAsync({ postId: newId, file });
+          } catch {
+            failedFiles.push(file.name);
+          }
+        }
+        if (failedFiles.length > 0) {
+          useToastStore.getState().addToast(
+            locale === 'ko'
+              ? `파일 업로드 실패: ${failedFiles.join(', ')}`
+              : `Failed to upload: ${failedFiles.join(', ')}`,
+            'error',
+          );
         }
       }
       router.push(newId ? `/community/${newId}` : '/community');
@@ -230,6 +257,7 @@ function CommunityNewPostContent() {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder={t('community.post.titlePlaceholder')}
+              autoFocus
               className="w-full px-4 py-3 rounded-xl bg-bg-tertiary border border-border/50 text-[14px] text-text-primary placeholder:text-text-quaternary focus:outline-none focus:border-accent/50"
               maxLength={200}
             />
