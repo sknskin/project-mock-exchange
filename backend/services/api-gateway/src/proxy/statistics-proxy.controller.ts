@@ -107,6 +107,26 @@ export class StatisticsProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 반려/비활성화 통계 조회를 user-auth로 프록시
+   * Proxy rejected/deactivated statistics to user-auth */
+  @Get('registrations-rejected')
+  @UseGuards(JwtAuthGuard, AdminRolesGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '반려/비활성화 통계 조회', description: '기간별 반려 및 비활성화된 회원 통계를 조회합니다.' })
+  @ApiQuery({ name: 'period', required: false, description: '집계 주기' })
+  @ApiQuery({ name: 'days', required: false, description: '조회 기간(일)' })
+  @ApiResponse({ status: 200, description: '반려/비활성화 통계 조회 성공' })
+  @ApiResponse({ status: 401, description: '인증 실패' })
+  async registrationsRejected(@Req() req: Request, @Res() res: Response) {
+    const result = await this.proxyService.forward('user-auth', {
+      method: 'GET',
+      url: '/statistics/registrations-rejected',
+      params: req.query,
+      headers: { Authorization: req.headers.authorization || '' },
+    });
+    return res.status(result.status).json(result.data);
+  }
+
   /** 로그인 통계 조회를 user-auth로 프록시
    * Proxy login statistics to user-auth */
   @Get('logins')

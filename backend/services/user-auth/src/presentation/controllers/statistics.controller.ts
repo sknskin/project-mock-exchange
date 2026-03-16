@@ -154,6 +154,65 @@ export class StatisticsController {
     return { success: true, data: grouped };
   }
 
+  /** 반려/비활성화 통계 (기간별)
+   * Rejected and deactivated user statistics by period */
+  @Get('registrations-rejected')
+  @UseGuards(JwtAuthGuard)
+  async rejectedRegistrationStats(
+    @CurrentUser() user: UserDto,
+    @Query() query: PeriodQueryDto,
+  ) {
+    this.assertAdmin(user);
+    const period = query.period || 'daily';
+    const daysNum = Math.min(query.days || 30, 365);
+    const since = new Date(Date.now() - daysNum * 86400000);
+
+    // 반려된 사용자 / Rejected users
+    const rejected = await this.prisma.user.findMany({
+      where: {
+        approvalStatus: 'REJECTED',
+        rejectedAt: { gte: since },
+      },
+      select: { rejectedAt: true },
+      orderBy: { rejectedAt: 'asc' },
+    });
+
+    // 비활성화된 사용자 / Deactivated users
+    const deactivated = await this.prisma.user.findMany({
+      where: {
+        isActive: false,
+        updatedAt: { gte: since },
+      },
+      select: { updatedAt: true },
+      orderBy: { updatedAt: 'asc' },
+    });
+
+    const rejectedGrouped = groupByPeriod(
+      rejected.filter((u) => u.rejectedAt !== null).map((u) => ({ date: u.rejectedAt!, value: 1 })),
+      period,
+    );
+    const deactivatedGrouped = groupByPeriod(
+      deactivated.map((u) => ({ date: u.updatedAt, value: 1 })),
+      period,
+    );
+
+    // 두 데이터를 하나의 타임라인으로 병합 / Merge both into single timeline
+    const allDates = new Set([
+      ...rejectedGrouped.map((r: { label: string }) => r.label),
+      ...deactivatedGrouped.map((d: { label: string }) => d.label),
+    ]);
+    const rejectedMap = new Map(rejectedGrouped.map((r: { label: string; count: number }) => [r.label, r.count]));
+    const deactivatedMap = new Map(deactivatedGrouped.map((d: { label: string; count: number }) => [d.label, d.count]));
+
+    const merged = [...allDates].sort().map((date) => ({
+      date,
+      rejected: rejectedMap.get(date) ?? 0,
+      deactivated: deactivatedMap.get(date) ?? 0,
+    }));
+
+    return { success: true, data: merged };
+  }
+
   /** 로그인 통계 (기간별)
    * Login statistics by period */
   @Get('logins')
