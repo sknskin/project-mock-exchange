@@ -108,6 +108,10 @@ export function useWebSocket(
       transports: ['websocket'],
       reconnection: true,
       reconnectionDelay: 1000,
+      // WS-L-01: 지수 백오프 — 최대 재연결 지연 10초, 랜덤화 팩터 0.5로 thundering herd 방지
+      // WS-L-01: Exponential backoff — max reconnection delay 10s, randomization factor 0.5 to prevent thundering herd
+      reconnectionDelayMax: 10000,
+      randomizationFactor: 0.5,
       reconnectionAttempts: 10,
       // 인증 토큰 전달 (있는 경우) / Pass auth token if available
       auth: accessToken ? { token: accessToken } : undefined,
