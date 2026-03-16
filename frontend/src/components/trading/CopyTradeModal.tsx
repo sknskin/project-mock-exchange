@@ -174,7 +174,7 @@ export default function CopyTradeModal({
                 {t('alert.cancel')}
               </button>
               <button
-                onClick={isActive && !updateMutation.isPending ? handleStop : handleSubmit}
+                onClick={isActive && !stopMutation.isPending ? handleStop : handleSubmit}
                 disabled={isPending}
                 className={cn(
                   'flex-1 h-11 rounded-xl text-white text-[14px] font-semibold transition-colors',
