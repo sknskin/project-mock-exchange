@@ -52,8 +52,14 @@ export function useStrategies(page = 1, symbol?: string, search?: string) {
       const params = new URLSearchParams();
       params.set('page', String(page));
       params.set('limit', '10');
-      // 'ALL' 종목은 필터링하지 않음 / 'ALL' symbol means no filtering
-      if (symbol && symbol !== 'ALL') params.set('symbol', symbol);
+      // 카테고리 필터 (CRYPTO/STOCK_KR/STOCK_US) 또는 개별 종목 / Category or individual symbol filter
+      if (symbol && symbol !== 'ALL') {
+        if (['CRYPTO', 'STOCK_KR', 'STOCK_US'].includes(symbol)) {
+          params.set('category', symbol);
+        } else {
+          params.set('symbol', symbol);
+        }
+      }
       if (search) params.set('search', search);
       const { data } = await api.get(`/api/strategies?${params.toString()}`);
 

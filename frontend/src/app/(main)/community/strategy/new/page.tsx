@@ -147,6 +147,7 @@ function StrategyNewContent() {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder={t('strategy.titlePlaceholder')}
+              autoFocus
               className="w-full px-4 py-3 rounded-xl bg-bg-tertiary border border-border/50 text-[14px] text-text-primary placeholder:text-text-quaternary focus:outline-none focus:border-accent/50"
               maxLength={200}
             />

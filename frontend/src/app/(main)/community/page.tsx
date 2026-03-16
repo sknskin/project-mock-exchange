@@ -21,6 +21,7 @@ import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
 import { useCommunityPosts } from '@/hooks/useCommunity';
 import { useFollowing, useFollowTrader, useUnfollowTrader, useBatchFollowCounts } from '@/hooks/useFollow';
 import { useStrategies, useLikeStrategy } from '@/hooks/useStrategy';
+import { useCopyTradeStatus } from '@/hooks/useCopyTrade';
 import ActivityFeed from '@/components/trading/ActivityFeed';
 import CopyTradeModal from '@/components/trading/CopyTradeModal';
 import {
@@ -47,8 +48,6 @@ import type { TranslationKey } from '@/lib/i18n';
 import type { LeaderboardEntry, CommunityStrategy } from '@/types';
 
 /* ───────── 상수 / Constants ───────── */
-
-const SYMBOLS = ['BTC', 'ETH', 'AAPL', 'TSLA', 'SOL', 'NVDA', 'AMZN', 'DOGE', 'XRP', 'GOOG'];
 
 /* ───────── 전략 카드 컴포넌트 / Strategy Card Component ───────── */
 
@@ -366,19 +365,46 @@ function CommunityPage() {
   // 전략 상태 / Strategy state
   const [strategyPage, setStrategyPage] = useState(1);
   const [strategySymbol, setStrategySymbol] = useState('ALL');
+  const [strategySearch, setStrategySearch] = useState('');
+  const [strategySearchQuery, setStrategySearchQuery] = useState('');
+  const strategyDebounceRef = useRef<ReturnType<typeof setTimeout>>(null);
+
+  // 전략 검색 디바운스 / Strategy search debounce
+  useEffect(() => {
+    if (strategyDebounceRef.current) clearTimeout(strategyDebounceRef.current);
+    strategyDebounceRef.current = setTimeout(() => {
+      setStrategySearchQuery(strategySearch);
+      setStrategyPage(1);
+    }, 300);
+    return () => { if (strategyDebounceRef.current) clearTimeout(strategyDebounceRef.current); };
+  }, [strategySearch]);
+
   const { data: strategiesData, isLoading: strategiesLoading } = useStrategies(
     strategyPage,
     strategySymbol !== 'ALL' ? strategySymbol : undefined,
+    strategySearchQuery || undefined,
   );
   const likeStrategy = useLikeStrategy();
 
-  // 활성 트레이더 (자산 > 0) / Active traders with assets > 0
+  // 트레이더 탭: 투자자만 + 카피트레이딩만 필터 / Traders tab: invested-only + copy-trade-only filter
+  const [tradersInvestedOnly, setTradersInvestedOnly] = useState(true);
+  const [tradersCopyTradeOnly, setTradersCopyTradeOnly] = useState(false);
+
+  // 카피 트레이딩 상태 / Copy trade status
+  const { data: copyTradeConfigs } = useCopyTradeStatus();
+  const copyTradingUserIds = useMemo(() => {
+    if (!copyTradeConfigs) return new Set<string>();
+    return new Set(copyTradeConfigs.filter((c) => c.isActive).map((c) => c.traderId));
+  }, [copyTradeConfigs]);
+
+  // 활성 트레이더 (투자자만/카피트레이딩만 필터) / Active traders (invested-only + copy-trade-only filter)
   const activeTraders = useMemo(() => {
     if (!leaderboardData) return [];
-    return leaderboardData
-      .filter((e) => e.totalValue > 0)
-      .map((entry, i) => ({ ...entry, rank: i + 1 }));
-  }, [leaderboardData]);
+    let filtered = leaderboardData;
+    if (tradersInvestedOnly) filtered = filtered.filter((e) => e.hasTraded);
+    if (tradersCopyTradeOnly) filtered = filtered.filter((e) => copyTradingUserIds.has(e.id));
+    return filtered.map((entry, i) => ({ ...entry, rank: i + 1 }));
+  }, [leaderboardData, tradersInvestedOnly, tradersCopyTradeOnly, copyTradingUserIds]);
 
   // 트레이더 팔로워 수 일괄 조회 — anon_ ID 제외 / Batch fetch follower counts — exclude anon_ IDs
   const traderUserIds = useMemo(() => activeTraders.map((e) => e.id).filter((id) => !id.startsWith('anon_')), [activeTraders]);
@@ -683,35 +709,30 @@ function CommunityPage() {
         {/* 전략 공유 탭 / Strategies Tab */}
         {tab === 'strategies' && (
           <div>
-            {/* 종목 필터 + 전략 글쓰기 버튼 / Symbol filter + Strategy write button */}
-            <div className="flex items-center justify-between gap-3 mb-4">
-              <div className="flex flex-wrap gap-1.5">
-                <button
-                  onClick={() => { setStrategySymbol('ALL'); setStrategyPage(1); }}
-                  className={cn(
-                    'px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors',
-                    strategySymbol === 'ALL'
-                      ? 'bg-accent text-white'
-                      : 'bg-bg-tertiary text-text-quaternary hover:text-text-secondary',
-                  )}
-                >
-                  {t('strategy.allSymbols')}
-                </button>
-                {SYMBOLS.map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => { setStrategySymbol(s); setStrategyPage(1); }}
-                    className={cn(
-                      'px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors',
-                      strategySymbol === s
-                        ? 'bg-accent text-white'
-                        : 'bg-bg-tertiary text-text-quaternary hover:text-text-secondary',
-                    )}
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
+            {/* 카테고리 필터 + 검색 + 전략 글쓰기 버튼 / Category filter + Search + Strategy write button */}
+            <div className="flex flex-col gap-3 mb-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex flex-wrap gap-1.5">
+                  {([
+                    { key: 'ALL', label: t('strategy.allSymbols') },
+                    { key: 'CRYPTO', label: t('community.strategyCrypto') },
+                    { key: 'STOCK_KR', label: t('community.strategyStockKR') },
+                    { key: 'STOCK_US', label: t('community.strategyStockUS') },
+                  ] as const).map(({ key, label }) => (
+                    <button
+                      key={key}
+                      onClick={() => { setStrategySymbol(key); setStrategyPage(1); }}
+                      className={cn(
+                        'px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors',
+                        strategySymbol === key
+                          ? 'bg-accent text-white'
+                          : 'bg-bg-tertiary text-text-quaternary hover:text-text-secondary',
+                      )}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
               <button
                 onClick={() => {
                   if (!isAuthenticated) {
@@ -735,6 +756,20 @@ function CommunityPage() {
                 <PenSquare className="w-3.5 h-3.5" />
                 {t('community.strategyWriteButton')}
               </button>
+              </div>
+
+              {/* 전략 검색 / Strategy search */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-text-quaternary" />
+                <input
+                  type="text"
+                  value={strategySearch}
+                  onChange={(e) => setStrategySearch(e.target.value)}
+                  placeholder={t('community.strategySearchPlaceholder')}
+                  maxLength={100}
+                  className="w-full pl-9 pr-3.5 py-2.5 bg-bg-secondary rounded-xl text-[13px] text-text-primary placeholder:text-text-quaternary outline-none focus:ring-1 focus:ring-accent/30"
+                />
+              </div>
             </div>
 
             {strategiesLoading ? (
@@ -797,6 +832,42 @@ function CommunityPage() {
         {/* 트레이더 탭 / Traders Tab */}
         {tab === 'traders' && (
           <div>
+            {/* 투자자만 필터 + 참여자 수 / Invested-only filter + participant count */}
+            <div className="flex items-center gap-4 mb-4">
+              <label className="flex items-center gap-2 cursor-pointer select-none group">
+                <div className="relative">
+                  <input
+                    type="checkbox"
+                    checked={tradersInvestedOnly}
+                    onChange={(e) => setTradersInvestedOnly(e.target.checked)}
+                    className="peer sr-only"
+                  />
+                  <div className="w-[34px] h-[18px] rounded-full bg-border peer-checked:bg-accent transition-colors" />
+                  <div className="absolute top-[2px] left-[2px] w-[14px] h-[14px] rounded-full bg-white shadow-sm transition-transform peer-checked:translate-x-[16px]" />
+                </div>
+                <span className="text-[12px] font-medium text-text-tertiary group-hover:text-text-secondary transition-colors">{t('community.investedOnly')}</span>
+              </label>
+              {isAuthenticated && (
+                <label className="flex items-center gap-2 cursor-pointer select-none group">
+                  <div className="relative">
+                    <input
+                      type="checkbox"
+                      checked={tradersCopyTradeOnly}
+                      onChange={(e) => setTradersCopyTradeOnly(e.target.checked)}
+                      className="peer sr-only"
+                    />
+                    <div className="w-[34px] h-[18px] rounded-full bg-border peer-checked:bg-accent transition-colors" />
+                    <div className="absolute top-[2px] left-[2px] w-[14px] h-[14px] rounded-full bg-white shadow-sm transition-transform peer-checked:translate-x-[16px]" />
+                  </div>
+                  <span className="text-[12px] font-medium text-text-tertiary group-hover:text-text-secondary transition-colors">{t('leaderboard.copyTradeOnly')}</span>
+                </label>
+              )}
+              <div className="flex items-center gap-1.5 text-[12px] text-text-tertiary">
+                <Users className="w-3.5 h-3.5" />
+                <span>{activeTraders.length}{t('community.tradersCount')}</span>
+              </div>
+            </div>
+
             {isLoading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {Array.from({ length: 6 }).map((_, i) => (
@@ -850,9 +921,8 @@ function CommunityPage() {
         {tab === 'feed' && (
           <ActivityFeed />
         )}
-      </div>
 
-      {/* 언팔로우 확인 모달 / Unfollow Confirmation Modal */}
+        {/* 언팔로우 확인 모달 / Unfollow Confirmation Modal */}
       {unfollowTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="bg-bg-primary border border-border rounded-2xl p-6 w-full max-w-sm mx-4 shadow-xl">
@@ -880,5 +950,6 @@ function CommunityPage() {
           </div>
         </div>
       )}
+      </div>
   );
 }

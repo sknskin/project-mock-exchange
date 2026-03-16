@@ -41,6 +41,7 @@ export class StrategyController {
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
     @Query('symbol') symbol?: string,
+    @Query('category') category?: string,
     @Query('search') search?: string,
     @Headers('x-user-id') userId?: string,
   ) {
@@ -49,10 +50,25 @@ export class StrategyController {
     const safeLimit = Math.min(Math.max(1, limit), 100);
     const safeSearch = search ? search.slice(0, 100) : undefined;
     const safeSymbol = symbol ? symbol.slice(0, 20) : undefined;
+    const safeCategory = category ? category.slice(0, 20) : undefined;
 
     const where: Record<string, unknown> = {};
     if (safeSymbol) {
       where.symbol = safeSymbol;
+    }
+    // 카테고리 필터: 종목명 패턴 매칭 / Category filter: symbol pattern matching
+    if (safeCategory === 'CRYPTO') {
+      // 암호화폐: USDT 접미사 / Crypto: ends with USDT
+      where.symbol = { endsWith: 'USDT' };
+    } else if (safeCategory === 'STOCK_KR') {
+      // 국내주식: .KS 접미사 / Korean stocks: ends with .KS
+      where.symbol = { endsWith: '.KS' };
+    } else if (safeCategory === 'STOCK_US') {
+      // 해외주식: USDT로 끝나지 않고 .KS로 끝나지 않는 종목 / US stocks: not USDT and not .KS
+      where.NOT = [
+        { symbol: { endsWith: 'USDT' } },
+        { symbol: { endsWith: '.KS' } },
+      ];
     }
     if (safeSearch) {
       where.OR = [
