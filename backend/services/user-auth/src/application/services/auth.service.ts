@@ -93,12 +93,12 @@ export class AuthService {
     const { email, username, password, passwordConfirm, name, phone, residentNumber, address, addressDetail, zipCode } = params;
 
     if (password !== passwordConfirm) {
-      throw new BadRequestException('비밀번호가 일치하지 않습니다.');
+      throw new BadRequestException('ERR_PASSWORD_MISMATCH: Passwords do not match.');
     }
 
     const phoneVerified = await this.smsVerificationService.isPhoneVerified(phone);
     if (!phoneVerified) {
-      throw new BadRequestException('전화번호 인증이 완료되지 않았습니다.');
+      throw new BadRequestException('ERR_PHONE_NOT_VERIFIED: Phone number verification is not completed.');
     }
 
     // 주민등록번호 암호화 / Encrypt resident number
@@ -124,17 +124,17 @@ export class AuthService {
       created = await this.prisma.$transaction(async (tx) => {
         const existingEmail = await tx.user.findUnique({ where: { email } });
         if (existingEmail) {
-          throw new ConflictException('이미 등록된 이메일입니다.');
+          throw new ConflictException('ERR_DUPLICATE_EMAIL: Email is already registered.');
         }
 
         const existingUsername = await tx.user.findUnique({ where: { username } });
         if (existingUsername) {
-          throw new ConflictException('이미 사용 중인 사용자명입니다.');
+          throw new ConflictException('ERR_DUPLICATE_USERNAME: Username is already in use.');
         }
 
         const existingPhone = await tx.user.findUnique({ where: { phone } });
         if (existingPhone) {
-          throw new ConflictException('이미 등록된 전화번호입니다.');
+          throw new ConflictException('ERR_DUPLICATE_PHONE: Phone number is already registered.');
         }
 
         const user = UserEntity.create({
@@ -182,15 +182,15 @@ export class AuthService {
       if (prismaError.code === 'P2002') {
         const fields = (prismaError.meta?.target as string[]) ?? [];
         if (fields.includes('email')) {
-          throw new ConflictException('이미 등록된 이메일입니다.');
+          throw new ConflictException('ERR_DUPLICATE_EMAIL: Email is already registered.');
         }
         if (fields.includes('username')) {
-          throw new ConflictException('이미 사용 중인 사용자명입니다.');
+          throw new ConflictException('ERR_DUPLICATE_USERNAME: Username is already in use.');
         }
         if (fields.includes('phone')) {
-          throw new ConflictException('이미 등록된 전화번호입니다.');
+          throw new ConflictException('ERR_DUPLICATE_PHONE: Phone number is already registered.');
         }
-        throw new ConflictException('이미 등록된 정보입니다.');
+        throw new ConflictException('ERR_DUPLICATE_FIELD: Information is already registered.');
       }
       throw error;
     }
@@ -229,7 +229,7 @@ export class AuthService {
       user = await this.userRepository.findByUsername(identifier);
     }
     if (!user) {
-      throw new UnauthorizedException('이메일 또는 비밀번호가 올바르지 않습니다.');
+      throw new UnauthorizedException('ERR_INVALID_CREDENTIALS: Invalid email or password.');
     }
 
     // 계정 잠금 확인 / Check account lock
@@ -238,26 +238,26 @@ export class AuthService {
       select: { lockedAt: true },
     });
     if (dbUser?.lockedAt) {
-      throw new UnauthorizedException('계정이 잠금 처리되었습니다.');
+      throw new UnauthorizedException('ERR_ACCOUNT_LOCKED: Account has been locked.');
     }
 
     // 미승인/반려 회원 로그인 거부 (SYSTEM 계정 예외) / Deny unapproved/rejected users (except SYSTEM)
     if (user.approvalStatus !== 'APPROVED' && user.role !== USER_ROLE.SYSTEM) {
       if (user.approvalStatus === 'REJECTED') {
-        throw new UnauthorizedException('가입이 반려된 계정입니다.');
+        throw new UnauthorizedException('ERR_ACCOUNT_REJECTED: Account registration has been rejected.');
       }
-      throw new UnauthorizedException('승인 대기 중인 계정입니다. 관리자 승인 후 로그인할 수 있습니다.');
+      throw new UnauthorizedException('ERR_ACCOUNT_PENDING: Account is pending approval. You can log in after admin approval.');
     }
 
     if (!user.isActive) {
-      throw new UnauthorizedException('비활성화된 계정입니다.');
+      throw new UnauthorizedException('ERR_ACCOUNT_INACTIVE: Account has been deactivated.');
     }
 
     const isValid = await bcrypt.compare(password, user.passwordHash);
     if (!isValid) {
       const masked = user.email.replace(/^(.)(.*)(@.*)$/, '$1***$3');
       this.logger.warn(`Login failed (invalid password) for: ${masked}`);
-      throw new UnauthorizedException('이메일 또는 비밀번호가 올바르지 않습니다.');
+      throw new UnauthorizedException('ERR_INVALID_CREDENTIALS: Invalid email or password.');
     }
 
     // 로그인 세션 생성 + SMS 인증 발송 / Create login session + send SMS verification
@@ -296,7 +296,7 @@ export class AuthService {
     const sessionKey = `login:session:${sessionId}`;
     const raw = await this.redis.get(sessionKey);
     if (!raw) {
-      throw new UnauthorizedException('세션이 만료되었습니다.');
+      throw new UnauthorizedException('ERR_SESSION_EXPIRED: Session has expired.');
     }
 
     // M-07: Redis 세션 JSON 파싱 오류 방어 / Guard against corrupted Redis session JSON
@@ -324,7 +324,7 @@ export class AuthService {
     const sessionKey = `login:session:${sessionId}`;
     const raw = await this.redis.get(sessionKey);
     if (!raw) {
-      throw new UnauthorizedException('세션이 만료되었습니다.');
+      throw new UnauthorizedException('ERR_SESSION_EXPIRED: Session has expired.');
     }
 
     // M-07: Redis 세션 JSON 파싱 오류 방어 / Guard against corrupted Redis session JSON
@@ -333,7 +333,7 @@ export class AuthService {
     if (session.attemptsLeft <= 0) {
       await this.lockUser(session.userId, 'SMS verification attempts exceeded');
       await this.redis.del(sessionKey);
-      throw new UnauthorizedException('계정이 잠금 처리되었습니다.');
+      throw new UnauthorizedException('ERR_ACCOUNT_LOCKED: Account has been locked.');
     }
 
     // SMS 코드 검증 / Verify SMS code
@@ -347,7 +347,7 @@ export class AuthService {
         await this.lockUser(session.userId, 'SMS verification attempts exceeded');
         await this.redis.del(sessionKey);
         await this.redis.del(smsKey);
-        return { success: false, attemptsLeft: 0, message: '인증 실패 횟수 초과로 계정이 잠겼습니다.' };
+        return { success: false, attemptsLeft: 0, message: 'ERR_VERIFICATION_LOCKED: Account locked due to too many failed verification attempts.' };
       }
 
       await this.redis.set(
@@ -357,7 +357,7 @@ export class AuthService {
         await this.redis.ttl(sessionKey),
       );
 
-      return { success: false, attemptsLeft: newAttemptsLeft, message: '인증번호가 일치하지 않습니다.' };
+      return { success: false, attemptsLeft: newAttemptsLeft, message: 'ERR_INVALID_CODE: Verification code does not match.' };
     }
 
     // 인증 성공: 세션 및 SMS 키 삭제, 토큰 발급 / Verification success: clean up, issue tokens
@@ -366,7 +366,7 @@ export class AuthService {
 
     const user = await this.userRepository.findById(session.userId);
     if (!user) {
-      throw new UnauthorizedException('사용자를 찾을 수 없습니다.');
+      throw new UnauthorizedException('ERR_USER_NOT_FOUND: User not found.');
     }
 
     const tokens = await this.generateTokens(user);
@@ -413,7 +413,7 @@ export class AuthService {
       if (stored) {
         await this.prisma.refreshToken.delete({ where: { id: stored.id } });
       }
-      throw new UnauthorizedException('유효하지 않거나 만료된 토큰입니다.');
+      throw new UnauthorizedException('ERR_INVALID_TOKEN: Invalid or expired token.');
     }
 
     const user = new UserEntity(
@@ -557,7 +557,7 @@ export class AuthService {
     const sessionKey = `reset:session:${sessionId}`;
     const raw = await this.redis.get(sessionKey);
     if (!raw) {
-      throw new UnauthorizedException('세션이 만료되었습니다.');
+      throw new UnauthorizedException('ERR_SESSION_EXPIRED: Session has expired.');
     }
 
     // M-07: Redis 세션 JSON 파싱 오류 방어 / Guard against corrupted Redis session JSON
@@ -582,7 +582,7 @@ export class AuthService {
       user = await this.userRepository.findByUsername(identifier);
     }
     if (!user) {
-      throw new BadRequestException('사용자를 찾을 수 없습니다.');
+      throw new BadRequestException('ERR_USER_NOT_FOUND: User not found.');
     }
 
     // 잠긴 계정도 비밀번호 재설정은 허용하지 않음 / Locked accounts cannot reset password
@@ -591,7 +591,7 @@ export class AuthService {
       select: { lockedAt: true },
     });
     if (dbUser?.lockedAt) {
-      throw new UnauthorizedException('계정이 잠금 처리되었습니다.');
+      throw new UnauthorizedException('ERR_ACCOUNT_LOCKED: Account has been locked.');
     }
 
     const resetSettings = await this.getSessionSecuritySettings();
@@ -621,7 +621,7 @@ export class AuthService {
     const sessionKey = `reset:session:${sessionId}`;
     const raw = await this.redis.get(sessionKey);
     if (!raw) {
-      throw new UnauthorizedException('세션이 만료되었습니다.');
+      throw new UnauthorizedException('ERR_SESSION_EXPIRED: Session has expired.');
     }
 
     // M-07: Redis 세션 JSON 파싱 오류 방어 / Guard against corrupted Redis session JSON
@@ -629,7 +629,7 @@ export class AuthService {
 
     if (session.attemptsLeft <= 0) {
       await this.redis.del(sessionKey);
-      throw new UnauthorizedException('인증 시도 횟수를 초과했습니다.');
+      throw new UnauthorizedException('ERR_VERIFICATION_ATTEMPTS_EXCEEDED: Verification attempts exceeded.');
     }
 
     const smsKey = `sms:verify:${session.phone}`;
@@ -640,7 +640,7 @@ export class AuthService {
       if (newAttemptsLeft <= 0) {
         await this.redis.del(sessionKey);
         await this.redis.del(smsKey);
-        return { success: false, attemptsLeft: 0, message: '인증 실패 횟수를 초과했습니다.' };
+        return { success: false, attemptsLeft: 0, message: 'ERR_VERIFICATION_ATTEMPTS_EXCEEDED: Verification attempts exceeded.' };
       }
       await this.redis.set(
         sessionKey,
@@ -648,7 +648,7 @@ export class AuthService {
         'EX',
         await this.redis.ttl(sessionKey),
       );
-      return { success: false, attemptsLeft: newAttemptsLeft, message: '인증번호가 일치하지 않습니다.' };
+      return { success: false, attemptsLeft: newAttemptsLeft, message: 'ERR_INVALID_CODE: Verification code does not match.' };
     }
 
     // SMS 인증 성공 → 세션에 verified 마킹 + TTL 연장 (5분) / Mark verified + extend TTL
@@ -667,31 +667,31 @@ export class AuthService {
    * Reset password — save new password after SMS verification */
   async resetPassword(sessionId: string, newPassword: string, confirmPassword: string): Promise<void> {
     if (newPassword !== confirmPassword) {
-      throw new BadRequestException('비밀번호가 일치하지 않습니다.');
+      throw new BadRequestException('ERR_PASSWORD_MISMATCH: Passwords do not match.');
     }
     if (newPassword.length < 8) {
-      throw new BadRequestException('비밀번호는 8자 이상이어야 합니다.');
+      throw new BadRequestException('ERR_PASSWORD_TOO_SHORT: Password must be at least 8 characters.');
     }
     if (!/[a-z]/.test(newPassword)) {
-      throw new BadRequestException('비밀번호에 소문자가 포함되어야 합니다.');
+      throw new BadRequestException('ERR_PASSWORD_NO_LOWERCASE: Password must contain a lowercase letter.');
     }
     if (!/[0-9]/.test(newPassword)) {
-      throw new BadRequestException('비밀번호에 숫자가 포함되어야 합니다.');
+      throw new BadRequestException('ERR_PASSWORD_NO_DIGIT: Password must contain a digit.');
     }
     if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(newPassword)) {
-      throw new BadRequestException('비밀번호에 특수문자가 포함되어야 합니다.');
+      throw new BadRequestException('ERR_PASSWORD_NO_SPECIAL: Password must contain a special character.');
     }
 
     const sessionKey = `reset:session:${sessionId}`;
     const raw = await this.redis.get(sessionKey);
     if (!raw) {
-      throw new UnauthorizedException('세션이 만료되었습니다.');
+      throw new UnauthorizedException('ERR_SESSION_EXPIRED: Session has expired.');
     }
 
     // M-07: Redis 세션 JSON 파싱 오류 방어 / Guard against corrupted Redis session JSON
     const session = this.safeParseSession<{ userId: string; phone: string; verified: boolean }>(raw, sessionKey);
     if (!session.verified) {
-      throw new UnauthorizedException('SMS 인증이 필요합니다.');
+      throw new UnauthorizedException('ERR_SMS_NOT_VERIFIED: SMS verification is required.');
     }
 
     const passwordHash = await bcrypt.hash(newPassword, this.SALT_ROUNDS);
@@ -712,7 +712,7 @@ export class AuthService {
     } catch {
       this.logger.warn(`Corrupted Redis session data for key: ${sessionKey}`);
       this.redis.del(sessionKey).catch(() => {});
-      throw new UnauthorizedException('세션이 만료되었습니다.');
+      throw new UnauthorizedException('ERR_SESSION_EXPIRED: Session has expired.');
     }
   }
 
