@@ -14,6 +14,7 @@ import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useFollowing, useFollowTrader, useUnfollowTrader } from '@/hooks/useFollow';
+import { useCopyTradeStatus } from '@/hooks/useCopyTrade';
 import { useAuthStore } from '@/stores/auth';
 import ExchangeRateBar from '@/components/market/ExchangeRateBar';
 import Skeleton from '@/components/ui/Skeleton';
@@ -129,7 +130,8 @@ export default function LeaderboardPage() {
   const setPeriod = useCallback((v: LeaderboardPeriod) => { setPeriodRaw(v); window.scrollTo({ top: 0, behavior: 'smooth' }); }, []);
   const [sortMode, setSortMode] = useState<LeaderboardSortBy>('return');
 
-  const [investedOnly, setInvestedOnly] = useState(false);
+  const [investedOnly, setInvestedOnly] = useState(true);
+  const [copyTradeOnly, setCopyTradeOnly] = useState(false);
   const { data: leaderboard, isLoading, refetch } = useLeaderboard({ period, sortBy: sortMode });
 
   // 팔로우 상태 훅 / Follow state hooks
@@ -142,6 +144,13 @@ export default function LeaderboardPage() {
     if (!followingData) return new Set<string>();
     return new Set(followingData.map((f) => f.followeeId));
   }, [followingData]);
+
+  // 카피 트레이딩 상태 / Copy trade status
+  const { data: copyTradeConfigs } = useCopyTradeStatus();
+  const copyTradingUserIds = useMemo(() => {
+    if (!copyTradeConfigs) return new Set<string>();
+    return new Set(copyTradeConfigs.filter((c) => c.isActive).map((c) => c.traderId));
+  }, [copyTradeConfigs]);
 
   // 카피 트레이딩 모달 상태 / Copy trade modal state
   const [copyTradeTarget, setCopyTradeTarget] = useState<{ id: string; name: string; pnlPercent: number } | null>(null);
@@ -202,7 +211,9 @@ export default function LeaderboardPage() {
     const unique = [...new Map(active.map((e) => [e.id, e])).values()];
     // 투자 여부 필터: 체크 시 실제 거래 이력이 있는 사용자만 표시 (hasTraded 기반)
     // Investment filter: when checked, only users who actually traded (based on hasTraded flag)
-    const filtered = investedOnly ? unique.filter((e) => e.hasTraded) : unique;
+    let filtered = investedOnly ? unique.filter((e) => e.hasTraded) : unique;
+    // 카피트레이딩 중인 투자자만 필터 / Filter to only copy-trading targets
+    if (copyTradeOnly) filtered = filtered.filter((e) => copyTradingUserIds.has(e.id));
     const sorted = filtered.sort((a, b) => {
       if (sortMode === 'return') return b.pnlPercent - a.pnlPercent;
       if (sortMode === 'absolute') {
@@ -211,7 +222,7 @@ export default function LeaderboardPage() {
       return b.totalValue - a.totalValue;
     });
     return sorted.map((entry, i) => ({ ...entry, rank: i + 1 }));
-  }, [leaderboard, sortMode, investedOnly]);
+  }, [leaderboard, sortMode, investedOnly, copyTradeOnly, copyTradingUserIds]);
 
   // 현재 사용자 순위 강조 / Current user rank highlight
   const myEntry = sortedLeaderboard.find((e) => e.isMe);
@@ -236,6 +247,9 @@ export default function LeaderboardPage() {
 
     const prev = prevRankMap.current;
 
+    // 배치 FLIP: 모든 행을 이전 위치로 즉시 설정 후, 한 번의 리플로우로 애니메이션 시작
+    // Batched FLIP: set all rows to prev position, then single reflow + animate
+    const movedEls: HTMLElement[] = [];
     sortedLeaderboard.forEach((entry) => {
       const el = rowRefs.current.get(entry.id);
       if (!el) return;
@@ -245,12 +259,20 @@ export default function LeaderboardPage() {
         const delta = (prevRank - entry.rank) * ROW_HEIGHT;
         el.style.transition = 'none';
         el.style.transform = `translateY(${delta}px)`;
-        // 리플로우 강제 / force reflow
-        void el.offsetHeight;
-        el.style.transition = 'transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-        el.style.transform = 'translateY(0)';
+        movedEls.push(el);
       }
     });
+
+    if (movedEls.length > 0) {
+      // 단일 리플로우 강제 후 애니메이션 시작 / Single forced reflow then animate
+      void movedEls[0].offsetHeight;
+      requestAnimationFrame(() => {
+        movedEls.forEach((el) => {
+          el.style.transition = 'transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+          el.style.transform = 'translateY(0)';
+        });
+      });
+    }
 
     const next = new Map<string, number>();
     sortedLeaderboard.forEach((entry) => next.set(entry.id, entry.rank));
@@ -311,6 +333,21 @@ export default function LeaderboardPage() {
               </div>
               <span className="text-[12px] font-medium text-text-tertiary group-hover:text-text-secondary transition-colors">{t('leaderboard.investedOnly')}</span>
             </label>
+            {isAuthenticated && (
+              <label className="flex items-center gap-2 cursor-pointer select-none group">
+                <div className="relative">
+                  <input
+                    type="checkbox"
+                    checked={copyTradeOnly}
+                    onChange={(e) => setCopyTradeOnly(e.target.checked)}
+                    className="peer sr-only"
+                  />
+                  <div className="w-[34px] h-[18px] rounded-full bg-border peer-checked:bg-accent transition-colors" />
+                  <div className="absolute top-[2px] left-[2px] w-[14px] h-[14px] rounded-full bg-white shadow-sm transition-transform peer-checked:translate-x-[16px]" />
+                </div>
+                <span className="text-[12px] font-medium text-text-tertiary group-hover:text-text-secondary transition-colors">{t('leaderboard.copyTradeOnly')}</span>
+              </label>
+            )}
             <div className="flex items-center gap-1.5 text-[12px] text-text-tertiary">
               <Users className="w-3.5 h-3.5" />
               <span>{t('leaderboard.participants')} {sortedLeaderboard.length}</span>
@@ -521,9 +558,11 @@ export default function LeaderboardPage() {
                             'p-1.5 rounded-lg transition-colors',
                             currentUser && currentUser.id === entry.id
                               ? 'text-text-quaternary/30 cursor-not-allowed'
-                              : 'text-text-quaternary hover:text-accent hover:bg-accent/10',
+                              : copyTradingUserIds.has(entry.id)
+                                ? 'text-accent bg-accent/10'
+                                : 'text-text-quaternary hover:text-accent hover:bg-accent/10',
                           )}
-                          title={currentUser && currentUser.id === entry.id ? t('follow.cannotCopyTradeSelf') : t('copyTrade.title')}
+                          title={currentUser && currentUser.id === entry.id ? t('follow.cannotCopyTradeSelf') : copyTradingUserIds.has(entry.id) ? t('copyTrade.active') : t('copyTrade.title')}
                           disabled={!!(currentUser && currentUser.id === entry.id)}
                         >
                           <Copy className="w-3.5 h-3.5" />
@@ -543,35 +582,35 @@ export default function LeaderboardPage() {
           )}
         </div>
       )}
-    </div>
 
-    {/* 언팔로우 확인 모달 / Unfollow Confirmation Modal */}
-    {unfollowTarget && (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-        <div className="bg-bg-primary border border-border rounded-2xl p-6 w-full max-w-sm mx-4 shadow-xl">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center">
-              <AlertTriangle className="w-5 h-5 text-red-500" />
+      {/* 언팔로우 확인 모달 / Unfollow Confirmation Modal */}
+      {unfollowTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-bg-primary border border-border rounded-2xl p-6 w-full max-w-sm mx-4 shadow-xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center">
+                <AlertTriangle className="w-5 h-5 text-red-500" />
+              </div>
+              <h3 className="text-[16px] font-bold text-text-primary">{t('follow.unfollowConfirmTitle')}</h3>
             </div>
-            <h3 className="text-[16px] font-bold text-text-primary">{t('follow.unfollowConfirmTitle')}</h3>
-          </div>
-          <p className="text-[14px] text-text-secondary mb-6">{t('follow.unfollowConfirmMessage')}</p>
-          <div className="flex gap-3">
-            <button
-              onClick={() => setUnfollowTarget(null)}
-              className="flex-1 h-10 rounded-xl bg-bg-secondary text-text-primary text-[13px] font-semibold hover:bg-bg-tertiary transition-colors"
-            >
-              {t('common.cancel')}
-            </button>
-            <button
-              onClick={confirmUnfollow}
-              className="flex-1 h-10 rounded-xl bg-red-500 text-white text-[13px] font-semibold hover:bg-red-600 transition-colors"
-            >
-              {t('follow.unfollow')}
-            </button>
+            <p className="text-[14px] text-text-secondary mb-6">{t('follow.unfollowConfirmMessage')}</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setUnfollowTarget(null)}
+                className="flex-1 h-10 rounded-xl bg-bg-secondary text-text-primary text-[13px] font-semibold hover:bg-bg-tertiary transition-colors"
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                onClick={confirmUnfollow}
+                className="flex-1 h-10 rounded-xl bg-red-500 text-white text-[13px] font-semibold hover:bg-red-600 transition-colors"
+              >
+                {t('follow.unfollow')}
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-    )}
+      )}
+    </div>
   );
 }
