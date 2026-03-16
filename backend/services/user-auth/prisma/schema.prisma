@@ -175,6 +175,8 @@ enum NotificationType {
   GENERAL
   CHAT_MESSAGE
   PRICE_ALERT
+  TRADE
+  COPY_TRADE
 }
 
 enum AlertCondition {
