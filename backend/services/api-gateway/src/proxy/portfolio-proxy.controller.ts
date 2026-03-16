@@ -260,12 +260,18 @@ export class PortfolioProxyController {
     try {
       const followingResult = await this.proxyService.forward('user-auth', {
         method: 'GET',
-        url: '/users/following',
+        url: '/follow/following',
         headers: { 'x-user-id': userId },
       });
       const followingData = followingResult.data as Record<string, unknown>;
-      if (followingData?.success && Array.isArray(followingData?.data)) {
-        followingIds = (followingData.data as string[]).join(',');
+      if (followingData?.success) {
+        // data는 { items: [{ followeeId, ... }], total, ... } 구조
+        // data is { items: [{ followeeId, ... }], total, ... } structure
+        const inner = followingData.data as Record<string, unknown>;
+        const items = inner?.items ?? inner;
+        if (Array.isArray(items)) {
+          followingIds = items.map((f: any) => f.followeeId ?? f.id ?? f).filter(Boolean).join(',');
+        }
       }
     } catch {
       // 팔로잉 목록 조회 실패 시 빈 피드 반환 / Return empty feed on following list failure
@@ -277,6 +283,38 @@ export class PortfolioProxyController {
       params: { followingIds, page, limit },
       headers: { 'x-user-id': userId },
     });
+
+    // 활동 데이터에 사용자 이름 enrichment / Enrich activity data with user names
+    try {
+      const feedData = result.data as Record<string, any>;
+      const activities = feedData?.data?.data ?? feedData?.data?.activities ?? [];
+      if (Array.isArray(activities) && activities.length > 0) {
+        const userIds = [...new Set(activities.map((a: any) => a.userId).filter(Boolean))];
+        if (userIds.length > 0) {
+          const usersResult = await this.proxyService.forward('user-auth', {
+            method: 'POST',
+            url: '/users/by-ids',
+            data: { ids: userIds },
+          });
+          const usersData = usersResult.data as Record<string, any>;
+          const users = usersData?.data ?? [];
+          const userMap = new Map<string, { username: string; name: string }>();
+          if (Array.isArray(users)) {
+            users.forEach((u: any) => userMap.set(u.id, { username: u.username, name: u.name }));
+          }
+          activities.forEach((a: any) => {
+            const user = userMap.get(a.userId);
+            if (user) {
+              a.username = user.username;
+              a.name = user.name;
+            }
+          });
+        }
+      }
+    } catch {
+      // enrichment 실패 시 이름 없이 반환 / Return without names if enrichment fails
+    }
+
     return res.status(result.status).json(result.data);
   }
 
