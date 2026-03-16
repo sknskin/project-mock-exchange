@@ -95,6 +95,7 @@ export function useMarkAsRead() {
     onSuccess: () => {
       // 알림 목록과 읽지 않은 수 캐시 무효화 / Invalidate notifications list and unread count caches
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] });
     },
   });
 }
@@ -116,6 +117,7 @@ export function useMarkAllAsRead() {
     onSuccess: () => {
       // 알림 목록과 읽지 않은 수 캐시 무효화 / Invalidate notifications list and unread count caches
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] });
     },
   });
 }
