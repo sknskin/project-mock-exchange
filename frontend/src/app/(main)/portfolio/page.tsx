@@ -72,9 +72,24 @@ export default function PortfolioPage() {
   const toBackendAmount = (input: number) =>
     currencyMode === 'original' && rate > 0 ? input * rate : input;
 
+  // 최대 입금 한도 (KRW 100억 / ~$10M) / Max deposit limit (100B KRW / ~$10M)
+  const MAX_DEPOSIT_KRW = 10000000000;
+  const maxDepositInCurrentUnit = currencyMode === 'original' && rate > 0 ? MAX_DEPOSIT_KRW / rate : MAX_DEPOSIT_KRW;
+  const depositExceedsMax = parseFloat(depositAmount || '0') > maxDepositInCurrentUnit;
+
   const handleDeposit = async () => {
     const amount = parseFloat(depositAmount);
     if (!amount || amount <= 0) return;
+
+    if (depositExceedsMax) {
+      useToastStore.getState().addToast(
+        currencyMode === 'original'
+          ? `Maximum deposit is $${Math.floor(maxDepositInCurrentUnit).toLocaleString('en-US')}`
+          : `최대 입금 한도는 ${(MAX_DEPOSIT_KRW / 100000000).toFixed(0)}억원입니다`,
+        'error',
+      );
+      return;
+    }
 
     try {
       await deposit.mutateAsync(toBackendAmount(amount));
@@ -330,6 +345,20 @@ export default function PortfolioPage() {
                   )}
                 </div>
               </>
+            ) : portfolio.holdings.length === 0 ? (
+              <div className="py-24 flex flex-col items-center text-center">
+                <TrendingUp className="w-10 h-10 text-text-quaternary/40 mb-3" />
+                <p className="text-text-quaternary text-[14px] whitespace-pre-line">
+                  {t('portfolio.emptyHoldings')}
+                </p>
+                <Link
+                  href="/dashboard"
+                  className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 text-[13px] font-semibold text-accent bg-accent/10 rounded-lg hover:bg-accent/20 transition-colors"
+                >
+                  <LayoutDashboard className="w-3.5 h-3.5" />
+                  {t('orders.goToDashboard')}
+                </Link>
+              </div>
             ) : (
               <PortfolioAnalytics portfolio={portfolio} />
             )}
@@ -365,6 +394,14 @@ export default function PortfolioPage() {
               ))}
             </div>
 
+            {depositExceedsMax && (
+              <p className="text-[12px] text-danger font-medium">
+                {currencyMode === 'original'
+                  ? `Maximum deposit: $${Math.floor(maxDepositInCurrentUnit).toLocaleString('en-US')}`
+                  : `최대 입금 한도: ${(MAX_DEPOSIT_KRW / 100000000).toFixed(0)}억원`}
+              </p>
+            )}
+
             <Button
               size="lg"
               fullWidth
@@ -372,7 +409,8 @@ export default function PortfolioPage() {
               disabled={
                 deposit.isPending ||
                 !depositAmount ||
-                parseFloat(depositAmount) <= 0
+                parseFloat(depositAmount) <= 0 ||
+                depositExceedsMax
               }
             >
               {deposit.isPending ? t('portfolio.depositing') : t('portfolio.deposit')}
