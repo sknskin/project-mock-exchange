@@ -29,7 +29,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       ignoreExpiration: false,
       secretOrKey: configService.getOrThrow<string>('JWT_SECRET'),
     });
-    this.userAuthUrl = `http://localhost:${configService.get('USER_AUTH_PORT', 3007)}`;
+    this.userAuthUrl = `http://${configService.getOrThrow<string>('SERVICE_HOST')}:${configService.get('USER_AUTH_PORT', 3007)}`;
     this.internalToken = configService.get<string>('INTERNAL_SERVICE_SECRET', '');
   }
 
