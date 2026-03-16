@@ -114,6 +114,7 @@ export default function MyPageEditPage() {
             type="text"
             value={form.name}
             onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+            autoFocus
             className="w-full bg-bg-secondary border border-border rounded-xl px-4 py-3 text-[14px] text-text-primary placeholder:text-text-quaternary focus:outline-none focus:border-accent/60 transition-colors"
           />
         </div>

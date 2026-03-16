@@ -126,6 +126,7 @@ export default function NewAnnouncementPage() {
             onChange={(e) => setTitle(e.target.value)}
             placeholder={t('announce.titlePlaceholder')}
             required
+            autoFocus
             className="w-full bg-bg-secondary border border-border rounded-xl px-4 py-3 text-[14px] text-text-primary placeholder:text-text-quaternary focus:outline-none focus:border-accent transition-colors"
           />
         </div>
