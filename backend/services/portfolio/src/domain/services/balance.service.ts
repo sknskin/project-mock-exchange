@@ -67,7 +67,13 @@ export class BalanceService {
   private readonly marketDataUrl: string;
 
   /** 환율 캐시 (USD → KRW)
-   * Exchange rate cache */
+   * Exchange rate cache
+   *
+   * EC-L-01: 현재 서비스별로 인메모리 캐시를 중복 관리하고 있음.
+   * Redis에 환율을 중앙 캐싱하여 서비스 간 공유하고, 중복 외부 API 호출을 제거해야 함.
+   * EC-L-01: Currently each service maintains its own in-memory cache.
+   * Should be centralized in Redis to share across services and eliminate duplicate external API calls.
+   */
   private cachedExchangeRate: { rate: Decimal; fetchedAt: number } | null = null;
   private static readonly EXCHANGE_RATE_TTL_MS = 10 * 60 * 1000; // 10분
 

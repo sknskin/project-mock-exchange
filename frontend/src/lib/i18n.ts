@@ -229,6 +229,7 @@ const translations = {
     'leaderboard.rankSame': '변동없음',
     'leaderboard.absolutePnl': '절대수익',
     'leaderboard.investedOnly': '투자자만',
+    'leaderboard.copyTradeOnly': '카피트레이딩만',
 
     // Portfolio (additional)
     'portfolio.totalAssets': '총 자산',
@@ -1943,6 +1944,12 @@ const translations = {
     'community.membersOnly': '회원 전용',
     'community.strategyWriteRestriction': '전략 공유 글쓰기는 수익률 5% 이상 또는 자산 상위 20% 이상의 투자자만 가능합니다.',
     'community.strategyWriteButton': '전략 글쓰기',
+    'community.strategyCrypto': '암호화폐',
+    'community.strategyStockKR': '국내주식',
+    'community.strategyStockUS': '해외주식',
+    'community.strategySearchPlaceholder': '전략 제목·종목·작성자 검색...',
+    'community.investedOnly': '투자자만',
+    'community.tradersCount': '명',
     'community.tradersLoginRequired': '트레이더 정보는 로그인 후 확인할 수 있습니다.\n로그인 페이지로 이동하시겠습니까?',
     'community.strategyLoginRequired': '전략 상세 내용은 로그인 후 확인할 수 있습니다.\n로그인 페이지로 이동하시겠습니까?',
 
@@ -2293,6 +2300,7 @@ const translations = {
     'leaderboard.rankSame': 'No change',
     'leaderboard.absolutePnl': 'Abs. PnL',
     'leaderboard.investedOnly': 'Invested only',
+    'leaderboard.copyTradeOnly': 'Copy trading only',
 
     // Portfolio (additional)
     'portfolio.totalAssets': 'Total Assets',
@@ -4007,6 +4015,12 @@ const translations = {
     'community.membersOnly': 'Members only',
     'community.strategyWriteRestriction': 'Strategy posts require a return rate of 5%+ or top 20% total assets.',
     'community.strategyWriteButton': 'Write Strategy',
+    'community.strategyCrypto': 'Crypto',
+    'community.strategyStockKR': 'KR Stocks',
+    'community.strategyStockUS': 'US Stocks',
+    'community.strategySearchPlaceholder': 'Search strategy title, symbol, author...',
+    'community.investedOnly': 'Investors only',
+    'community.tradersCount': ' traders',
     'community.tradersLoginRequired': 'Trader information requires login.\nWould you like to go to the login page?',
     'community.strategyLoginRequired': 'Strategy details require login.\nWould you like to go to the login page?',
 
