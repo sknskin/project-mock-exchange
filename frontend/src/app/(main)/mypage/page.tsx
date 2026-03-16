@@ -139,8 +139,11 @@ export default function MyPage() {
   const { data: trades } = useTradeHistory();
   const user = useAuthStore((s) => s.user);
 
-  // 계정 초기화 모달 상태 / Account reset modal state
+  // 계정 초기화 2단계 확인 상태 / Account reset two-step confirmation state
+  // FRM-L-01: Step 1 = ConfirmModal, Step 2 = type "RESET" to confirm
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
+  const [resetStep2Open, setResetStep2Open] = useState(false);
+  const [resetTypedText, setResetTypedText] = useState('');
 
   /**
    * 거래 통계 집계 (메모이제이션) — 총 거래수, 총 거래량, 최고 수익률
@@ -561,24 +564,75 @@ export default function MyPage() {
         </div>
       )}
 
-      {/* 계정 초기화 확인 모달 / Account reset confirmation modal */}
+      {/* FRM-L-01: 계정 초기화 — 2단계 확인 (Step 1: 확인 모달, Step 2: "RESET" 입력)
+         FRM-L-01: Account reset — two-step confirmation (Step 1: confirm modal, Step 2: type "RESET") */}
       <ConfirmModal
         isOpen={resetConfirmOpen}
         onClose={() => setResetConfirmOpen(false)}
-        onConfirm={async () => {
-          try {
-            await resetAccount.mutateAsync();
-            setResetConfirmOpen(false);
-            useToastStore.getState().addToast(t('mypage.resetAccountSuccess'), 'success');
-          } catch {
-            useToastStore.getState().addToast(t('mypage.resetAccountError'), 'error');
-          }
+        onConfirm={() => {
+          setResetConfirmOpen(false);
+          setResetTypedText('');
+          setResetStep2Open(true);
         }}
         title={t('mypage.resetAccountConfirmTitle')}
         message={t('mypage.resetAccountConfirmMessage')}
         confirmVariant="danger"
-        loading={resetAccount.isPending}
       />
+
+      {/* Step 2: "RESET" 입력 확인 모달 / Step 2: Type "RESET" confirmation modal */}
+      {resetStep2Open && (
+        <>
+          <div className="fixed inset-0 z-[70] bg-black/70" onClick={() => setResetStep2Open(false)} />
+          <div className="fixed inset-0 z-[71] flex items-center justify-center pointer-events-none px-4">
+            <div className="relative bg-bg-primary border border-danger/30 rounded-2xl p-6 w-full max-w-[min(380px,calc(100vw-2rem))] shadow-2xl pointer-events-auto" role="dialog" aria-modal="true" aria-labelledby="reset-step2-title">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-8 h-8 rounded-full bg-danger/15 flex items-center justify-center">
+                  <RotateCcw className="w-4 h-4 text-danger" />
+                </div>
+                <h3 id="reset-step2-title" className="text-[16px] font-bold text-text-primary">
+                  {t('mypage.resetAccountFinalTitle')}
+                </h3>
+              </div>
+              <p className="text-[13px] text-text-tertiary leading-relaxed mb-4">
+                {t('mypage.resetAccountFinalMessage')}
+              </p>
+              <input
+                type="text"
+                value={resetTypedText}
+                onChange={(e) => setResetTypedText(e.target.value)}
+                placeholder="RESET"
+                autoFocus
+                className="w-full bg-bg-secondary border border-border rounded-xl px-4 py-3 text-[14px] text-text-primary placeholder:text-text-quaternary focus:outline-none focus:border-danger/60 transition-colors mb-4 font-mono tracking-widest text-center"
+              />
+              <div className="flex gap-3">
+                <button
+                  onClick={async () => {
+                    try {
+                      await resetAccount.mutateAsync();
+                      setResetStep2Open(false);
+                      setResetTypedText('');
+                      useToastStore.getState().addToast(t('mypage.resetAccountSuccess'), 'success');
+                    } catch {
+                      useToastStore.getState().addToast(t('mypage.resetAccountError'), 'error');
+                    }
+                  }}
+                  disabled={resetTypedText !== 'RESET' || resetAccount.isPending}
+                  className="flex-1 h-11 rounded-xl bg-danger hover:bg-danger/90 text-white text-[14px] font-bold transition-colors disabled:opacity-50"
+                >
+                  {resetAccount.isPending ? t('mypage.resetting') : t('mypage.resetAccount')}
+                </button>
+                <button
+                  onClick={() => { setResetStep2Open(false); setResetTypedText(''); }}
+                  disabled={resetAccount.isPending}
+                  className="flex-1 h-11 rounded-xl border border-border text-[14px] font-semibold text-text-secondary hover:bg-bg-secondary transition-colors disabled:opacity-50"
+                >
+                  {t('mypage.cancel')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Password Change Modal */}
       {isPasswordModalOpen && (
