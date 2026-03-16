@@ -17,9 +17,6 @@ import { ArrowLeft, Send } from 'lucide-react';
 import { cn } from '@/lib/format';
 import { useEffect } from 'react';
 
-// 종목 옵션 / Symbol options
-const SYMBOLS = ['BTC', 'ETH', 'AAPL', 'TSLA', 'SOL', 'NVDA', 'AMZN', 'DOGE', 'XRP', 'GOOG'];
-
 /**
  * Suspense 래퍼 — useSearchParams 사용을 위해 필요
  * Suspense wrapper — required for useSearchParams usage in Next.js 15
@@ -42,7 +39,7 @@ function StrategyNewContent() {
   const editId = searchParams.get('edit');
 
   // 폼 상태 / Form state
-  const [symbol, setSymbol] = useState('BTC');
+  const [symbol, setSymbol] = useState('ALL');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [performance, setPerformance] = useState('');
@@ -115,24 +112,29 @@ function StrategyNewContent() {
         </div>
 
         <div className="bg-bg-secondary/60 border border-border/60 rounded-2xl p-5 sm:p-6 space-y-5">
-          {/* 종목 선택 / Symbol selector */}
+          {/* 카테고리 선택 / Category selector */}
           <div>
             <label className="block text-[13px] font-semibold text-text-secondary mb-2">
               {t('strategy.symbol')}
             </label>
             <div className="flex flex-wrap gap-2">
-              {SYMBOLS.map((s) => (
+              {([
+                { key: 'ALL', label: t('strategy.allSymbols') },
+                { key: 'CRYPTO', label: t('community.strategyCrypto') },
+                { key: 'STOCK_KR', label: t('community.strategyStockKR') },
+                { key: 'STOCK_US', label: t('community.strategyStockUS') },
+              ]).map(({ key, label }) => (
                 <button
-                  key={s}
-                  onClick={() => setSymbol(s)}
+                  key={key}
+                  onClick={() => setSymbol(key)}
                   className={cn(
                     'px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors',
-                    symbol === s
+                    symbol === key
                       ? 'bg-accent text-white'
                       : 'bg-bg-tertiary text-text-quaternary hover:text-text-secondary',
                   )}
                 >
-                  {s}
+                  {label}
                 </button>
               ))}
             </div>
