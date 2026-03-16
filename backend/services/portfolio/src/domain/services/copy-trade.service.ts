@@ -344,7 +344,7 @@ export class CopyTradeService {
           const budgetCheckResult = await this.prisma.$transaction(async (tx) => {
             // FOR UPDATE 잠금으로 최신 설정 조회 / Read latest config with FOR UPDATE lock
             const [lockedConfig] = await tx.$queryRawUnsafe<any[]>(
-              `SELECT "totalInvested", "maxInvestment" FROM "CopyTradeConfig" WHERE "id" = $1 FOR UPDATE`,
+              `SELECT "total_invested" AS "totalInvested", "max_investment" AS "maxInvestment" FROM "copy_trade_configs" WHERE "id" = $1 FOR UPDATE`,
               config.id,
             );
 
