@@ -110,6 +110,9 @@ export function usePortfolio() {
     // 10초마다 리페치하여 보유 자산 가치 변동 반영
     // Refetch every 10s to reflect holding value changes
     refetchInterval: 10000,
+    // FC-M-01: 폴링 주기 내 중복 리페치 방지 (8초간 fresh 유지)
+    // FC-M-01: Avoid redundant refetches within the polling cycle (stay fresh for 8s)
+    staleTime: 8000,
   });
 }
 
@@ -128,6 +131,9 @@ export function usePortfolioValuation() {
       return mapSummaryToPortfolio(raw);
     },
     refetchInterval: 10000,
+    // FC-M-01: 폴링 주기 내 중복 리페치 방지 (8초간 fresh 유지)
+    // FC-M-01: Avoid redundant refetches within the polling cycle (stay fresh for 8s)
+    staleTime: 8000,
   });
 }
 

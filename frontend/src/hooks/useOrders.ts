@@ -71,6 +71,9 @@ export function useOrders(status?: string) {
     // 주문 상태 변경을 반영하기 위해 10초 간격 폴링
     // Poll every 10 seconds to reflect order status changes
     refetchInterval: 10000,
+    // FC-M-02: 폴링 주기 내 중복 리페치 방지 (8초간 fresh 유지)
+    // FC-M-02: Avoid redundant refetches within the polling cycle (stay fresh for 8s)
+    staleTime: 8000,
   });
 }
 
@@ -197,5 +200,8 @@ export function useTradeHistory() {
     },
     // 10초마다 리페치하여 새 체결 반영 / Refetch every 10s to reflect new trades
     refetchInterval: 10000,
+    // FC-M-02: 폴링 주기 내 중복 리페치 방지 (8초간 fresh 유지)
+    // FC-M-02: Avoid redundant refetches within the polling cycle (stay fresh for 8s)
+    staleTime: 8000,
   });
 }
