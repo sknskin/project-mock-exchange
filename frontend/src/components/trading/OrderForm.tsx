@@ -20,7 +20,6 @@ import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatPriceDisplay, isKRW } from '@/lib/format';
 import type { TranslationKey } from '@/lib/i18n';
-import { useToastStore } from '@/stores/toast';
 
 // 주문 폼 Props / Order Form Props
 interface OrderFormProps {
@@ -226,12 +225,9 @@ export default function OrderForm({
       setQuantity('');
       setTriggerPrice('');
       onSuccess?.();
-    } catch (err) {
-      // 에러 토스트 표시 및 버튼 상태 초기화 / Show error toast and reset button state
-      const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-        || t('order.submitError' as TranslationKey)
-        || 'Order submission failed';
-      useToastStore.getState().addToast(message, 'error');
+    } catch {
+      // 에러 토스트는 QueryProvider의 전역 MutationCache.onError에서 처리
+      // Error toast handled by global MutationCache.onError in QueryProvider
     }
   };
 
