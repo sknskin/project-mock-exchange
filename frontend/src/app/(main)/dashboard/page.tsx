@@ -4,6 +4,14 @@
  *
  * @file Market Dashboard Page
  * @description Dashboard showing real-time prices, asset list, and period changes
+ *
+ * TODO [RD-M-02]: Refactor this component — it currently handles too many concerns
+ * (real-time prices, WebSocket batching, AI analysis, spotlight search, tab state,
+ * watchlist, period filtering). Recommended split:
+ *   - Extract AI analysis modal into a separate <AiMarketAnalysisModal /> component
+ *   - Extract WebSocket price batching logic into a custom hook (e.g., useLivePrices)
+ *   - Extract tab/period filter state into a custom hook or context
+ *   - Keep DashboardPage as a thin orchestrator composing the above
  */
 'use client';
 
@@ -15,6 +23,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useAuthStore } from '@/stores/auth';
 import { useSettingsStore } from '@/stores/settings';
 import { useScrollLock } from '@/hooks/useScrollLock';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { useWatchlist, useAddWatchlist, useRemoveWatchlist } from '@/hooks/useWatchlist';
 import AssetList from '@/components/market/AssetList';
 import MarketIndexSummary from '@/components/market/MarketIndexSummary';
@@ -72,6 +81,9 @@ export default function DashboardPage() {
   const [aiResult, setAiResult] = useState<{ summary: string; highlights: string[]; sentiment: string; sectionAnalysis?: { title: string; content: string }[] } | null>(null);
   const [aiError, setAiError] = useState(false);
   const [aiModalOpen, setAiModalOpen] = useState(false);
+  // MOD-M-01: AI 분석 모달 포커스 트랩 — 접근성 향상 / AI analysis modal focus trap — accessibility improvement
+  const aiModalRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(aiModalRef, aiModalOpen);
   useScrollLock(aiModalOpen);
 
   // WebSocket 배치 타이머 정리 / Cleanup WebSocket batch timer
@@ -407,7 +419,7 @@ export default function DashboardPage() {
 
       {/* AI 시장 분석 모달 / AI Market Analysis Modal */}
       {aiModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="dashboard-ai-title">
+        <div ref={aiModalRef} className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="dashboard-ai-title">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-modal-backdrop" onClick={() => !aiLoading && setAiModalOpen(false)} />
           <div className="relative w-full max-w-3xl bg-bg-primary border border-border rounded-2xl shadow-xl max-h-[90vh] flex flex-col overflow-hidden animate-modal-content">
             <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
