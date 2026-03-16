@@ -712,7 +712,7 @@ const translations = {
 
     // Admin - Order Audit
     'admin.stats.orderAudit': '주문 감사 로그',
-    'admin.stats.orderAudit.desc': '전체 주문 내역을 시간순으로 확인합니다',
+    'admin.stats.orderAudit.desc': '전체 사용자의 주문 체결 내역을 시간순으로 감사합니다. 비정상 거래 패턴을 모니터링할 수 있습니다.',
     'admin.stats.orderAudit.id': '주문 ID',
     'admin.stats.orderAudit.user': '사용자',
     'admin.stats.orderAudit.symbol': '종목',
@@ -721,7 +721,11 @@ const translations = {
     'admin.stats.orderAudit.price': '가격',
     'admin.stats.orderAudit.status': '상태',
     'admin.stats.orderAudit.time': '시간',
-    'admin.stats.orderAudit.noData': '주문 데이터가 없습니다',
+    'admin.stats.orderAudit.noData': '체결 내역이 없습니다',
+    'admin.stats.orderAudit.searchPlaceholder': '종목명, 주문ID, 사용자ID 검색...',
+    'admin.stats.orderAudit.allSides': '전체 (매수/매도)',
+    'admin.stats.orderAudit.totalCount': '총 체결 건수',
+    'admin.stats.orderAudit.perPage': '건',
 
     // Admin - Audit
     'admin.audit.title': '감사 보고서',
@@ -865,6 +869,8 @@ const translations = {
     'mypage.resetAccountSuccess': '계정이 초기화되었습니다',
     'mypage.resetAccountError': '계정 초기화에 실패했습니다',
     'mypage.resetting': '초기화 중...',
+    'mypage.resetAccountFinalTitle': '최종 확인',
+    'mypage.resetAccountFinalMessage': '계정 초기화를 진행하려면 아래에 RESET을 입력해주세요.',
 
     // Statistics
     'stats.title': '통계',
@@ -876,7 +882,7 @@ const translations = {
     'stats.totalPageViews': '총 방문',
     'stats.todayLogins': '오늘 로그인',
     'stats.registrations': '회원가입 신청',
-    'stats.registrationsApproved': '회원가입 (승인)',
+    'stats.registrationsApproved': '회원가입',
     'stats.logins': '로그인',
     'stats.pageViews': '페이지 방문',
     'stats.announcementStats': '공지사항',
@@ -935,6 +941,10 @@ const translations = {
     'stats.topLikedAnnouncements': '좋아요 TOP 10',
     'stats.desc.registrations': '기간별 회원가입 신청 수 추이',
     'stats.desc.registrationsApproved': '기간별 승인 완료된 회원가입 수 추이',
+    'stats.rejectedDeactivated': '반려 / 비활성화',
+    'stats.desc.rejectedDeactivated': '기간별 반려 및 비활성화된 회원 수 추이',
+    'stats.rejected': '반려',
+    'stats.deactivated': '비활성화',
     'stats.desc.userRole': '승인된 회원의 역할별 분포 (시스템/관리자/일반)',
     'stats.desc.userStatus': '승인 및 활성화 상태별 사용자 분포',
     'stats.desc.logins': '기간별 로그인 횟수 추이',
@@ -2029,7 +2039,7 @@ const translations = {
     'copyTrade.maxInvestmentDesc': '카피 트레이딩에 사용할 최대 금액',
     'copyTrade.stopLoss': '손절 비율',
     'copyTrade.stopLossDesc': '손실이 이 비율에 도달하면 자동 중지',
-    'copyTrade.active': '활성',
+    'copyTrade.active': '카피 트레이딩 중',
     'copyTrade.inactive': '비활성',
     'copyTrade.history': '카피 내역',
     'copyTrade.executed': '체결됨',
@@ -2783,7 +2793,7 @@ const translations = {
 
     // Admin - Order Audit
     'admin.stats.orderAudit': 'Order Audit Log',
-    'admin.stats.orderAudit.desc': 'View all orders in chronological order',
+    'admin.stats.orderAudit.desc': 'Audit all user order executions chronologically. Monitor for abnormal trading patterns.',
     'admin.stats.orderAudit.id': 'Order ID',
     'admin.stats.orderAudit.user': 'User',
     'admin.stats.orderAudit.symbol': 'Symbol',
@@ -2792,7 +2802,11 @@ const translations = {
     'admin.stats.orderAudit.price': 'Price',
     'admin.stats.orderAudit.status': 'Status',
     'admin.stats.orderAudit.time': 'Time',
-    'admin.stats.orderAudit.noData': 'No order data',
+    'admin.stats.orderAudit.noData': 'No trade executions found',
+    'admin.stats.orderAudit.searchPlaceholder': 'Search symbol, order ID, user ID...',
+    'admin.stats.orderAudit.allSides': 'All (Buy/Sell)',
+    'admin.stats.orderAudit.totalCount': 'Total executions',
+    'admin.stats.orderAudit.perPage': ' / page',
 
     // Admin - Audit
     'admin.audit.title': 'Audit Report',
@@ -2936,6 +2950,8 @@ const translations = {
     'mypage.resetAccountSuccess': 'Account has been reset',
     'mypage.resetAccountError': 'Failed to reset account',
     'mypage.resetting': 'Resetting...',
+    'mypage.resetAccountFinalTitle': 'Final Confirmation',
+    'mypage.resetAccountFinalMessage': 'To proceed with account reset, type RESET below.',
 
     // Statistics
     'stats.title': 'Statistics',
@@ -2947,7 +2963,7 @@ const translations = {
     'stats.totalPageViews': 'Page Views',
     'stats.todayLogins': 'Today Logins',
     'stats.registrations': 'Registration Requests',
-    'stats.registrationsApproved': 'Registrations (Approved)',
+    'stats.registrationsApproved': 'Registrations',
     'stats.logins': 'Logins',
     'stats.pageViews': 'Page Views',
     'stats.announcementStats': 'Announcements',
@@ -3006,6 +3022,10 @@ const translations = {
     'stats.topLikedAnnouncements': 'Top 10 Most Liked',
     'stats.desc.registrations': 'Registration request trend over time',
     'stats.desc.registrationsApproved': 'Approved registration trend over time',
+    'stats.rejectedDeactivated': 'Rejected / Deactivated',
+    'stats.desc.rejectedDeactivated': 'Rejected and deactivated user trend over time',
+    'stats.rejected': 'Rejected',
+    'stats.deactivated': 'Deactivated',
     'stats.desc.userRole': 'Approved user distribution by role (System/Admin/User)',
     'stats.desc.userStatus': 'User distribution by approval and activation status',
     'stats.desc.logins': 'Login count trend over time',
@@ -4100,7 +4120,7 @@ const translations = {
     'copyTrade.maxInvestmentDesc': 'Maximum amount for copy trading',
     'copyTrade.stopLoss': 'Stop Loss',
     'copyTrade.stopLossDesc': 'Auto-stop when loss reaches this percentage',
-    'copyTrade.active': 'Active',
+    'copyTrade.active': 'Copy Trading',
     'copyTrade.inactive': 'Inactive',
     'copyTrade.history': 'Copy History',
     'copyTrade.executed': 'Executed',
