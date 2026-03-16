@@ -40,8 +40,8 @@ export default function MarketTicker({ assets }: MarketTickerProps) {
   if (topAssets.length === 0) return null;
 
   return (
-    <div className="py-4 border-b border-border">
-      <div className="flex items-center gap-2 md:gap-2.5 lg:gap-3 overflow-x-auto scrollbar-hide -mx-1 px-1">
+    <div className="py-4 border-b border-border" role="region" aria-label="Market Ticker">
+      <div className="flex items-center gap-2 md:gap-2.5 lg:gap-3 overflow-x-auto scrollbar-hide -mx-1 px-1" aria-live="polite" aria-atomic="false">
         <span className="text-[11px] md:text-[12px] text-text-quaternary font-medium shrink-0 self-center leading-tight text-center min-w-[40px] md:min-w-[44px] whitespace-pre-line">
           {t('market.top5Turnover')}
         </span>
