@@ -59,7 +59,11 @@ export class ProfileController {
   }
 
   /** 프로필 정보 수정 (이름, 전화번호, 주소)
-   * Update profile (name, phone, address) */
+   * Update profile (name, phone, address)
+   *
+   * DB-M-01: 이름 변경 시 비정규화된 authorName을 커뮤니티 테이블에 일괄 업데이트
+   * DB-M-01: When name changes, cascade-update denormalized authorName across community tables
+   */
   @Put()
   async updateProfile(
     @CurrentUser() user: UserDto,
@@ -78,6 +82,56 @@ export class ProfileController {
     if (body.address) data.address = body.address;
     if (body.addressDetail !== undefined) data.addressDetail = body.addressDetail;
     if (body.zipCode) data.zipCode = body.zipCode;
+
+    // DB-M-01: 이름 변경 시 트랜잭션으로 User + 커뮤니티 authorName 일괄 업데이트
+    // DB-M-01: When name changes, use transaction to batch-update User + community authorName
+    if (body.name) {
+      const updated = await this.prisma.$transaction(async (tx) => {
+        const result = await tx.user.update({
+          where: { id: user.id },
+          data,
+          select: {
+            id: true,
+            email: true,
+            username: true,
+            name: true,
+            role: true,
+            phone: true,
+            address: true,
+            addressDetail: true,
+            zipCode: true,
+            isActive: true,
+            approvalStatus: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        });
+
+        // 비정규화된 authorName 캐스케이드 업데이트 / Cascade update denormalized authorName
+        await Promise.all([
+          tx.communityPost.updateMany({
+            where: { authorId: user.id },
+            data: { authorName: body.name! },
+          }),
+          tx.communityComment.updateMany({
+            where: { authorId: user.id },
+            data: { authorName: body.name! },
+          }),
+          tx.communityStrategy.updateMany({
+            where: { authorId: user.id },
+            data: { authorName: body.name! },
+          }),
+          tx.communityStrategyComment.updateMany({
+            where: { authorId: user.id },
+            data: { authorName: body.name! },
+          }),
+        ]);
+
+        return result;
+      });
+
+      return { success: true, data: updated };
+    }
 
     const updated = await this.prisma.user.update({
       where: { id: user.id },
