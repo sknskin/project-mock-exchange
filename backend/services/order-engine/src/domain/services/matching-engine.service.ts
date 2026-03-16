@@ -124,23 +124,54 @@ export class MatchingEngineService implements OnModuleInit {
   private insertEntry(entry: OrderBookEntry): void {
     if (entry.side === 'BUY') {
       const book = this.bids.get(entry.symbol) || [];
-      book.push(entry);
-      // 매수호가 정렬: 최고가 우선, 동일가는 시간 우선 / Sort bids: highest price first, then earliest timestamp
-      book.sort((a, b) => {
+      // OE-H-01: 이진 탐색으로 삽입 위치를 찾아 O(N)에 삽입 (기존 push+sort는 O(N log N))
+      // OE-H-01: Binary search to find insertion point and splice in O(N) (was push+sort O(N log N))
+      const idx = this.binarySearchInsert(book, entry, (a, b) => {
+        // 매수호가: 최고가 우선, 동일가는 시간 우선 / Bids: highest price first, then earliest timestamp
         const priceDiff = b.price.minus(a.price).toNumber();
         return priceDiff !== 0 ? priceDiff : a.timestamp - b.timestamp;
       });
+      book.splice(idx, 0, entry);
       this.bids.set(entry.symbol, book);
     } else {
       const book = this.asks.get(entry.symbol) || [];
-      book.push(entry);
-      // 매도호가 정렬: 최저가 우선, 동일가는 시간 우선 / Sort asks: lowest price first, then earliest timestamp
-      book.sort((a, b) => {
+      // OE-H-01: 이진 탐색으로 삽입 위치를 찾아 O(N)에 삽입 (기존 push+sort는 O(N log N))
+      // OE-H-01: Binary search to find insertion point and splice in O(N) (was push+sort O(N log N))
+      const idx = this.binarySearchInsert(book, entry, (a, b) => {
+        // 매도호가: 최저가 우선, 동일가는 시간 우선 / Asks: lowest price first, then earliest timestamp
         const priceDiff = a.price.minus(b.price).toNumber();
         return priceDiff !== 0 ? priceDiff : a.timestamp - b.timestamp;
       });
+      book.splice(idx, 0, entry);
       this.asks.set(entry.symbol, book);
     }
+  }
+
+  /**
+   * 정렬된 배열에서 이진 탐색으로 삽입 위치를 찾습니다.
+   * Finds the insertion index in a sorted array via binary search.
+   *
+   * @param book - 정렬된 오더북 항목 배열 / Sorted array of order book entries
+   * @param entry - 삽입할 새 항목 / New entry to insert
+   * @param comparator - 정렬 비교 함수 (음수: a가 앞, 양수: b가 앞) / Sort comparator (negative: a before b)
+   * @returns 삽입 위치 인덱스 / Insertion index
+   */
+  private binarySearchInsert(
+    book: OrderBookEntry[],
+    entry: OrderBookEntry,
+    comparator: (a: OrderBookEntry, b: OrderBookEntry) => number,
+  ): number {
+    let lo = 0;
+    let hi = book.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >>> 1;
+      if (comparator(entry, book[mid]) >= 0) {
+        lo = mid + 1;
+      } else {
+        hi = mid;
+      }
+    }
+    return lo;
   }
 
   /** 오더북에서 특정 주문을 제거합니다
@@ -225,11 +256,13 @@ export class MatchingEngineService implements OnModuleInit {
       }
     }
 
+    // OE-M-01: Set으로 변환하여 O(N*M) → O(N) 필터링 / Convert to Set for O(N) filtering instead of O(N*M)
     // 전량 체결된 주문 제거 / Remove fully filled entries
     if (toRemove.length > 0) {
+      const removeSet = new Set(toRemove);
       counterBook.set(
         symbol,
-        entries.filter((e) => !toRemove.includes(e.orderId)),
+        entries.filter((e) => !removeSet.has(e.orderId)),
       );
     }
 
@@ -316,11 +349,13 @@ export class MatchingEngineService implements OnModuleInit {
       }
     }
 
+    // OE-M-01: Set으로 변환하여 O(N*M) → O(N) 필터링 / Convert to Set for O(N) filtering instead of O(N*M)
     // 전량 체결된 대기 주문 제거 / Remove fully filled resting orders
     if (toRemove.length > 0) {
+      const removeSet = new Set(toRemove);
       counterBook.set(
         symbol,
-        entries.filter((e) => !toRemove.includes(e.orderId)),
+        entries.filter((e) => !removeSet.has(e.orderId)),
       );
     }
 
