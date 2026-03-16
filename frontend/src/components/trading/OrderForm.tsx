@@ -7,7 +7,7 @@
  */
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Tabs from '@/components/ui/Tabs';
@@ -20,6 +20,7 @@ import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatPriceDisplay, isKRW } from '@/lib/format';
 import type { TranslationKey } from '@/lib/i18n';
+import { useToastStore } from '@/stores/toast';
 
 // 주문 폼 Props / Order Form Props
 interface OrderFormProps {
@@ -109,21 +110,24 @@ export default function OrderForm({
     }
   }, [currentPrice, symbol, currencyMode, rate]);
 
-  // 통화 모드 변경 시 트리거 가격도 동기화 (Sync triggerPrice when currency mode changes)
-  const [prevCurrencyMode, setPrevCurrencyMode] = useState(currencyMode);
-  const [prevRate, setPrevRate] = useState(rate);
+  // 통화 모드 변경 시 트리거 가격도 동기화 — ref로 이전 값 추적하여 경쟁 조건 방지
+  // Sync triggerPrice when currency mode changes — use refs for prev values to prevent race condition
+  const prevCurrencyModeRef = useRef(currencyMode);
+  const prevRateRef = useRef(rate);
   useEffect(() => {
-    if (triggerPrice && (prevCurrencyMode !== currencyMode || prevRate !== rate)) {
+    const prevMode = prevCurrencyModeRef.current;
+    const prevR = prevRateRef.current;
+    if (triggerPrice && (prevMode !== currencyMode || prevR !== rate)) {
       const parsedTrigger = parseFloat(triggerPrice);
       if (parsedTrigger > 0 && Number.isFinite(parsedTrigger)) {
-        const usdValue = toUsdPrice(parsedTrigger, symbol, prevCurrencyMode, prevRate);
+        const usdValue = toUsdPrice(parsedTrigger, symbol, prevMode, prevR);
         const newDisplay = toDisplayPrice(usdValue, symbol, currencyMode, rate);
         setTriggerPrice(newDisplay.toString());
       }
     }
-    setPrevCurrencyMode(currencyMode);
-    setPrevRate(rate);
-  }, [currencyMode, rate, symbol, triggerPrice, prevCurrencyMode, prevRate]);
+    prevCurrencyModeRef.current = currencyMode;
+    prevRateRef.current = rate;
+  }, [currencyMode, rate, symbol, triggerPrice]);
 
   const typeTabs = useMemo(
     () => typeTabKeys.map((i) => ({ key: i.key, label: t(i.i18nKey) })),
@@ -222,14 +226,17 @@ export default function OrderForm({
       setQuantity('');
       setTriggerPrice('');
       onSuccess?.();
-    } catch {
-      // 에러 토스트는 QueryProvider의 전역 MutationCache.onError에서 처리
-      // Error toast handled by global MutationCache.onError in QueryProvider
+    } catch (err) {
+      // 에러 토스트 표시 및 버튼 상태 초기화 / Show error toast and reset button state
+      const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
+        || t('order.submitError' as TranslationKey)
+        || 'Order submission failed';
+      useToastStore.getState().addToast(message, 'error');
     }
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4 sm:space-y-5">
       <Tabs
         tabs={typeTabs}
         activeTab={orderType}
@@ -303,7 +310,7 @@ export default function OrderForm({
                 }
                 setQuantityError('');
               }}
-              className="flex-1 py-1.5 text-[11px] font-medium text-text-tertiary bg-bg-secondary rounded-md hover:bg-bg-tertiary hover:text-text-primary transition-colors"
+              className="flex-1 py-2 sm:py-1.5 text-[12px] sm:text-[11px] font-medium text-text-tertiary bg-bg-secondary rounded-md hover:bg-bg-tertiary hover:text-text-primary transition-colors"
             >
               {pct}%
             </button>
