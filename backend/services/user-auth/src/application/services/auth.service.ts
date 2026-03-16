@@ -672,6 +672,15 @@ export class AuthService {
     if (newPassword.length < 8) {
       throw new BadRequestException('비밀번호는 8자 이상이어야 합니다.');
     }
+    if (!/[a-z]/.test(newPassword)) {
+      throw new BadRequestException('비밀번호에 소문자가 포함되어야 합니다.');
+    }
+    if (!/[0-9]/.test(newPassword)) {
+      throw new BadRequestException('비밀번호에 숫자가 포함되어야 합니다.');
+    }
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(newPassword)) {
+      throw new BadRequestException('비밀번호에 특수문자가 포함되어야 합니다.');
+    }
 
     const sessionKey = `reset:session:${sessionId}`;
     const raw = await this.redis.get(sessionKey);
