@@ -504,14 +504,14 @@ export class CopyTradeService {
     // Single recursive CTE query for cycle detection — eliminates per-depth sequential queries
     const result = await this.prisma.$queryRaw<{ found: boolean }[]>`
       WITH RECURSIVE copy_chain AS (
-        SELECT "traderId"::uuid AS user_id, 1 AS depth
-        FROM "CopyTradeConfig"
-        WHERE "followerId" = ${startUserId}::uuid AND "isActive" = true
+        SELECT "trader_id"::uuid AS user_id, 1 AS depth
+        FROM "copy_trade_configs"
+        WHERE "follower_id" = ${startUserId}::uuid AND "is_active" = true
         UNION ALL
-        SELECT c."traderId"::uuid, cc.depth + 1
-        FROM "CopyTradeConfig" c
-        JOIN copy_chain cc ON c."followerId" = cc.user_id
-        WHERE c."isActive" = true AND cc.depth < ${maxDepth}
+        SELECT c."trader_id"::uuid, cc.depth + 1
+        FROM "copy_trade_configs" c
+        JOIN copy_chain cc ON c."follower_id" = cc.user_id
+        WHERE c."is_active" = true AND cc.depth < ${maxDepth}
       )
       SELECT EXISTS(
         SELECT 1 FROM copy_chain WHERE user_id = ${targetUserId}::uuid
