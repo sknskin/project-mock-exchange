@@ -106,10 +106,22 @@ export default function ActivityFeed() {
                         {isBuy ? t('feed.bought') : t('feed.sold')}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 text-[12px] text-text-tertiary">
-                      <span className="font-medium text-text-secondary">{activity.symbol}</span>
+                    <div className="flex items-center gap-2 text-[12px] text-text-tertiary flex-wrap">
+                      <span className="font-medium text-text-secondary">{activity.symbol?.replace('-USD', '') ?? '-'}</span>
                       <span className="text-text-quaternary">|</span>
                       <span>{isBuy ? t('feed.buyExecuted') : t('feed.sellExecuted')}</span>
+                      {activity.quantity && Number(activity.quantity) > 0 && (
+                        <>
+                          <span className="text-text-quaternary">|</span>
+                          <span className="tabular-nums">{Number(activity.quantity).toLocaleString(undefined, { maximumFractionDigits: 6 })}</span>
+                        </>
+                      )}
+                      {activity.price && Number(activity.price) > 0 && (
+                        <>
+                          <span className="text-text-quaternary">@</span>
+                          <span className="tabular-nums">${Number(activity.price).toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                        </>
+                      )}
                     </div>
                   </div>
 
