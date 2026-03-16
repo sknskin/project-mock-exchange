@@ -584,6 +584,48 @@ export class OrderService {
     });
   }
 
+  /** 관리자용 전체 체결 내역 페이징 조회
+   * Get all trades for admin audit (paginated) */
+  async getAdminAuditTrades(page: number, limit: number, filters?: { symbol?: string; side?: string; search?: string }) {
+    const skip = (page - 1) * limit;
+    const where: Record<string, unknown> = {};
+    if (filters?.symbol) where.symbol = { contains: filters.symbol, mode: 'insensitive' };
+    if (filters?.search) {
+      where.OR = [
+        { symbol: { contains: filters.search, mode: 'insensitive' } },
+        { tradeId: { contains: filters.search, mode: 'insensitive' } },
+        { buyerId: { contains: filters.search, mode: 'insensitive' } },
+        { sellerId: { contains: filters.search, mode: 'insensitive' } },
+      ];
+    }
+    const [trades, total] = await Promise.all([
+      this.prisma.tradeRead.findMany({
+        where,
+        orderBy: { executedAt: 'desc' },
+        take: limit,
+        skip,
+      }),
+      this.prisma.tradeRead.count({ where }),
+    ]);
+
+    return {
+      trades: trades.map((t) => ({
+        id: t.tradeId,
+        userId: t.buyerId ?? t.sellerId ?? '',
+        symbol: t.symbol,
+        side: t.buyerId ? 'BUY' : 'SELL',
+        quantity: t.quantity.toString(),
+        price: t.price.toString(),
+        status: 'FILLED',
+        executedAt: t.executedAt,
+      })),
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
   /** 특정 심볼의 오더북 뎁스를 조회합니다
    * Get order book depth for a symbol */
   getOrderBook(symbol: string) {

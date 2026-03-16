@@ -25,6 +25,7 @@ import { Request, Response } from 'express';
 import { ProxyService } from './proxy.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ChatGateway } from '../gateway/chat.gateway';
+import { PlaceOrderDto } from './dto/place-order.dto';
 
 @ApiTags('Orders')
 @Controller('api/orders')
@@ -45,7 +46,7 @@ export class OrderProxyController {
   @ApiResponse({ status: 201, description: '주문 접수 성공' })
   @ApiResponse({ status: 400, description: '유효성 검사 실패' })
   @ApiResponse({ status: 401, description: '인증 필요' })
-  async placeOrder(@Body() body: unknown, @Req() req: Request, @Res() res: Response) {
+  async placeOrder(@Body() body: PlaceOrderDto, @Req() req: Request, @Res() res: Response) {
     const userId = (req as Record<string, any>).user?.id;
     const result = await this.proxyService.forward('order-engine', {
       method: 'POST',
@@ -132,6 +133,51 @@ export class OrderProxyController {
 
   // ── 구체적 경로를 :orderId 파라미터 경로보다 먼저 정의 ──
   // ── Specific paths must come before :orderId parameter path ──
+
+  /** 관리자용 주문 감사 로그를 order-engine으로 프록시
+   * Proxy admin audit trades to order-engine service */
+  @Get('trades/admin-audit')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '주문 감사 로그', description: '전체 사용자의 체결 내역을 시간순으로 조회합니다' })
+  @ApiQuery({ name: 'page', required: false, description: '페이지 번호' })
+  @ApiQuery({ name: 'limit', required: false, description: '조회 개수' })
+  @ApiResponse({ status: 200, description: '주문 감사 로그 반환' })
+  async adminAuditTrades(
+    @Query('page') page: string,
+    @Query('limit') limit: string,
+    @Query('symbol') symbol: string,
+    @Query('side') side: string,
+    @Query('search') search: string,
+    @Res() res: Response,
+  ) {
+    const result = await this.proxyService.forward('order-engine', {
+      method: 'GET',
+      url: '/orders/trades/admin-audit',
+      params: { page, limit, symbol: symbol || undefined, side: side || undefined, search: search || undefined },
+    });
+
+    // 사용자 이름 enrichment / Enrich with user names
+    try {
+      const data = result.data as Record<string, any>;
+      const trades = data?.data?.trades ?? [];
+      if (Array.isArray(trades) && trades.length > 0) {
+        const userIds = [...new Set(trades.map((t: any) => t.userId).filter(Boolean))];
+        if (userIds.length > 0) {
+          const usersResult = await this.proxyService.forward('user-auth', {
+            method: 'POST',
+            url: '/users/by-ids',
+            data: { ids: userIds },
+          });
+          const users = (usersResult.data as Record<string, any>)?.data ?? [];
+          const userMap = new Map(Array.isArray(users) ? users.map((u: any) => [u.id, u.username ?? u.name ?? '-']) : []);
+          trades.forEach((t: any) => { t.username = userMap.get(t.userId) ?? t.userId?.slice(0, 8); });
+        }
+      }
+    } catch { /* enrichment 실패 시 userId만 표시 */ }
+
+    return res.status(result.status).json(result.data);
+  }
 
   /** 거래 통계 조회를 order-engine으로 프록시
    * Proxy trading statistics to order-engine service */

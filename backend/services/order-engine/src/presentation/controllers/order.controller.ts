@@ -165,6 +165,26 @@ export class OrderController {
     return { success: true, data: trades };
   }
 
+  /** 관리자용 전체 체결 내역 페이징 조회
+   * Get all trades for admin audit (paginated) */
+  @Get('trades/admin-audit')
+  async adminAuditTrades(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('symbol') symbol?: string,
+    @Query('side') side?: string,
+    @Query('search') search?: string,
+  ) {
+    const safePage = Math.max(parseInt(page || '1', 10) || 1, 1);
+    const safeLimit = Math.min(Math.max(parseInt(limit || '30', 10) || 30, 1), 100);
+    const result = await this.orderService.getAdminAuditTrades(safePage, safeLimit, {
+      symbol: symbol || undefined,
+      side: side || undefined,
+      search: search || undefined,
+    });
+    return { success: true, data: result };
+  }
+
   /** 거래 통계 조회 (기간별 주문 수, 거래량 등)
    * Get trading statistics (order count, volume, etc.) */
   @Get('stats/trading')
