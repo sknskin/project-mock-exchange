@@ -263,11 +263,15 @@ export default function DashboardPage() {
   }, [periodChanges]);
 
   /**
-   * 표시용 자산 목록 — WebSocket 실시간 가격 + 기간별 등락률 오버레이
-   * Display assets — overlays WebSocket live prices + period change rates
+   * PF-M-03: displayAssets + filteredDisplayAssets를 단일 useMemo로 병합
+   * PF-M-03: Merge displayAssets + filteredDisplayAssets into a single useMemo
+   * WebSocket 실시간 가격 + 기간별 등락률 오버레이 + 관심종목 필터 적용
+   * Overlays WebSocket live prices + period change rates + watchlist filter
    */
   const displayAssets = useMemo(() => {
-    let result = assets.map((asset) => {
+    const watchlistSet = activeMainTab === 'watchlist' && watchlistSymbols ? new Set(watchlistSymbols) : null;
+
+    const result = assets.map((asset) => {
       const live = livePrices[asset.symbol];
       let display = live
         ? {
@@ -291,17 +295,17 @@ export default function DashboardPage() {
 
       return display;
     });
-    return result;
-  }, [assets, livePrices, period, periodChangeMap]);
 
-  // 관심종목 탭일 때 워치리스트 필터 적용 / Apply watchlist filter when on watchlist tab
-  const filteredDisplayAssets = useMemo(() => {
-    if (activeMainTab === 'watchlist' && watchlistSymbols) {
-      const set = new Set(watchlistSymbols);
-      return displayAssets.filter((a) => set.has(a.symbol));
+    // 관심종목 탭일 때 워치리스트 필터 적용 / Apply watchlist filter when on watchlist tab
+    if (watchlistSet) {
+      return result.filter((a) => watchlistSet.has(a.symbol));
     }
-    return displayAssets;
-  }, [displayAssets, activeMainTab, watchlistSymbols]);
+    return result;
+  }, [assets, livePrices, period, periodChangeMap, activeMainTab, watchlistSymbols]);
+
+  // PF-M-03: filteredDisplayAssets를 displayAssets로 통합 — 하위 호환을 위한 별칭
+  // PF-M-03: Merged into displayAssets — alias for backward compatibility
+  const filteredDisplayAssets = displayAssets;
 
   if (pricesError) {
     return <ServiceError onRetry={refetch} />;
@@ -343,7 +347,7 @@ export default function DashboardPage() {
               'pb-3.5 text-[13px] sm:text-[14px] md:text-[15px] font-bold transition-colors relative whitespace-nowrap shrink-0',
               activeMainTab === tab.key
                 ? 'text-text-primary'
-                : 'text-text-quaternary hover:text-text-tertiary',
+                : 'text-text-tertiary hover:text-text-secondary',
             )}
           >
             {tab.label}
