@@ -26,6 +26,7 @@ import {
 } from '@/hooks/useCommunity';
 import type { CommunityComment, CommunityAttachment } from '@/hooks/useCommunity';
 import { cn, formatRelativeTime } from '@/lib/format';
+import { useToastStore } from '@/stores/toast';
 import LoginRequiredModal from '@/components/ui/LoginRequiredModal';
 import {
   ArrowLeft,
@@ -253,8 +254,11 @@ export default function CommunityPostDetailPage() {
       await deletePost.mutateAsync(id);
       router.push('/community');
     } catch {
-      // 삭제 실패 시 사용자에게 알림 / Notify user on delete failure
-      alert(locale === 'ko' ? '게시글 삭제에 실패했습니다.' : 'Failed to delete post.');
+      // ERR-M-01: alert() 대신 토스트 알림 사용 / Use toast notification instead of alert()
+      useToastStore.getState().addToast(
+        locale === 'ko' ? '게시글 삭제에 실패했습니다.' : 'Failed to delete post.',
+        'error',
+      );
     }
   };
 
@@ -366,7 +370,12 @@ export default function CommunityPostDetailPage() {
             )}
           </div>
 
-          {/* Content — render as HTML from TipTap */}
+          {/* Content — render as HTML from TipTap
+            * A11Y-M-02: <img> is intentionally excluded from ALLOWED_TAGS and 'src' is in FORBID_ATTR.
+            * This is a deliberate security trade-off to prevent XSS via image onerror/onload handlers
+            * and to avoid external resource loading (tracking pixels, SSRF). Users can share images
+            * via the file attachment system instead, which goes through server-side validation.
+            */}
           <div
             className="prose prose-sm prose-invert max-w-none text-[14px] text-text-secondary leading-relaxed min-h-[100px]"
             dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content, { ALLOWED_TAGS: ['p','br','strong','em','u','s','h1','h2','h3','h4','ul','ol','li','blockquote','a','code','pre','span','div','hr'], ALLOWED_ATTR: ['href','alt','class','target','rel'], FORBID_ATTR: ['onerror','onload','onclick','onmouseover','src'], ALLOW_DATA_ATTR: false, ALLOW_UNKNOWN_PROTOCOLS: false, ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):)/i }) }}

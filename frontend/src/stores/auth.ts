@@ -4,6 +4,53 @@
  *
  * @file Auth State Store
  * @description Zustand store managing auth state: login, logout, tokens
+ *
+ * ============================================================================
+ * SEC-C-01 (Critical): JWT Access Token Migration Plan
+ * ============================================================================
+ * CURRENT STATE: Access token is stored in sessionStorage, which is vulnerable
+ * to XSS attacks. Any injected script can read sessionStorage and exfiltrate
+ * the token.
+ *
+ * MIGRATION PLAN (4 steps):
+ *
+ * Step 1: Backend issues access token as HttpOnly cookie
+ *   - Modify the auth controller's login/refresh endpoints to set the access
+ *     token as an HttpOnly + Secure + SameSite=Strict cookie instead of
+ *     returning it in the response body.
+ *   - Cookie attributes: HttpOnly, Secure, SameSite=Strict, Path=/api,
+ *     Max-Age matching token expiry.
+ *
+ * Step 2: Frontend stops storing token in sessionStorage
+ *   - Remove accessToken from the Zustand persisted state (partialize).
+ *   - Remove setToken() and the login() token parameter.
+ *   - The cookie will be sent automatically by the browser on every request.
+ *   - Remove the Authorization header from the axios request interceptor
+ *     (lib/api.ts) since cookies are sent automatically.
+ *   - Update the 401 response interceptor to call the refresh endpoint
+ *     (which will also set a new cookie) instead of reading a stored token.
+ *
+ * Step 3: Add CSRF protection
+ *   - Since cookies are now sent automatically, the app becomes vulnerable
+ *     to CSRF attacks. Implement one of:
+ *     (a) Double-submit cookie pattern: Backend sets a non-HttpOnly CSRF
+ *         token cookie; frontend reads it and sends it as a custom header
+ *         (e.g., X-CSRF-Token) on state-changing requests.
+ *     (b) Synchronizer token pattern: Backend generates a CSRF token per
+ *         session; frontend includes it in requests.
+ *   - SameSite=Strict already provides baseline CSRF protection for modern
+ *     browsers, but explicit CSRF tokens add defense-in-depth.
+ *
+ * Step 4: Update all API calls to rely on cookie-based auth
+ *   - Ensure axios is configured with `withCredentials: true` so cookies
+ *     are included in cross-origin requests (if API is on a different origin).
+ *   - Audit all API calls to ensure none manually set Authorization headers.
+ *   - Update WebSocket connections to authenticate via cookies instead of
+ *     query-string tokens.
+ *   - Remove any remaining references to accessToken in the codebase.
+ *
+ * TIMELINE: This migration should be prioritized before production launch.
+ * ============================================================================
  */
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
