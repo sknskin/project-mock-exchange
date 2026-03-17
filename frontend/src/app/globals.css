@@ -26,6 +26,10 @@
   --color-text-primary: #ECECEC;
   --color-text-secondary: #8B95A1;
   --color-text-tertiary: #6B7683;
+  /* NOTE: text-quaternary (#808A98 dark / #8899A8 light) does not meet WCAG AA
+     contrast ratio (4.5:1) against bg-primary in either theme. Use text-tertiary
+     for important interactive labels; keep text-quaternary only for decorative or
+     supplementary text (placeholders, timestamps, icons). */
   --color-text-quaternary: #808A98;
   --color-border: rgba(255, 255, 255, 0.08);
   --color-rise: #F04452;
@@ -74,7 +78,7 @@ nextjs-portal,
     --color-text-primary: #191F28;
     --color-text-secondary: #4E5968;
     --color-text-tertiary: #8B95A1;
-    --color-text-quaternary: #8899A8;
+    --color-text-quaternary: #8899A8; /* See WCAG AA note above */
     --color-border: rgba(0, 0, 0, 0.08);
   }
 

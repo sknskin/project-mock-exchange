@@ -82,13 +82,13 @@ function AssetListItem({ asset, rank, isWatchlisted, onToggleWatchlist }: AssetL
             e.stopPropagation();
             onToggleWatchlist(asset.symbol);
           }}
-          className="shrink-0 mr-1 sm:mr-2 p-2 -m-1.5 rounded transition-colors hover:bg-bg-secondary/80"
+          className="shrink-0 mr-1 sm:mr-2 p-2 -m-1.5 rounded transition-colors hover:bg-bg-secondary/80 active:scale-125 transition-transform duration-150"
           aria-label={isWatchlisted ? t('market.removeFromWatchlist') : t('market.addToWatchlist')}
         >
           <Star
             className={cn(
-              'w-4 h-4 transition-colors',
-              isWatchlisted ? 'text-yellow-400 fill-yellow-400' : 'text-text-quaternary',
+              'w-4 h-4 transition-all duration-150',
+              isWatchlisted ? 'text-yellow-400 fill-yellow-400 scale-110' : 'text-text-quaternary scale-100',
             )}
           />
         </button>

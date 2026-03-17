@@ -12,6 +12,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import Pagination from '@/components/ui/Pagination';
 import LoginRequiredModal from '@/components/ui/LoginRequiredModal';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 import { useLeaderboard } from '@/hooks/useLeaderboard';
 import { useAuthStore } from '@/stores/auth';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -67,6 +68,9 @@ function StrategyCard({
   return (
     <div
       onClick={onClick}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } }}
+      role="button"
+      tabIndex={0}
       className="bg-bg-secondary/60 border border-border/60 rounded-xl p-4 hover:border-accent/30 transition-all cursor-pointer"
     >
       {/* Top: 작성자 + 종목 / author + symbol */}
@@ -579,7 +583,7 @@ function CommunityPage() {
                       'px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors',
                       discussionCategory === cat.value
                         ? 'bg-accent text-white'
-                        : 'bg-bg-tertiary text-text-quaternary hover:text-text-secondary',
+                        : 'bg-bg-tertiary text-text-tertiary hover:text-text-secondary',
                     )}
                   >
                     {locale === 'ko' ? cat.ko : cat.en}
@@ -631,6 +635,9 @@ function CommunityPage() {
                   <div
                     key={post.id}
                     onClick={() => handlePostClick(post.id, post.visibility)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handlePostClick(post.id, post.visibility); } }}
+                    role="button"
+                    tabIndex={0}
                     className="bg-bg-secondary/60 border border-border/60 rounded-xl p-4 hover:border-accent/30 transition-all cursor-pointer"
                   >
                     <div className="flex items-start justify-between gap-3">
@@ -724,7 +731,7 @@ function CommunityPage() {
                         'px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors',
                         strategySymbol === key
                           ? 'bg-accent text-white'
-                          : 'bg-bg-tertiary text-text-quaternary hover:text-text-secondary',
+                          : 'bg-bg-tertiary text-text-tertiary hover:text-text-secondary',
                       )}
                     >
                       {label}
@@ -922,33 +929,16 @@ function CommunityPage() {
         )}
 
         {/* 언팔로우 확인 모달 / Unfollow Confirmation Modal */}
-      {unfollowTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-bg-primary border border-border rounded-2xl p-6 w-full max-w-sm mx-4 shadow-xl">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center">
-                <AlertTriangle className="w-5 h-5 text-red-500" />
-              </div>
-              <h3 className="text-[16px] font-bold text-text-primary">{t('follow.unfollowConfirmTitle')}</h3>
-            </div>
-            <p className="text-[14px] text-text-secondary mb-6">{t('follow.unfollowConfirmMessage')}</p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setUnfollowTarget(null)}
-                className="flex-1 h-10 rounded-xl bg-bg-secondary text-text-primary text-[13px] font-semibold hover:bg-bg-tertiary transition-colors"
-              >
-                {t('common.cancel')}
-              </button>
-              <button
-                onClick={confirmUnfollow}
-                className="flex-1 h-10 rounded-xl bg-red-500 text-white text-[13px] font-semibold hover:bg-red-600 transition-colors"
-              >
-                {t('follow.unfollow')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmModal
+        isOpen={!!unfollowTarget}
+        onClose={() => setUnfollowTarget(null)}
+        onConfirm={confirmUnfollow}
+        title={t('follow.unfollowConfirmTitle')}
+        message={t('follow.unfollowConfirmMessage')}
+        confirmLabel={t('follow.unfollow')}
+        cancelLabel={t('common.cancel')}
+        confirmVariant="danger"
+      />
       </div>
   );
 }

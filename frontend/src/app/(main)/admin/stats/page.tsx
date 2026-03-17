@@ -217,7 +217,7 @@ export default function AdminStatsPage() {
       : '0';
 
   return (
-    <div className="overflow-hidden">
+    <div className="overflow-x-clip">
       {/* Page header */}
       <div className="py-6 flex items-center gap-2.5 h-[88px]">
         <BarChart3 className="w-5 h-5 text-accent" />
@@ -225,7 +225,7 @@ export default function AdminStatsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex overflow-x-auto scrollbar-hide sm:flex-wrap gap-1 mb-5 border-b border-border pb-1" ref={tabsRef}>
+      <div className="flex flex-nowrap overflow-x-auto scrollbar-hide sm:flex-wrap gap-1 mb-5 border-b border-border pb-1" ref={tabsRef}>
         {STAT_TABS.map((t_) => {
           const Icon = t_.icon;
           const isActive = tab === t_.key;
@@ -237,7 +237,7 @@ export default function AdminStatsPage() {
                 'flex items-center gap-1.5 px-2.5 sm:px-4 py-2 text-[12px] sm:text-[13px] font-semibold transition-colors rounded-lg shrink-0',
                 isActive
                   ? 'bg-accent/15 text-accent'
-                  : 'text-text-quaternary hover:text-text-secondary hover:bg-bg-secondary/50',
+                  : 'text-text-tertiary hover:text-text-secondary hover:bg-bg-secondary/50',
               )}
             >
               <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
