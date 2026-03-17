@@ -22,6 +22,7 @@ import {
 } from '@/hooks/useStrategy';
 import api from '@/lib/api';
 import { cn, formatRelativeTime } from '@/lib/format';
+import { useToastStore } from '@/stores/toast';
 import type { StrategyComment } from '@/types';
 import {
   ArrowLeft,
@@ -166,8 +167,11 @@ export default function StrategyDetailPage() {
       await deleteStrategy.mutateAsync(id);
       router.push('/community?tab=strategies');
     } catch {
-      // 삭제 실패 시 사용자에게 알림 / Notify user on delete failure
-      alert(locale === 'ko' ? '전략 삭제에 실패했습니다.' : 'Failed to delete strategy.');
+      // ERR-M-01: alert() 대신 토스트 알림 사용 / Use toast notification instead of alert()
+      useToastStore.getState().addToast(
+        locale === 'ko' ? '전략 삭제에 실패했습니다.' : 'Failed to delete strategy.',
+        'error',
+      );
     }
   };
 

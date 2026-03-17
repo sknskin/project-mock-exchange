@@ -155,15 +155,23 @@ function CommunityNewPostContent() {
     const validFiles: File[] = [];
     for (const file of Array.from(selected)) {
       if (!ALLOWED_FILE_TYPES.includes(file.type)) {
-        alert(locale === 'ko'
-          ? `허용되지 않는 파일 형식입니다: ${file.name}`
-          : `File type not allowed: ${file.name}`);
+        // ERR-M-01: alert() 대신 토스트 알림 사용 / Use toast notification instead of alert()
+        useToastStore.getState().addToast(
+          locale === 'ko'
+            ? `허용되지 않는 파일 형식입니다: ${file.name}`
+            : `File type not allowed: ${file.name}`,
+          'error',
+        );
         continue;
       }
       if (file.size > MAX_FILE_SIZE) {
-        alert(locale === 'ko'
-          ? `파일 크기가 10MB를 초과합니다: ${file.name}`
-          : `File exceeds 10MB limit: ${file.name}`);
+        // ERR-M-01: alert() 대신 토스트 알림 사용 / Use toast notification instead of alert()
+        useToastStore.getState().addToast(
+          locale === 'ko'
+            ? `파일 크기가 10MB를 초과합니다: ${file.name}`
+            : `File exceeds 10MB limit: ${file.name}`,
+          'error',
+        );
         continue;
       }
       validFiles.push(file);
