@@ -174,6 +174,15 @@ export class AnnouncementController {
     @Param('id') id: string,
     @Body() body: { originalName: string; mimeType: string; size: number; data: string },
   ) {
+    // VAL-H-01: MIME 화이트리스트 검증 / MIME type whitelist validation
+    const ALLOWED_MIME_TYPES = [
+      'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+      'application/pdf',
+    ];
+    if (!ALLOWED_MIME_TYPES.includes(body.mimeType)) {
+      throw new BadRequestException(`File type not allowed: ${body.mimeType}`);
+    }
+
     // 파일 사이즈 검증 (10MB 제한) / Validate file size (10MB limit)
     const MAX_FILE_SIZE = 10 * 1024 * 1024;
     const bufferData = Buffer.from(body.data, 'base64');

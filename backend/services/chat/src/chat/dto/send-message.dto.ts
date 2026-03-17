@@ -8,9 +8,9 @@
 import { IsString, MaxLength, MinLength } from 'class-validator';
 
 export class SendMessageDto {
-  // 메시지 내용: 1~2000자 / Message content: 1-2000 characters
+  // VAL-M-01: 메시지 내용: 1~5000자 / Message content: 1-5000 characters
   @IsString()
   @MinLength(1)
-  @MaxLength(2000)
+  @MaxLength(5000)
   content: string;
 }

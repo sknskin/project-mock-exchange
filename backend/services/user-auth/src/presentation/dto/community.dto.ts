@@ -54,9 +54,11 @@ export class UpdatePostDto {
 }
 
 export class CreateCommentDto {
+  // VAL-M-02: 댓글 최대 2000자 제한 / Comment max 2000 characters
   @IsString()
   @IsNotEmpty()
   @MinLength(2)
+  @MaxLength(2000)
   content: string;
 
   @IsString()
