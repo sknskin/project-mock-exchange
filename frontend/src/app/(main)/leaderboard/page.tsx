@@ -20,6 +20,9 @@ import ExchangeRateBar from '@/components/market/ExchangeRateBar';
 import Skeleton from '@/components/ui/Skeleton';
 import RefreshControl from '@/components/ui/RefreshControl';
 import CopyTradeModal from '@/components/trading/CopyTradeModal';
+import UserProfileModal from '@/components/leaderboard/UserProfileModal';
+import type { UserProfileData } from '@/components/leaderboard/UserProfileModal';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 import { cn, formatCurrencyDisplay, formatPercent } from '@/lib/format';
 import {
   Trophy,
@@ -31,7 +34,6 @@ import {
   UserPlus,
   UserCheck,
   Copy,
-  AlertTriangle,
 } from 'lucide-react';
 
 /* ───────── 상수 / Constants ───────── */
@@ -158,6 +160,9 @@ export default function LeaderboardPage() {
   // 언팔로우 확인 모달 상태 / Unfollow confirm modal state
   const [unfollowTarget, setUnfollowTarget] = useState<string | null>(null);
 
+  // 사용자 프로필 모달 상태 / User profile modal state
+  const [profileTarget, setProfileTarget] = useState<UserProfileData | null>(null);
+
   /** 팔로우/언팔로우 토글 / Toggle follow/unfollow */
   const toggleFollow = useCallback((userId: string) => {
     if (!isAuthenticated) return;
@@ -247,20 +252,21 @@ export default function LeaderboardPage() {
 
     const prev = prevRankMap.current;
 
-    // 배치 FLIP: 모든 행을 이전 위치로 즉시 설정 후, 한 번의 리플로우로 애니메이션 시작
-    // Batched FLIP: set all rows to prev position, then single reflow + animate
+    // FR-H-02: 배치 FLIP — 순위가 실제로 변경된 행만 애니메이션 (변경 없는 행은 건너뜀)
+    // FR-H-02: Batched FLIP — only animate rows that actually changed rank (skip unchanged rows)
     const movedEls: HTMLElement[] = [];
     sortedLeaderboard.forEach((entry) => {
+      const prevRank = prev.get(entry.id);
+      // 순위가 같으면 건너뜀 / Skip if rank unchanged
+      if (prevRank === undefined || prevRank === entry.rank) return;
+
       const el = rowRefs.current.get(entry.id);
       if (!el) return;
 
-      const prevRank = prev.get(entry.id);
-      if (prevRank !== undefined && prevRank !== entry.rank) {
-        const delta = (prevRank - entry.rank) * ROW_HEIGHT;
-        el.style.transition = 'none';
-        el.style.transform = `translateY(${delta}px)`;
-        movedEls.push(el);
-      }
+      const delta = (prevRank - entry.rank) * ROW_HEIGHT;
+      el.style.transition = 'none';
+      el.style.transform = `translateY(${delta}px)`;
+      movedEls.push(el);
     });
 
     if (movedEls.length > 0) {
@@ -369,7 +375,7 @@ export default function LeaderboardPage() {
                   'px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-colors',
                   sortMode === opt.key
                     ? 'bg-accent text-white'
-                    : 'text-text-quaternary hover:text-text-secondary',
+                    : 'text-text-tertiary hover:text-text-secondary',
                 )}
               >
                 {opt.label}
@@ -413,6 +419,23 @@ export default function LeaderboardPage() {
         </div>
       )}
 
+      {/* 사용자 프로필 모달 / User Profile Modal */}
+      <UserProfileModal
+        user={profileTarget}
+        onClose={() => setProfileTarget(null)}
+        isFollowed={profileTarget ? followedUserIds.has(profileTarget.id) : false}
+        isCopyTrading={profileTarget ? copyTradingUserIds.has(profileTarget.id) : false}
+        onToggleFollow={(userId) => {
+          toggleFollow(userId);
+          setProfileTarget(null);
+        }}
+        onCopyTrade={(target) => {
+          setCopyTradeTarget(target);
+          setProfileTarget(null);
+        }}
+        isAuthenticated={isAuthenticated}
+      />
+
       {/* 카피 트레이딩 모달 / Copy Trade Modal */}
       {copyTradeTarget && (
         <CopyTradeModal
@@ -425,14 +448,14 @@ export default function LeaderboardPage() {
       )}
 
       {/* 테이블 헤더 / Table header */}
-      <div className="flex items-center py-2.5 text-[11px] text-text-quaternary font-medium border-b border-border/80">
+      <div className="flex items-center py-2.5 text-[11px] text-text-tertiary font-medium border-b border-border/80">
         <span className="w-10 sm:w-14 text-center shrink-0">{t('leaderboard.rank')}</span>
         <span className="flex-1 pl-2 min-w-0">{t('leaderboard.user')}</span>
         <span className="hidden sm:block w-36 text-right shrink-0">{thirdColHeader}</span>
         <span className="w-20 sm:w-24 text-right shrink-0">{t('leaderboard.returnRate')}</span>
         <span className="w-10 sm:w-14 text-center shrink-0"></span>
         {/* 팔로우/카피 액션 열 (인증 시만) / Follow/Copy action column (auth only) */}
-        {isAuthenticated && <span className="hidden sm:block w-24 text-center shrink-0"></span>}
+        {isAuthenticated && <span className="w-14 sm:w-24 text-center shrink-0"></span>}
       </div>
 
       {isLoading ? (
@@ -459,6 +482,7 @@ export default function LeaderboardPage() {
                 ref={(el) => {
                   if (el) rowRefs.current.set(entry.id, el);
                 }}
+                style={{ willChange: 'transform' }}
                 className={cn(
                   'flex items-center py-3 sm:py-3.5 transition-colors',
                   isTop3 && (top3Bg[entry.rank] || 'bg-bg-secondary/20'),
@@ -476,8 +500,22 @@ export default function LeaderboardPage() {
                   )}
                 </div>
 
-                {/* 사용자 정보 / User info */}
-                <div className="flex items-center flex-1 pl-2 min-w-0">
+                {/* 사용자 정보 (클릭 시 프로필 모달) / User info (click to open profile modal) */}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setProfileTarget({
+                      id: entry.id,
+                      name: entry.name || '',
+                      username: entry.username || '',
+                      rank: entry.rank,
+                      totalValue: entry.totalValue,
+                      pnlPercent: entry.pnlPercent,
+                      isMe: entry.isMe,
+                    })
+                  }
+                  className="flex items-center flex-1 pl-2 min-w-0 text-left cursor-pointer rounded-lg hover:bg-bg-secondary/60 transition-colors -my-1 py-1"
+                >
                   <div className="min-w-0">
                     <span
                       className={cn(
@@ -499,7 +537,7 @@ export default function LeaderboardPage() {
                       )}
                     </span>
                   </div>
-                </div>
+                </button>
 
                 {/* 자산/절대수익 (데스크탑) / Assets/Absolute PnL (desktop) */}
                 <span className="hidden sm:block w-36 text-right text-[14px] text-text-secondary tabular-nums font-medium shrink-0">
@@ -529,13 +567,13 @@ export default function LeaderboardPage() {
 
                 {/* 팔로우 + 카피 트레이딩 버튼 (인증 시, 본인 제외) / Follow + Copy buttons (auth, not self) */}
                 {isAuthenticated && (
-                  <div className="hidden sm:flex w-24 items-center justify-center gap-1 shrink-0">
+                  <div className="flex w-14 sm:w-24 items-center justify-center gap-0.5 sm:gap-1 shrink-0">
                     {!isMe && (
                       <>
                         <button
                           onClick={() => toggleFollow(entry.id)}
                           className={cn(
-                            'p-1.5 rounded-lg transition-colors',
+                            'p-1 sm:p-1.5 rounded-lg transition-colors',
                             followedUserIds.has(entry.id)
                               ? 'text-accent bg-accent/10'
                               : 'text-text-quaternary hover:text-accent hover:bg-accent/10',
@@ -555,7 +593,7 @@ export default function LeaderboardPage() {
                             setCopyTradeTarget({ id: entry.id, name: displayName, pnlPercent: entry.pnlPercent });
                           }}
                           className={cn(
-                            'p-1.5 rounded-lg transition-colors',
+                            'p-1 sm:p-1.5 rounded-lg transition-colors',
                             currentUser && currentUser.id === entry.id
                               ? 'text-text-quaternary/30 cursor-not-allowed'
                               : copyTradingUserIds.has(entry.id)
@@ -584,33 +622,16 @@ export default function LeaderboardPage() {
       )}
 
       {/* 언팔로우 확인 모달 / Unfollow Confirmation Modal */}
-      {unfollowTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-bg-primary border border-border rounded-2xl p-6 w-full max-w-sm mx-4 shadow-xl">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center">
-                <AlertTriangle className="w-5 h-5 text-red-500" />
-              </div>
-              <h3 className="text-[16px] font-bold text-text-primary">{t('follow.unfollowConfirmTitle')}</h3>
-            </div>
-            <p className="text-[14px] text-text-secondary mb-6">{t('follow.unfollowConfirmMessage')}</p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setUnfollowTarget(null)}
-                className="flex-1 h-10 rounded-xl bg-bg-secondary text-text-primary text-[13px] font-semibold hover:bg-bg-tertiary transition-colors"
-              >
-                {t('common.cancel')}
-              </button>
-              <button
-                onClick={confirmUnfollow}
-                className="flex-1 h-10 rounded-xl bg-red-500 text-white text-[13px] font-semibold hover:bg-red-600 transition-colors"
-              >
-                {t('follow.unfollow')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmModal
+        isOpen={!!unfollowTarget}
+        onClose={() => setUnfollowTarget(null)}
+        onConfirm={confirmUnfollow}
+        title={t('follow.unfollowConfirmTitle')}
+        message={t('follow.unfollowConfirmMessage')}
+        confirmLabel={t('follow.unfollow')}
+        cancelLabel={t('common.cancel')}
+        confirmVariant="danger"
+      />
     </div>
   );
 }
