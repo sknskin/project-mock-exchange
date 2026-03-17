@@ -126,11 +126,13 @@ export default function PortfolioHistoryChart({ totalValue }: PortfolioHistoryCh
     [transactions, period, totalValue],
   );
 
-  // SVG 차트 치수
+  // SVG 차트 치수 — 좌측 Y축 라벨 + 하단 X축 날짜 여백 확보
   const width = 600;
-  const height = 200;
-  const paddingX = 0;
+  const height = 220;
+  const paddingLeft = 90;
+  const paddingRight = 10;
   const paddingY = 16;
+  const chartBottom = height - 24; // X축 라벨 공간
 
   const values = data.map((d) => d.value);
   const minVal = Math.min(...values);
@@ -138,22 +140,56 @@ export default function PortfolioHistoryChart({ totalValue }: PortfolioHistoryCh
   const range = maxVal - minVal || 1;
 
   const points = data.map((d, i) => {
-    const x = paddingX + (i / (data.length - 1)) * (width - paddingX * 2);
-    const y = paddingY + (1 - (d.value - minVal) / range) * (height - paddingY * 2);
+    const x = paddingLeft + (i / (data.length - 1)) * (width - paddingLeft - paddingRight);
+    const y = paddingY + (1 - (d.value - minVal) / range) * (chartBottom - paddingY);
     return { x, y, ...d };
   });
 
   const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
   const areaPath = points.length > 0
-    ? `${linePath} L ${points[points.length - 1].x} ${height} L ${points[0].x} ${height} Z`
+    ? `${linePath} L ${points[points.length - 1].x} ${chartBottom} L ${points[0].x} ${chartBottom} Z`
     : '';
+
+  // X축 날짜 라벨 (최대 5개) / X-axis date labels (max 5)
+  const xLabels = useMemo(() => {
+    if (data.length < 2) return [];
+    const step = Math.max(1, Math.floor((data.length - 1) / 4));
+    const labels: { x: number; label: string }[] = [];
+    for (let i = 0; i < data.length; i += step) {
+      const pt = points[i];
+      if (pt) {
+        const d = data[i].date;
+        labels.push({ x: pt.x, label: `${d.getMonth() + 1}/${d.getDate()}` });
+      }
+    }
+    // 마지막 포인트 항상 포함 / Always include last point
+    const lastPt = points[points.length - 1];
+    const lastD = data[data.length - 1].date;
+    const lastLabel = `${lastD.getMonth() + 1}/${lastD.getDate()}`;
+    if (!labels.length || labels[labels.length - 1].label !== lastLabel) {
+      labels.push({ x: lastPt.x, label: lastLabel });
+    }
+    return labels;
+  }, [data, points]);
+
+  const hasData = data.length >= 2;
+
+  // Y축 금액 라벨 (3단계) / Y-axis value labels (3 levels)
+  const yLabels = useMemo(() => {
+    if (!hasData) return [];
+    const fmt = (v: number) => formatCurrencyDisplay(v, currencyMode, rate);
+    const mid = (minVal + maxVal) / 2;
+    return [
+      { y: paddingY, label: fmt(maxVal) },
+      { y: paddingY + (chartBottom - paddingY) / 2, label: fmt(mid) },
+      { y: chartBottom, label: fmt(minVal) },
+    ];
+  }, [minVal, maxVal, hasData, currencyMode, rate, paddingY, chartBottom]);
 
   const startVal = data[0]?.value ?? 0;
   const endVal = data[data.length - 1]?.value ?? 0;
   const changePercent = startVal > 0 ? ((endVal - startVal) / startVal) * 100 : 0;
   const isPositive = changePercent >= 0;
-
-  const hasData = data.length >= 2;
 
   return (
     <div className="py-4 border-b border-border/60">
@@ -246,6 +282,25 @@ export default function PortfolioHistoryChart({ totalValue }: PortfolioHistoryCh
                   strokeWidth="1.5"
                 />
               )}
+
+              {/* Y축 금액 라벨 / Y-axis value labels */}
+              {yLabels.map((l, i) => (
+                <text key={`y-${i}`} x={paddingLeft - 6} y={l.y + 3} textAnchor="end" fill="#808A98" fontSize="8" fontFamily="inherit">
+                  {l.label}
+                </text>
+              ))}
+
+              {/* Y축 가이드 라인 / Y-axis guide lines */}
+              {yLabels.map((l, i) => (
+                <line key={`yg-${i}`} x1={paddingLeft} y1={l.y} x2={width - paddingRight} y2={l.y} stroke="#2A2A32" strokeWidth="0.5" strokeDasharray="4 4" />
+              ))}
+
+              {/* X축 날짜 라벨 / X-axis date labels */}
+              {xLabels.map((l, i) => (
+                <text key={`x-${i}`} x={l.x} y={chartBottom + 14} textAnchor="middle" fill="#808A98" fontSize="8" fontFamily="inherit">
+                  {l.label}
+                </text>
+              ))}
             </svg>
           </div>
         </>
