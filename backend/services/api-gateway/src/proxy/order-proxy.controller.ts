@@ -24,6 +24,7 @@ import { Throttle } from '@nestjs/throttler';
 import { Request, Response } from 'express';
 import { ProxyService } from './proxy.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { CurrentUser } from '../auth/current-user.decorator';
 import { ChatGateway } from '../gateway/chat.gateway';
 import { PlaceOrderDto } from './dto/place-order.dto';
 
@@ -46,8 +47,7 @@ export class OrderProxyController {
   @ApiResponse({ status: 201, description: '주문 접수 성공' })
   @ApiResponse({ status: 400, description: '유효성 검사 실패' })
   @ApiResponse({ status: 401, description: '인증 필요' })
-  async placeOrder(@Body() body: PlaceOrderDto, @Req() req: Request, @Res() res: Response) {
-    const userId = (req as Record<string, any>).user?.id;
+  async placeOrder(@Body() body: PlaceOrderDto, @CurrentUser('id') userId: string, @Req() req: Request, @Res() res: Response) {
     const result = await this.proxyService.forward('order-engine', {
       method: 'POST',
       url: '/orders',
@@ -189,10 +189,9 @@ export class OrderProxyController {
   @ApiResponse({ status: 200, description: '거래 통계 반환' })
   async tradingStats(
     @Query('days') days: string,
-    @Req() req: Request,
+    @CurrentUser('id') userId: string,
     @Res() res: Response,
   ) {
-    const userId = (req as Record<string, any>).user?.id;
     const result = await this.proxyService.forward('order-engine', {
       method: 'GET',
       url: '/orders/stats/trading',
@@ -228,10 +227,9 @@ export class OrderProxyController {
   async getUserTrades(
     @Query('limit') limit: string,
     @Query('offset') offset: string,
-    @Req() req: Request,
+    @CurrentUser('id') userId: string,
     @Res() res: Response,
   ) {
-    const userId = (req as Record<string, any>).user?.id;
     const result = await this.proxyService.forward('order-engine', {
       method: 'GET',
       url: '/orders/trades/history',
@@ -255,10 +253,9 @@ export class OrderProxyController {
     @Query('limit') limit: string,
     @Query('offset') offset: string,
     @Query('status') status: string,
-    @Req() req: Request,
+    @CurrentUser('id') userId: string,
     @Res() res: Response,
   ) {
-    const userId = (req as Record<string, any>).user?.id;
     const result = await this.proxyService.forward('order-engine', {
       method: 'GET',
       url: '/orders',
@@ -277,8 +274,7 @@ export class OrderProxyController {
   @ApiParam({ name: 'orderId', description: '주문 ID' })
   @ApiResponse({ status: 200, description: '주문 상세 반환' })
   @ApiResponse({ status: 404, description: '주문 없음' })
-  async getOrder(@Param('orderId') orderId: string, @Req() req: Request, @Res() res: Response) {
-    const userId = (req as Record<string, any>).user?.id;
+  async getOrder(@Param('orderId') orderId: string, @CurrentUser('id') userId: string, @Res() res: Response) {
     const result = await this.proxyService.forward('order-engine', {
       method: 'GET',
       url: `/orders/${orderId}`,
@@ -299,10 +295,9 @@ export class OrderProxyController {
   async modifyOrder(
     @Param('orderId') orderId: string,
     @Body() body: unknown,
-    @Req() req: Request,
+    @CurrentUser('id') userId: string,
     @Res() res: Response,
   ) {
-    const userId = (req as Record<string, any>).user?.id;
     const result = await this.proxyService.forward('order-engine', {
       method: 'PATCH',
       url: `/orders/${orderId}`,
@@ -321,8 +316,7 @@ export class OrderProxyController {
   @ApiParam({ name: 'orderId', description: '주문 ID' })
   @ApiResponse({ status: 200, description: '주문 취소 성공' })
   @ApiResponse({ status: 404, description: '주문 없음' })
-  async cancelOrder(@Param('orderId') orderId: string, @Req() req: Request, @Res() res: Response) {
-    const userId = (req as Record<string, any>).user?.id;
+  async cancelOrder(@Param('orderId') orderId: string, @CurrentUser('id') userId: string, @Res() res: Response) {
     const result = await this.proxyService.forward('order-engine', {
       method: 'DELETE',
       url: `/orders/${orderId}`,
