@@ -217,6 +217,23 @@ export class PortfolioProxyController {
     return res.status(result.status).json(result.data);
   }
 
+  /** 특정 사용자의 공개 포트폴리오(보유 자산) 조회를 portfolio 서비스로 프록시
+   * Proxy specific user's public portfolio (holdings) to portfolio service */
+  @Get('public/:userId')
+  @ApiOperation({ summary: '공개 포트폴리오 조회', description: '특정 사용자의 보유 자산과 평가 정보를 반환합니다' })
+  @ApiParam({ name: 'userId', description: '대상 사용자 ID' })
+  @ApiResponse({ status: 200, description: '공개 포트폴리오 반환' })
+  async getPublicPortfolio(
+    @Param('userId') targetUserId: string,
+    @Res() res: Response,
+  ) {
+    const result = await this.proxyService.forward('portfolio', {
+      method: 'GET',
+      url: `/portfolio/public/${targetUserId}`,
+    });
+    return res.status(result.status).json(result.data);
+  }
+
   /** 거래 내역 조회를 portfolio 서비스로 프록시
    * Proxy transaction history to portfolio service */
   @Get('transactions')

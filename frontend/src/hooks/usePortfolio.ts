@@ -137,6 +137,39 @@ export function usePortfolioValuation() {
   });
 }
 
+// ===== 공개 포트폴리오 조회 훅 (Public Portfolio Query Hook) =====
+
+/**
+ * 특정 사용자의 공개 포트폴리오(보유 자산)를 조회하는 훅.
+ * 리더보드 프로필 모달에서 다른 사용자의 보유 종목을 표시하기 위해 사용합니다.
+ *
+ * Hook that fetches a specific user's public portfolio (holdings).
+ * Used in the leaderboard profile modal to display another user's holdings.
+ *
+ * @param userId - 대상 사용자 ID / Target user ID
+ * @returns TanStack Query 결과 / TanStack Query result
+ */
+export function usePublicPortfolio(userId: string) {
+  return useQuery({
+    queryKey: ['public-portfolio', userId],
+    queryFn: async () => {
+      const { data } = await api.get(`/api/portfolio/public/${userId}`);
+      return unwrapResponse<{
+        holdings: {
+          symbol: string;
+          quantity: string;
+          avgPrice: string;
+          currentPrice: string;
+          currentValue: string;
+          pnlPercent: string;
+        }[];
+        totalValue: string;
+      }>(data);
+    },
+    enabled: !!userId,
+  });
+}
+
 // ===== 입출금 뮤테이션 훅 (Deposit / Withdraw Mutation Hooks) =====
 
 /**

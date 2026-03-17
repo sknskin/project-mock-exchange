@@ -11,6 +11,7 @@ import {
   Post,
   Body,
   Headers,
+  Param,
   Query,
   BadRequestException,
   UseGuards,
@@ -107,6 +108,21 @@ export class PortfolioController {
     this.validateUserId(userId);
     const valuation = await this.balanceService.getPortfolioValuation(userId);
     return { success: true, data: valuation };
+  }
+
+  /**
+   * 특정 사용자의 공개 포트폴리오(보유 자산) 조회.
+   * 리더보드 프로필 모달에서 사용합니다.
+   *
+   * Get a specific user's public portfolio (holdings).
+   * Used in the leaderboard profile modal.
+   * GET /portfolio/public/:userId
+   */
+  @Get('public/:userId')
+  async getPublicPortfolio(@Param('userId') userId: string) {
+    this.validateUserId(userId);
+    const portfolio = await this.balanceService.getPublicPortfolio(userId);
+    return { success: true, data: portfolio };
   }
 
   /**

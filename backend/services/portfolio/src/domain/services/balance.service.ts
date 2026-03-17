@@ -843,6 +843,68 @@ export class BalanceService {
   }
 
   /**
+   * 공개 포트폴리오 조회: 특정 사용자의 보유 자산과 현재가 기반 평가 정보를 반환합니다.
+   * 리더보드 프로필 모달에서 다른 사용자의 보유 종목을 확인하기 위해 사용합니다.
+   *
+   * Get public portfolio: returns a user's holdings with current-price-based valuation.
+   * Used in the leaderboard profile modal to view another user's holdings.
+   */
+  async getPublicPortfolio(userId: string): Promise<{
+    holdings: {
+      symbol: string;
+      quantity: string;
+      avgPrice: string;
+      currentPrice: string;
+      currentValue: string;
+      pnlPercent: string;
+    }[];
+    totalValue: string;
+  }> {
+    // 계정이 없으면 빈 포트폴리오 반환 / Return empty portfolio if account doesn't exist
+    const account = await this.prisma.account.findUnique({ where: { userId } });
+    if (!account) {
+      return { holdings: [], totalValue: '0' };
+    }
+
+    const holdings = await this.getHoldings(userId);
+    const symbols = holdings.map((h) => h.symbol);
+    const priceMap = await this.fetchMarketPrices(symbols);
+    const exchangeRate = await this.getExchangeRate();
+
+    let totalValue = new Decimal(0);
+
+    const publicHoldings = holdings.map((h) => {
+      const qty = new Decimal(h.quantity);
+      const avgCost = new Decimal(h.avgCostBasis);
+      const rawPrice = priceMap.get(h.symbol) || avgCost;
+      const currentPrice = this.isUsdSymbol(h.symbol)
+        ? rawPrice.mul(exchangeRate)
+        : rawPrice;
+      const currentValue = qty.mul(currentPrice);
+      const cost = new Decimal(h.totalCost);
+      const pnlPercent = cost.gt(0)
+        ? currentValue.minus(cost).div(cost).mul(100)
+        : new Decimal(0);
+
+      totalValue = totalValue.plus(currentValue);
+
+      return {
+        symbol: h.symbol,
+        quantity: qty.toFixed(8),
+        avgPrice: avgCost.toFixed(8),
+        currentPrice: currentPrice.toFixed(8),
+        currentValue: currentValue.toFixed(8),
+        pnlPercent: pnlPercent.toFixed(3),
+      };
+    });
+
+    return {
+      holdings: publicHoldings,
+      totalValue: totalValue.toFixed(8),
+    };
+  }
+
+  /**
    * 리더보드 조회: 총 포트폴리오 가치 기준 상위 순위.
    *
    * Get leaderboard: top portfolios ranked by total value.
