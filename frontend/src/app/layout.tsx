@@ -37,6 +37,8 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         {/* CDN 폰트 FOIT 방지: preconnect로 DNS/TLS 사전 연결 / Prevent FOIT with preconnect */}
         <link rel="preconnect" href="https://cdn.jsdelivr.net" crossOrigin="anonymous" />
+        {/* IMG-L-01: CDN 폰트 스타일시트 프리로드 — 렌더링 차단 최소화 / CDN font stylesheet preload — minimize render blocking */}
+        <link rel="preload" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" as="style" />
         {/*
           SSR Hydration Flicker 방지: React 렌더링 전에 sessionStorage에서 인증 상태를 읽어
           CSS data 속성을 설정합니다. auth-show/auth-hide CSS 클래스가 즉시 동작합니다.
@@ -64,6 +66,7 @@ export default function RootLayout({
               document.documentElement.lang = s.state.locale;
             }
           } catch (e) {}
+          if (!document.documentElement.lang || document.documentElement.lang === 'en') document.documentElement.lang = 'ko';
         `}</Script>
       </head>
       <body className="bg-bg-primary text-text-primary min-h-screen">

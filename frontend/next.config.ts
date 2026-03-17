@@ -6,7 +6,7 @@ const isDev = process.env.NODE_ENV === 'development';
 // In production, it is removed for stronger CSP security.
 const scriptSrc = isDev
   ? "'self' 'unsafe-eval' 'unsafe-inline'"
-  : "'self' 'unsafe-inline'";
+  : "'self' 'unsafe-inline' 'strict-dynamic'";
 
 const nextConfig: NextConfig = {
   images: {
