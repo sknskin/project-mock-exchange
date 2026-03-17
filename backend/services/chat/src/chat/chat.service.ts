@@ -12,6 +12,7 @@ import {
   BadRequestException,
   NotFoundException,
   ForbiddenException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateRoomDto, RoomTypeDto } from './dto/create-room.dto';
@@ -20,6 +21,8 @@ import { InviteUserDto } from './dto/invite-user.dto';
 
 @Injectable()
 export class ChatService {
+  private readonly logger = new Logger(ChatService.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   /** 사용자가 참여 중인 채팅방 목록을 안읽음 수와 함께 조회합니다
@@ -185,6 +188,8 @@ export class ChatService {
     // 사용자가 참여자인지 확인 (Verify user is participant)
     await this.verifyParticipant(roomId, userId);
 
+    // DB-H-01: readReceipts의 _count만 조회하여 N+1 문제 해결 (전체 레코드 대신 카운트만 사용)
+    // DB-H-01: Use _count of readReceipts to fix N+1 (count only instead of full records)
     const messages = await this.prisma.message.findMany({
       where: { roomId },
       orderBy: { createdAt: 'desc' },
@@ -199,8 +204,8 @@ export class ChatService {
         senderRole: true,
         content: true,
         createdAt: true,
-        readReceipts: {
-          select: { userId: true },
+        _count: {
+          select: { readReceipts: true },
         },
       },
     });
@@ -214,9 +219,9 @@ export class ChatService {
     });
 
     const messagesWithUnread = items.map((msg) => {
-      // 안읽음 수 = 전체 활성 참여자 - 발신자 - 읽은 사람 (unreadCount = total active participants - sender - those who read)
-      const readUserIds = new Set(msg.readReceipts.map((r) => r.userId));
-      const unreadCount = Math.max(0, participantCount - 1 - readUserIds.size);
+      // 안읽음 수 = 전체 활성 참여자 - 발신자 - 읽은 수 (unreadCount = total active participants - sender - read count)
+      const readCount = msg._count.readReceipts;
+      const unreadCount = Math.max(0, participantCount - 1 - readCount);
       return {
         id: msg.id,
         roomId: msg.roomId,
@@ -239,6 +244,13 @@ export class ChatService {
   /** 채팅방에 메시지를 전송하고 방의 updatedAt을 갱신합니다
    * Send a message to a room and update room's updatedAt */
   async sendMessage(roomId: string, userId: string, username: string, dto: SendMessageDto, name?: string, role?: string) {
+    // VAL-M-01: 메시지 길이 서비스 레벨 재검증 (DTO @MaxLength 이중 방어)
+    // VAL-M-01: Service-level message length re-validation (defense-in-depth with DTO @MaxLength)
+    const MAX_MESSAGE_LENGTH = 5000;
+    if (dto.content && dto.content.length > MAX_MESSAGE_LENGTH) {
+      throw new BadRequestException(`Message exceeds maximum length of ${MAX_MESSAGE_LENGTH} characters`);
+    }
+
     // 참여자 검증 + 메시지 생성 + 방 업데이트를 트랜잭션으로 원자적 처리
     // Wrap participant verification + message creation + room update in a transaction for atomicity
     const { message, participantCount } = await this.prisma.$transaction(async (tx) => {
@@ -486,6 +498,12 @@ export class ChatService {
     await this.prisma.message.delete({
       where: { id: messageId },
     });
+
+    // LOG-M-01: 메시지 삭제 감사 로그 — 누가, 어떤 메시지를, 어떤 방에서 삭제했는지 기록
+    // LOG-M-01: Audit log for message deletion — records who deleted which message in which room
+    this.logger.log(
+      `Message deleted: messageId=${messageId}, roomId=${roomId}, deletedBy=${userId}, role=${role || 'USER'}, originalSender=${message.senderId}`,
+    );
 
     return { success: true, deletedMessageId: messageId };
   }
