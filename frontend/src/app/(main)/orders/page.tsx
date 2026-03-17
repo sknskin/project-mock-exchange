@@ -381,6 +381,10 @@ export default function OrdersPage() {
   const [editQuantity, setEditQuantity] = useState('');
   const [cancelTargetId, setCancelTargetId] = useState<string | null>(null);
 
+  // ORD-M-01: 커스텀 날짜 범위 필터 상태 / Custom date range filter state
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+
   // 체결내역 탭 필터 상태 / Trade history tab filter state
   const [tradeSideFilter, setTradeSideFilter] = useState<'all' | 'BUY' | 'SELL'>('all');
   const [tradeSearch, setTradeSearch] = useState('');
@@ -413,13 +417,27 @@ export default function OrdersPage() {
     return () => clearTimeout(timer);
   }, [searchInput]);
 
-  // 클라이언트 측 심볼 필터 — 서버에서 전체 조회 후 프론트에서 필터 / Client-side symbol filter — filter locally after full server fetch
+  // 클라이언트 측 심볼 + 날짜 범위 필터 — 서버에서 전체 조회 후 프론트에서 필터
+  // Client-side symbol + date range filter — filter locally after full server fetch
   const filteredOrders = useMemo(() => {
     if (!orders) return [];
-    if (!symbolSearch.trim()) return orders;
-    const q = symbolSearch.toLowerCase();
-    return orders.filter((o) => o.symbol.toLowerCase().includes(q));
-  }, [orders, symbolSearch]);
+    let result = orders;
+    if (symbolSearch.trim()) {
+      const q = symbolSearch.toLowerCase();
+      result = result.filter((o) => o.symbol.toLowerCase().includes(q));
+    }
+    // ORD-M-01: 커스텀 날짜 범위 필터 적용 / Apply custom date range filter
+    if (dateFrom) {
+      const from = new Date(dateFrom).getTime();
+      result = result.filter((o) => new Date(o.createdAt).getTime() >= from);
+    }
+    if (dateTo) {
+      // 종료일의 끝(23:59:59)까지 포함 / Include until end of the to-date (23:59:59)
+      const to = new Date(dateTo).getTime() + 86_400_000 - 1;
+      result = result.filter((o) => new Date(o.createdAt).getTime() <= to);
+    }
+    return result;
+  }, [orders, symbolSearch, dateFrom, dateTo]);
 
   /**
    * 체결내역 클라이언트 측 필터 (매수/매도 + 심볼 검색)
@@ -509,6 +527,37 @@ export default function OrdersPage() {
                 options={STATUS_OPTIONS}
                 t={t}
               />
+            </div>
+
+            {/* ORD-M-01: 커스텀 날짜 범위 필터 / Custom date range filter */}
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-5">
+              <label className="text-[12px] font-medium text-text-tertiary shrink-0">{t('orders.customRange')}</label>
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                max={dateTo || undefined}
+                className="bg-bg-secondary border border-border rounded-xl px-3 py-2 text-[13px] text-text-primary focus:outline-none focus:border-accent/60 transition-colors"
+                aria-label={t('orders.dateFrom')}
+              />
+              <span className="text-[12px] text-text-quaternary">~</span>
+              <input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                min={dateFrom || undefined}
+                className="bg-bg-secondary border border-border rounded-xl px-3 py-2 text-[13px] text-text-primary focus:outline-none focus:border-accent/60 transition-colors"
+                aria-label={t('orders.dateTo')}
+              />
+              {(dateFrom || dateTo) && (
+                <button
+                  onClick={() => { setDateFrom(''); setDateTo(''); }}
+                  className="p-1.5 text-text-quaternary hover:text-text-primary transition-colors"
+                  aria-label="Clear date filter"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </div>
 
             {/* 주문 요약 통계 / Order Summary Stats */}
