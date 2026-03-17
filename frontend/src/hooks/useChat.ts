@@ -328,7 +328,9 @@ export function useDeleteMessage() {
  */
 export function useSearchUsers(query: string, excludeIds?: string[]) {
   return useQuery({
-    queryKey: ['chat-user-search', query, excludeIds],
+    // PF-L-01: 배열 참조 대신 문자열로 직렬화하여 불필요한 쿼리 재실행 방지
+    // PF-L-01: Serialize array to string to prevent unnecessary query re-execution
+    queryKey: ['chat-user-search', query, excludeIds?.join(',')],
     // 검색어 없어도 초기 사용자 목록을 로드 — 빈 쿼리 시 전체 승인 사용자 반환
     // Load initial user list even without query — returns all approved users when empty
     queryFn: async () => {
