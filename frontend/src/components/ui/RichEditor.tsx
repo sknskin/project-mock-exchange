@@ -84,9 +84,12 @@ export default function RichEditor({ content, onChange, placeholder }: RichEdito
   // 허용 이미지 MIME 타입 / Allowed image MIME types
   const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
   const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
+  // CM-M-02: 최대 이미지 해상도 제한 — 과도한 메모리 사용 방지
+  // CM-M-02: Maximum image resolution limit — prevents excessive memory usage
+  const MAX_IMAGE_DIMENSION = 4096; // 4096x4096 px
 
-  // 파일 선택 시 MIME/크기 검증 후 Base64로 변환하여 에디터에 이미지 삽입
-  // Validate MIME type and size, then convert selected file to Base64 and insert image into editor
+  // 파일 선택 시 MIME/크기/해상도 검증 후 Base64로 변환하여 에디터에 이미지 삽입
+  // Validate MIME type, size, and resolution, then convert selected file to Base64 and insert image into editor
   const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !editor) return;
@@ -100,10 +103,24 @@ export default function RichEditor({ content, onChange, placeholder }: RichEdito
       e.target.value = '';
       return;
     }
+
+    // CM-M-02: 이미지 해상도 검증 — 4096x4096 초과 시 거부
+    // CM-M-02: Validate image resolution — reject if exceeds 4096x4096
     const reader = new FileReader();
     reader.onload = () => {
       const src = reader.result as string;
-      editor.chain().focus().setImage({ src }).run();
+      const img = new window.Image();
+      img.onload = () => {
+        if (img.width > MAX_IMAGE_DIMENSION || img.height > MAX_IMAGE_DIMENSION) {
+          addToast(t('editor.imageResolutionTooLarge'), 'error');
+          return;
+        }
+        editor.chain().focus().setImage({ src }).run();
+      };
+      img.onerror = () => {
+        addToast(t('editor.invalidImageType'), 'error');
+      };
+      img.src = src;
     };
     reader.readAsDataURL(file);
     e.target.value = '';
