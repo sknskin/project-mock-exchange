@@ -230,6 +230,23 @@ const translations = {
     'leaderboard.absolutePnl': '절대수익',
     'leaderboard.investedOnly': '투자자만',
     'leaderboard.copyTradeOnly': '카피트레이딩만',
+    'leaderboard.profile.title': '사용자 프로필',
+    'leaderboard.profile.totalAssets': '총 자산',
+    'leaderboard.profile.returnRate': '수익률',
+    'leaderboard.profile.pnlAmount': '손익 금액',
+    'leaderboard.profile.follow': '팔로우',
+    'leaderboard.profile.unfollow': '언팔로우',
+    'leaderboard.profile.copyTrade': '카피 트레이딩',
+    'leaderboard.profile.rank': '#{rank}위',
+    'leaderboard.profile.close': '닫기',
+    'leaderboard.profile.holdings': '보유 종목',
+    'leaderboard.profile.holdingsEmpty': '보유 종목이 없습니다',
+    'leaderboard.profile.holdingsLoading': '보유 종목 불러오는 중...',
+    'leaderboard.profile.symbol': '종목',
+    'leaderboard.profile.quantity': '수량',
+    'leaderboard.profile.avgPrice': '평균 매수가',
+    'leaderboard.profile.currentValue': '평가 금액',
+    'leaderboard.profile.holdingPnl': '손익률',
 
     // Portfolio (additional)
     'portfolio.totalAssets': '총 자산',
@@ -1022,6 +1039,10 @@ const translations = {
     'orders.analysisTrades': '건',
     'orders.side': '매매',
     'orders.executedAt': '체결일시',
+    // ORD-M-01: 커스텀 기간 필터 / Custom date range filter
+    'orders.customRange': '직접 설정',
+    'orders.dateFrom': '시작일',
+    'orders.dateTo': '종료일',
 
     // Export
     'export.csv': 'CSV 내보내기',
@@ -1966,6 +1987,7 @@ const translations = {
     // 에디터 (Editor)
     'editor.invalidImageType': 'JPG, PNG, GIF, WebP 이미지만 업로드할 수 있습니다.',
     'editor.imageTooLarge': '이미지 크기는 5MB를 초과할 수 없습니다.',
+    'editor.imageResolutionTooLarge': '이미지 해상도는 4096x4096 픽셀을 초과할 수 없습니다.',
 
     // 전략 공유 (Strategy Sharing)
     'strategy.title': '전략 공유',
@@ -2027,6 +2049,17 @@ const translations = {
     'feed.sellExecuted': '매도 체결',
     'feed.emptyHint': '커뮤니티에서 트레이더를 팔로우해보세요',
     'feed.goToTraders': '트레이더 찾기',
+    'feed.detail.title': '거래 상세',
+    'feed.detail.trader': '트레이더',
+    'feed.detail.type': '거래 유형',
+    'feed.detail.symbol': '종목',
+    'feed.detail.quantity': '수량',
+    'feed.detail.price': '가격',
+    'feed.detail.total': '추정 총액',
+    'feed.detail.tradeId': '거래 ID',
+    'feed.detail.timestamp': '거래 시각',
+    'feed.detail.buy': '매수',
+    'feed.detail.sell': '매도',
 
     // Copy Trading (카피 트레이딩)
     'copyTrade.title': '카피 트레이딩',
@@ -2311,6 +2344,23 @@ const translations = {
     'leaderboard.absolutePnl': 'Abs. PnL',
     'leaderboard.investedOnly': 'Invested only',
     'leaderboard.copyTradeOnly': 'Copy trading only',
+    'leaderboard.profile.title': 'User Profile',
+    'leaderboard.profile.totalAssets': 'Total Assets',
+    'leaderboard.profile.returnRate': 'Return Rate',
+    'leaderboard.profile.pnlAmount': 'PnL Amount',
+    'leaderboard.profile.follow': 'Follow',
+    'leaderboard.profile.unfollow': 'Unfollow',
+    'leaderboard.profile.copyTrade': 'Copy Trade',
+    'leaderboard.profile.rank': 'Rank #{rank}',
+    'leaderboard.profile.close': 'Close',
+    'leaderboard.profile.holdings': 'Holdings',
+    'leaderboard.profile.holdingsEmpty': 'No holdings',
+    'leaderboard.profile.holdingsLoading': 'Loading holdings...',
+    'leaderboard.profile.symbol': 'Symbol',
+    'leaderboard.profile.quantity': 'Qty',
+    'leaderboard.profile.avgPrice': 'Avg Price',
+    'leaderboard.profile.currentValue': 'Value',
+    'leaderboard.profile.holdingPnl': 'P&L',
 
     // Portfolio (additional)
     'portfolio.totalAssets': 'Total Assets',
@@ -3103,6 +3153,10 @@ const translations = {
     'orders.analysisTrades': '',
     'orders.side': 'Side',
     'orders.executedAt': 'Executed At',
+    // ORD-M-01: Custom date range filter
+    'orders.customRange': 'Custom',
+    'orders.dateFrom': 'From',
+    'orders.dateTo': 'To',
 
     // Export
     'export.csv': 'Export CSV',
@@ -4047,6 +4101,7 @@ const translations = {
     // Editor
     'editor.invalidImageType': 'Only JPG, PNG, GIF, WebP images are allowed.',
     'editor.imageTooLarge': 'Image size cannot exceed 5MB.',
+    'editor.imageResolutionTooLarge': 'Image resolution cannot exceed 4096x4096 pixels.',
 
     // Strategy Sharing
     'strategy.title': 'Strategy Sharing',
@@ -4108,6 +4163,17 @@ const translations = {
     'feed.sellExecuted': 'Sell Executed',
     'feed.emptyHint': 'Follow traders from the community page',
     'feed.goToTraders': 'Find Traders',
+    'feed.detail.title': 'Trade Detail',
+    'feed.detail.trader': 'Trader',
+    'feed.detail.type': 'Trade Type',
+    'feed.detail.symbol': 'Symbol',
+    'feed.detail.quantity': 'Quantity',
+    'feed.detail.price': 'Price',
+    'feed.detail.total': 'Estimated Total',
+    'feed.detail.tradeId': 'Trade ID',
+    'feed.detail.timestamp': 'Timestamp',
+    'feed.detail.buy': 'BUY',
+    'feed.detail.sell': 'SELL',
 
     // Copy Trading
     'copyTrade.title': 'Copy Trading',
