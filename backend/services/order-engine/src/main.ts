@@ -50,8 +50,13 @@ async function bootstrap() {
     }),
   );
 
-  // 내부 전용 서비스 — CORS 비활성화 (API Gateway만 접근)
-  // Internal-only service — CORS disabled (access through API Gateway only)
+  // INT-L-01: 내부 전용 서비스 — CORS 비활성화 (API Gateway만 접근)
+  // 프로덕션 환경에서는 이 서비스를 내부 네트워크(private subnet)에만 바인딩해야 합니다.
+  // 예: app.listen(port, '10.0.0.0') 또는 Docker/Kubernetes 네트워크 정책으로 외부 접근을 차단합니다.
+  //
+  // INT-L-01: Internal-only service — CORS disabled (access through API Gateway only)
+  // In production, bind this service to internal network only (private subnet).
+  // e.g., app.listen(port, '10.0.0.0') or use Docker/Kubernetes network policies to block external access.
 
   const port = process.env.ORDER_ENGINE_PORT || 3002;
   await app.listen(port);
