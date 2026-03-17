@@ -7,7 +7,7 @@
  */
 'use client';
 
-import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import { useState, useMemo, useRef, useEffect, useCallback, type MutableRefObject } from 'react';
 import { ChevronDown } from 'lucide-react';
 import AssetListItem from './AssetListItem';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -89,8 +89,27 @@ export default function AssetList({ assets, period, onPeriodChange, mainTab = 'r
   const lastSortTimeRef = useRef(0);
   const SORT_THROTTLE_MS = 3000;
 
+  // FR-H-01: assets 배열의 참조가 WebSocket 틱마다 변경되므로 ref로 안정적 참조 유지
+  // FR-H-01: assets array reference changes on every WS tick, use ref for stable reference
+  const assetsRef = useRef(assets) as MutableRefObject<Asset[]>;
+  assetsRef.current = assets;
+  const assetsLenRef = useRef(assets.length);
+  const assetsSymbolsRef = useRef('');
+  const currentSymbols = useMemo(() => assets.map((a) => a.symbol).join(','), [assets]);
+  // 심볼 구성이 변경될 때만 새 값으로 업데이트 (길이 + 심볼 문자열 비교)
+  // Only update when symbol composition changes (length + symbol string comparison)
+  const assetsVersion = useMemo(() => {
+    if (assets.length !== assetsLenRef.current || currentSymbols !== assetsSymbolsRef.current) {
+      assetsLenRef.current = assets.length;
+      assetsSymbolsRef.current = currentSymbols;
+      return currentSymbols;
+    }
+    return assetsSymbolsRef.current;
+  }, [assets.length, currentSymbols]);
+
   const filtered = useMemo(() => {
-    const assetMap = new Map(assets.map((a) => [a.symbol, a]));
+    const currentAssets = assetsRef.current;
+    const assetMap = new Map(currentAssets.map((a) => [a.symbol, a]));
     const now = Date.now();
 
     const filterChanged =
@@ -107,13 +126,13 @@ export default function AssetList({ assets, period, onPeriodChange, mainTab = 'r
     if (needsResort) {
       let result: Asset[];
       if (category === 'all') {
-        result = [...assets];
+        result = [...currentAssets];
       } else if (category === 'STOCK_KR') {
-        result = assets.filter((a) => a.type === 'STOCK' && a.symbol.endsWith('.KS'));
+        result = currentAssets.filter((a) => a.type === 'STOCK' && a.symbol.endsWith('.KS'));
       } else if (category === 'STOCK_US') {
-        result = assets.filter((a) => a.type === 'STOCK' && !a.symbol.endsWith('.KS'));
+        result = currentAssets.filter((a) => a.type === 'STOCK' && !a.symbol.endsWith('.KS'));
       } else {
-        result = assets.filter((a) => a.type === category);
+        result = currentAssets.filter((a) => a.type === category);
       }
 
       const tiebreak = (a: Asset, b: Asset) => a.symbol.localeCompare(b.symbol);
@@ -147,7 +166,7 @@ export default function AssetList({ assets, period, onPeriodChange, mainTab = 'r
     return sortedOrderRef.current
       .map((sym) => assetMap.get(sym))
       .filter((a): a is Asset => a != null);
-  }, [assets, category, sort, period, mainTab]);
+  }, [assetsVersion, category, sort, period, mainTab]);
 
   const paged = useMemo(() => filtered.slice(0, page * PAGE_SIZE), [filtered, page]);
   const hasMore = paged.length < filtered.length;
