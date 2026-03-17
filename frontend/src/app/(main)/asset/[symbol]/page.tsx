@@ -7,7 +7,7 @@
  */
 'use client';
 
-import { useState, useCallback, useMemo, use, startTransition } from 'react';
+import { useState, useCallback, useMemo, use, startTransition, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAssetPrice, useCandlesticks, useOrderBook, useRecentTrades } from '@/hooks/useMarket';
 import { useWebSocket } from '@/hooks/useWebSocket';
@@ -112,17 +112,34 @@ export default function AssetDetailPage({
   }, [isAuthenticated, isWatchlisted, symbol, addWatchlist, removeWatchlist]);
 
   /**
-   * WebSocket 실시간 가격 구독 — 현재 심볼의 가격만 필터링
-   * REST API 가격을 초기값으로, WebSocket 수신 시 오버라이드
+   * WS-M-01: WebSocket 실시간 가격 구독 — 500ms 쓰로틀 + startTransition
+   * 대시보드와 동일한 배치 패턴으로 과도한 렌더링 방지
    *
-   * WebSocket live price subscription — filters only current symbol's updates
-   * REST API price as initial value, overridden by WebSocket updates
+   * WS-M-01: WebSocket live price subscription — 500ms throttle + startTransition
+   * Uses same batching pattern as dashboard to prevent excessive renders
    */
   const [livePrice, setLivePrice] = useState<PriceUpdate | null>(null);
+  const pendingPriceRef = useRef<PriceUpdate | null>(null);
+  const throttleTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  // 타이머 정리 / Cleanup timer
+  useEffect(() => {
+    return () => { if (throttleTimerRef.current) clearTimeout(throttleTimerRef.current); };
+  }, []);
 
   const handlePriceUpdate = useCallback((update: PriceUpdate) => {
     if (update.symbol === symbol) {
-      startTransition(() => { setLivePrice(update); });
+      pendingPriceRef.current = update;
+      if (!throttleTimerRef.current) {
+        throttleTimerRef.current = setTimeout(() => {
+          const pending = pendingPriceRef.current;
+          pendingPriceRef.current = null;
+          throttleTimerRef.current = undefined;
+          if (pending) {
+            startTransition(() => { setLivePrice(pending); });
+          }
+        }, 500);
+      }
     }
   }, [symbol]);
 
