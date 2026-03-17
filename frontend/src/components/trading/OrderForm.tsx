@@ -100,22 +100,22 @@ export default function OrderForm({
   const { data: portfolio } = usePortfolio();
   const [confirmOpen, setConfirmOpen] = useState(false);
 
-  // currentPrice 또는 통화 모드 변경 시 지정가 갱신 (Sync limit price with currentPrice/currency)
-  useEffect(() => {
-    const safePrice = Number.isFinite(currentPrice) ? currentPrice : 0;
-    if (safePrice > 0) {
-      const displayPrice = toDisplayPrice(safePrice, symbol, currencyMode, rate);
-      setPrice(displayPrice.toString());
-    }
-  }, [currentPrice, symbol, currencyMode, rate]);
-
-  // 통화 모드 변경 시 트리거 가격도 동기화 — ref로 이전 값 추적하여 경쟁 조건 방지
-  // Sync triggerPrice when currency mode changes — use refs for prev values to prevent race condition
+  // PF-M-02: price + triggerPrice 업데이트를 단일 useEffect로 병합하여 캐스케이딩 렌더 방지
+  // PF-M-02: Merge price + triggerPrice updates into a single useEffect to avoid cascading re-renders
   const prevCurrencyModeRef = useRef(currencyMode);
   const prevRateRef = useRef(rate);
   useEffect(() => {
     const prevMode = prevCurrencyModeRef.current;
     const prevR = prevRateRef.current;
+
+    // 지정가 갱신 (Sync limit price with currentPrice/currency)
+    const safePrice = Number.isFinite(currentPrice) ? currentPrice : 0;
+    if (safePrice > 0) {
+      const displayPrice = toDisplayPrice(safePrice, symbol, currencyMode, rate);
+      setPrice(displayPrice.toString());
+    }
+
+    // 통화 모드 변경 시 트리거 가격도 동기화 (Sync triggerPrice when currency mode changes)
     if (triggerPrice && (prevMode !== currencyMode || prevR !== rate)) {
       const parsedTrigger = parseFloat(triggerPrice);
       if (parsedTrigger > 0 && Number.isFinite(parsedTrigger)) {
@@ -124,9 +124,10 @@ export default function OrderForm({
         setTriggerPrice(newDisplay.toString());
       }
     }
+
     prevCurrencyModeRef.current = currencyMode;
     prevRateRef.current = rate;
-  }, [currencyMode, rate, symbol, triggerPrice]);
+  }, [currentPrice, symbol, currencyMode, rate]);
 
   const typeTabs = useMemo(
     () => typeTabKeys.map((i) => ({ key: i.key, label: t(i.i18nKey) })),
