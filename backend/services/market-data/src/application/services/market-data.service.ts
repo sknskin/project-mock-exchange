@@ -459,6 +459,7 @@ export class MarketDataService implements OnModuleInit {
       { name: '5m', minutes: 5 },
       { name: '15m', minutes: 15 },
       { name: '1h', minutes: 60 },
+      { name: '4h', minutes: 240 },
       { name: '1d', minutes: 1440 },
     ];
 

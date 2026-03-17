@@ -151,34 +151,32 @@ export function useCandlesticks(
   interval: string = '1m',
   limit: number = 2000,
 ) {
-  // 상위 interval 집계를 위해 필요한 1m 데이터 수를 계산
-  // 예: 5m 캔들 100개를 만들려면 1m 데이터 500개 필요
-  // Calculate how many 1m candles are needed for higher interval aggregation
-  // Example: 100 x 5m candles require 500 x 1m data points
-  const fetchLimit = interval === '1m' ? limit
-    : interval === '5m' ? limit * 5
-    : interval === '15m' ? limit * 15
-    : interval === '1h' ? Math.min(limit * 60, 5000)
-    : interval === '4h' ? Math.min(limit * 240, 5000)
-    : Math.min(limit * 1440, 2000);
+  // CS-M-01: 백엔드가 5m/15m/1h/4h/1d interval을 직접 집계하므로, 요청 interval로 직접 조회
+  // 폴백이 필요한 경우에만 1m 데이터를 가져와 클라이언트에서 집계
+  // CS-M-01: Backend aggregates 5m/15m/1h/4h/1d intervals server-side; query requested interval directly
+  // Only fetch 1m data for client-side aggregation as a fallback
+  const FALLBACK_1M_MULTIPLIER: Record<string, number> = {
+    '5m': 5, '15m': 15, '1h': 60, '4h': 240, '1d': 1440,
+  };
+  const fallbackLimit = Math.min(limit * (FALLBACK_1M_MULTIPLIER[interval] ?? 1), 5000);
 
   return useQuery<Candlestick[]>({
     queryKey: ['market', 'candlesticks', symbol, interval],
     queryFn: async () => {
-      // 1단계: 먼저 요청한 interval로 시도
-      // Step 1: Try the requested interval first
+      // 1단계: 백엔드에서 요청한 interval의 사전 집계된 데이터 조회
+      // Step 1: Fetch pre-aggregated data from backend for the requested interval
       const { data } = await api.get(
         `/api/market/prices/${symbol}/candlesticks`,
-        { params: { interval, limit: interval === '1m' ? fetchLimit : limit } },
+        { params: { interval, limit } },
       );
       let raw = data.data ?? data;
 
-      // 2단계: 요청한 interval에 데이터가 없으면 1m 데이터로 폴백하여 클라이언트 집계
+      // 2단계: 백엔드에 해당 interval 데이터가 없으면 1m 데이터로 폴백하여 클라이언트 집계
       // Step 2: Fallback to 1m data for client-side aggregation if requested interval is empty
       if ((!raw || raw.length === 0) && interval !== '1m') {
         const fallback = await api.get(
           `/api/market/prices/${symbol}/candlesticks`,
-          { params: { interval: '1m', limit: fetchLimit } },
+          { params: { interval: '1m', limit: fallbackLimit } },
         );
         raw = fallback.data.data ?? fallback.data;
       }
