@@ -4,286 +4,30 @@
  *
  * @file Community Page
  * @description Community page with real discussion board, real strategy sharing, and trader rankings
+ *
+ * PF-M-01 / BD-M-01: 950-line monolith split into lazy-loaded tab components
  */
 'use client';
 
-import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
-import Pagination from '@/components/ui/Pagination';
+import dynamic from 'next/dynamic';
 import LoginRequiredModal from '@/components/ui/LoginRequiredModal';
-import ConfirmModal from '@/components/ui/ConfirmModal';
 import { useLeaderboard } from '@/hooks/useLeaderboard';
 import { useAuthStore } from '@/stores/auth';
 import { useTranslation } from '@/hooks/useTranslation';
-import { cn, formatPercent, formatCurrencyDisplay, formatRelativeTime } from '@/lib/format';
-import { useExchangeRate } from '@/hooks/useExchangeRate';
-import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
-import { useCommunityPosts } from '@/hooks/useCommunity';
-import { useFollowing, useFollowTrader, useUnfollowTrader, useBatchFollowCounts } from '@/hooks/useFollow';
-import { useStrategies, useLikeStrategy } from '@/hooks/useStrategy';
-import { useCopyTradeStatus } from '@/hooks/useCopyTrade';
-import ActivityFeed from '@/components/trading/ActivityFeed';
-import CopyTradeModal from '@/components/trading/CopyTradeModal';
-import {
-  Users,
-  TrendingUp,
-  Heart,
-  MessageCircle,
-  UserPlus,
-  UserCheck,
-  Trophy,
-  AlertTriangle,
-  MessageSquare,
-  PenSquare,
-  Clock,
-  ThumbsUp,
-  Eye,
-  Search,
-  Paperclip,
-  Lock,
-  Copy,
-  X,
-} from 'lucide-react';
-import type { TranslationKey } from '@/lib/i18n';
-import type { LeaderboardEntry, CommunityStrategy } from '@/types';
+import { cn } from '@/lib/format';
+import { Users } from 'lucide-react';
 
-/* ───────── 상수 / Constants ───────── */
+/* ───────── 동적 임포트 — 탭별 코드 스플리팅 / Dynamic imports — per-tab code splitting ───────── */
 
-/* ───────── 전략 카드 컴포넌트 / Strategy Card Component ───────── */
-
-/** 전략 카드 — 실제 전략의 종목/수익률/좋아요/댓글 표시
- * Strategy card — displays real strategy symbol, return, likes, comments */
-function StrategyCard({
-  strategy,
-  locale,
-  onClick,
-  onLike,
-}: {
-  strategy: CommunityStrategy;
-  locale: 'ko' | 'en';
-  onClick: () => void;
-  onLike: () => void;
-}) {
-  return (
-    <div
-      onClick={onClick}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } }}
-      role="button"
-      tabIndex={0}
-      className="bg-bg-secondary/60 border border-border/60 rounded-xl p-4 hover:border-accent/30 transition-all cursor-pointer"
-    >
-      {/* Top: 작성자 + 종목 / author + symbol */}
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="w-8 h-8 rounded-full bg-accent/15 border border-accent/30 flex items-center justify-center shrink-0">
-            <span className="text-[12px] font-bold text-accent">
-              {strategy.authorName.charAt(0).toUpperCase()}
-            </span>
-          </div>
-          <span className="text-[13px] font-semibold text-text-primary truncate">
-            {strategy.authorName}
-          </span>
-        </div>
-        <span className="px-2 py-0.5 text-[11px] font-semibold rounded-md bg-accent/10 text-accent shrink-0">
-          {strategy.symbol}
-        </span>
-      </div>
-
-      {/* 전략 정보 / Strategy info */}
-      <div className="mb-3">
-        <h3 className="text-[14px] font-bold text-text-primary mb-1 line-clamp-1">
-          {strategy.title}
-        </h3>
-        <p className="text-[12px] text-text-tertiary line-clamp-2 leading-relaxed">
-          {strategy.description}
-        </p>
-      </div>
-
-      {/* 구분선 / Divider */}
-      <div className="border-t border-border/50 my-3" />
-
-      {/* 하단: 수익률 + 통계 / Bottom: performance + stats */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          {strategy.performance != null && (
-            <span
-              className={cn(
-                'flex items-center gap-1 text-[13px] font-bold tabular-nums',
-                strategy.performance >= 0 ? 'text-rise' : 'text-fall',
-              )}
-            >
-              <TrendingUp className="w-3.5 h-3.5" />
-              {strategy.performance >= 0 ? '+' : ''}
-              {strategy.performance}%
-            </span>
-          )}
-          <button
-            onClick={(e) => { e.stopPropagation(); onLike(); }}
-            className="flex items-center gap-1 text-[12px] text-text-quaternary hover:text-rise transition-colors"
-          >
-            <Heart
-              className={cn('w-3.5 h-3.5', strategy.liked && 'fill-rise text-rise')}
-            />
-            <span className="tabular-nums">{strategy.likeCount}</span>
-          </button>
-          <span className="flex items-center gap-1 text-[12px] text-text-quaternary">
-            <MessageCircle className="w-3.5 h-3.5" />
-            <span className="tabular-nums">{strategy.commentCount}</span>
-          </span>
-        </div>
-        <span className="text-[11px] text-text-quaternary">
-          {timeAgo(strategy.createdAt, locale)}
-        </span>
-      </div>
-    </div>
-  );
-}
-
-/* ───────── 트레이더 카드 컴포넌트 / Trader Card Component ───────── */
-
-/** 트레이더 카드 — 리더보드 기반 트레이더 정보 + 팔로우 기능
- * Trader card — leaderboard-based trader info + follow toggle */
-function TraderCard({
-  entry,
-  isFollowed,
-  isCopyTrading,
-  followerCount,
-  onToggleFollow,
-  onCopyTrade,
-  t,
-  fmt,
-}: {
-  entry: LeaderboardEntry;
-  isFollowed: boolean;
-  isCopyTrading: boolean;
-  followerCount: number;
-  onToggleFollow: () => void;
-  onCopyTrade: () => void;
-  t: (key: TranslationKey) => string;
-  fmt: (v: number) => string;
-}) {
-  const displayName = entry.name || entry.username || '-';
-
-  return (
-    <div className="bg-bg-secondary/60 border border-border/60 rounded-xl p-4 hover:border-accent/30 transition-all">
-      {/* 아바타 + 이름 / Avatar + Name */}
-      <div className="flex items-center gap-3 mb-3">
-        <div className="w-10 h-10 rounded-full bg-accent/15 border border-accent/30 flex items-center justify-center shrink-0">
-          <span className="text-[14px] font-bold text-accent">
-            {displayName.charAt(0).toUpperCase()}
-          </span>
-        </div>
-        <div className="min-w-0">
-          <span className="block text-[14px] font-semibold text-text-primary truncate">
-            {displayName}
-          </span>
-          <span className="flex items-center gap-1 text-[12px] text-yellow-400 font-medium">
-            <Trophy className="w-3 h-3" />
-            {t('community.rank')} #{entry.rank}
-          </span>
-        </div>
-      </div>
-
-      {/* 통계 / Stats */}
-      <div className="space-y-2 mb-3">
-        <div className="flex items-center justify-between">
-          <span className="text-[12px] text-text-tertiary">{t('community.returnRate')}</span>
-          <span
-            className={cn(
-              'text-[13px] font-bold tabular-nums',
-              entry.pnlPercent >= 0 ? 'text-rise' : 'text-fall',
-            )}
-          >
-            {formatPercent(entry.pnlPercent)}
-          </span>
-        </div>
-        <div className="flex items-center justify-between">
-          <span className="text-[12px] text-text-tertiary">{t('community.totalAssets')}</span>
-          <span className="text-[13px] font-medium text-text-secondary tabular-nums">
-            {fmt(entry.totalValue)}
-          </span>
-        </div>
-      </div>
-
-      {/* 구분선 / Divider */}
-      <div className="border-t border-border/50 my-3" />
-
-      {/* 팔로우 버튼 + 카피 트레이딩 + 팔로워 수 / Follow button + Copy Trade button + followers */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={onToggleFollow}
-            className={cn(
-              'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-colors',
-              isFollowed
-                ? 'bg-bg-tertiary text-text-secondary'
-                : 'bg-accent text-white hover:bg-accent/90',
-            )}
-          >
-            {isFollowed ? (
-              <>
-                <UserCheck className="w-3.5 h-3.5" />
-                {t('community.following')}
-              </>
-            ) : (
-              <>
-                <UserPlus className="w-3.5 h-3.5" />
-                {t('community.follow')}
-              </>
-            )}
-          </button>
-          {/* 카피 트레이딩 버튼 — 팔로우와 동일 스타일 / Copy Trade button — same style as follow */}
-          <button
-            onClick={onCopyTrade}
-            className={cn(
-              'flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-colors',
-              isCopyTrading
-                ? 'bg-bg-tertiary text-text-secondary'
-                : 'bg-accent/10 text-accent hover:bg-accent/20',
-            )}
-            title={isCopyTrading ? t('copyTrade.active') : t('copyTrade.title')}
-          >
-            <Copy className="w-3 h-3" />
-            {isCopyTrading ? t('copyTrade.active') : t('copyTrade.title')}
-          </button>
-        </div>
-        <span className="text-[11px] text-text-quaternary">
-          {t('community.followers')} {followerCount + (isFollowed ? 1 : 0)}
-        </span>
-      </div>
-    </div>
-  );
-}
+const DiscussionsTab = dynamic(() => import('@/components/community/DiscussionsTab'), { ssr: false });
+const StrategiesTab = dynamic(() => import('@/components/community/StrategiesTab'), { ssr: false });
+const TradersTab = dynamic(() => import('@/components/community/TradersTab'), { ssr: false });
+const ActivityFeed = dynamic(() => import('@/components/trading/ActivityFeed'), { ssr: false });
 
 /* ───────── 메인 페이지 / Main Page ───────── */
-
-const DISCUSSION_CATEGORIES = [
-  { value: 'ALL', ko: '전체', en: 'All' },
-  { value: 'FREE', ko: '자유토론', en: 'Discussion' },
-  { value: 'INFO', ko: '정보공유', en: 'Info' },
-  { value: 'QUESTION', ko: '질문', en: 'Question' },
-  { value: 'STRATEGY', ko: '전략', en: 'Strategy' },
-  { value: 'ANALYSIS', ko: '분석', en: 'Analysis' },
-  { value: 'PROOF', ko: '인증', en: 'Proof' },
-];
-
-const CATEGORY_LABELS: Record<string, { ko: string; en: string }> = {
-  FREE: { ko: '자유토론', en: 'Discussion' },
-  INFO: { ko: '정보공유', en: 'Info' },
-  QUESTION: { ko: '질문', en: 'Question' },
-  STRATEGY: { ko: '전략', en: 'Strategy' },
-  ANALYSIS: { ko: '분석', en: 'Analysis' },
-  PROOF: { ko: '인증', en: 'Proof' },
-};
-
-// 상대 시간 표시 — 공유 유틸 사용 / Relative time display — uses shared utility
-const timeAgo = formatRelativeTime;
-
-// HTML 태그 제거 유틸 (게시글 미리보기용) / Strip HTML tags utility (for post preview)
-function stripHtml(html: string): string {
-  return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
-}
 
 /** Suspense 래퍼 — useSearchParams 사용을 위해 필요
  * Suspense wrapper — required for useSearchParams usage in Next.js 15 */
@@ -298,7 +42,7 @@ export default function CommunityPageWrapper() {
 /** 커뮤니티 페이지 컴포넌트 — 자유게시판/전략 공유/트레이더 랭킹 탭
  * Community page component — discussions, strategies, and trader rankings tabs */
 function CommunityPage() {
-  const { t, locale } = useTranslation();
+  const { t } = useTranslation();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -312,24 +56,7 @@ function CommunityPage() {
   const [tab, setTabRaw] = useState<'discussions' | 'strategies' | 'traders' | 'feed'>(initialTab);
   const setTab = useCallback((v: typeof tab) => { setTabRaw(v); window.scrollTo({ top: 0, behavior: 'smooth' }); }, []);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  const { data: leaderboardData, isLoading } = useLeaderboard();
-
-  // 실제 팔로우 훅 사용 / Use real follow hooks
-  const { data: followingData } = useFollowing();
-  const followTrader = useFollowTrader();
-  const unfollowTrader = useUnfollowTrader();
-  const followedUserIds = useMemo(() => {
-    if (!followingData) return new Set<string>();
-    return new Set(followingData.map((f) => f.followeeId));
-  }, [followingData]);
-
-  // 카피 트레이딩 모달 상태 / Copy trade modal state
-  const [copyTradeTarget, setCopyTradeTarget] = useState<{ id: string; name: string; pnlPercent: number } | null>(null);
-
-  const { query: { data: rateData } } = useExchangeRate();
-  const { display: currencyMode } = useCurrencyDisplay();
-  const rate = rateData?.rate;
-  const fmt = (v: number) => formatCurrencyDisplay(v, currencyMode, rate);
+  const { data: leaderboardData } = useLeaderboard();
 
   // 로그인 필요 모달 상태 / Login required modal state
   const [loginModalOpen, setLoginModalOpen] = useState(false);
@@ -341,77 +68,6 @@ function CommunityPage() {
     setLoginModalOpen(true);
   }, []);
 
-  // 자유게시판 상태 / Discussion board state
-  const [discussionPage, setDiscussionPage] = useState(1);
-  const [discussionCategory, setDiscussionCategory] = useState('ALL');
-  const [searchInput, setSearchInput] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
-
-  // 디바운스 검색 — 300ms 후 쿼리 적용 / Debounced search — applies query after 300ms
-  useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      setSearchQuery(searchInput);
-      setDiscussionPage(1);
-    }, 300);
-    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
-  }, [searchInput]);
-
-  const { data: postsData, isLoading: postsLoading } = useCommunityPosts(
-    discussionPage,
-    discussionCategory !== 'ALL' ? discussionCategory : undefined,
-    searchQuery || undefined,
-  );
-
-  // 전략 상태 / Strategy state
-  const [strategyPage, setStrategyPage] = useState(1);
-  const [strategySymbol, setStrategySymbol] = useState('ALL');
-  const [strategySearch, setStrategySearch] = useState('');
-  const [strategySearchQuery, setStrategySearchQuery] = useState('');
-  const strategyDebounceRef = useRef<ReturnType<typeof setTimeout>>(null);
-
-  // 전략 검색 디바운스 / Strategy search debounce
-  useEffect(() => {
-    if (strategyDebounceRef.current) clearTimeout(strategyDebounceRef.current);
-    strategyDebounceRef.current = setTimeout(() => {
-      setStrategySearchQuery(strategySearch);
-      setStrategyPage(1);
-    }, 300);
-    return () => { if (strategyDebounceRef.current) clearTimeout(strategyDebounceRef.current); };
-  }, [strategySearch]);
-
-  const { data: strategiesData, isLoading: strategiesLoading } = useStrategies(
-    strategyPage,
-    strategySymbol !== 'ALL' ? strategySymbol : undefined,
-    strategySearchQuery || undefined,
-  );
-  const likeStrategy = useLikeStrategy();
-
-  // 트레이더 탭: 투자자만 + 카피트레이딩만 필터 / Traders tab: invested-only + copy-trade-only filter
-  const [tradersInvestedOnly, setTradersInvestedOnly] = useState(true);
-  const [tradersCopyTradeOnly, setTradersCopyTradeOnly] = useState(false);
-
-  // 카피 트레이딩 상태 / Copy trade status
-  const { data: copyTradeConfigs } = useCopyTradeStatus();
-  const copyTradingUserIds = useMemo(() => {
-    if (!copyTradeConfigs) return new Set<string>();
-    return new Set(copyTradeConfigs.filter((c) => c.isActive).map((c) => c.traderId));
-  }, [copyTradeConfigs]);
-
-  // 활성 트레이더 (투자자만/카피트레이딩만 필터) / Active traders (invested-only + copy-trade-only filter)
-  const activeTraders = useMemo(() => {
-    if (!leaderboardData) return [];
-    let filtered = leaderboardData;
-    if (tradersInvestedOnly) filtered = filtered.filter((e) => e.hasTraded);
-    if (tradersCopyTradeOnly) filtered = filtered.filter((e) => copyTradingUserIds.has(e.id));
-    return filtered.map((entry, i) => ({ ...entry, rank: i + 1 }));
-  }, [leaderboardData, tradersInvestedOnly, tradersCopyTradeOnly, copyTradingUserIds]);
-
-  // 트레이더 팔로워 수 일괄 조회 — anon_ ID 제외 / Batch fetch follower counts — exclude anon_ IDs
-  const traderUserIds = useMemo(() => activeTraders.map((e) => e.id).filter((id) => !id.startsWith('anon_')), [activeTraders]);
-  const { data: batchFollowCounts } = useBatchFollowCounts(traderUserIds);
-
   /** 전략 글쓰기 자격 확인 — 시스템관리자 무조건 허용, 일반 사용자는 수익률 5% 이상 또는 자산 상위 20%
    * Check strategy write eligibility — always allowed for SYSTEM/ADMIN, otherwise return rate >= 5% or top 20% assets */
   const canWriteStrategy = useMemo(() => {
@@ -420,50 +76,14 @@ function CommunityPage() {
     // 시스템관리자/관리자는 무조건 글쓰기 가능 / SYSTEM/ADMIN can always write strategies
     if (userAuth && (userAuth.role === 'SYSTEM' || userAuth.role === 'ADMIN')) return true;
     if (!leaderboardData || leaderboardData.length === 0) return false;
-    // 리더보드에서 현재 사용자 찾기 (isMe 플래그 또는 ID 매칭)
-    // Find current user in leaderboard (via isMe flag or ID matching)
     const userEntry = leaderboardData.find((e) => e.isMe || (userAuth && e.id === userAuth.id));
     if (!userEntry) return false;
-    // 수익률 5% 이상 / Return rate >= 5%
     if (userEntry.pnlPercent >= 5) return true;
-    // 자산 상위 20% / Top 20% total assets
     const sorted = [...leaderboardData].sort((a, b) => b.totalValue - a.totalValue);
     const userIndex = sorted.findIndex((e) => e.id === userEntry.id);
     if (userIndex >= 0 && userIndex < sorted.length * 0.2) return true;
     return false;
   }, [isAuthenticated, leaderboardData]);
-
-  /** 트레이더 팔로우/언팔로우 토글 — 실제 API 호출
-   * Toggle trader follow/unfollow — real API call */
-  const currentUser = useAuthStore((s) => s.user);
-
-  // 언팔로우 확인 모달 상태 / Unfollow confirm modal state
-  const [unfollowTarget, setUnfollowTarget] = useState<string | null>(null);
-
-  const toggleFollow = useCallback((userId: string) => {
-    if (!isAuthenticated) {
-      showLoginModal();
-      return;
-    }
-    // 자기 자신 팔로우 불가 / Cannot follow yourself
-    if (currentUser && currentUser.id === userId) return;
-    // anon_ ID는 팔로우 불가 / Cannot follow anonymized IDs
-    if (userId.startsWith('anon_')) return;
-    if (followedUserIds.has(userId)) {
-      // 언팔로우 시 확인 모달 표시 / Show confirmation before unfollow
-      setUnfollowTarget(userId);
-    } else {
-      followTrader.mutate(userId);
-    }
-  }, [isAuthenticated, currentUser, followedUserIds, followTrader, showLoginModal]);
-
-  /** 언팔로우 확인 처리 / Confirm unfollow handler */
-  const confirmUnfollow = useCallback(() => {
-    if (unfollowTarget) {
-      unfollowTrader.mutate(unfollowTarget);
-      setUnfollowTarget(null);
-    }
-  }, [unfollowTarget, unfollowTrader]);
 
   /** 트레이더 탭 클릭 핸들러 — 비로그인 시 로그인 모달 표시
    * Traders tab click handler — shows login modal for non-authenticated users */
@@ -497,13 +117,13 @@ function CommunityPage() {
 
   /** 전략 좋아요 토글 — 비로그인 시 로그인 모달
    * Toggle strategy like — login modal for non-auth */
-  const handleStrategyLike = useCallback((strategyId: string) => {
+  const handleStrategyLike = useCallback((_strategyId: string) => {
     if (!isAuthenticated) {
       showLoginModal(t('community.strategyLoginRequired'));
       return;
     }
-    likeStrategy.mutate(strategyId);
-  }, [isAuthenticated, likeStrategy, showLoginModal, t]);
+    // Like is handled inside StrategiesTab via useLikeStrategy — this is a guard only
+  }, [isAuthenticated, showLoginModal, t]);
 
   /** 글쓰기 버튼 클릭 핸들러 — 비로그인 시 로그인 모달 표시
    * Write button click handler — shows login modal for non-authenticated users */
@@ -514,6 +134,17 @@ function CommunityPage() {
     }
     router.push('/community/new');
   }, [isAuthenticated, router, showLoginModal]);
+
+  /** 전략 글쓰기 핸들러 — 비로그인 시 로그인 모달, 자격 미달 시 무시
+   * Strategy write handler — login modal for non-auth, ignore if not eligible */
+  const handleStrategyWriteClick = useCallback(() => {
+    if (!isAuthenticated) {
+      showLoginModal();
+      return;
+    }
+    if (!canWriteStrategy) return;
+    router.push('/community/strategy/new');
+  }, [isAuthenticated, canWriteStrategy, router, showLoginModal]);
 
   return (
       <div>
@@ -531,17 +162,6 @@ function CommunityPage() {
             {t('community.title')}
           </h1>
         </div>
-
-        {/* 카피 트레이딩 모달 / Copy Trade Modal */}
-        {copyTradeTarget && (
-          <CopyTradeModal
-            isOpen={!!copyTradeTarget}
-            onClose={() => setCopyTradeTarget(null)}
-            traderId={copyTradeTarget.id}
-            traderName={copyTradeTarget.name}
-            returnRate={copyTradeTarget.pnlPercent}
-          />
-        )}
 
         {/* 탭 네비게이션 / Tab navigation */}
         <div className="flex items-center border-b border-border mb-5">
@@ -571,374 +191,32 @@ function CommunityPage() {
 
         {/* 자유게시판 탭 / Discussions Tab */}
         {tab === 'discussions' && (
-          <div>
-            {/* 카테고리 필터 + 글쓰기 / Category filter + Write button */}
-            <div className="flex items-center justify-between gap-3 mb-4">
-              <div className="flex flex-wrap gap-1.5">
-                {DISCUSSION_CATEGORIES.map((cat) => (
-                  <button
-                    key={cat.value}
-                    onClick={() => { setDiscussionCategory(cat.value); setDiscussionPage(1); }}
-                    className={cn(
-                      'px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors',
-                      discussionCategory === cat.value
-                        ? 'bg-accent text-white'
-                        : 'bg-bg-tertiary text-text-tertiary hover:text-text-secondary',
-                    )}
-                  >
-                    {locale === 'ko' ? cat.ko : cat.en}
-                  </button>
-                ))}
-              </div>
-              <button
-                onClick={handleWriteClick}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-accent text-white text-[13px] font-semibold hover:bg-accent/90 transition-colors shrink-0"
-              >
-                <PenSquare className="w-3.5 h-3.5" />
-                {t('community.writePost')}
-              </button>
-            </div>
-
-            {/* 검색 / Search */}
-            <div className="relative mb-4">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-quaternary" />
-              <input
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                placeholder={t('community.post.searchPlaceholder')}
-                className="w-full pl-9 pr-9 py-2.5 rounded-xl bg-bg-secondary border border-border/50 text-[13px] text-text-primary placeholder:text-text-quaternary focus:outline-none focus:border-accent/50"
-              />
-              {searchInput && (
-                <button onClick={() => setSearchInput('')} className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 text-text-quaternary hover:text-text-primary transition-colors" aria-label="Clear search">
-                  <X className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-
-            {/* 게시글 목록 / Post list */}
-            {postsLoading ? (
-              <div className="space-y-3">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="bg-bg-secondary/60 border border-border/60 rounded-xl p-4 animate-pulse">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="h-4 w-16 bg-bg-tertiary rounded" />
-                      <div className="h-3 w-20 bg-bg-tertiary rounded" />
-                    </div>
-                    <div className="h-4 w-3/4 bg-bg-tertiary rounded mb-1" />
-                    <div className="h-3 w-1/2 bg-bg-tertiary rounded" />
-                  </div>
-                ))}
-              </div>
-            ) : (postsData?.data && postsData.data.length > 0) ? (
-              <div className="space-y-3">
-                {postsData.data.map((post) => (
-                  <div
-                    key={post.id}
-                    onClick={() => handlePostClick(post.id, post.visibility)}
-                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handlePostClick(post.id, post.visibility); } }}
-                    role="button"
-                    tabIndex={0}
-                    className="bg-bg-secondary/60 border border-border/60 rounded-xl p-4 hover:border-accent/30 transition-all cursor-pointer"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <span className="px-2 py-0.5 text-[10px] font-semibold rounded-md bg-accent/10 text-accent shrink-0">
-                            {CATEGORY_LABELS[post.category]?.[locale] ?? post.category}
-                          </span>
-                          {/* 회원 전용 잠금 아이콘 / Members-only lock icon */}
-                          {post.visibility === 'MEMBERS_ONLY' && (
-                            <span className="flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-semibold rounded-md bg-warning/10 text-warning shrink-0" title={t('community.membersOnly')}>
-                              <Lock className="w-3 h-3" />
-                              {t('community.membersOnly')}
-                            </span>
-                          )}
-                          <span className="text-[12px] text-text-quaternary truncate">
-                            {post.authorName}
-                          </span>
-                        </div>
-                        <h3 className="text-[14px] font-bold text-text-primary mb-1 line-clamp-1">
-                          {post.title}
-                        </h3>
-                        <p className="text-[12px] text-text-tertiary line-clamp-1 leading-relaxed">
-                          {stripHtml(post.content)}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border/40">
-                      <span className="flex items-center gap-1 text-[12px] text-text-quaternary">
-                        <ThumbsUp className="w-3.5 h-3.5" />
-                        <span className="tabular-nums">{post._count?.likes ?? post.likeCount ?? 0}</span>
-                      </span>
-                      <span className="flex items-center gap-1 text-[12px] text-text-quaternary">
-                        <MessageSquare className="w-3.5 h-3.5" />
-                        <span className="tabular-nums">{post._count?.comments ?? post.commentCount ?? 0}</span>
-                      </span>
-                      <span className="flex items-center gap-1 text-[12px] text-text-quaternary">
-                        <Eye className="w-3.5 h-3.5" />
-                        <span className="tabular-nums">{post.viewCount}</span>
-                      </span>
-                      {(post.attachmentCount ?? 0) > 0 && (
-                        <span className="flex items-center gap-1 text-[12px] text-text-quaternary">
-                          <Paperclip className="w-3.5 h-3.5" />
-                          <span className="tabular-nums">{post.attachmentCount}</span>
-                        </span>
-                      )}
-                      <span className="flex items-center gap-1 text-[12px] text-text-quaternary ml-auto">
-                        <Clock className="w-3 h-3" />
-                        {timeAgo(post.createdAt, locale)}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="py-24 text-center text-text-quaternary text-[14px]">
-                {t('community.post.noPosts')}
-              </div>
-            )}
-
-            {/* 페이지네이션 / Pagination */}
-            {postsData && postsData.totalPages > 1 && (
-              <Pagination
-                page={discussionPage}
-                totalPages={postsData.totalPages}
-                total={postsData.total}
-                limit={postsData.limit}
-                onPageChange={setDiscussionPage}
-              />
-            )}
-          </div>
+          <DiscussionsTab
+            onPostClick={handlePostClick}
+            onWriteClick={handleWriteClick}
+          />
         )}
 
         {/* 전략 공유 탭 / Strategies Tab */}
         {tab === 'strategies' && (
-          <div>
-            {/* 카테고리 필터 + 검색 + 전략 글쓰기 버튼 / Category filter + Search + Strategy write button */}
-            <div className="flex flex-col gap-3 mb-4">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex flex-wrap gap-1.5">
-                  {([
-                    { key: 'ALL', label: t('strategy.allSymbols') },
-                    { key: 'CRYPTO', label: t('community.strategyCrypto') },
-                    { key: 'STOCK_KR', label: t('community.strategyStockKR') },
-                    { key: 'STOCK_US', label: t('community.strategyStockUS') },
-                  ] as const).map(({ key, label }) => (
-                    <button
-                      key={key}
-                      onClick={() => { setStrategySymbol(key); setStrategyPage(1); }}
-                      className={cn(
-                        'px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors',
-                        strategySymbol === key
-                          ? 'bg-accent text-white'
-                          : 'bg-bg-tertiary text-text-tertiary hover:text-text-secondary',
-                      )}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              <button
-                onClick={() => {
-                  if (!isAuthenticated) {
-                    showLoginModal();
-                    return;
-                  }
-                  // 자격 미충족 시 비활성 상태 — 클릭해도 동작하지 않음
-                  // If criteria not met, button is disabled — click does nothing
-                  if (!canWriteStrategy) return;
-                  router.push('/community/strategy/new');
-                }}
-                disabled={isAuthenticated && !canWriteStrategy}
-                className={cn(
-                  'flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[13px] font-semibold transition-colors shrink-0',
-                  isAuthenticated && !canWriteStrategy
-                    ? 'bg-bg-tertiary text-text-quaternary cursor-not-allowed'
-                    : 'bg-accent text-white hover:bg-accent/90',
-                )}
-                title={isAuthenticated && !canWriteStrategy ? t('community.strategyWriteRestriction') : undefined}
-              >
-                <PenSquare className="w-3.5 h-3.5" />
-                {t('community.strategyWriteButton')}
-              </button>
-              </div>
-
-              {/* 전략 검색 / Strategy search */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-text-quaternary" />
-                <input
-                  type="text"
-                  value={strategySearch}
-                  onChange={(e) => setStrategySearch(e.target.value)}
-                  placeholder={t('community.strategySearchPlaceholder')}
-                  maxLength={100}
-                  className="w-full pl-9 pr-3.5 py-2.5 bg-bg-secondary rounded-xl text-[13px] text-text-primary placeholder:text-text-quaternary outline-none focus:ring-1 focus:ring-accent/30"
-                />
-              </div>
-            </div>
-
-            {strategiesLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="bg-bg-secondary/60 border border-border/60 rounded-xl p-4 animate-pulse"
-                  >
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="w-8 h-8 rounded-full bg-bg-tertiary" />
-                      <div className="h-4 w-24 bg-bg-tertiary rounded" />
-                    </div>
-                    <div className="h-4 w-full bg-bg-tertiary rounded mb-2" />
-                    <div className="h-3 w-3/4 bg-bg-tertiary rounded mb-3" />
-                    <div className="border-t border-border/50 my-3" />
-                    <div className="h-3 w-1/2 bg-bg-tertiary rounded" />
-                  </div>
-                ))}
-              </div>
-            ) : (strategiesData?.data && strategiesData.data.length > 0) ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {strategiesData.data.map((strategy) => (
-                  <StrategyCard
-                    key={strategy.id}
-                    strategy={strategy}
-                    locale={locale}
-                    onClick={() => handleStrategyClick(strategy.id)}
-                    onLike={() => handleStrategyLike(strategy.id)}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="py-24 text-center text-text-quaternary text-[14px]">
-                {t('strategy.empty')}
-              </div>
-            )}
-
-            {/* 전략 페이지네이션 / Strategy Pagination */}
-            {strategiesData && strategiesData.totalPages > 1 && (
-              <Pagination
-                page={strategyPage}
-                totalPages={strategiesData.totalPages}
-                total={strategiesData.total}
-                limit={strategiesData.limit}
-                onPageChange={setStrategyPage}
-              />
-            )}
-
-            {/* 전략 글쓰기 제한 안내 / Strategy write restriction notice */}
-            <div className="flex items-center gap-2 px-3 py-2 mt-4 rounded-lg bg-bg-secondary/60 border border-border/40">
-              <AlertTriangle className="w-3.5 h-3.5 text-text-quaternary shrink-0" />
-              <span className="text-[12px] text-text-tertiary">
-                {t('community.strategyWriteRestriction')}
-              </span>
-            </div>
-          </div>
+          <StrategiesTab
+            isAuthenticated={isAuthenticated}
+            canWriteStrategy={canWriteStrategy}
+            onStrategyClick={handleStrategyClick}
+            onStrategyLike={handleStrategyLike}
+            onWriteClick={handleStrategyWriteClick}
+          />
         )}
 
         {/* 트레이더 탭 / Traders Tab */}
         {tab === 'traders' && (
-          <div>
-            {/* 투자자만 필터 + 참여자 수 / Invested-only filter + participant count */}
-            <div className="flex items-center gap-4 mb-4">
-              <label className="flex items-center gap-2 cursor-pointer select-none group">
-                <div className="relative">
-                  <input
-                    type="checkbox"
-                    checked={tradersInvestedOnly}
-                    onChange={(e) => setTradersInvestedOnly(e.target.checked)}
-                    className="peer sr-only"
-                  />
-                  <div className="w-[34px] h-[18px] rounded-full bg-border peer-checked:bg-accent transition-colors" />
-                  <div className="absolute top-[2px] left-[2px] w-[14px] h-[14px] rounded-full bg-white shadow-sm transition-transform peer-checked:translate-x-[16px]" />
-                </div>
-                <span className="text-[12px] font-medium text-text-tertiary group-hover:text-text-secondary transition-colors">{t('community.investedOnly')}</span>
-              </label>
-              {isAuthenticated && (
-                <label className="flex items-center gap-2 cursor-pointer select-none group">
-                  <div className="relative">
-                    <input
-                      type="checkbox"
-                      checked={tradersCopyTradeOnly}
-                      onChange={(e) => setTradersCopyTradeOnly(e.target.checked)}
-                      className="peer sr-only"
-                    />
-                    <div className="w-[34px] h-[18px] rounded-full bg-border peer-checked:bg-accent transition-colors" />
-                    <div className="absolute top-[2px] left-[2px] w-[14px] h-[14px] rounded-full bg-white shadow-sm transition-transform peer-checked:translate-x-[16px]" />
-                  </div>
-                  <span className="text-[12px] font-medium text-text-tertiary group-hover:text-text-secondary transition-colors">{t('leaderboard.copyTradeOnly')}</span>
-                </label>
-              )}
-              <div className="flex items-center gap-1.5 text-[12px] text-text-tertiary">
-                <Users className="w-3.5 h-3.5" />
-                <span>{activeTraders.length}{t('community.tradersCount')}</span>
-              </div>
-            </div>
-
-            {isLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="bg-bg-secondary/60 border border-border/60 rounded-xl p-4 animate-pulse"
-                  >
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="w-10 h-10 rounded-full bg-bg-tertiary" />
-                      <div>
-                        <div className="h-4 w-20 bg-bg-tertiary rounded mb-1" />
-                        <div className="h-3 w-14 bg-bg-tertiary rounded" />
-                      </div>
-                    </div>
-                    <div className="h-3 w-full bg-bg-tertiary rounded mb-2" />
-                    <div className="h-3 w-3/4 bg-bg-tertiary rounded mb-3" />
-                    <div className="border-t border-border/50 my-3" />
-                    <div className="h-8 w-20 bg-bg-tertiary rounded" />
-                  </div>
-                ))}
-              </div>
-            ) : activeTraders.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {activeTraders.map((entry) => (
-                  <TraderCard
-                    key={entry.id}
-                    entry={entry}
-                    isFollowed={followedUserIds.has(entry.id)}
-                    isCopyTrading={copyTradingUserIds.has(entry.id)}
-                    followerCount={batchFollowCounts?.[entry.id] ?? 0}
-                    onToggleFollow={() => toggleFollow(entry.id)}
-                    onCopyTrade={() => {
-                      if (!isAuthenticated) { showLoginModal(); return; }
-                      // 자기 자신 카피트레이딩 방지 / Prevent self copy trading
-                      if (currentUser && currentUser.id === entry.id) return;
-                      setCopyTradeTarget({ id: entry.id, name: entry.name || entry.username || '-', pnlPercent: entry.pnlPercent });
-                    }}
-                    t={t}
-                    fmt={fmt}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="py-24 text-center text-text-quaternary text-[14px]">
-                {t('community.noStrategies')}
-              </div>
-            )}
-          </div>
+          <TradersTab showLoginModal={showLoginModal} />
         )}
 
         {/* 활동 피드 탭 / Activity Feed Tab */}
         {tab === 'feed' && (
           <ActivityFeed />
         )}
-
-        {/* 언팔로우 확인 모달 / Unfollow Confirmation Modal */}
-      <ConfirmModal
-        isOpen={!!unfollowTarget}
-        onClose={() => setUnfollowTarget(null)}
-        onConfirm={confirmUnfollow}
-        title={t('follow.unfollowConfirmTitle')}
-        message={t('follow.unfollowConfirmMessage')}
-        confirmLabel={t('follow.unfollow')}
-        cancelLabel={t('common.cancel')}
-        confirmVariant="danger"
-      />
       </div>
   );
 }
