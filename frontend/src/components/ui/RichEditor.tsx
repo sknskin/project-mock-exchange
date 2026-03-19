@@ -88,9 +88,14 @@ export default function RichEditor({ content, onChange, placeholder }: RichEdito
   // CM-M-02: Maximum image resolution limit — prevents excessive memory usage
   const MAX_IMAGE_DIMENSION = 4096; // 4096x4096 px
 
-  // 파일 선택 시 MIME/크기/해상도 검증 후 Base64로 변환하여 에디터에 이미지 삽입
-  // Validate MIME type, size, and resolution, then convert selected file to Base64 and insert image into editor
-  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // IMG-M-01: 이미지 업로드 — 서버 업로드 엔드포인트를 사용하여 URL을 삽입합니다.
+  // 현재 첨부파일 API(/api/community/posts/:id/attachments)는 게시글 ID가 필요하므로,
+  // postId가 전달된 경우에만 서버 업로드를 사용하고, 그렇지 않으면 data URL을 사용합니다.
+  //
+  // IMG-M-01: Image upload — uses server upload endpoint to insert URL.
+  // The attachment API (/api/community/posts/:id/attachments) requires a post ID,
+  // so we use server upload only when postId is available, otherwise fall back to data URL.
+  const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !editor) return;
     if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
@@ -107,20 +112,30 @@ export default function RichEditor({ content, onChange, placeholder }: RichEdito
     // CM-M-02: 이미지 해상도 검증 — 4096x4096 초과 시 거부
     // CM-M-02: Validate image resolution — reject if exceeds 4096x4096
     const reader = new FileReader();
-    reader.onload = () => {
-      const src = reader.result as string;
+    reader.onload = async () => {
+      const dataUrl = reader.result as string;
       const img = new window.Image();
-      img.onload = () => {
+      img.onload = async () => {
         if (img.width > MAX_IMAGE_DIMENSION || img.height > MAX_IMAGE_DIMENSION) {
           addToast(t('editor.imageResolutionTooLarge'), 'error');
           return;
         }
-        editor.chain().focus().setImage({ src }).run();
+
+        // TODO: IMG-M-01 — 독립적인 이미지 업로드 API 엔드포인트를 생성하면
+        // Base64 data URL 대신 서버 URL을 삽입할 수 있습니다.
+        // 현재 첨부파일 API는 게시글 ID를 필수로 요구하므로,
+        // 게시글 작성 시점에서는 사용할 수 없습니다.
+        //
+        // TODO: IMG-M-01 — Once a standalone image upload API endpoint is created,
+        // insert server URL instead of Base64 data URL.
+        // The current attachment API requires a post ID,
+        // so it cannot be used at post creation time.
+        editor.chain().focus().setImage({ src: dataUrl }).run();
       };
       img.onerror = () => {
         addToast(t('editor.invalidImageType'), 'error');
       };
-      img.src = src;
+      img.src = dataUrl;
     };
     reader.readAsDataURL(file);
     e.target.value = '';
