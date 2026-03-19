@@ -385,10 +385,10 @@ export default function AdminUserDetailPage({
 
           {/* User Info Tab */}
           {activeTab === 'info' && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
               {/* Basic Info */}
-              <div className="bg-bg-secondary rounded-2xl px-5 py-4">
-                <h2 className="text-[13px] font-bold text-text-tertiary uppercase tracking-wide mb-2">
+              <div className="bg-bg-secondary rounded-2xl px-3 sm:px-5 py-3 sm:py-4">
+                <h2 className="text-[12px] sm:text-[13px] font-bold text-text-tertiary uppercase tracking-wide mb-2">
                   {t('admin.users.basicInfo')}
                 </h2>
                 <div className="flex flex-col divide-y divide-border/40">
@@ -408,8 +408,8 @@ export default function AdminUserDetailPage({
               </div>
 
               {/* Account Info */}
-              <div className="bg-bg-secondary rounded-2xl px-5 py-4">
-                <h2 className="text-[13px] font-bold text-text-tertiary uppercase tracking-wide mb-2">
+              <div className="bg-bg-secondary rounded-2xl px-3 sm:px-5 py-3 sm:py-4">
+                <h2 className="text-[12px] sm:text-[13px] font-bold text-text-tertiary uppercase tracking-wide mb-2">
                   {t('admin.users.accountInfo')}
                 </h2>
                 <div className="flex flex-col divide-y divide-border/40">
@@ -433,15 +433,15 @@ export default function AdminUserDetailPage({
 
               {/* Action Buttons */}
               {canManage && (
-                <div className="bg-bg-secondary rounded-2xl px-5 py-4 lg:col-span-2">
-                  <h2 className="text-[13px] font-bold text-text-tertiary uppercase tracking-wide mb-3">
+                <div className="bg-bg-secondary rounded-2xl px-3 sm:px-5 py-3 sm:py-4 lg:col-span-2">
+                  <h2 className="text-[12px] sm:text-[13px] font-bold text-text-tertiary uppercase tracking-wide mb-3">
                     {t('admin.users.actions')}
                   </h2>
-                  <div className="flex flex-wrap gap-3">
+                  <div className="flex flex-wrap gap-2 sm:gap-3">
                     {user.approvalStatus !== 'APPROVED' && (
                       <button
                         onClick={() => openModal('approve')}
-                        className="px-5 py-2.5 rounded-xl text-[14px] font-semibold text-green-600 border border-green-600/30 hover:bg-green-600/10 transition-colors"
+                        className="px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl text-[13px] sm:text-[14px] font-semibold text-green-600 border border-green-600/30 hover:bg-green-600/10 transition-colors"
                       >
                         {t('admin.users.approve')}
                       </button>
@@ -449,7 +449,7 @@ export default function AdminUserDetailPage({
                     {user.approvalStatus !== 'REJECTED' && user.approvalStatus !== 'APPROVED' && (
                       <button
                         onClick={() => openModal('reject')}
-                        className="px-5 py-2.5 rounded-xl text-[14px] font-semibold text-orange-500 border border-orange-500/30 hover:bg-orange-500/10 transition-colors"
+                        className="px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl text-[13px] sm:text-[14px] font-semibold text-orange-500 border border-orange-500/30 hover:bg-orange-500/10 transition-colors"
                       >
                         {t('admin.users.reject')}
                       </button>
@@ -457,7 +457,7 @@ export default function AdminUserDetailPage({
                     {user.approvalStatus === 'APPROVED' && user.isActive && (
                       <button
                         onClick={() => openModal('deactivate')}
-                        className="px-5 py-2.5 rounded-xl text-[14px] font-semibold text-yellow-600 border border-yellow-600/30 hover:bg-yellow-600/10 transition-colors"
+                        className="px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl text-[13px] sm:text-[14px] font-semibold text-yellow-600 border border-yellow-600/30 hover:bg-yellow-600/10 transition-colors"
                       >
                         {t('admin.users.deactivate')}
                       </button>
@@ -465,7 +465,7 @@ export default function AdminUserDetailPage({
                     {user.approvalStatus === 'APPROVED' && !user.isActive && (
                       <button
                         onClick={() => openModal('activate')}
-                        className="px-5 py-2.5 rounded-xl text-[14px] font-semibold text-green-600 border border-green-600/30 hover:bg-green-600/10 transition-colors"
+                        className="px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl text-[13px] sm:text-[14px] font-semibold text-green-600 border border-green-600/30 hover:bg-green-600/10 transition-colors"
                       >
                         {t('admin.users.activate')}
                       </button>
@@ -473,7 +473,7 @@ export default function AdminUserDetailPage({
                     {user.approvalStatus === 'APPROVED' && (
                       <button
                         onClick={() => openModal('delete')}
-                        className="px-5 py-2.5 rounded-xl text-[14px] font-semibold text-danger border border-danger/30 hover:bg-danger/10 transition-colors"
+                        className="px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl text-[13px] sm:text-[14px] font-semibold text-danger border border-danger/30 hover:bg-danger/10 transition-colors"
                       >
                         {t('admin.users.delete')}
                       </button>
@@ -484,7 +484,7 @@ export default function AdminUserDetailPage({
                           setSelectedRole(user.role === 'ADMIN' ? 'USER' : 'ADMIN');
                           setActiveModal('changeRole');
                         }}
-                        className="px-5 py-2.5 rounded-xl text-[14px] font-semibold text-purple-500 border border-purple-500/30 hover:bg-purple-500/10 transition-colors"
+                        className="px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl text-[13px] sm:text-[14px] font-semibold text-purple-500 border border-purple-500/30 hover:bg-purple-500/10 transition-colors"
                       >
                         {t('admin.changeRole')}
                       </button>

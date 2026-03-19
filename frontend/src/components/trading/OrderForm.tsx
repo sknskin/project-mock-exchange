@@ -96,6 +96,7 @@ export default function OrderForm({
   const [triggerPrice, setTriggerPrice] = useState('');
   const [quantityError, setQuantityError] = useState('');
   const [priceError, setPriceError] = useState('');
+  const [triggerPriceError, setTriggerPriceError] = useState('');
   const placeOrder = usePlaceOrder();
   const { data: portfolio } = usePortfolio();
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -179,6 +180,16 @@ export default function OrderForm({
       setPriceError(t('order.pricePlaceholder'));
     } else {
       setPriceError('');
+    }
+  };
+
+  /** 트리거 가격 유효성 검사
+   * Validate trigger price */
+  const validateTriggerPrice = () => {
+    if (triggerPrice && parseFloat(triggerPrice) <= 0) {
+      setTriggerPriceError(t('order.triggerPricePlaceholder'));
+    } else {
+      setTriggerPriceError('');
     }
   };
 
@@ -271,13 +282,18 @@ export default function OrderForm({
       )}
 
       {isConditional && (
-        <Input
-          label={`${t('order.triggerPrice')} (${currencyLabel})`}
-          type="number"
-          value={triggerPrice}
-          onChange={(e) => setTriggerPrice(e.target.value)}
-          placeholder={t('order.triggerPricePlaceholder')}
-        />
+        <div>
+          <Input
+            label={`${t('order.triggerPrice')} (${currencyLabel})`}
+            type="number"
+            value={triggerPrice}
+            onChange={(e) => { setTriggerPrice(e.target.value); setTriggerPriceError(''); }}
+            onBlur={validateTriggerPrice}
+            placeholder={t('order.triggerPricePlaceholder')}
+            aria-describedby={triggerPriceError ? 'trigger-price-error' : undefined}
+          />
+          {triggerPriceError && <p id="trigger-price-error" className="text-[11px] text-danger mt-1">{triggerPriceError}</p>}
+        </div>
       )}
 
       <div>
@@ -288,7 +304,10 @@ export default function OrderForm({
           onChange={(e) => { setQuantity(e.target.value); setQuantityError(''); }}
           onBlur={validateQuantity}
           placeholder={t('order.quantityPlaceholder')}
-          aria-describedby={quantityError ? 'quantity-error' : undefined}
+          aria-describedby={
+            [quantityError && 'quantity-error', insufficientHoldings && 'insufficient-holdings-error']
+              .filter(Boolean).join(' ') || undefined
+          }
         />
         {quantityError && <p id="quantity-error" className="text-[11px] text-danger mt-1">{quantityError}</p>}
         {/* 비율 수량 선택기 / Percentage quantity selector */}
@@ -344,7 +363,7 @@ export default function OrderForm({
         )}
         {/* 매도 시 보유량 부족 경고 (Insufficient holdings warning for sell) */}
         {insufficientHoldings && (
-          <p className="text-[11px] text-danger mt-1">{t('order.insufficientHoldings')}</p>
+          <p id="insufficient-holdings-error" className="text-[11px] text-danger mt-1">{t('order.insufficientHoldings')}</p>
         )}
       </div>
 
