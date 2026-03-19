@@ -18,7 +18,7 @@ import ScrollToTop from '@/components/layout/ScrollToTop';
 import ToastContainer from '@/components/ui/ToastContainer';
 import LiveToastContainer from '@/components/ui/LiveToastContainer';
 import ConnectionGuard from '@/components/layout/ConnectionGuard';
-import ChatPanel from '@/components/chat/ChatPanel';
+import AuthenticatedChatPanel from '@/components/chat/AuthenticatedChatPanel';
 import MainContent from '@/components/layout/MainContent';
 
 export const metadata: Metadata = {
@@ -91,7 +91,7 @@ export default function RootLayout({
             <BottomNav />
             <ToastContainer />
             <LiveToastContainer />
-            <ChatPanel />
+            <AuthenticatedChatPanel />
           </ConnectionGuard>
         </QueryProvider>
       </body>
