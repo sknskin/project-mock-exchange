@@ -4,6 +4,8 @@
  *
  * @file Orders Hook
  * @description Fetches orders, trade history, and executes orders via TanStack Query
+ *
+ * API-M-01 + API-M-02: Server-side pagination support with limit/offset params
  */
 'use client';
 
@@ -26,6 +28,12 @@ export interface TradeHistory {
   executedAt: string;
 }
 
+/** 페이지네이션된 주문 응답 / Paginated order response */
+export interface PaginatedOrders {
+  orders: Order[];
+  total: number;
+}
+
 // ===== 주문 조회 (Order Query) =====
 
 /**
@@ -36,14 +44,18 @@ export interface TradeHistory {
  * Normalizes backend field names (orderId, orderType, etc.) to frontend Order type.
  *
  * @param status - 주문 상태 필터 (선택: 'PENDING', 'FILLED' 등) / Order status filter (optional: 'PENDING', 'FILLED', etc.)
+ * @param limit - 페이지당 건수 (기본 50) / Items per page (default 50)
+ * @param offset - 오프셋 (기본 0) / Offset (default 0)
  * @returns TanStack Query 결과 (Order[]) / TanStack Query result (Order[])
  */
-export function useOrders(status?: string) {
+export function useOrders(status?: string, limit = 50, offset = 0) {
   return useQuery<Order[]>({
-    queryKey: ['orders', status],
+    queryKey: ['orders', status, limit, offset],
     queryFn: async () => {
       const params: Record<string, string> = {};
       if (status) params.status = status;
+      params.limit = String(limit);
+      params.offset = String(offset);
       const { data } = await api.get('/api/orders', { params });
       const raw: Record<string, unknown>[] = data.data ?? data;
 

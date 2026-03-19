@@ -13,6 +13,7 @@ import AuthGuard from '@/components/layout/AuthGuard';
 import TransactionList from '@/components/portfolio/TransactionList';
 import ExchangeRateBar from '@/components/market/ExchangeRateBar';
 import ConfirmModal from '@/components/ui/ConfirmModal';
+import Pagination from '@/components/ui/Pagination';
 import Skeleton from '@/components/ui/Skeleton';
 import ServiceError from '@/components/ui/ServiceError';
 import RefreshControl from '@/components/ui/RefreshControl';
@@ -359,11 +360,19 @@ export default function OrdersPage() {
   const [symbolSearch, setSymbolSearch] = useState('');
   const user = useAuthStore((s) => s.user);
 
+  // API-M-01: 서버 측 페이지네이션 상태 / Server-side pagination state
+  const ORDERS_PER_PAGE = 50;
+  const [orderPage, setOrderPage] = useState(1);
+  const orderOffset = (orderPage - 1) * ORDERS_PER_PAGE;
+
   // 데이터 조회 — 체결내역은 모든 탭에서 공유 (분석 탭에서도 사용) / Data fetching — trades shared across tabs (used by analysis tab too)
   const { data: trades, isLoading: tradesLoading, error: tradesError, refetch: refetchTrades } = useTradeHistory();
   // statusFilter가 'all'이면 undefined 전달하여 전체 조회 / Pass undefined for 'all' to fetch all orders
+  // API-M-01: limit/offset을 서버에 전달하여 서버 측 페이지네이션 / Pass limit/offset to server for server-side pagination
   const { data: orders, isLoading, error: ordersError, refetch: refetchOrders } = useOrders(
     statusFilter === 'all' ? undefined : statusFilter,
+    ORDERS_PER_PAGE,
+    orderOffset,
   );
 
   const handleRefresh = useCallback(async () => {
@@ -523,7 +532,7 @@ export default function OrdersPage() {
               {/* Status filter – custom dropdown */}
               <StatusDropdown
                 value={statusFilter}
-                onChange={setStatusFilter}
+                onChange={(v) => { setStatusFilter(v); setOrderPage(1); }}
                 options={STATUS_OPTIONS}
                 t={t}
               />
@@ -717,6 +726,18 @@ export default function OrdersPage() {
                 <TransactionList orders={filteredOrders ?? []} />
               )}
             </div>
+
+            {/* API-M-01: 서버 측 페이지네이션 — 정확한 total이 없으므로 현재 결과 수로 추정
+               Server-side pagination — no exact total from API, estimate from current result count */}
+            {orders && (orderPage > 1 || orders.length === ORDERS_PER_PAGE) && (
+              <Pagination
+                page={orderPage}
+                totalPages={orders.length === ORDERS_PER_PAGE ? orderPage + 1 : orderPage}
+                total={(orderPage - 1) * ORDERS_PER_PAGE + orders.length}
+                limit={ORDERS_PER_PAGE}
+                onPageChange={setOrderPage}
+              />
+            )}
           </>
         )}
 
