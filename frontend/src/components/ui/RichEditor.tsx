@@ -7,10 +7,12 @@
  */
 'use client';
 
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import { useToastStore } from '@/stores/toast';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useAuthStore } from '@/stores/auth';
+import api from '@/lib/api';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
 import Underline from '@tiptap/extension-underline';
@@ -46,6 +48,8 @@ export default function RichEditor({ content, onChange, placeholder }: RichEdito
   const fileInputRef = useRef<HTMLInputElement>(null);
   const addToast = useToastStore((s) => s.addToast);
   const { t } = useTranslation();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const [uploading, setUploading] = useState(false);
 
   const editor = useEditor({
     extensions: [
@@ -88,13 +92,11 @@ export default function RichEditor({ content, onChange, placeholder }: RichEdito
   // CM-M-02: Maximum image resolution limit — prevents excessive memory usage
   const MAX_IMAGE_DIMENSION = 4096; // 4096x4096 px
 
-  // IMG-M-01: 이미지 업로드 — 서버 업로드 엔드포인트를 사용하여 URL을 삽입합니다.
-  // 현재 첨부파일 API(/api/community/posts/:id/attachments)는 게시글 ID가 필요하므로,
-  // postId가 전달된 경우에만 서버 업로드를 사용하고, 그렇지 않으면 data URL을 사용합니다.
+  // IMG-M-01: 이미지 업로드 — 인증 시 서버 업로드 API를 사용하여 URL을 삽입합니다.
+  // 비인증 시 data URL 폴백을 사용합니다.
   //
-  // IMG-M-01: Image upload — uses server upload endpoint to insert URL.
-  // The attachment API (/api/community/posts/:id/attachments) requires a post ID,
-  // so we use server upload only when postId is available, otherwise fall back to data URL.
+  // IMG-M-01: Image upload — uses server upload API to insert URL when authenticated.
+  // Falls back to data URL for unauthenticated users.
   const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !editor) return;
@@ -121,16 +123,36 @@ export default function RichEditor({ content, onChange, placeholder }: RichEdito
           return;
         }
 
-        // TODO: IMG-M-01 — 독립적인 이미지 업로드 API 엔드포인트를 생성하면
-        // Base64 data URL 대신 서버 URL을 삽입할 수 있습니다.
-        // 현재 첨부파일 API는 게시글 ID를 필수로 요구하므로,
-        // 게시글 작성 시점에서는 사용할 수 없습니다.
-        //
-        // TODO: IMG-M-01 — Once a standalone image upload API endpoint is created,
-        // insert server URL instead of Base64 data URL.
-        // The current attachment API requires a post ID,
-        // so it cannot be used at post creation time.
-        editor.chain().focus().setImage({ src: dataUrl }).run();
+        // 인증된 사용자: 서버 업로드 API로 이미지 업로드 후 URL 삽입
+        // Authenticated user: upload image via server API and insert URL
+        if (isAuthenticated) {
+          try {
+            setUploading(true);
+            const base64Data = dataUrl.split(',')[1]; // data URL에서 base64 부분 추출
+            const { data: response } = await api.post('/api/community/upload-image', {
+              originalName: file.name,
+              mimeType: file.type,
+              data: base64Data,
+            });
+            const imageUrl = response.data?.url;
+            if (imageUrl) {
+              editor.chain().focus().setImage({ src: imageUrl }).run();
+            } else {
+              // 업로드 응답에 URL이 없으면 data URL 폴백
+              editor.chain().focus().setImage({ src: dataUrl }).run();
+            }
+          } catch {
+            // 서버 업로드 실패 시 data URL 폴백
+            // Fall back to data URL if server upload fails
+            editor.chain().focus().setImage({ src: dataUrl }).run();
+          } finally {
+            setUploading(false);
+          }
+        } else {
+          // 비인증 사용자: data URL 사용 (폴백)
+          // Unauthenticated: use data URL (fallback)
+          editor.chain().focus().setImage({ src: dataUrl }).run();
+        }
       };
       img.onerror = () => {
         addToast(t('editor.invalidImageType'), 'error');
@@ -199,7 +221,11 @@ export default function RichEditor({ content, onChange, placeholder }: RichEdito
         </ToolBtn>
         <div className="w-px h-5 bg-border/50 mx-1" />
         <ToolBtn onClick={handleImageUpload} label="Insert image">
-          <ImageIcon className="w-4 h-4" />
+          {uploading ? (
+            <span className="w-4 h-4 border-2 border-text-quaternary border-t-accent rounded-full animate-spin inline-block" />
+          ) : (
+            <ImageIcon className="w-4 h-4" />
+          )}
         </ToolBtn>
         <div className="w-px h-5 bg-border/50 mx-1" />
         <ToolBtn onClick={() => editor.chain().focus().undo().run()} label="Undo">
