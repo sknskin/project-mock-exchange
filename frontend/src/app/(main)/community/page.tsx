@@ -54,7 +54,19 @@ function CommunityPage() {
   })();
 
   const [tab, setTabRaw] = useState<'discussions' | 'strategies' | 'traders' | 'feed'>(initialTab);
-  const setTab = useCallback((v: typeof tab) => { setTabRaw(v); window.scrollTo({ top: 0, behavior: 'smooth' }); }, []);
+  const setTab = useCallback((v: typeof tab) => {
+    setTabRaw(v);
+    // URL 파라미터 동기화 — 기본 탭(discussions)이면 파라미터 제거
+    // URL param sync — remove param for default tab (discussions)
+    const url = new URL(window.location.href);
+    if (v === 'discussions') {
+      url.searchParams.delete('tab');
+    } else {
+      url.searchParams.set('tab', v);
+    }
+    router.replace(url.pathname + url.search, { scroll: false });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [router]);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const { data: leaderboardData } = useLeaderboard();
 
