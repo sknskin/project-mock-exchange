@@ -60,7 +60,7 @@ export default function AssetDetailPage({
   const router = useRouter();
   const { t } = useTranslation();
   const { isAuthenticated } = useAuthStore();
-  const { data: asset } = useAssetPrice(symbol);
+  const { data: asset, isLoading: assetLoading } = useAssetPrice(symbol);
   const { query: { data: rateData } } = useExchangeRate();
   const currencyMode = useCurrencyDisplay((s) => s.display);
   const rate = rateData?.rate;
@@ -222,13 +222,21 @@ export default function AssetDetailPage({
         <div className="flex gap-1.5 shrink-0">
           <button
             onClick={() => handleBuySell('BUY')}
-            className="h-9 sm:h-11 px-2.5 sm:px-4 text-[12px] sm:text-[13px] font-bold text-rise border border-rise/30 rounded-md hover:bg-rise hover:text-white transition-colors"
+            disabled={assetLoading && currentPrice === 0}
+            className={cn(
+              'h-9 sm:h-11 px-2.5 sm:px-4 text-[12px] sm:text-[13px] font-bold text-rise border border-rise/30 rounded-md transition-colors',
+              assetLoading && currentPrice === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-rise hover:text-white',
+            )}
           >
             {t('detail.buy')}
           </button>
           <button
             onClick={() => handleBuySell('SELL')}
-            className="h-9 sm:h-11 px-2.5 sm:px-4 text-[12px] sm:text-[13px] font-bold text-fall border border-fall/30 rounded-md hover:bg-fall hover:text-white transition-colors"
+            disabled={assetLoading && currentPrice === 0}
+            className={cn(
+              'h-9 sm:h-11 px-2.5 sm:px-4 text-[12px] sm:text-[13px] font-bold text-fall border border-fall/30 rounded-md transition-colors',
+              assetLoading && currentPrice === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-fall hover:text-white',
+            )}
           >
             {t('detail.sell')}
           </button>
@@ -240,33 +248,42 @@ export default function AssetDetailPage({
 
       {/* 현재가 / Price */}
       <div className="pb-5 mt-3">
-        <div className="text-[28px] sm:text-[32px] md:text-[34px] font-extrabold tabular-nums text-text-primary leading-tight break-all">
-          {fp(currentPrice)}
-        </div>
-        <div className="flex items-center gap-2 mt-1.5">
-          <span
-            className={cn(
-              'text-[14px] font-bold tabular-nums',
-              isRise && 'text-rise',
-              isFall && 'text-fall',
-              !isRise && !isFall && 'text-text-quaternary',
-            )}
-          >
-            {formatPercent(changePercent)}
-          </span>
-          {changeAmount !== 0 && (
-            <span
-              className={cn(
-                'text-[13px] tabular-nums',
-                isRise && 'text-rise',
-                isFall && 'text-fall',
-                !isRise && !isFall && 'text-text-quaternary',
+        {assetLoading && currentPrice === 0 ? (
+          <>
+            <div className="h-[36px] w-48 rounded-lg bg-bg-secondary animate-pulse" />
+            <div className="h-[20px] w-24 rounded-md bg-bg-secondary animate-pulse mt-1.5" />
+          </>
+        ) : (
+          <>
+            <div className="text-[28px] sm:text-[32px] md:text-[34px] font-extrabold tabular-nums text-text-primary leading-tight break-all">
+              {fp(currentPrice)}
+            </div>
+            <div className="flex items-center gap-2 mt-1.5">
+              <span
+                className={cn(
+                  'text-[14px] font-bold tabular-nums',
+                  isRise && 'text-rise',
+                  isFall && 'text-fall',
+                  !isRise && !isFall && 'text-text-quaternary',
+                )}
+              >
+                {formatPercent(changePercent)}
+              </span>
+              {changeAmount !== 0 && (
+                <span
+                  className={cn(
+                    'text-[13px] tabular-nums',
+                    isRise && 'text-rise',
+                    isFall && 'text-fall',
+                    !isRise && !isFall && 'text-text-quaternary',
+                  )}
+                >
+                  {fa(changeAmount)}
+                </span>
               )}
-            >
-              {fa(changeAmount)}
-            </span>
-          )}
-        </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* 차트 컨트롤 (항상 표시) / Chart controls (always visible) */}
@@ -504,15 +521,23 @@ export default function AssetDetailPage({
         <div className="flex gap-3">
           <button
             onClick={() => handleBuySell('BUY')}
-            className="flex-1 h-12 text-[15px] font-bold text-white bg-rise rounded-xl hover:bg-rise/90 transition-colors"
+            disabled={assetLoading && currentPrice === 0}
+            className={cn(
+              'flex-1 h-12 text-[15px] font-bold text-white bg-rise rounded-xl transition-colors',
+              assetLoading && currentPrice === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-rise/90',
+            )}
           >
-            {t('detail.buy')}
+            {assetLoading && currentPrice === 0 ? t('common.loading') : t('detail.buy')}
           </button>
           <button
             onClick={() => handleBuySell('SELL')}
-            className="flex-1 h-12 text-[15px] font-bold text-white bg-fall rounded-xl hover:bg-fall/90 transition-colors"
+            disabled={assetLoading && currentPrice === 0}
+            className={cn(
+              'flex-1 h-12 text-[15px] font-bold text-white bg-fall rounded-xl transition-colors',
+              assetLoading && currentPrice === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-fall/90',
+            )}
           >
-            {t('detail.sell')}
+            {assetLoading && currentPrice === 0 ? t('common.loading') : t('detail.sell')}
           </button>
         </div>
       </div>
