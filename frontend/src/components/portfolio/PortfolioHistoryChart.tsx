@@ -9,6 +9,7 @@
 
 import { useState, useMemo } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useSettingsStore } from '@/stores/settings';
 import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useTransactions } from '@/hooks/usePortfolio';
@@ -113,6 +114,8 @@ function buildHistoryFromTransactions(
  * Portfolio value history chart — time-series SVG chart based on transactions */
 export default function PortfolioHistoryChart({ totalValue }: PortfolioHistoryChartProps) {
   const { t } = useTranslation();
+  const theme = useSettingsStore((s) => s.theme);
+  const isLight = theme === 'light';
   const { display: currencyMode } = useCurrencyDisplay();
   const { query: { data: rateData } } = useExchangeRate();
   const rate = rateData?.rate ?? 0;
@@ -278,26 +281,26 @@ export default function PortfolioHistoryChart({ totalValue }: PortfolioHistoryCh
                   cy={points[points.length - 1].y}
                   r="3.5"
                   fill={isPositive ? 'rgb(34,197,94)' : 'rgb(239,68,68)'}
-                  stroke="white"
+                  stroke={isLight ? '#FFFFFF' : 'white'}
                   strokeWidth="1.5"
                 />
               )}
 
               {/* Y축 금액 라벨 / Y-axis value labels */}
               {yLabels.map((l, i) => (
-                <text key={`y-${i}`} x={paddingLeft - 6} y={l.y + 3} textAnchor="end" fill="#808A98" fontSize="8" fontFamily="inherit">
+                <text key={`y-${i}`} x={paddingLeft - 6} y={l.y + 3} textAnchor="end" fill={isLight ? '#4E5968' : '#808A98'} fontSize="8" fontFamily="inherit">
                   {l.label}
                 </text>
               ))}
 
               {/* Y축 가이드 라인 / Y-axis guide lines */}
               {yLabels.map((l, i) => (
-                <line key={`yg-${i}`} x1={paddingLeft} y1={l.y} x2={width - paddingRight} y2={l.y} stroke="#2A2A32" strokeWidth="0.5" strokeDasharray="4 4" />
+                <line key={`yg-${i}`} x1={paddingLeft} y1={l.y} x2={width - paddingRight} y2={l.y} stroke={isLight ? '#D8DCE1' : '#2A2A32'} strokeWidth="0.5" strokeDasharray="4 4" />
               ))}
 
               {/* X축 날짜 라벨 / X-axis date labels */}
               {xLabels.map((l, i) => (
-                <text key={`x-${i}`} x={l.x} y={chartBottom + 14} textAnchor="middle" fill="#808A98" fontSize="8" fontFamily="inherit">
+                <text key={`x-${i}`} x={l.x} y={chartBottom + 14} textAnchor="middle" fill={isLight ? '#4E5968' : '#808A98'} fontSize="8" fontFamily="inherit">
                   {l.label}
                 </text>
               ))}

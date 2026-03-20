@@ -20,6 +20,7 @@ import type {
   UTCTimestamp,
 } from 'lightweight-charts';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useSettingsStore } from '@/stores/settings';
 import {
   calculateSMA,
   calculateRSI,
@@ -93,6 +94,8 @@ export default function CandlestickChart({
   interval,
 }: CandlestickChartProps) {
   const { t } = useTranslation();
+  const theme = useSettingsStore((s) => s.theme);
+  const isLight = theme === 'light';
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const rsiContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
@@ -131,26 +134,26 @@ export default function CandlestickChart({
     const chart = createChart(chartContainerRef.current, {
       layout: {
         background: { type: ColorType.Solid, color: 'transparent' },
-        textColor: '#6B7683',
+        textColor: isLight ? '#4E5968' : '#6B7683',
         fontSize: 11,
       },
       grid: {
-        vertLines: { color: 'rgba(255,255,255,0.04)' },
-        horzLines: { color: 'rgba(255,255,255,0.04)' },
+        vertLines: { color: isLight ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.04)' },
+        horzLines: { color: isLight ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.04)' },
       },
       width: chartContainerRef.current.clientWidth,
       height: 380,
       crosshair: {
-        vertLine: { color: 'rgba(255,255,255,0.1)', labelBackgroundColor: '#2A2A32' },
-        horzLine: { color: 'rgba(255,255,255,0.1)', labelBackgroundColor: '#2A2A32' },
+        vertLine: { color: isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)', labelBackgroundColor: isLight ? '#E5E8EB' : '#2A2A32' },
+        horzLine: { color: isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)', labelBackgroundColor: isLight ? '#E5E8EB' : '#2A2A32' },
       },
       timeScale: {
-        borderColor: 'rgba(255,255,255,0.06)',
+        borderColor: isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.06)',
         timeVisible: true,
         secondsVisible: false,
       },
       rightPriceScale: {
-        borderColor: 'rgba(255,255,255,0.06)',
+        borderColor: isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.06)',
       },
     });
 
@@ -184,7 +187,7 @@ export default function CandlestickChart({
       bbLowerRef.current = null;
       chart.remove();
     };
-  }, []);
+  }, [isLight]);
 
   /* ========== 이펙트 2: RSI 차트 생성/제거 (Effect 2: RSI chart create/destroy) ========== */
   useEffect(() => {
@@ -203,26 +206,26 @@ export default function CandlestickChart({
     const rsiChart = createChart(rsiContainerRef.current, {
       layout: {
         background: { type: ColorType.Solid, color: 'transparent' },
-        textColor: '#6B7683',
+        textColor: isLight ? '#4E5968' : '#6B7683',
         fontSize: 10,
       },
       grid: {
-        vertLines: { color: 'rgba(255,255,255,0.04)' },
-        horzLines: { color: 'rgba(255,255,255,0.04)' },
+        vertLines: { color: isLight ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.04)' },
+        horzLines: { color: isLight ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.04)' },
       },
       width: rsiContainerRef.current.clientWidth,
       height: 120,
       crosshair: {
-        vertLine: { color: 'rgba(255,255,255,0.1)', labelBackgroundColor: '#2A2A32' },
-        horzLine: { color: 'rgba(255,255,255,0.1)', labelBackgroundColor: '#2A2A32' },
+        vertLine: { color: isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)', labelBackgroundColor: isLight ? '#E5E8EB' : '#2A2A32' },
+        horzLine: { color: isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)', labelBackgroundColor: isLight ? '#E5E8EB' : '#2A2A32' },
       },
       timeScale: {
-        borderColor: 'rgba(255,255,255,0.06)',
+        borderColor: isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.06)',
         timeVisible: true,
         secondsVisible: false,
       },
       rightPriceScale: {
-        borderColor: 'rgba(255,255,255,0.06)',
+        borderColor: isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.06)',
         scaleMargins: { top: 0.1, bottom: 0.1 },
       },
     });
@@ -310,7 +313,7 @@ export default function CandlestickChart({
       rsiChartRef.current = null;
       rsiChart.remove();
     };
-  }, [toggles.rsi, closesData]);
+  }, [toggles.rsi, closesData, isLight]);
 
   /* ========== 이펙트 3: 시리즈 타입 변경 (Effect 3: Series type change) ========== */
   useEffect(() => {
@@ -429,7 +432,9 @@ export default function CandlestickChart({
     const volumeData: HistogramData[] = sortedData.map((d) => ({
       time: (d.time / 1000) as UTCTimestamp,
       value: d.volume,
-      color: d.close >= d.open ? 'rgba(240,68,82,0.3)' : 'rgba(49,130,246,0.3)',
+      color: d.close >= d.open
+        ? (isLight ? 'rgba(240,68,82,0.4)' : 'rgba(240,68,82,0.3)')
+        : (isLight ? 'rgba(49,130,246,0.4)' : 'rgba(49,130,246,0.3)'),
     }));
     volumeSeriesRef.current.setData(volumeData);
 
@@ -469,7 +474,7 @@ export default function CandlestickChart({
       }
       isFirstRenderRef.current = false;
     }
-  }, [data, exchangeRate, chartType, closesData]);
+  }, [data, exchangeRate, chartType, closesData, isLight]);
 
   /* ========== 이펙트 5: 지표 토글 가시성 (Effect 5: Toggle indicator visibility) ========== */
   useEffect(() => {
