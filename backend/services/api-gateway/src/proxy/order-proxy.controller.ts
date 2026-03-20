@@ -24,9 +24,11 @@ import { Throttle } from '@nestjs/throttler';
 import { Request, Response } from 'express';
 import { ProxyService } from './proxy.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { AdminRolesGuard } from '../auth/admin-roles.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { ChatGateway } from '../gateway/chat.gateway';
 import { PlaceOrderDto } from './dto/place-order.dto';
+import { ModifyOrderDto } from './dto/modify-order.dto';
 
 @ApiTags('Orders')
 @Controller('api/orders')
@@ -137,7 +139,7 @@ export class OrderProxyController {
   /** 관리자용 주문 감사 로그를 order-engine으로 프록시
    * Proxy admin audit trades to order-engine service */
   @Get('trades/admin-audit')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AdminRolesGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '주문 감사 로그', description: '전체 사용자의 체결 내역을 시간순으로 조회합니다' })
   @ApiQuery({ name: 'page', required: false, description: '페이지 번호' })
@@ -182,7 +184,7 @@ export class OrderProxyController {
   /** 거래 통계 조회를 order-engine으로 프록시
    * Proxy trading statistics to order-engine service */
   @Get('stats/trading')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AdminRolesGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '거래 통계', description: '거래량, 인기 자산, 매수/매도 비율 등 거래 통계' })
   @ApiQuery({ name: 'days', required: false, description: '조회 기간 (일)' })
@@ -223,17 +225,21 @@ export class OrderProxyController {
   @ApiOperation({ summary: '체결 내역 조회', description: '현재 사용자의 체결 내역을 반환합니다' })
   @ApiQuery({ name: 'limit', required: false, description: '조회 개수' })
   @ApiQuery({ name: 'offset', required: false, description: '오프셋' })
+  @ApiQuery({ name: 'symbol', required: false, description: '종목 심볼 필터 (예: BTC-USD)' })
+  @ApiQuery({ name: 'side', required: false, description: '매수/매도 필터 (BUY 또는 SELL)' })
   @ApiResponse({ status: 200, description: '체결 내역 반환' })
   async getUserTrades(
     @Query('limit') limit: string,
     @Query('offset') offset: string,
+    @Query('symbol') symbol: string,
+    @Query('side') side: string,
     @CurrentUser('id') userId: string,
     @Res() res: Response,
   ) {
     const result = await this.proxyService.forward('order-engine', {
       method: 'GET',
       url: '/orders/trades/history',
-      params: { limit, offset },
+      params: { limit, offset, symbol: symbol || undefined, side: side || undefined },
       headers: { 'x-user-id': userId },
     });
     return res.status(result.status).json(result.data);
@@ -248,18 +254,20 @@ export class OrderProxyController {
   @ApiQuery({ name: 'limit', required: false, description: '조회 개수' })
   @ApiQuery({ name: 'offset', required: false, description: '오프셋' })
   @ApiQuery({ name: 'status', required: false, description: '주문 상태 필터 (예: PENDING, FILLED, CANCELLED)' })
+  @ApiQuery({ name: 'symbol', required: false, description: '종목 심볼 필터 (예: BTC-USD)' })
   @ApiResponse({ status: 200, description: '주문 목록 반환' })
   async getUserOrders(
     @Query('limit') limit: string,
     @Query('offset') offset: string,
     @Query('status') status: string,
+    @Query('symbol') symbol: string,
     @CurrentUser('id') userId: string,
     @Res() res: Response,
   ) {
     const result = await this.proxyService.forward('order-engine', {
       method: 'GET',
       url: '/orders',
-      params: { limit, offset, status },
+      params: { limit, offset, status, symbol: symbol || undefined },
       headers: { 'x-user-id': userId },
     });
     return res.status(result.status).json(result.data);
@@ -294,7 +302,7 @@ export class OrderProxyController {
   @ApiResponse({ status: 404, description: '주문 없음' })
   async modifyOrder(
     @Param('orderId') orderId: string,
-    @Body() body: unknown,
+    @Body() body: ModifyOrderDto,
     @CurrentUser('id') userId: string,
     @Res() res: Response,
   ) {
