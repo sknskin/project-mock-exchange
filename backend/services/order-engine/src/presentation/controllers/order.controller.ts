@@ -134,6 +134,7 @@ export class OrderController {
     @Query('limit') limit?: string,
     @Query('offset') offset?: string,
     @Query('status') status?: string,
+    @Query('symbol') symbol?: string,
   ) {
     this.validateUserId(userId);
     // 페이지네이션 최대값 제한 (1~500) — 메모리 소진 방지 / Cap pagination limit (1-500) — prevents memory exhaustion
@@ -144,6 +145,7 @@ export class OrderController {
       parsedLimit,
       parsedOffset,
       status,
+      symbol,
     );
     return { success: true, data: orders };
   }
@@ -155,12 +157,16 @@ export class OrderController {
     @Headers('x-user-id') userId: string,
     @Query('limit') limit?: string,
     @Query('offset') offset?: string,
+    @Query('symbol') symbol?: string,
+    @Query('side') side?: string,
   ) {
     this.validateUserId(userId);
     const trades = await this.orderService.getUserTrades(
       userId,
       Math.min(Math.max(parseInt(limit || '50', 10) || 50, 1), 500),
       Math.max(parseInt(offset || '0', 10) || 0, 0),
+      symbol,
+      side as 'BUY' | 'SELL' | undefined,
     );
     return { success: true, data: trades };
   }

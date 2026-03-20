@@ -557,10 +557,13 @@ export class OrderService {
 
   /** 사용자의 주문 목록을 필터링/페이징하여 조회합니다
    * Get filtered and paginated order list for a user */
-  async getUserOrders(userId: string, limit = 50, offset = 0, status?: string) {
+  async getUserOrders(userId: string, limit = 50, offset = 0, status?: string, symbol?: string) {
     const where: Prisma.OrderReadWhereInput = { userId };
     if (status) {
       where.status = status;
+    }
+    if (symbol) {
+      where.symbol = symbol;
     }
     return this.prisma.orderRead.findMany({
       where,
@@ -573,11 +576,25 @@ export class OrderService {
 
   /** 사용자의 체결 내역을 조회합니다
    * Get trade execution history for a user */
-  async getUserTrades(userId: string, limit = 50, offset = 0): Promise<unknown[]> {
+  async getUserTrades(userId: string, limit = 50, offset = 0, symbol?: string, side?: 'BUY' | 'SELL'): Promise<unknown[]> {
+    const where: Prisma.TradeReadWhereInput = {};
+
+    // side 필터: BUY면 buyerId만, SELL이면 sellerId만, 없으면 둘 다
+    // Side filter: BUY = buyerId only, SELL = sellerId only, none = both
+    if (side === 'BUY') {
+      where.buyerId = userId;
+    } else if (side === 'SELL') {
+      where.sellerId = userId;
+    } else {
+      where.OR = [{ buyerId: userId }, { sellerId: userId }];
+    }
+
+    if (symbol) {
+      where.symbol = symbol;
+    }
+
     return this.prisma.tradeRead.findMany({
-      where: {
-        OR: [{ buyerId: userId }, { sellerId: userId }],
-      },
+      where,
       orderBy: { executedAt: 'desc' },
       take: limit,
       skip: offset,
