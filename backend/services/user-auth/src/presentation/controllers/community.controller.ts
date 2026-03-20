@@ -470,6 +470,49 @@ export class CommunityController {
   }
 
   /**
+   * 독립적 이미지 업로드 — 게시글 ID 없이 에디터에서 이미지를 업로드합니다 (base64 JSON)
+   * Standalone image upload — uploads image from editor without requiring a post ID (base64 JSON)
+   */
+  @Post('upload-image')
+  async uploadImage(
+    @Body() body: { originalName: string; mimeType: string; data: string },
+    @Headers('x-user-id') userId: string,
+  ) {
+    if (!userId) {
+      throw new BadRequestException('x-user-id header is required');
+    }
+
+    // 이미지 MIME 타입 검증 / Image MIME type validation
+    const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!ALLOWED_IMAGE_TYPES.includes(body.mimeType)) {
+      throw new BadRequestException(`Image type not allowed: ${body.mimeType}`);
+    }
+
+    // 파일 크기 검증 — 5MB 제한 / File size validation — 5MB limit
+    const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
+    const bufferData = Buffer.from(body.data, 'base64');
+    if (bufferData.length > MAX_IMAGE_SIZE) {
+      throw new BadRequestException('Image size exceeds 5MB limit');
+    }
+
+    // 고유 파일명 생성 / Generate unique filename
+    const safeName = path.basename(body.originalName);
+    const ext = path.extname(safeName);
+    const fileName = `community-img-${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`;
+    const uploadsDir = path.join(process.cwd(), 'uploads');
+    if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+    fs.writeFileSync(path.join(uploadsDir, fileName), bufferData);
+
+    return {
+      success: true,
+      data: {
+        url: `/api/community/uploads/${fileName}`,
+        fileName,
+      },
+    };
+  }
+
+  /**
    * 첨부파일 업로드 (base64 JSON, 작성자만)
    * Upload attachment (base64 JSON, author only)
    */

@@ -300,6 +300,34 @@ export class CommunityProxyController {
   }
 
   /**
+   * 독립적 이미지 업로드 (인증 필수) — 게시글 ID 없이 에디터 이미지 업로드
+   * Standalone image upload (requires auth) — upload editor image without post ID
+   */
+  @Post('upload-image')
+  @ApiOperation({ summary: '에디터 이미지 업로드', description: '게시글 ID 없이 에디터에서 이미지를 업로드합니다' })
+  @ApiResponse({ status: 201, description: '이미지 업로드 성공' })
+  @ApiResponse({ status: 400, description: '유효성 검사 실패' })
+  @ApiResponse({ status: 401, description: '인증 필요' })
+  async uploadImage(
+    @Body() body: unknown,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    const user = req.user as { id: string; role?: string; name?: string };
+    const result = await this.proxyService.forward('user-auth', {
+      method: 'POST',
+      url: '/community/upload-image',
+      data: body,
+      headers: {
+        'x-user-id': user.id,
+        'x-user-role': user.role || '',
+        'x-user-name': encodeURIComponent(user.name || ''),
+      },
+    });
+    return res.status(result.status).json(result.data);
+  }
+
+  /**
    * 첨부파일 업로드 (인증 필수)
    * Upload attachment (requires auth)
    */
