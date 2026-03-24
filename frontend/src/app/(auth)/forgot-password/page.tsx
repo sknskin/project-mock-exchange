@@ -16,6 +16,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import VirtuExLogo from '@/components/ui/VirtuExLogo';
 import api from '@/lib/api';
 import type { AxiosError } from 'axios';
+import { Eye, EyeOff } from 'lucide-react';
 
 type Step = 'identifier' | 'sms' | 'newPassword';
 
@@ -44,6 +45,9 @@ export default function ForgotPasswordPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [success, setSuccess] = useState(false);
   const passwordRef = useRef<HTMLInputElement>(null);
+  // 비밀번호 표시/숨기기 토글 상태 / Password show/hide toggle state
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => { identifierRef.current?.focus(); }, []);
 
@@ -289,23 +293,49 @@ export default function ForgotPasswordPage() {
         {/* Step 3: 새 비밀번호 입력 */}
         {step === 'newPassword' && (
           <form onSubmit={handleResetPassword} className="space-y-4">
-            <Input
-              ref={passwordRef}
-              type="password"
-              placeholder={t('auth.forgot.newPasswordPlaceholder')}
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              englishOnly
-              required
-            />
-            <Input
-              type="password"
-              placeholder={t('auth.forgot.confirmPasswordPlaceholder')}
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              englishOnly
-              required
-            />
+            <div className="relative">
+              <Input
+                ref={passwordRef}
+                type={showNewPassword ? 'text' : 'password'}
+                placeholder={t('auth.forgot.newPasswordPlaceholder')}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                englishOnly
+                required
+                className="pr-11"
+              />
+              {/* 새 비밀번호 표시/숨기기 토글 / New password show/hide toggle */}
+              <button
+                type="button"
+                onClick={() => setShowNewPassword((prev) => !prev)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-text-quaternary hover:text-text-secondary transition-colors"
+                aria-label={showNewPassword ? 'Hide password' : 'Show password'}
+                tabIndex={-1}
+              >
+                {showNewPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
+              </button>
+            </div>
+            <div className="relative">
+              <Input
+                type={showConfirmPassword ? 'text' : 'password'}
+                placeholder={t('auth.forgot.confirmPasswordPlaceholder')}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                englishOnly
+                required
+                className="pr-11"
+              />
+              {/* 비밀번호 확인 표시/숨기기 토글 / Confirm password show/hide toggle */}
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword((prev) => !prev)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-text-quaternary hover:text-text-secondary transition-colors"
+                aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                tabIndex={-1}
+              >
+                {showConfirmPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
+              </button>
+            </div>
             {error && <p className="text-[13px] text-danger text-center py-1">{error}</p>}
             <div className="pt-3">
               <Button type="submit" size="lg" fullWidth disabled={loading || !newPassword || !confirmPassword}>

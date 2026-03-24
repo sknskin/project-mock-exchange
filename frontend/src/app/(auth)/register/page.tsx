@@ -27,6 +27,7 @@ import {
   validateResidentNumber,
 } from '@/lib/validation';
 import api from '@/lib/api';
+import { Eye, EyeOff } from 'lucide-react';
 
 /** 회원가입 페이지 컴포넌트 — 사용자 정보 입력 및 중복 검사 후 가입 요청
  * Register page component — input user info, duplicate checks, and submit registration */
@@ -53,6 +54,9 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  // 비밀번호 표시/숨기기 토글 상태 / Password show/hide toggle state
+  const [showPassword, setShowPassword] = useState(false);
+  const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
   const firstInputRef = useRef<HTMLInputElement>(null);
 
   // 첫번째 입력 필드 자동 포커스 / Auto-focus first input field
@@ -215,14 +219,27 @@ export default function RegisterPage() {
             <label className="block text-[13px] text-text-secondary font-semibold mb-2">
               {t('auth.register.password')} <span className="text-danger">*</span>
             </label>
-            <Input
-              type="password"
-              placeholder={t('auth.register.passwordPlaceholder')}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              englishOnly
-              required
-            />
+            <div className="relative">
+              <Input
+                type={showPassword ? 'text' : 'password'}
+                placeholder={t('auth.register.passwordPlaceholder')}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                englishOnly
+                required
+                className="pr-11"
+              />
+              {/* 비밀번호 표시/숨기기 토글 버튼 / Password show/hide toggle button */}
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-text-quaternary hover:text-text-secondary transition-colors"
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
+              </button>
+            </div>
             <ValidationFeedback rules={passwordRules} show={password.length > 0} />
           </div>
 
@@ -231,15 +248,28 @@ export default function RegisterPage() {
             <label className="block text-[13px] text-text-secondary font-semibold mb-2">
               {t('auth.register.passwordConfirm')} <span className="text-danger">*</span>
             </label>
-            <Input
-              type="password"
-              placeholder={t('auth.register.passwordConfirmPlaceholder')}
-              value={passwordConfirm}
-              onChange={(e) => setPasswordConfirm(e.target.value)}
-              error={passwordConfirm.length > 0 && !passwordMatch ? t('validation.passwordConfirm.match') : undefined}
-              englishOnly
-              required
-            />
+            <div className="relative">
+              <Input
+                type={showPasswordConfirm ? 'text' : 'password'}
+                placeholder={t('auth.register.passwordConfirmPlaceholder')}
+                value={passwordConfirm}
+                onChange={(e) => setPasswordConfirm(e.target.value)}
+                error={passwordConfirm.length > 0 && !passwordMatch ? t('validation.passwordConfirm.match') : undefined}
+                englishOnly
+                required
+                className="pr-11"
+              />
+              {/* 비밀번호 확인 표시/숨기기 토글 버튼 / Password confirm show/hide toggle button */}
+              <button
+                type="button"
+                onClick={() => setShowPasswordConfirm((prev) => !prev)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-text-quaternary hover:text-text-secondary transition-colors"
+                aria-label={showPasswordConfirm ? 'Hide password' : 'Show password'}
+                tabIndex={-1}
+              >
+                {showPasswordConfirm ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
+              </button>
+            </div>
             {passwordConfirm.length > 0 && passwordMatch && (
               <p className="mt-1 text-[12px] font-medium text-accent">{t('validation.passwordConfirm.ok')}</p>
             )}

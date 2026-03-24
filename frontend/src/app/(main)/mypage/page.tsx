@@ -10,7 +10,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Lock, Edit2, User, Bell, BarChart3, Activity, Clock, Shield, RotateCcw } from 'lucide-react';
+import { Lock, Edit2, User, Bell, BarChart3, Activity, Clock, Shield, RotateCcw, Eye, EyeOff } from 'lucide-react';
 import { useProfile, useChangePassword } from '@/hooks/useAdmin';
 import { useTradeHistory } from '@/hooks/useOrders';
 import { useResetAccount } from '@/hooks/usePortfolio';
@@ -189,6 +189,10 @@ export default function MyPage() {
   const [passwordError, setPasswordError] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState('');
   const [confirmPasswordOpen, setConfirmPasswordOpen] = useState(false);
+  // 비밀번호 필드별 표시/숨기기 토글 상태 / Password show/hide toggle state per field
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   /**
    * 비밀번호 모달 포커스 트랩 — Tab/Shift+Tab으로 포커스가 모달 밖으로 나가지 않도록
@@ -671,35 +675,59 @@ export default function MyPage() {
                   <label className="text-[13px] text-text-tertiary">
                     {t('mypage.currentPassword')}
                   </label>
-                  <input
-                    type="password"
-                    value={passwordForm.currentPassword}
-                    onChange={(e) =>
-                      setPasswordForm((f) => ({ ...f, currentPassword: e.target.value }))
-                    }
-                    autoComplete="current-password"
-                    className="bg-bg-secondary border border-border rounded-xl px-4 py-3 text-[14px] text-text-primary placeholder:text-text-quaternary focus:outline-none focus:border-accent/60 transition-colors"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showCurrentPassword ? 'text' : 'password'}
+                      value={passwordForm.currentPassword}
+                      onChange={(e) =>
+                        setPasswordForm((f) => ({ ...f, currentPassword: e.target.value }))
+                      }
+                      autoComplete="current-password"
+                      className="w-full bg-bg-secondary border border-border rounded-xl px-4 py-3 pr-11 text-[14px] text-text-primary placeholder:text-text-quaternary focus:outline-none focus:border-accent/60 transition-colors"
+                    />
+                    {/* 현재 비밀번호 표시/숨기기 토글 / Current password show/hide toggle */}
+                    <button
+                      type="button"
+                      onClick={() => setShowCurrentPassword((prev) => !prev)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-text-quaternary hover:text-text-secondary transition-colors"
+                      aria-label={showCurrentPassword ? 'Hide password' : 'Show password'}
+                      tabIndex={-1}
+                    >
+                      {showCurrentPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="flex flex-col gap-1.5">
                   <label className="text-[13px] text-text-tertiary">
                     {t('mypage.newPassword')}
                   </label>
-                  <input
-                    type="password"
-                    value={passwordForm.newPassword}
-                    onChange={(e) =>
-                      setPasswordForm((f) => ({ ...f, newPassword: e.target.value }))
-                    }
-                    autoComplete="new-password"
-                    className={cn(
-                      'bg-bg-secondary border rounded-xl px-4 py-3 text-[14px] text-text-primary placeholder:text-text-quaternary focus:outline-none transition-colors',
-                      passwordForm.newPassword.length > 0 && passwordForm.newPassword.length < 8
-                        ? 'border-danger/60 focus:border-danger'
-                        : 'border-border focus:border-accent/60',
-                    )}
-                  />
+                  <div className="relative">
+                    <input
+                      type={showNewPassword ? 'text' : 'password'}
+                      value={passwordForm.newPassword}
+                      onChange={(e) =>
+                        setPasswordForm((f) => ({ ...f, newPassword: e.target.value }))
+                      }
+                      autoComplete="new-password"
+                      className={cn(
+                        'w-full bg-bg-secondary border rounded-xl px-4 py-3 pr-11 text-[14px] text-text-primary placeholder:text-text-quaternary focus:outline-none transition-colors',
+                        passwordForm.newPassword.length > 0 && passwordForm.newPassword.length < 8
+                          ? 'border-danger/60 focus:border-danger'
+                          : 'border-border focus:border-accent/60',
+                      )}
+                    />
+                    {/* 새 비밀번호 표시/숨기기 토글 / New password show/hide toggle */}
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword((prev) => !prev)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-text-quaternary hover:text-text-secondary transition-colors"
+                      aria-label={showNewPassword ? 'Hide password' : 'Show password'}
+                      tabIndex={-1}
+                    >
+                      {showNewPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
+                    </button>
+                  </div>
                   {passwordForm.newPassword.length > 0 && passwordForm.newPassword.length < 8 && (
                     <p className="text-[12px] text-danger">{t('validation.password.minLength')}</p>
                   )}
@@ -709,24 +737,36 @@ export default function MyPage() {
                   <label className="text-[13px] text-text-tertiary">
                     {t('mypage.confirmPassword')}
                   </label>
-                  <input
-                    type="password"
-                    value={passwordForm.confirmPassword}
-                    onChange={(e) =>
-                      setPasswordForm((f) => ({ ...f, confirmPassword: e.target.value }))
-                    }
-                    autoComplete="new-password"
-                    className={cn(
-                      'bg-bg-secondary border rounded-xl px-4 py-3 text-[14px] text-text-primary placeholder:text-text-quaternary focus:outline-none transition-colors',
-                      passwordForm.confirmPassword.length > 0 &&
-                        passwordForm.newPassword !== passwordForm.confirmPassword
-                        ? 'border-danger/60 focus:border-danger'
-                        : passwordForm.confirmPassword.length > 0 &&
-                            passwordForm.newPassword === passwordForm.confirmPassword
-                          ? 'border-green-500/60 focus:border-green-500'
-                          : 'border-border focus:border-accent/60',
-                    )}
-                  />
+                  <div className="relative">
+                    <input
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      value={passwordForm.confirmPassword}
+                      onChange={(e) =>
+                        setPasswordForm((f) => ({ ...f, confirmPassword: e.target.value }))
+                      }
+                      autoComplete="new-password"
+                      className={cn(
+                        'w-full bg-bg-secondary border rounded-xl px-4 py-3 pr-11 text-[14px] text-text-primary placeholder:text-text-quaternary focus:outline-none transition-colors',
+                        passwordForm.confirmPassword.length > 0 &&
+                          passwordForm.newPassword !== passwordForm.confirmPassword
+                          ? 'border-danger/60 focus:border-danger'
+                          : passwordForm.confirmPassword.length > 0 &&
+                              passwordForm.newPassword === passwordForm.confirmPassword
+                            ? 'border-green-500/60 focus:border-green-500'
+                            : 'border-border focus:border-accent/60',
+                      )}
+                    />
+                    {/* 비밀번호 확인 표시/숨기기 토글 / Confirm password show/hide toggle */}
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword((prev) => !prev)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-text-quaternary hover:text-text-secondary transition-colors"
+                      aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                      tabIndex={-1}
+                    >
+                      {showConfirmPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
+                    </button>
+                  </div>
                   {passwordForm.confirmPassword.length > 0 && (
                     <p
                       className={cn(
