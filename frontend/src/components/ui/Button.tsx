@@ -31,8 +31,9 @@ export default function Button({
   children,
   ...props
 }: ButtonProps) {
-  // 공통 기본 스타일 / Common base styles
-  const base = 'inline-flex items-center justify-center font-bold transition-all duration-150 disabled:opacity-35 disabled:cursor-not-allowed';
+  // 공통 기본 스타일 (포커스 링 포함 — WCAG 2.4.7)
+  // Common base styles (includes focus ring — WCAG 2.4.7)
+  const base = 'inline-flex items-center justify-center font-bold transition-all duration-150 disabled:opacity-35 disabled:cursor-not-allowed focus:ring-2 focus:ring-accent/50 focus:ring-offset-1 focus:outline-none';
 
   // 변형별 색상/배경 스타일 매핑 / Variant-specific color/background style mapping
   const variants = {
