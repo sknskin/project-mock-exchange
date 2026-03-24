@@ -301,14 +301,15 @@ export default function LeaderboardPage() {
 
       <ExchangeRateBar />
 
-      {/* 기간 필터 탭 / Period filter tabs */}
-      <div className="flex items-center border-b border-border mb-5">
+      {/* 기간 필터 탭 — 좁은 화면에서 가로 스크롤 허용 (WCAG 터치 타겟 44px 보장)
+          Period filter tabs — allows horizontal scroll on narrow screens (WCAG 44px touch target) */}
+      <div className="flex items-center border-b border-border mb-5 overflow-x-auto scrollbar-hide">
         {periodTabs.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setPeriod(tab.key as LeaderboardPeriod)}
             className={cn(
-              'relative px-4 py-2.5 text-[14px] font-semibold transition-colors',
+              'relative px-4 py-2.5 text-[14px] font-semibold transition-colors whitespace-nowrap min-h-[44px] min-w-[44px]',
               period === tab.key
                 ? 'text-accent'
                 : 'text-text-tertiary hover:text-text-primary',
@@ -322,10 +323,11 @@ export default function LeaderboardPage() {
         ))}
       </div>
 
-      {/* 참여자 수 + 내 순위 + 정렬 / Participants + My Rank + Sort */}
+      {/* 참여자 수 + 내 순위 + 정렬 — 좁은 화면에서 줄 바꿈 + 가로 스크롤 허용
+          Participants + My Rank + Sort — flex-wrap + overflow-x-auto for narrow screens */}
       {!isLoading && leaderboard && leaderboard.length > 0 && (
-        <div className="flex items-center justify-between gap-4 pb-3 flex-wrap">
-          <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between gap-4 pb-3 flex-wrap overflow-x-auto scrollbar-hide">
+          <div className="flex items-center gap-4 flex-wrap">
             <label className="flex items-center gap-2 cursor-pointer select-none group">
               <div className="relative">
                 <input
@@ -365,14 +367,14 @@ export default function LeaderboardPage() {
               </div>
             )}
           </div>
-          {/* 정렬 기준 탭 / Sort criteria tabs */}
-          <div className="flex items-center gap-1 bg-bg-secondary border border-border rounded-xl p-1">
+          {/* 정렬 기준 탭 — 최소 터치 타겟 44px 보장 / Sort criteria tabs — ensures 44px min touch target */}
+          <div className="flex items-center gap-1 bg-bg-secondary border border-border rounded-xl p-1 shrink-0">
             {sortTabs.map((opt) => (
               <button
                 key={opt.key}
                 onClick={() => setSortMode(opt.key as LeaderboardSortBy)}
                 className={cn(
-                  'px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-colors',
+                  'px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-colors whitespace-nowrap min-h-[44px] min-w-[44px]',
                   sortMode === opt.key
                     ? 'bg-accent text-white'
                     : 'text-text-tertiary hover:text-text-secondary',
