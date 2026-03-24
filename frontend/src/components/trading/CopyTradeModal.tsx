@@ -7,7 +7,7 @@
  */
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useScrollLock } from '@/hooks/useScrollLock';
 import { useCopyTradeConfig, useStartCopyTrade, useUpdateCopyTrade, useStopCopyTrade } from '@/hooks/useCopyTrade';
@@ -67,6 +67,9 @@ export default function CopyTradeModal({
 
   useScrollLock(isOpen);
 
+  // 모달 DOM 참조 (포커스 트랩용) / Modal DOM ref (for focus trap)
+  const modalRef = useRef<HTMLDivElement>(null);
+
   // ESC 키로 모달 닫기 / Close modal on ESC
   useEffect(() => {
     if (!isOpen) return;
@@ -76,6 +79,47 @@ export default function CopyTradeModal({
     document.addEventListener('keydown', handleKey);
     return () => document.removeEventListener('keydown', handleKey);
   }, [isOpen, onClose]);
+
+  // 모달 열릴 때 첫 번째 포커스 가능 요소에 포커스 / Focus first focusable element on modal open
+  useEffect(() => {
+    if (!isOpen) return;
+    const timer = setTimeout(() => {
+      const modal = modalRef.current;
+      if (!modal) return;
+      const focusable = modal.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      );
+      if (focusable.length > 0) focusable[0].focus();
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [isOpen]);
+
+  /**
+   * 포커스 트랩 핸들러 — Tab/Shift+Tab으로 포커스가 모달 밖으로 나가지 않도록 순환
+   * Focus trap handler — cycles Tab/Shift+Tab focus within the modal
+   */
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key !== 'Tab') return;
+    const modal = modalRef.current;
+    if (!modal) return;
+    const focusable = modal.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    );
+    if (focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (e.shiftKey) {
+      if (document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      }
+    } else {
+      if (document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+  }, []);
 
   /** 시작/수정 핸들러 / Start/Update handler */
   const handleSubmit = useCallback(() => {
@@ -116,12 +160,20 @@ export default function CopyTradeModal({
       {/* 배경 오버레이 / Background overlay */}
       <div className="absolute inset-0 bg-black/60 animate-modal-backdrop" onClick={onClose} />
 
-      {/* 모달 콘텐츠 / Modal content */}
-      <div className="relative bg-bg-primary border border-border rounded-2xl p-6 w-[420px] max-w-[calc(100vw-2rem)] shadow-2xl animate-modal-content">
+      {/* 모달 콘텐츠 — ARIA 다이얼로그 + 포커스 트랩 / Modal content — ARIA dialog + focus trap */}
+      <div
+        ref={modalRef}
+        onKeyDown={handleKeyDown}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="copy-trade-modal-title"
+        className="relative bg-bg-primary border border-border rounded-2xl p-6 w-[420px] max-w-[calc(100vw-2rem)] shadow-2xl animate-modal-content"
+      >
         {/* 닫기 버튼 / Close button */}
         <button
           onClick={onClose}
           className="absolute top-4 right-4 p-1 text-text-quaternary hover:text-text-primary transition-colors"
+          aria-label="닫기"
         >
           <X className="w-5 h-5" />
         </button>
@@ -132,7 +184,7 @@ export default function CopyTradeModal({
             <Copy className="w-4 h-4 text-accent" />
           </div>
           <div>
-            <h2 className="text-[16px] font-bold text-text-primary">
+            <h2 id="copy-trade-modal-title" className="text-[16px] font-bold text-text-primary">
               {t('copyTrade.title')}
             </h2>
             <div className="flex items-center gap-2 mt-0.5">
