@@ -12,6 +12,8 @@ import {
   IsNotEmpty,
   IsIn,
   IsOptional,
+  Matches,
+  MaxLength,
 } from 'class-validator';
 
 export class PlaceOrderDto {
@@ -19,8 +21,11 @@ export class PlaceOrderDto {
   @IsNotEmpty()
   symbol: string;
 
+  /** 주문 수량 (소수점 문자열) / Order quantity (decimal string) */
   @IsString()
   @IsNotEmpty()
+  @MaxLength(50)
+  @Matches(/^\d+(\.\d+)?$/, { message: 'quantity must be a valid decimal string' })
   quantity: string;
 
   @IsString()
@@ -31,16 +36,22 @@ export class PlaceOrderDto {
   @IsIn(['MARKET', 'LIMIT'])
   type: string;
 
+  /** 주문 가격 (소수점 문자열, LIMIT 주문 시 필수) / Order price (decimal string, required for LIMIT orders) */
   @IsOptional()
   @IsString()
+  @MaxLength(50)
+  @Matches(/^\d+(\.\d+)?$/, { message: 'price must be a valid decimal string' })
   price?: string;
 
   @IsOptional()
   @IsString()
   idempotencyKey?: string;
 
+  /** 트리거 가격 (소수점 문자열) / Trigger price (decimal string) */
   @IsOptional()
   @IsString()
+  @MaxLength(50)
+  @Matches(/^\d+(\.\d+)?$/, { message: 'triggerPrice must be a valid decimal string' })
   triggerPrice?: string;
 
   @IsOptional()
