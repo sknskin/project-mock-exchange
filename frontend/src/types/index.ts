@@ -27,7 +27,9 @@ export interface AuthResponse {
   success: boolean;
   data: {
     user: User;
-    accessToken: string;
+    /** 액세스 토큰 — httpOnly 쿠키가 주 인증 방식이므로 선택값 (Swagger/Postman/WebSocket 호환용)
+     * Access token — optional since httpOnly cookie is primary auth (Swagger/Postman/WebSocket compat) */
+    accessToken?: string;
     /** 토큰 만료 시간 (초)
      * Token expiration (seconds) */
     expiresIn: number;

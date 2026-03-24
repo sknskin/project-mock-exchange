@@ -187,7 +187,6 @@ export default function AdminHealthPage() {
   const router = useRouter();
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
-  const token = useAuthStore((s) => s.accessToken);
 
   const [activeTab, setActiveTabRaw] = useState<string>('overview');
   /** 탭 전환 시 상단으로 스크롤
@@ -288,7 +287,9 @@ export default function AdminHealthPage() {
     try {
       const res = await fetch(`/api/health/${serviceKey}/detail`, {
         signal: AbortSignal.timeout(10000), // eslint-disable-line no-undef
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        // httpOnly 쿠키 인증 — credentials: 'include'로 쿠키 자동 전송
+        // httpOnly cookie auth — send cookies automatically via credentials: 'include'
+        credentials: 'include',
       });
       if (res.ok) {
         const data = await res.json();
@@ -300,7 +301,7 @@ export default function AdminHealthPage() {
       setServiceDetail(null);
     }
     setDetailLoading(false);
-  }, [token]);
+  }, []);
 
   useEffect(() => { checkHealth(); }, [checkHealth]);
 

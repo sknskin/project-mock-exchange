@@ -61,8 +61,8 @@ interface AuthState {
   /** 현재 로그인한 사용자
    * Currently logged-in user */
   user: User | null;
-  /** JWT 액세스 토큰
-   * JWT access token */
+  /** JWT 액세스 토큰 — WebSocket 전용 (httpOnly 쿠키 인증이 주 방식)
+   * JWT access token — WebSocket only (httpOnly cookie is primary auth) */
   accessToken: string | null;
   /** 인증 여부
    * Whether authenticated */
@@ -73,18 +73,18 @@ interface AuthState {
   /** 토큰 갱신
    * Update token */
   setToken: (token: string) => void;
-  /** 로그인 처리 (사용자 + 토큰 동시 설정)
-   * Login (sets user + token at once) */
-  login: (user: User, token: string) => void;
+  /** 로그인 처리 (사용자 설정 + 선택적 토큰 — WebSocket용)
+   * Login (sets user + optional token — for WebSocket) */
+  login: (user: User, token?: string) => void;
   /** 로그아웃 처리 (모든 상태 초기화)
    * Logout (resets all state) */
   logout: () => void;
 }
 
-// TODO: HttpOnly + Secure + SameSite 쿠키로 토큰 저장 전환 — XSS 완전 차단
-// TODO: Migrate token storage to HttpOnly + Secure + SameSite cookies for full XSS protection
-// sessionStorage에 저장할 상태 부분집합 / Subset of state persisted to sessionStorage
-type PersistedAuthState = Pick<AuthState, 'user' | 'accessToken' | 'isAuthenticated'>;
+// httpOnly 쿠키로 토큰 저장 전환 완료 — accessToken은 sessionStorage에 저장하지 않음
+// Token storage migrated to httpOnly cookies — accessToken is no longer persisted to sessionStorage
+// sessionStorage에 저장할 상태 부분집합 (토큰 제외) / Subset of state persisted to sessionStorage (no token)
+type PersistedAuthState = Pick<AuthState, 'user' | 'isAuthenticated'>;
 
 export const useAuthStore = create<AuthState>()(
   persist<AuthState, [], [], PersistedAuthState>(
@@ -95,7 +95,7 @@ export const useAuthStore = create<AuthState>()(
       setUser: (user) => set({ user }),
       setToken: (token) => set({ accessToken: token }),
       login: (user, token) =>
-        set({ user, accessToken: token, isAuthenticated: true }),
+        set({ user, accessToken: token ?? null, isAuthenticated: true }),
       logout: () =>
         set({ user: null, accessToken: null, isAuthenticated: false }),
     }),
@@ -109,9 +109,10 @@ export const useAuthStore = create<AuthState>()(
         setItem: (name, value) => sessionStorage.setItem(name, JSON.stringify(value)),
         removeItem: (name) => sessionStorage.removeItem(name),
       },
+      // accessToken은 sessionStorage에 저장하지 않음 — httpOnly 쿠키가 주 인증 방식
+      // accessToken is NOT persisted to sessionStorage — httpOnly cookie is primary auth
       partialize: (state) => ({
         user: state.user,
-        accessToken: state.accessToken,
         isAuthenticated: state.isAuthenticated,
       }),
     },

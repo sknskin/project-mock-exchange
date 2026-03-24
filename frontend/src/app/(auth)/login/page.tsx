@@ -75,9 +75,9 @@ export default function LoginPage() {
     }
   };
 
-  /** SMS 인증 성공 시 로그인 완료 및 대시보드 이동
-   * Complete login and redirect to dashboard on SMS success */
-  const handleSmsSuccess = (data: { user: { id: string; email: string; name: string; role: string }; accessToken: string }) => {
+  /** SMS 인증 성공 시 로그인 완료 및 대시보드 이동 (쿠키 인증 — accessToken은 WebSocket용 선택값)
+   * Complete login and redirect to dashboard on SMS success (cookie auth — accessToken optional for WebSocket) */
+  const handleSmsSuccess = (data: { user: { id: string; email: string; name: string; role: string }; accessToken?: string }) => {
     setSmsModalOpen(false);
     login(data.user as User, data.accessToken);
     router.push('/dashboard');

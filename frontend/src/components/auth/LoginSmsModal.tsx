@@ -27,9 +27,9 @@ interface LoginSmsModalProps {
   /** 마스킹된 전화번호 (예: 010-****-1234)
    * Masked phone number */
   maskedPhone: string;
-  /** 인증 성공 콜백
-   * Verification success callback */
-  onSuccess: (data: { user: { id: string; email: string; name: string; role: string }; accessToken: string }) => void;
+  /** 인증 성공 콜백 (쿠키 인증 — accessToken은 WebSocket 호환용 선택값)
+   * Verification success callback (cookie auth — accessToken optional for WebSocket compat) */
+  onSuccess: (data: { user: { id: string; email: string; name: string; role: string }; accessToken?: string }) => void;
   /** 모달 닫기 콜백
    * Modal close callback */
   onClose: () => void;
