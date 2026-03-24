@@ -21,14 +21,25 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     super();
   }
 
-  canActivate(context: ExecutionContext) {
+  async canActivate(context: ExecutionContext) {
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),
       context.getClass(),
     ]);
     if (isPublic) return true;
 
-    return super.canActivate(context);
+    const result = await (super.canActivate(context) as Promise<boolean>);
+
+    // httpOnly 쿠키로 인증된 경우 Authorization 헤더 복원 — 프록시 컨트롤러가 내부 서비스에 토큰 전달 가능하도록
+    // Restore Authorization header from cookie token — allows proxy controllers to forward token to internal services
+    if (result) {
+      const request = context.switchToHttp().getRequest();
+      if (!request.headers.authorization && request.cookies?.access_token) {
+        request.headers.authorization = `Bearer ${request.cookies.access_token}`;
+      }
+    }
+
+    return result;
   }
 
   handleRequest(err: any, user: any, info: any, context: ExecutionContext) {
