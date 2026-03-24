@@ -34,20 +34,39 @@ import { InternalAuthGuard } from '../../common/guards/internal-auth.guard';
 
 // 리프레시 토큰 쿠키 이름 / Refresh token cookie name
 const REFRESH_TOKEN_COOKIE = 'refresh_token';
+// 액세스 토큰 쿠키 이름 / Access token cookie name
+const ACCESS_TOKEN_COOKIE = 'access_token';
+
 /**
- * 보안 쿠키 옵션:
+ * 리프레시 토큰 보안 쿠키 옵션:
  * - httpOnly: JavaScript에서 접근 불가 (XSS 방지) / Inaccessible from JavaScript (XSS protection)
  * - secure: 프로덕션에서 HTTPS만 허용 / HTTPS only in production
- * - sameSite: CSRF 방지 / CSRF protection
+ * - sameSite: CSRF 방지 (lax — cross-port 요청 호환) / CSRF protection (lax — cross-port compatible)
  * - path: /api/auth 경로에만 전송 / Only sent on /api/auth paths
  * - maxAge: 7일 유효기간 / 7-day expiry
  */
-const COOKIE_OPTIONS = {
+const REFRESH_COOKIE_OPTIONS = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
   sameSite: 'lax' as const,
   path: '/api/auth',
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7일 / 7 days
+};
+
+/**
+ * 액세스 토큰 보안 쿠키 옵션:
+ * - httpOnly: JavaScript에서 접근 불가 (XSS 방지) / Inaccessible from JavaScript (XSS protection)
+ * - secure: 프로덕션에서 HTTPS만 허용 / HTTPS only in production
+ * - sameSite: CSRF 방지 (lax — cross-port 요청 호환) / CSRF protection (lax — cross-port compatible)
+ * - path: / 전체 경로에 전송 (API 게이트웨이에서 인증 필요) / Sent on all paths (needed for auth at API gateway)
+ * - maxAge: 15분 유효기간 / 15-minute expiry
+ */
+const ACCESS_COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'lax' as const,
+  path: '/',
+  maxAge: 15 * 60 * 1000, // 15분 / 15 minutes
 };
 
 // InternalAuthGuard — API Gateway만 접근 가능 (x-internal-token 검증)
@@ -125,12 +144,17 @@ export class AuthController {
       };
     }
 
-    res.cookie(REFRESH_TOKEN_COOKIE, result.refreshToken, COOKIE_OPTIONS);
+    // 리프레시 토큰 httpOnly 쿠키 설정 / Set refresh token as httpOnly cookie
+    res.cookie(REFRESH_TOKEN_COOKIE, result.refreshToken, REFRESH_COOKIE_OPTIONS);
+    // 액세스 토큰 httpOnly 쿠키 설정 / Set access token as httpOnly cookie
+    res.cookie(ACCESS_TOKEN_COOKIE, result.tokens.accessToken, ACCESS_COOKIE_OPTIONS);
 
     return {
       success: true,
       data: {
         user: result.user,
+        // 응답 바디에도 포함 — Swagger/Postman/WebSocket 호환용 (@deprecated: 쿠키 인증 우선)
+        // Also included in body — Swagger/Postman/WebSocket compatibility (@deprecated: cookie auth preferred)
         accessToken: result.tokens.accessToken,
         expiresIn: result.tokens.expiresIn,
       },
@@ -157,11 +181,16 @@ export class AuthController {
 
     const { tokens, refreshToken } = await this.authService.refreshTokens(oldToken);
 
-    res.cookie(REFRESH_TOKEN_COOKIE, refreshToken, COOKIE_OPTIONS);
+    // 리프레시 토큰 httpOnly 쿠키 갱신 / Rotate refresh token httpOnly cookie
+    res.cookie(REFRESH_TOKEN_COOKIE, refreshToken, REFRESH_COOKIE_OPTIONS);
+    // 액세스 토큰 httpOnly 쿠키 갱신 / Set new access token httpOnly cookie
+    res.cookie(ACCESS_TOKEN_COOKIE, tokens.accessToken, ACCESS_COOKIE_OPTIONS);
 
     return {
       success: true,
       data: {
+        // 응답 바디에도 포함 — Swagger/Postman/WebSocket 호환용 (@deprecated: 쿠키 인증 우선)
+        // Also included in body — Swagger/Postman/WebSocket compatibility (@deprecated: cookie auth preferred)
         accessToken: tokens.accessToken,
         expiresIn: tokens.expiresIn,
       },
@@ -181,7 +210,10 @@ export class AuthController {
       await this.authService.logout(token);
     }
 
+    // 리프레시 토큰 쿠키 제거 — path 일치 필수 / Clear refresh token cookie — path must match
     res.clearCookie(REFRESH_TOKEN_COOKIE, { path: '/api/auth' });
+    // 액세스 토큰 쿠키 제거 — path 일치 필수 / Clear access token cookie — path must match
+    res.clearCookie(ACCESS_TOKEN_COOKIE, { path: '/' });
 
     return { success: true, message: 'Logged out' };
   }

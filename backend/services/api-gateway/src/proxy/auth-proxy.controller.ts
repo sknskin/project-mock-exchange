@@ -26,18 +26,23 @@ export class AuthProxyController {
   ) {}
 
   /**
-   * Set-Cookie 헤더를 검증하여 Secure, HttpOnly 플래그가 포함된 쿠키만 전달
-   * Validate Set-Cookie headers — only forward cookies that have Secure and HttpOnly flags
+   * Set-Cookie 헤더를 검증하여 HttpOnly, SameSite 플래그를 보장하고 전달
+   * 프로덕션에서만 Secure 플래그를 추가 (localhost 개발 환경에서는 Secure가 쿠키 설정을 차단함)
+   *
+   * Validate Set-Cookie headers — ensure HttpOnly and SameSite flags
+   * Only add Secure flag in production (Secure blocks cookie setting on localhost in dev)
    */
   private sanitizeAndForwardCookies(
     setCookieHeader: string | string[] | undefined,
     res: Response,
   ): void {
     if (!setCookieHeader) return;
+    const isProduction = process.env.NODE_ENV === 'production';
     const cookies = Array.isArray(setCookieHeader) ? setCookieHeader : [setCookieHeader];
     for (let cookie of cookies) {
-      // Secure 플래그 확인 및 추가 (Ensure Secure flag)
-      if (!/;\s*Secure/i.test(cookie)) {
+      // Secure 플래그: 프로덕션에서만 추가 (개발 환경 localhost는 HTTP이므로 Secure 시 쿠키 거부됨)
+      // Secure flag: only in production (dev uses HTTP localhost — Secure would reject cookies)
+      if (isProduction && !/;\s*Secure/i.test(cookie)) {
         cookie += '; Secure';
       }
       // HttpOnly 플래그 확인 및 추가 (Ensure HttpOnly flag)
@@ -180,8 +185,9 @@ export class AuthProxyController {
         Cookie: req.headers.cookie || '',
       },
     });
-    // 클라이언트 쿠키 제거 — path 일치 필수 / Clear client cookie — path must match the original cookie path
+    // 클라이언트 쿠키 제거 — path 일치 필수 / Clear client cookies — path must match the original cookie path
     res.clearCookie('refresh_token', { path: '/api/auth' });
+    res.clearCookie('access_token', { path: '/' });
     return res.status(result.status).json(result.data);
   }
 

@@ -25,7 +25,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     @Inject(REDIS_CLIENT) private readonly redis: Redis,
   ) {
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      // 쿠키에서 먼저 추출, 없으면 Authorization 헤더로 폴백 (Swagger/Postman 호환)
+      // Extract from cookie first, fallback to Authorization header (Swagger/Postman compatibility)
+      jwtFromRequest: ExtractJwt.fromExtractors([
+        (req: { cookies?: Record<string, string> }) => req?.cookies?.access_token || null,
+        ExtractJwt.fromAuthHeaderAsBearerToken(),
+      ]),
       ignoreExpiration: false,
       secretOrKey: configService.getOrThrow<string>('JWT_SECRET'),
     });
