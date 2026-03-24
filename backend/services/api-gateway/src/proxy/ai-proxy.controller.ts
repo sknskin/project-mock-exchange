@@ -7,20 +7,27 @@
  */
 import { Controller, Get, Post, Body, Req, Res, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { Request, Response } from 'express';
 import { ProxyService } from './proxy.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
+// AI 분석 요청은 비용이 높으므로 인증 필수 + 1분당 10회 제한
+// AI analysis requests are costly — require authentication + limit to 10 requests per minute
 @ApiTags('AI')
+@ApiBearerAuth()
 @Controller('api/ai')
+@UseGuards(JwtAuthGuard)
+@Throttle({ default: { ttl: 60000, limit: 10 } })
 export class AiProxyController {
   constructor(private readonly proxyService: ProxyService) {}
 
-  /** AI 매매 시그널 조회를 ai-service로 프록시 — 비로그인 허용 (대시보드 위젯)
-   * Proxy AI trading signals to ai-service — no auth required (dashboard widget) */
+  /** AI 매매 시그널 조회를 ai-service로 프록시 — 인증 필수
+   * Proxy AI trading signals to ai-service — authentication required */
   @Get('signals')
   @ApiOperation({ summary: 'AI 매매 시그널 조회', description: 'AI 기반 매매 시그널을 반환합니다' })
   @ApiResponse({ status: 200, description: '시그널 목록 반환' })
+  @ApiResponse({ status: 401, description: '인증 필요' })
   async getSignals(@Req() _req: Request, @Res() res: Response) {
     const result = await this.proxyService.forward('ai-service', {
       method: 'GET',
@@ -48,11 +55,13 @@ export class AiProxyController {
     return res.status(result.status).json(result.data);
   }
 
-  /** 뉴스 AI 요약 요청을 ai-service로 프록시 — 비로그인 허용
-   * Proxy news AI summary to ai-service — no auth required */
+  /** 뉴스 AI 요약 요청을 ai-service로 프록시 — 인증 필수
+   * Proxy news AI summary to ai-service — authentication required */
   @Post('news-summary')
+  @ApiBearerAuth()
   @ApiOperation({ summary: '뉴스 AI 요약', description: '카테고리별 24시간 뉴스를 AI로 분석합니다' })
   @ApiResponse({ status: 200, description: '뉴스 요약 반환' })
+  @ApiResponse({ status: 401, description: '인증 필요' })
   async summarizeNews(@Body() body: unknown, @Res() res: Response) {
     const result = await this.proxyService.forward('ai-service', {
       method: 'POST',
