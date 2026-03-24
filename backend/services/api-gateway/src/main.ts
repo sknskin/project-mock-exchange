@@ -12,6 +12,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import compression from 'compression';
+import type { Request, Response, NextFunction } from 'express';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './config/all-exceptions.filter';
 import { LoggingInterceptor } from './config/logging.interceptor';
@@ -53,6 +54,14 @@ async function bootstrap() {
       },
     }),
   );
+
+  // 브라우저 민감 API 차단 — XSS 시 카메라/마이크/위치 등 악용 방지
+  // Block sensitive browser APIs — prevent camera/microphone/geolocation abuse on XSS
+  app.use((_req: Request, res: Response, next: NextFunction) => {
+    res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(), usb=()');
+    next();
+  });
+
   app.use(cookieParser());
 
   // Swagger 문서는 프로덕션 환경에서 비활성화
@@ -95,7 +104,9 @@ async function bootstrap() {
     origin: process.env.CORS_ORIGIN || 'http://localhost:4000',
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-internal-token', 'x-user-id'],
+    // 내부 서비스 간 헤더(x-internal-token, x-user-id 등)는 외부 클라이언트가 설정할 수 없도록 제외
+    // Exclude internal service-to-service headers (x-internal-token, x-user-id, etc.) from client-settable headers
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
     maxAge: 86400,
   });
 
