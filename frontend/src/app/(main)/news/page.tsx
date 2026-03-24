@@ -7,7 +7,7 @@
  */
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { ExternalLink, Newspaper, Search, Sparkles, X, Loader2 } from 'lucide-react';
 import { useNews } from '@/hooks/useNews';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -35,8 +35,8 @@ const SENTIMENT_KEY: Record<string, string> = {
   MIXED: 'news.aiAnalysis.sentiment.MIXED',
 };
 
-// 필터 적용 시 클라이언트 측 페이지네이션을 위한 대량 조회 한도 / Large batch fetch limit for client-side pagination when filtered
-const FILTERED_FETCH_LIMIT = 200;
+// AI 분석 시 최근 뉴스 조회 한도 (실제 사용량: 최대 50건) / AI analysis fetch limit (actual usage: max 50 items)
+const AI_ANALYSIS_FETCH_LIMIT = 50;
 
 export default function NewsPage() {
   const { t } = useTranslation();
@@ -51,9 +51,22 @@ export default function NewsPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  // 검색 및 날짜 필터 상태 / Search and date filter state
+  // 검색 입력 상태 (즉시 반영) 및 디바운스된 검색 쿼리 (API 호출용)
+  // Search input state (immediate) and debounced search query (for API calls)
+  const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [dateFilter, setDateFilter] = useState<'all' | '24h' | '7d' | '30d'>('24h');
+
+  // 검색 디바운스 — 300ms 후 쿼리 적용 (기존 DiscussionsTab 패턴 따름)
+  // Debounced search — applies query after 300ms (follows existing DiscussionsTab pattern)
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setSearchQuery(searchInput);
+    }, 300);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [searchInput]);
 
   // AI 분석 상태 / AI analysis state
   const [aiLoading, setAiLoading] = useState(false);
@@ -71,16 +84,17 @@ export default function NewsPage() {
     return () => { document.removeEventListener('keydown', handleKey); };
   }, [aiModalOpen, aiLoading]);
 
-  const isFiltered = searchQuery.trim() !== '' || dateFilter !== 'all';
-
   /**
-   * 필터 적용 시 대량 조회 후 클라이언트 측 페이지네이션, 아닐 때 서버 측 페이지네이션
-   * When filtered: fetch large batch for client-side pagination; otherwise: server-side pagination
+   * 서버 사이드 필터링으로 검색어와 날짜 필터를 전달하여 필요한 데이터만 조회
+   * Server-side filtering — pass keyword and date filter to fetch only required data
    */
-  const apiPage = isFiltered ? 1 : page;
-  const apiLimit = isFiltered ? FILTERED_FETCH_LIMIT : pageSize;
-
-  const { data, isLoading } = useNews({ category: activeTab, page: apiPage, limit: apiLimit });
+  const { data, isLoading } = useNews({
+    category: activeTab,
+    page,
+    limit: pageSize,
+    keyword: searchQuery.trim() || undefined,
+    dateFilter: dateFilter !== 'all' ? dateFilter : undefined,
+  });
 
   // 검색/날짜 필터 변경 시 페이지 초기화 / Reset page when search or date filter changes
   useEffect(() => {
@@ -108,38 +122,10 @@ export default function NewsPage() {
     { key: '30d', label: t('news.dateFilter.30d') },
   ];
 
-  // 날짜 필터에 해당하는 기준 시점 계산 / Calculate date cutoff for the selected filter
-  const getDateCutoff = () => {
-    if (dateFilter === 'all') return null;
-    const now = new Date();
-    if (dateFilter === '24h') return new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    if (dateFilter === '7d') return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-  };
-
-  // 검색어 + 날짜 기준 클라이언트 필터링 / Client-side filtering by search query + date
-  const filteredItems = useMemo(() => (data?.items ?? []).filter((item) => {
-    const q = searchQuery.toLowerCase().trim();
-    if (q && !item.title.toLowerCase().includes(q) && !(item.summary?.toLowerCase().includes(q))) {
-      return false;
-    }
-    const cutoff = getDateCutoff();
-    if (cutoff) {
-      const itemDate = new Date(item.publishedAt || item.scrapedAt);
-      if (itemDate < cutoff) return false;
-    }
-    return true;
-  }), [data?.items, searchQuery, dateFilter]);
-
-  // 필터 적용 시 클라이언트 측 슬라이싱 페이지네이션 / Client-side slice pagination for filtered results
-  const displayItems = isFiltered
-    ? filteredItems.slice((page - 1) * pageSize, page * pageSize)
-    : filteredItems;
-
-  const paginationTotal = isFiltered ? filteredItems.length : (data?.total ?? 0);
-  const paginationTotalPages = isFiltered
-    ? Math.ceil(filteredItems.length / pageSize)
-    : (data?.totalPages ?? 0);
+  // 서버 사이드 필터링 결과를 그대로 사용 / Use server-side filtered results directly
+  const displayItems = data?.items ?? [];
+  const paginationTotal = data?.total ?? 0;
+  const paginationTotalPages = data?.totalPages ?? 0;
 
   const handleRefresh = useCallback(async () => {
     await queryClient.invalidateQueries({ queryKey: ['news'] });
@@ -152,9 +138,9 @@ export default function NewsPage() {
     setAiResult(null);
     setAiModalOpen(true);
     try {
-      // 뉴스 조회와 AI 분석 요청을 병렬로 시작 — 워터폴 제거
-      // Start news fetch and AI analysis in parallel — eliminates waterfall
-      const newsPromise = api.get('/api/news', { params: { category: activeTab, page: 1, limit: 200 } });
+      // 최근 24시간 뉴스만 조회 (AI 분석에 필요한 최대 50건) — 과잉 조회 방지
+      // Fetch only recent 24h news (max 50 for AI analysis) — prevents over-fetching
+      const newsPromise = api.get('/api/news', { params: { category: activeTab, page: 1, limit: AI_ANALYSIS_FETCH_LIMIT, dateFilter: '24h' } });
 
       const { data: newsData } = await newsPromise;
       const items = newsData?.data?.items ?? newsData?.items ?? [];
@@ -265,13 +251,13 @@ export default function NewsPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-quaternary pointer-events-none" />
           <input
             type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
             placeholder={t('news.search')}
             className="w-full bg-bg-secondary border border-border rounded-xl pl-9 pr-9 py-2.5 text-[14px] text-text-primary placeholder:text-text-quaternary focus:outline-none focus:border-accent/60 transition-colors"
           />
-          {searchQuery && (
-            <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 text-text-quaternary hover:text-text-primary transition-colors" aria-label="Clear search">
+          {searchInput && (
+            <button onClick={() => { setSearchInput(''); setSearchQuery(''); }} className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 text-text-quaternary hover:text-text-primary transition-colors" aria-label="Clear search">
               <X className="w-4 h-4" />
             </button>
           )}

@@ -13,23 +13,39 @@ import { useAuthStore } from '@/stores/auth';
 import type { NewsItem, PaginatedResponse, ScrapeStatus } from '@/types';
 
 /**
- * 뉴스 목록을 카테고리별 페이지네이션으로 조회하는 훅
- * Hook that fetches paginated news list by category
+ * 뉴스 목록을 카테고리별 페이지네이션으로 조회하는 훅 (서버 사이드 검색/날짜 필터 지원)
+ * Hook that fetches paginated news list by category (supports server-side keyword search and date filter)
  *
  * @param params.category - 뉴스 카테고리 / News category
  * @param params.page - 페이지 번호 / Page number
  * @param params.limit - 페이지당 항목 수 / Items per page
+ * @param params.keyword - 검색어 (선택) / Search keyword (optional)
+ * @param params.dateFilter - 날짜 필터 (선택: all, 24h, 7d, 30d) / Date filter (optional: all, 24h, 7d, 30d)
  * @returns TanStack Query 결과 (PaginatedResponse<NewsItem>) / TanStack Query result
  */
 export function useNews(params: {
   category: string;
   page: number;
   limit: number;
+  keyword?: string;
+  dateFilter?: string;
 }) {
   return useQuery({
     queryKey: ['news', params],
     queryFn: async () => {
-      const { data } = await api.get('/api/news', { params });
+      // 빈 검색어와 'all' 날짜 필터는 전송하지 않음 / Omit empty keyword and 'all' dateFilter
+      const queryParams: Record<string, string | number> = {
+        category: params.category,
+        page: params.page,
+        limit: params.limit,
+      };
+      if (params.keyword && params.keyword.trim()) {
+        queryParams.keyword = params.keyword.trim();
+      }
+      if (params.dateFilter && params.dateFilter !== 'all') {
+        queryParams.dateFilter = params.dateFilter;
+      }
+      const { data } = await api.get('/api/news', { params: queryParams });
       return data.data as PaginatedResponse<NewsItem>;
     },
     // 60초마다 자동 리페치 / Auto-refetch every 60 seconds

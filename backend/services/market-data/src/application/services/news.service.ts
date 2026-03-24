@@ -264,19 +264,54 @@ export class NewsService implements OnModuleInit {
     return inserted;
   }
 
-  /** 카테고리별 뉴스 목록을 페이징하여 조회합니다
-   * Get paginated news list by category */
-  async list(category: NewsCategory, page: number, limit: number) {
+  /**
+   * 날짜 필터 문자열을 기준 시점으로 변환합니다
+   * Convert date filter string to a cutoff Date
+   */
+  private getDateCutoff(dateFilter?: string): Date | null {
+    if (!dateFilter || dateFilter === 'all') return null;
+    const now = new Date();
+    const MS_PER_HOUR = 60 * 60 * 1000;
+    const MS_PER_DAY = 24 * MS_PER_HOUR;
+    switch (dateFilter) {
+      case '24h': return new Date(now.getTime() - MS_PER_DAY);
+      case '7d': return new Date(now.getTime() - 7 * MS_PER_DAY);
+      case '30d': return new Date(now.getTime() - 30 * MS_PER_DAY);
+      default: return null;
+    }
+  }
+
+  /** 카테고리별 뉴스 목록을 페이징하여 조회합니다 (검색어, 날짜 필터 지원)
+   * Get paginated news list by category (supports keyword search and date filter) */
+  async list(category: NewsCategory, page: number, limit: number, keyword?: string, dateFilter?: string) {
     const skip = (page - 1) * limit;
+
+    // 서버 사이드 필터 조건 구성 / Build server-side filter conditions
+    const where: Record<string, unknown> = { category };
+
+    // 검색어 필터 — 제목 또는 요약에 포함 / Keyword filter — matches title or summary
+    if (keyword && keyword.trim()) {
+      const trimmed = keyword.trim();
+      where.OR = [
+        { title: { contains: trimmed, mode: 'insensitive' } },
+        { summary: { contains: trimmed, mode: 'insensitive' } },
+      ];
+    }
+
+    // 날짜 필터 — 기준 시점 이후만 조회 / Date filter — only items after cutoff
+    const cutoff = this.getDateCutoff(dateFilter);
+    if (cutoff) {
+      where.scrapedAt = { gte: cutoff };
+    }
 
     const [items, total] = await Promise.all([
       this.prisma.news.findMany({
-        where: { category },
+        where,
         orderBy: { scrapedAt: 'desc' },
         skip,
         take: limit,
       }),
-      this.prisma.news.count({ where: { category } }),
+      this.prisma.news.count({ where }),
     ]);
 
     return {

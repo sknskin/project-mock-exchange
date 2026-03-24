@@ -23,10 +23,12 @@ export class NewsProxyController {
    * Proxy news list to market-data service */
   @Get()
   @CacheTTL(60)
-  @ApiOperation({ summary: '뉴스 목록 조회', description: '카테고리, 페이지, 개수 기준으로 뉴스 목록을 조회합니다.' })
+  @ApiOperation({ summary: '뉴스 목록 조회', description: '카테고리, 페이지, 개수, 검색어, 날짜 필터 기준으로 뉴스 목록을 조회합니다.' })
   @ApiQuery({ name: 'category', required: false, description: '뉴스 카테고리' })
   @ApiQuery({ name: 'page', required: false, description: '페이지 번호' })
   @ApiQuery({ name: 'limit', required: false, description: '페이지당 항목 수' })
+  @ApiQuery({ name: 'keyword', required: false, description: '검색어 (제목/요약 검색)' })
+  @ApiQuery({ name: 'dateFilter', required: false, description: '날짜 필터 (all, 24h, 7d, 30d)' })
   @ApiResponse({ status: 200, description: '뉴스 목록 조회 성공' })
   async list(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const result = await this.proxyService.forward('market-data', {

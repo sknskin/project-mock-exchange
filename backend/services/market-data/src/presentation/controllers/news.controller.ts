@@ -15,17 +15,19 @@ import { InternalAuthGuard } from '../../common/guards/internal-auth.guard';
 export class NewsController {
   constructor(private readonly newsService: NewsService) {}
 
-  /** 카테고리별 뉴스 목록 페이징 조회
-   * Get paginated news list by category */
+  /** 카테고리별 뉴스 목록 페이징 조회 (검색어, 날짜 필터 지원)
+   * Get paginated news list by category (supports keyword search and date filter) */
   @Get()
   async list(
     @Query('category') category: NewsCategory = 'CRYPTO',
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+    @Query('keyword') keyword?: string,
+    @Query('dateFilter') dateFilter?: string,
   ) {
     const safePage = Math.max(1, page);
     const safeLimit = Math.min(Math.max(1, limit), 100);
-    const result = await this.newsService.list(category, safePage, safeLimit);
+    const result = await this.newsService.list(category, safePage, safeLimit, keyword, dateFilter);
     return { success: true, data: result };
   }
 
