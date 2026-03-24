@@ -17,6 +17,7 @@ import { cn } from '@/lib/format';
 import RoomList from './RoomList';
 import MessageArea from './MessageArea';
 import CreateRoomModal from './CreateRoomModal';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 
 // 패널 최소 크기 제한 / Minimum panel size constraints
 const MIN_W = 320;
@@ -44,6 +45,8 @@ function ChatPanel() {
     origH: number;
   } | null>(null);
   const [interacting, setInteracting] = useState(false);
+  // 퇴장 확인 모달 상태 / Leave confirmation modal state
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
 
   // ESC 키로 닫기 (Close on ESC)
   useEffect(() => {
@@ -150,14 +153,24 @@ function ChatPanel() {
 
   if (!isOpen) return null;
 
-  const handleLeaveRoom = async () => {
+  /** 채팅방 퇴장 확인 모달 표시
+   * Show leave confirmation modal */
+  const handleLeaveRoom = () => {
     if (!activeRoomId) return;
-    if (!window.confirm(t('chat.confirmLeaveRoom'))) return;
+    setShowLeaveConfirm(true);
+  };
+
+  /** 채팅방 퇴장 확정 처리
+   * Confirm and execute leaving the room */
+  const handleConfirmLeave = async () => {
+    if (!activeRoomId) return;
     try {
       await leaveRoom.mutateAsync(activeRoomId);
       backToList();
     } catch {
       // 실패해도 UI 상태 유지 (Keep UI state on failure)
+    } finally {
+      setShowLeaveConfirm(false);
     }
   };
 
@@ -230,6 +243,17 @@ function ChatPanel() {
         <div onMouseDown={(e) => onPointerDown('resize-s', e)} className="hidden lg:block absolute bottom-0 left-3 right-3 h-1.5 cursor-s-resize z-10" />
         <div onMouseDown={(e) => onPointerDown('resize-n', e)} className="hidden lg:block absolute top-0 left-3 right-3 h-1.5 cursor-n-resize z-10" />
       </div>
+
+      {/* 채팅방 퇴장 확인 모달 — 네이티브 confirm() 대체 */}
+      {/* Leave room confirmation modal — replaces native confirm() */}
+      <ConfirmModal
+        isOpen={showLeaveConfirm}
+        onClose={() => setShowLeaveConfirm(false)}
+        onConfirm={handleConfirmLeave}
+        title={t('chat.leaveRoom')}
+        message={t('chat.confirmLeaveRoom')}
+        confirmVariant="danger"
+      />
     </>
   );
 

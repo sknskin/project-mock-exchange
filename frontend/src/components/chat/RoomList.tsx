@@ -16,6 +16,7 @@ import { usePresenceStore } from '@/stores/presence';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/format';
 import Tooltip from '@/components/ui/Tooltip';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 import type { ChatRoom } from '@/types';
 import type { TranslationKey } from '@/lib/i18n';
 
@@ -72,6 +73,8 @@ function RoomListInner() {
   const [contextMenu, setContextMenu] = useState<ContextMenu | null>(null);
   const [renamingRoomId, setRenamingRoomId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
+  // 퇴장 확인 모달 상태 / Leave confirmation modal state
+  const [leaveConfirmRoomId, setLeaveConfirmRoomId] = useState<string | null>(null);
   const renameInputRef = useRef<HTMLInputElement>(null);
   const contextMenuRef = useRef<HTMLDivElement>(null);
 
@@ -121,14 +124,21 @@ function RoomListInner() {
     setRenameValue('');
   }, [renameValue, renameRoom]);
 
-  /** 채팅방 퇴장 처리
-   * Handle leaving a chat room */
-  const handleLeave = useCallback(async (roomId: string) => {
+  /** 채팅방 퇴장 확인 모달 표시
+   * Show leave confirmation modal */
+  const handleLeave = useCallback((roomId: string) => {
     setContextMenu(null);
-    if (!confirm(t('chat.leaveConfirm'))) return;
-    await leaveRoom.mutateAsync(roomId);
+    setLeaveConfirmRoomId(roomId);
+  }, []);
+
+  /** 채팅방 퇴장 확정 처리
+   * Confirm and execute leaving the room */
+  const handleConfirmLeave = useCallback(async () => {
+    if (!leaveConfirmRoomId) return;
+    await leaveRoom.mutateAsync(leaveConfirmRoomId);
+    setLeaveConfirmRoomId(null);
     backToList();
-  }, [leaveRoom, backToList, t]);
+  }, [leaveConfirmRoomId, leaveRoom, backToList]);
 
   return (
     <div className="flex flex-col h-full">
@@ -306,6 +316,17 @@ function RoomListInner() {
           </button>
         </div>
       )}
+
+      {/* 채팅방 퇴장 확인 모달 — 네이티브 confirm() 대체 */}
+      {/* Leave room confirmation modal — replaces native confirm() */}
+      <ConfirmModal
+        isOpen={leaveConfirmRoomId !== null}
+        onClose={() => setLeaveConfirmRoomId(null)}
+        onConfirm={handleConfirmLeave}
+        title={t('chat.leaveRoom')}
+        message={t('chat.leaveConfirm')}
+        confirmVariant="danger"
+      />
     </div>
   );
 }
