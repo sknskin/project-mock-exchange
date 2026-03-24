@@ -16,6 +16,7 @@ import {
   Req,
   Res,
   UseGuards,
+  Logger,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
@@ -29,6 +30,10 @@ import { ChatGateway } from '../gateway/chat.gateway';
 @Controller('api/announcements')
 @UseGuards(JwtAuthGuard)
 export class AnnouncementProxyController {
+  // 관리자 감사 로그용 Logger 인스턴스
+  // Logger instance for admin audit logging
+  private readonly logger = new Logger('AdminAudit');
+
   constructor(
     private readonly proxyService: ProxyService,
     private readonly chatGateway: ChatGateway,
@@ -133,6 +138,8 @@ export class AnnouncementProxyController {
     });
     if (result.status < 400 && result.data) {
       const data = result.data as { id?: string; title?: string };
+      // 관리자 감사 로그: 공지사항 생성 / Admin audit log: announcement creation
+      this.logger.warn(`[ADMIN_AUDIT] admin=${user?.id} action=CREATE_ANNOUNCEMENT target=${data.id}`, 'AdminAudit');
       this.chatGateway.server.emit('notification:announcement-new', {
         type: 'announcement-new',
         title: (body as { title?: string })?.title || data.title || '',
@@ -168,6 +175,8 @@ export class AnnouncementProxyController {
       headers: { Authorization: req.headers.authorization || '' },
     });
     if (result.status < 400) {
+      // 관리자 감사 로그: 공지사항 수정 / Admin audit log: announcement update
+      this.logger.warn(`[ADMIN_AUDIT] admin=${user?.id} action=UPDATE_ANNOUNCEMENT target=${id}`, 'AdminAudit');
       this.chatGateway.server.emit('notification:announcement-updated', {
         type: 'announcement-updated',
         title: (body as { title?: string })?.title || '',
@@ -189,11 +198,16 @@ export class AnnouncementProxyController {
   @ApiResponse({ status: 403, description: '권한 부족' })
   @ApiResponse({ status: 404, description: '공지사항을 찾을 수 없음' })
   async delete(@Param('id') id: string, @Req() req: Request, @Res() res: Response) {
+    const user = req.user as { id: string } | undefined;
     const result = await this.proxyService.forward('user-auth', {
       method: 'DELETE',
       url: `/announcements/${id}`,
       headers: { Authorization: req.headers.authorization || '' },
     });
+    if (result.status < 400) {
+      // 관리자 감사 로그: 공지사항 삭제 / Admin audit log: announcement deletion
+      this.logger.warn(`[ADMIN_AUDIT] admin=${user?.id} action=DELETE_ANNOUNCEMENT target=${id}`, 'AdminAudit');
+    }
     return res.status(result.status).json(result.data);
   }
 
@@ -213,12 +227,17 @@ export class AnnouncementProxyController {
     @Req() req: Request,
     @Res() res: Response,
   ) {
+    const user = req.user as { id: string } | undefined;
     const result = await this.proxyService.forward('user-auth', {
       method: 'POST',
       url: `/announcements/${id}/pin`,
       data: body,
       headers: { Authorization: req.headers.authorization || '' },
     });
+    if (result.status < 400) {
+      // 관리자 감사 로그: 공지사항 고정 토글 / Admin audit log: announcement pin toggle
+      this.logger.warn(`[ADMIN_AUDIT] admin=${user?.id} action=TOGGLE_PIN_ANNOUNCEMENT target=${id}`, 'AdminAudit');
+    }
     return res.status(result.status).json(result.data);
   }
 

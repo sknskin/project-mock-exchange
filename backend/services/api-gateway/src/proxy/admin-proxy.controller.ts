@@ -16,6 +16,7 @@ import {
   Req,
   Res,
   UseGuards,
+  Logger,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { Request, Response } from 'express';
@@ -31,6 +32,10 @@ import { ChatGateway } from '../gateway/chat.gateway';
 @Controller('api/admin')
 @UseGuards(JwtAuthGuard, AdminRolesGuard)
 export class AdminProxyController {
+  // 관리자 감사 로그용 Logger 인스턴스
+  // Logger instance for admin audit logging
+  private readonly logger = new Logger('AdminAudit');
+
   constructor(
     private readonly proxyService: ProxyService,
     private readonly chatGateway: ChatGateway,
@@ -96,6 +101,7 @@ export class AdminProxyController {
     @Req() req: Request,
     @Res() res: Response,
   ) {
+    const adminId = (req as unknown as { user?: { id: string } }).user?.id;
     const result = await this.proxyService.forward('user-auth', {
       method: 'POST',
       url: `/admin/users/${id}/approve`,
@@ -104,6 +110,8 @@ export class AdminProxyController {
     });
     // 승인 성공 시 해당 사용자에게 WebSocket 알림 전송 / On approval, notify the user via WebSocket
     if (result.status < 400) {
+      // 관리자 감사 로그: 가입 승인 / Admin audit log: user approval
+      this.logger.warn(`[ADMIN_AUDIT] admin=${adminId} action=APPROVE_USER target=${id}`, 'AdminAudit');
       this.chatGateway.notifyUser(id, 'notification:registration-approved', {
         type: 'registration-approved',
         timestamp: new Date().toISOString(),
@@ -128,6 +136,7 @@ export class AdminProxyController {
     @Req() req: Request,
     @Res() res: Response,
   ) {
+    const adminId = (req as unknown as { user?: { id: string } }).user?.id;
     const result = await this.proxyService.forward('user-auth', {
       method: 'POST',
       url: `/admin/users/${id}/reject`,
@@ -136,6 +145,8 @@ export class AdminProxyController {
     });
     // 거절 시 해당 사용자에게 사유와 함께 WebSocket 알림 전송 / On rejection, notify user with reason via WebSocket
     if (result.status < 400) {
+      // 관리자 감사 로그: 가입 거절 / Admin audit log: user rejection
+      this.logger.warn(`[ADMIN_AUDIT] admin=${adminId} action=REJECT_USER target=${id}`, 'AdminAudit');
       this.chatGateway.notifyUser(id, 'notification:registration-rejected', {
         type: 'registration-rejected',
         reason: body.reason || '',
@@ -160,11 +171,16 @@ export class AdminProxyController {
     @Req() req: Request,
     @Res() res: Response,
   ) {
+    const adminId = (req as unknown as { user?: { id: string } }).user?.id;
     const result = await this.proxyService.forward('user-auth', {
       method: 'POST',
       url: `/admin/users/${id}/deactivate`,
       headers: { Authorization: req.headers.authorization || '' },
     });
+    if (result.status < 400) {
+      // 관리자 감사 로그: 사용자 비활성화 / Admin audit log: user deactivation
+      this.logger.warn(`[ADMIN_AUDIT] admin=${adminId} action=DEACTIVATE_USER target=${id}`, 'AdminAudit');
+    }
     return res.status(result.status).json(result.data);
   }
 
@@ -183,11 +199,16 @@ export class AdminProxyController {
     @Req() req: Request,
     @Res() res: Response,
   ) {
+    const adminId = (req as unknown as { user?: { id: string } }).user?.id;
     const result = await this.proxyService.forward('user-auth', {
       method: 'POST',
       url: `/admin/users/${id}/activate`,
       headers: { Authorization: req.headers.authorization || '' },
     });
+    if (result.status < 400) {
+      // 관리자 감사 로그: 사용자 활성화 / Admin audit log: user activation
+      this.logger.warn(`[ADMIN_AUDIT] admin=${adminId} action=ACTIVATE_USER target=${id}`, 'AdminAudit');
+    }
     return res.status(result.status).json(result.data);
   }
 
@@ -205,11 +226,16 @@ export class AdminProxyController {
     @Req() req: Request,
     @Res() res: Response,
   ) {
+    const adminId = (req as unknown as { user?: { id: string } }).user?.id;
     const result = await this.proxyService.forward('user-auth', {
       method: 'POST',
       url: `/admin/users/${id}/unlock`,
       headers: { Authorization: req.headers.authorization || '' },
     });
+    if (result.status < 400) {
+      // 관리자 감사 로그: 계정 잠금 해제 / Admin audit log: account unlock
+      this.logger.warn(`[ADMIN_AUDIT] admin=${adminId} action=UNLOCK_USER target=${id}`, 'AdminAudit');
+    }
     return res.status(result.status).json(result.data);
   }
 
@@ -227,11 +253,16 @@ export class AdminProxyController {
     @Req() req: Request,
     @Res() res: Response,
   ) {
+    const adminId = (req as unknown as { user?: { id: string } }).user?.id;
     const result = await this.proxyService.forward('user-auth', {
       method: 'DELETE',
       url: `/admin/users/${id}`,
       headers: { Authorization: req.headers.authorization || '' },
     });
+    if (result.status < 400) {
+      // 관리자 감사 로그: 사용자 삭제 / Admin audit log: user deletion
+      this.logger.warn(`[ADMIN_AUDIT] admin=${adminId} action=DELETE_USER target=${id}`, 'AdminAudit');
+    }
     return res.status(result.status).json(result.data);
   }
 
@@ -251,12 +282,17 @@ export class AdminProxyController {
     @Req() req: Request,
     @Res() res: Response,
   ) {
+    const adminId = (req as unknown as { user?: { id: string } }).user?.id;
     const result = await this.proxyService.forward('user-auth', {
       method: 'PATCH',
       url: `/admin/users/${id}/role`,
       data: body,
       headers: { Authorization: req.headers.authorization || '' },
     });
+    if (result.status < 400) {
+      // 관리자 감사 로그: 역할 변경 / Admin audit log: role change
+      this.logger.warn(`[ADMIN_AUDIT] admin=${adminId} action=CHANGE_ROLE target=${id} newRole=${body.role}`, 'AdminAudit');
+    }
     return res.status(result.status).json(result.data);
   }
 }
