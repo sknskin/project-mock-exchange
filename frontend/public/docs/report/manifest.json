@@ -1,5 +1,26 @@
 [
   {
+    "name": "ux-audit-7.pdf",
+    "path": "/docs/report/ux-audit-7.pdf",
+    "label": "VirtuEx 사용자 UX 개선 감사 보고서 (7차)",
+    "date": "2026-03-24",
+    "type": "ux"
+  },
+  {
+    "name": "perf-audit-11.pdf",
+    "path": "/docs/report/perf-audit-11.pdf",
+    "label": "VirtuEx 성능 개선 감사 보고서 (11차)",
+    "date": "2026-03-24",
+    "type": "performance"
+  },
+  {
+    "name": "audit-report-23.pdf",
+    "path": "/docs/report/audit-report-23.pdf",
+    "label": "VirtuEx 시스템 감사 보고서 (23차)",
+    "date": "2026-03-24",
+    "type": "general"
+  },
+  {
     "name": "ux-audit-6.pdf",
     "path": "/docs/report/ux-audit-6.pdf",
     "label": "VirtuEx 사용자 UX 개선 감사 보고서 (6차)",
