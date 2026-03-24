@@ -34,7 +34,13 @@ function ToastContainer() {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed bottom-20 sm:bottom-4 right-0 sm:right-4 z-[100] flex flex-col items-end gap-2.5 pointer-events-none w-full sm:w-auto sm:max-w-sm px-3 sm:px-0">
+    // 스크린 리더 알림 영역 — 에러는 즉시 읽기, 그 외는 대기 후 읽기
+    // Screen reader live region — error toasts read immediately, others read politely
+    <div
+      className="fixed bottom-20 sm:bottom-4 right-0 sm:right-4 z-[100] flex flex-col items-end gap-2.5 pointer-events-none w-full sm:w-auto sm:max-w-sm px-3 sm:px-0"
+      role="status"
+      aria-live="polite"
+    >
       {toasts.map((toast) => (
         <div
           key={toast.id}

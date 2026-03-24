@@ -45,10 +45,12 @@ function Tabs({
   // pill 변형: 둥근 테두리 버튼 스타일 / Pill variant: rounded border button style
   if (variant === 'pill') {
     return (
-      <div className="flex gap-2.5">
+      <div className="flex gap-2.5" role="tablist">
         {tabs.map((tab) => (
           <button
             key={tab.key}
+            role="tab"
+            aria-selected={activeTab === tab.key}
             onClick={() => onChange(tab.key)}
             className={cn(
               'h-9 px-4 text-[13px] font-semibold rounded-full border transition-colors',
@@ -66,10 +68,12 @@ function Tabs({
 
   // default 변형: 밑줄 인디케이터 스타일 / Default variant: underline indicator style
   return (
-    <div className="flex border-b border-border">
+    <div className="flex border-b border-border" role="tablist">
       {tabs.map((tab) => (
         <button
           key={tab.key}
+          role="tab"
+          aria-selected={activeTab === tab.key}
           onClick={() => onChange(tab.key)}
           className={cn(
             'flex-1 py-3.5 text-[14px] font-bold transition-colors relative',

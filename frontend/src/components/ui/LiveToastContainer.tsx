@@ -78,7 +78,12 @@ export default function LiveToastContainer() {
   };
 
   return (
-    <div className="fixed bottom-20 sm:bottom-4 right-0 sm:right-4 z-[110] flex flex-col gap-2 w-full sm:w-auto sm:max-w-sm px-3 sm:px-0 pointer-events-none">
+    // 스크린 리더 실시간 알림 영역 / Screen reader live region for real-time notifications
+    <div
+      className="fixed bottom-20 sm:bottom-4 right-0 sm:right-4 z-[110] flex flex-col gap-2 w-full sm:w-auto sm:max-w-sm px-3 sm:px-0 pointer-events-none"
+      role="status"
+      aria-live="polite"
+    >
       {toasts.map((toast) => {
         const Icon = ICON_MAP[toast.category];
         const colorClass = COLOR_MAP[toast.category];
