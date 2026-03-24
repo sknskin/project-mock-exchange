@@ -19,6 +19,7 @@ import ToastContainer from '@/components/ui/ToastContainer';
 import LiveToastContainer from '@/components/ui/LiveToastContainer';
 import ConnectionGuard from '@/components/layout/ConnectionGuard';
 import AuthenticatedChatPanel from '@/components/chat/AuthenticatedChatPanel';
+import AuthTokenRecovery from '@/components/layout/AuthTokenRecovery';
 import MainContent from '@/components/layout/MainContent';
 
 export const metadata: Metadata = {
@@ -70,16 +71,18 @@ export default function RootLayout({
         `}</Script>
       </head>
       <body className="bg-bg-primary text-text-primary min-h-screen">
-        {/* Skip to content link for keyboard/screen reader users */}
+        {/* 키보드/스크린 리더 사용자를 위한 본문 건너뛰기 링크 (WCAG 2.4.1)
+            Skip to content link for keyboard/screen reader users (WCAG 2.4.1) */}
         <a
           href="#main-content"
-          className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:bg-accent focus:text-white focus:rounded-lg focus:text-sm focus:font-semibold"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[9999] focus:bg-bg-primary focus:text-text-primary focus:px-4 focus:py-2 focus:rounded-lg focus:ring-2 focus:ring-accent"
           data-i18n-skip
         >
-          Skip to content / 본문으로 건너뛰기
+          본문으로 건너뛰기
         </a>
         <QueryProvider>
           <ConnectionGuard>
+            <AuthTokenRecovery />
             <ThemeProvider />
             <PageViewTracker />
             <ScrollToTop />
