@@ -7,16 +7,15 @@
  */
 'use client';
 
+import React from 'react';
 import { Search } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 
 interface DashboardMobileSearchProps {
-  /** 스포트라이트 검색 모달 열기 콜백
-   * Callback to open the spotlight search modal */
   onOpen: () => void;
 }
 
-export default function DashboardMobileSearch({ onOpen }: DashboardMobileSearchProps) {
+function DashboardMobileSearch({ onOpen }: DashboardMobileSearchProps) {
   const { t } = useTranslation();
 
   return (
@@ -31,3 +30,5 @@ export default function DashboardMobileSearch({ onOpen }: DashboardMobileSearchP
     </div>
   );
 }
+
+export default React.memo(DashboardMobileSearch);

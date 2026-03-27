@@ -19,7 +19,7 @@ interface DashboardTabBarProps {
   onTabChange: (key: string) => void;
 }
 
-export default function DashboardTabBar({ activeMainTab, onTabChange }: DashboardTabBarProps) {
+function DashboardTabBarInner({ activeMainTab, onTabChange }: DashboardTabBarProps) {
   const { t } = useTranslation();
 
   const mainTabs = [
@@ -65,3 +65,6 @@ export default function DashboardTabBar({ activeMainTab, onTabChange }: Dashboar
     </div>
   );
 }
+
+import React from 'react';
+export default React.memo(DashboardTabBarInner);
