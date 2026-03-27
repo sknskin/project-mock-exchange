@@ -236,6 +236,12 @@ export default function LeaderboardPage() {
   // 행 DOM 참조 (순위 이동 애니메이션용) / Row DOM refs (for rank movement animation)
   const rowRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
+  // 필터/정렬 변경 시 이전 순위 맵 초기화 — 잘못된 순위 변동 애니메이션 방지
+  // Reset previous rank map on filter/sort change — prevents incorrect rank change animation
+  useEffect(() => {
+    prevRankMap.current = new Map();
+  }, [period, sortMode, investedOnly, copyTradeOnly]);
+
   const handleRefresh = useCallback(async () => {
     await refetch();
   }, [refetch]);

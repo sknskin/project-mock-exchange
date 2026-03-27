@@ -44,9 +44,9 @@ export function useLeaderboard(options?: UseLeaderboardOptions) {
     // Include period and sortBy in queryKey for automatic refetch on option change
     queryKey: ['leaderboard', period, sortBy],
     queryFn: async () => {
-      // period와 sortBy는 향후 백엔드 지원 시 쿼리 파라미터로 전달 예정
-      // period and sortBy will be passed as query params when backend supports them
-      const { data } = await api.get('/api/portfolio/leaderboard', { params: { limit: 100 } });
+      // API-L-01: period와 sortBy를 쿼리 파라미터로 전달 — 백엔드에서 미지원 시 무시됨
+      // API-L-01: Pass period and sortBy as query params — ignored if backend doesn't support them
+      const { data } = await api.get('/api/portfolio/leaderboard', { params: { limit: 100, period, sortBy } });
 
       // 백엔드 응답 구조가 다양할 수 있으므로 data.data 또는 data 자체를 사용
       // Backend response structure may vary, so use data.data or data itself
