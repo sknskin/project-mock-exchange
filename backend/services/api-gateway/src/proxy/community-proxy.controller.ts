@@ -20,6 +20,7 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
 import { Request, Response } from 'express';
+import * as path from 'path';
 import { ProxyService } from './proxy.service';
 import { JwtAuthGuard, OptionalAuth } from '../auth/jwt-auth.guard';
 
@@ -392,9 +393,12 @@ export class CommunityProxyController {
     @Param('fileName') fileName: string,
     @Res() res: Response,
   ) {
+    // PROXY-L-01: 디렉토리 트래버설 방지 — 파일명에서 경로 부분 제거
+    // PROXY-L-01: Prevent directory traversal — strip path components from filename
+    const safeName = path.basename(fileName);
     const result = await this.proxyService.forward('user-auth', {
       method: 'GET',
-      url: `/community/uploads/${fileName}`,
+      url: `/community/uploads/${safeName}`,
       responseType: 'arraybuffer',
     });
     if (result.status !== 200) {

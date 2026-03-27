@@ -59,7 +59,7 @@ export class OrderProxyController {
 
     // WebSocket으로 거래 체결 알림 전송 (Send trade execution notification via WebSocket)
     if (result.status < 400 && userId) {
-      this.sendTradeNotification(userId, result.data, req).catch((e) => new Logger('OrderProxy').warn('sendTradeNotification failed', e.message));
+      this.sendTradeNotification(userId, result.data, req).catch((e) => new Logger('OrderProxy').warn('sendTradeNotification failed', e instanceof Error ? e.name : 'UnknownError'));
     }
 
     return res.status(result.status).json(result.data);
@@ -205,10 +205,15 @@ export class OrderProxyController {
 
   /** 호가창 조회를 order-engine으로 프록시
    * Proxy order book to order-engine service */
+  // AUTH-M-01: 호가창 조회에 인증 필수 적용 — 비인증 사용자 접근 차단
+  // AUTH-M-01: Require authentication for order book endpoint — block unauthenticated access
   @Get('book/:symbol')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: '호가창 조회', description: '특정 자산의 호가창(주문서)을 반환합니다' })
   @ApiParam({ name: 'symbol', description: '자산 심볼 (예: BTC-USD)' })
   @ApiResponse({ status: 200, description: '호가창 데이터 반환' })
+  @ApiResponse({ status: 401, description: '인증 필요' })
   async getOrderBook(@Param('symbol') symbol: string, @Res() res: Response) {
     const result = await this.proxyService.forward('order-engine', {
       method: 'GET',
