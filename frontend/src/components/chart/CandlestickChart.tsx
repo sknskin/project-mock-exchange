@@ -534,8 +534,9 @@ export default function CandlestickChart({
         ))}
       </div>
 
+      {/* ANI-L-02: 차트 로딩 완료 시 페이드인 효과 — 부드러운 차트 전환 / Fade-in on chart load — smooth chart transition */}
       {/* 메인 차트 (Main Chart) */}
-      <div ref={chartContainerRef} className="w-full overflow-hidden" />
+      <div ref={chartContainerRef} className="w-full overflow-hidden animate-fade-in" />
 
       {/* RSI 차트 (RSI Chart) */}
       {toggles.rsi && (
