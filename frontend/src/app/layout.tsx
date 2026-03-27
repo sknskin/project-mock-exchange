@@ -40,6 +40,9 @@ export default function RootLayout({
         <link rel="preconnect" href="https://cdn.jsdelivr.net" crossOrigin="anonymous" />
         {/* IMG-L-01: CDN 폰트 스타일시트 프리로드 — 렌더링 차단 최소화 / CDN font stylesheet preload — minimize render blocking */}
         <link rel="preload" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" as="style" />
+        {/* FONT-M-01: 프리로드된 폰트 스타일시트 실제 적용 — preload만으로는 스타일이 적용되지 않음 */}
+        {/* FONT-M-01: Apply preloaded font stylesheet — preload alone does not apply styles */}
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
         {/*
           SSR Hydration Flicker 방지: React 렌더링 전에 sessionStorage에서 인증 상태를 읽어
           CSS data 속성을 설정합니다. auth-show/auth-hide CSS 클래스가 즉시 동작합니다.
