@@ -87,12 +87,19 @@ export class PriceEngineService {
   /** 자산의 초기 가격 및 추적 상태를 설정합니다
    * Initialize asset price and tracking state */
   initializeAsset(config: AssetConfig): void {
+    // 초기 거래량 — 한국 주식은 높은 시작값으로 거래대금 정렬에서 코인과 섞이도록
+    // Initial volume — Korean stocks start high so they mix with crypto in turnover sort
+    const isKR = config.symbol.endsWith('.KS');
+    const initialVolume = isKR
+      ? (config.basePrice > 200000 ? 2_000_000 : config.basePrice > 50000 ? 5_000_000 : 10_000_000)
+      : 0;
+
     this.symbols.set(config.symbol, {
       price: config.basePrice,
       openPrice24h: config.basePrice,
       high24h: config.basePrice,
       low24h: config.basePrice,
-      volume: 0,
+      volume: initialVolume,
       volatilityEvent: null,
     });
     this.logger.log(`Initialized ${config.symbol} at $${config.basePrice}`);
@@ -163,8 +170,25 @@ export class PriceEngineService {
     const bid = this.roundPrice(newPrice - halfSpread);
     const ask = this.roundPrice(newPrice + halfSpread);
 
-    // 거래량 시뮬레이션: 기본 거래량 + 변동성 기반 급등 + 랜덤 노이즈 / Simulate volume: base volume + volatility-driven spikes + random noise
-    const baseVolume = config.basePrice > 100 ? 500 : 10000; // 고가 자산은 적은 수량 거래 / higher-priced assets trade fewer units
+    // 거래량 시뮬레이션: 통화/자산 유형별 현실적 기본 거래량
+    // Volume simulation: realistic base volume per currency/asset type
+    const isKR = config.symbol.endsWith('.KS');
+    const isCrypto = config.symbol.includes('-');
+    let baseVolume: number;
+    if (isKR) {
+      // 한국 주식 — 원화 고가 종목도 충분한 USD 환산 거래대금 생성
+      // Korean stocks — generate sufficient USD-equivalent turnover
+      // 삼성전자 72,000원 × 50,000주 = ₩3.6B ÷ 1400 = $2.6M/tick
+      baseVolume = config.basePrice > 200000 ? 15000 : config.basePrice > 50000 ? 50000 : 100000;
+    } else if (isCrypto) {
+      // 암호화폐 — 기존 유지
+      // Crypto — keep existing
+      baseVolume = config.basePrice > 100 ? 500 : 10000;
+    } else {
+      // 미국 주식 — 기존 유지
+      // US stocks — keep existing
+      baseVolume = config.basePrice > 100 ? 500 : 10000;
+    }
     const volatilityFactor = effectiveVolatility / config.volatility; // 변동성 이벤트 시 급등 / spikes during volatility events
     // M-04: 거래량 이동 팩터를 5x로 상한 제한하여 극단적인 가격 변동 시
     // 비현실적인 거래량 급등을 방지합니다.
