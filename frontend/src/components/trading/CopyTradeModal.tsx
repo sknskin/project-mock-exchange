@@ -167,7 +167,7 @@ export default function CopyTradeModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="copy-trade-modal-title"
-        className="relative bg-bg-primary border border-border rounded-2xl p-6 w-[420px] max-w-[calc(100vw-2rem)] shadow-2xl animate-modal-content"
+        className="relative bg-bg-primary border border-border rounded-2xl p-6 w-[420px] max-w-[calc(100vw-2rem)] max-h-[85dvh] overflow-y-auto shadow-2xl animate-modal-content"
       >
         {/* 닫기 버튼 / Close button */}
         <button

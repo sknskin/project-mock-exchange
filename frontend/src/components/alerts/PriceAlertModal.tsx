@@ -145,7 +145,7 @@ export default function PriceAlertModal({ isOpen, onClose, symbol, currentPrice 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="price-alert-modal-title" ref={modalRef}>
       <div className="absolute inset-0 bg-black/50 animate-modal-backdrop" onClick={onClose} />
-      <div className="relative w-full max-w-sm bg-bg-primary border border-border rounded-xl shadow-xl animate-modal-content">
+      <div className="relative w-full max-w-sm max-h-[85dvh] overflow-y-auto bg-bg-primary border border-border rounded-xl shadow-xl animate-modal-content">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border">
           <div className="flex items-center gap-2">

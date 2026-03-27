@@ -130,7 +130,7 @@ export default function UserProfileModal({
       <div
         ref={modalRef}
         tabIndex={-1}
-        className="relative bg-bg-primary border border-border rounded-2xl p-6 w-[400px] max-w-[calc(100vw-2rem)] shadow-2xl animate-modal-content outline-none"
+        className="relative bg-bg-primary border border-border rounded-2xl p-6 w-[400px] max-w-[calc(100vw-2rem)] max-h-[90dvh] overflow-y-auto shadow-2xl animate-modal-content outline-none"
       >
         {/* 닫기 버튼 / Close button */}
         <button

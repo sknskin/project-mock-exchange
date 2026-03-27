@@ -96,8 +96,10 @@ export default function PortfolioPage() {
       setDepositAmount('');
       setDepositOpen(false);
       useToastStore.getState().addToast(t('portfolio.depositSuccess'), 'success');
-    } catch {
-      // Error handled by query client
+    } catch (e) {
+      // 에러는 query client에서 처리, 디버깅용 로그 출력
+      // Error handled by query client, log for debugging
+      console.debug('[Portfolio] deposit error:', e);
     }
   };
 
@@ -110,8 +112,10 @@ export default function PortfolioPage() {
       setWithdrawAmount('');
       setWithdrawOpen(false);
       useToastStore.getState().addToast(t('portfolio.withdrawSuccess'), 'success');
-    } catch {
-      // Error handled by query client
+    } catch (e) {
+      // 에러는 query client에서 처리, 디버깅용 로그 출력
+      // Error handled by query client, log for debugging
+      console.debug('[Portfolio] withdraw error:', e);
     }
   };
 
@@ -368,13 +372,15 @@ export default function PortfolioPage() {
         {/* 입금 바텀시트 — 금액 입력 + 빠른 금액 버튼 / Deposit BottomSheet — amount input + quick amount buttons */}
         <BottomSheet
           isOpen={depositOpen}
-          onClose={() => setDepositOpen(false)}
+          onClose={() => { setDepositOpen(false); setDepositAmount(''); }}
           title={t('portfolio.depositTitle')}
         >
           <div className="space-y-5">
+            {/* MOB-M-10: inputMode="decimal" — 모바일에서 숫자 키보드 표시 / Show numeric keyboard on mobile */}
             <Input
               label={`${t('portfolio.depositAmount')} (${currencyMode === 'krw' ? 'KRW' : 'USD'})`}
               type="number"
+              inputMode="decimal"
               value={depositAmount}
               onChange={(e) => setDepositAmount(e.target.value)}
               placeholder={t('portfolio.depositPlaceholder')}
@@ -421,14 +427,16 @@ export default function PortfolioPage() {
         {/* 출금 바텀시트 — 금액 입력 + 빠른 금액 + 잔액 비율(%) 버튼 / Withdraw BottomSheet — amount input + quick amount + balance % buttons */}
         <BottomSheet
           isOpen={withdrawOpen}
-          onClose={() => setWithdrawOpen(false)}
+          onClose={() => { setWithdrawOpen(false); setWithdrawAmount(''); }}
           title={t('portfolio.withdrawTitle')}
         >
           <div className="space-y-5">
             <div>
+              {/* MOB-M-10: inputMode="decimal" — 모바일에서 숫자 키보드 표시 / Show numeric keyboard on mobile */}
               <Input
                 label={`${t('portfolio.withdrawAmount')} (${currencyMode === 'krw' ? 'KRW' : 'USD'})`}
                 type="number"
+                inputMode="decimal"
                 value={withdrawAmount}
                 onChange={(e) => setWithdrawAmount(e.target.value)}
                 placeholder={t('portfolio.withdrawPlaceholder')}

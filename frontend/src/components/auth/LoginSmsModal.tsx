@@ -183,7 +183,7 @@ export default function LoginSmsModal({
       <div className="absolute inset-0 bg-black/60 animate-modal-backdrop" onTouchMove={(e) => e.preventDefault()} />
 
       {/* 모달 본체 / Modal body */}
-      <div className="relative bg-bg-primary border border-border rounded-2xl w-full max-w-[360px] shadow-2xl animate-modal-content">
+      <div className="relative bg-bg-primary border border-border rounded-2xl w-full max-w-[360px] max-h-[90dvh] overflow-y-auto shadow-2xl animate-modal-content">
         {/* X 닫기 버튼 / X close button */}
         <button
           onClick={onClose}

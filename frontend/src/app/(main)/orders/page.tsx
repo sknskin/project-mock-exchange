@@ -612,14 +612,16 @@ export default function OrdersPage() {
                               value={editPrice}
                               onChange={(e) => setEditPrice(e.target.value)}
                               placeholder={t('orders.price')}
-                              className="flex-1 h-11 px-3 text-[13px] bg-bg-secondary border border-border rounded-lg text-text-primary"
+                              aria-label={t('orders.price')}
+                              className="flex-1 h-11 px-3 text-[13px] bg-bg-secondary border border-border rounded-lg text-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/20 focus-visible:border-accent/40"
                             />
                             <input
                               type="number"
                               value={editQuantity}
                               onChange={(e) => setEditQuantity(e.target.value)}
                               placeholder={t('orders.quantity')}
-                              className="flex-1 h-11 px-3 text-[13px] bg-bg-secondary border border-border rounded-lg text-text-primary"
+                              aria-label={t('orders.quantity')}
+                              className="flex-1 h-11 px-3 text-[13px] bg-bg-secondary border border-border rounded-lg text-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/20 focus-visible:border-accent/40"
                             />
                           </div>
                           <div className="flex gap-2">
@@ -631,7 +633,7 @@ export default function OrdersPage() {
                               {t('orders.confirmModify')}
                             </button>
                             <button
-                              onClick={() => setEditingOrderId(null)}
+                              onClick={() => { setEditingOrderId(null); setEditPrice(''); setEditQuantity(''); }}
                               className="flex-1 h-10 text-[12px] font-semibold text-text-tertiary bg-bg-secondary rounded-lg hover:bg-bg-tertiary transition-colors"
                             >
                               {t('orders.cancel')}
@@ -683,7 +685,8 @@ export default function OrdersPage() {
                               {formatQuantity(order.quantity)}{t('orders.unit')} ·{' '}
                               {order.price ? formatPriceDisplay(order.price, order.symbol, currencyMode, rate) : t('orders.marketPrice')}
                             </span>
-                            <span className="text-[11px] md:text-[12px] text-text-quaternary shrink-0">
+                            {/* MOB-L-04: 날짜 텍스트 크기 증가 — 모바일 가독성 개선 / Increase date text size — improve mobile readability */}
+                            <span className="text-[12px] md:text-[12px] text-text-quaternary shrink-0">
                               {formatDate(order.createdAt)}
                             </span>
                           </div>
