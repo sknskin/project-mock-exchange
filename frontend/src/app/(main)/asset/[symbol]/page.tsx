@@ -29,7 +29,6 @@ import { ArrowLeft, Star, Bell } from 'lucide-react';
 import { useWatchlist, useAddWatchlist, useRemoveWatchlist } from '@/hooks/useWatchlist';
 import { usePriceAlerts } from '@/hooks/usePriceAlert';
 import PriceAlertModal from '@/components/alerts/PriceAlertModal';
-import Link from 'next/link';
 import type { PriceUpdate } from '@/types';
 import type { TranslationKey } from '@/lib/i18n';
 
@@ -178,16 +177,21 @@ export default function AssetDetailPage({
     <div className="pb-4">
       {/* 헤더 / Header */}
       <div className="flex items-center gap-3 py-6 h-[88px]">
-        <Link href="/dashboard" className="flex items-center justify-center w-8 h-8 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-secondary transition-colors">
+        {/* NAV-M-01: 하드코딩된 /dashboard 대신 router.back() 사용 — 이전 페이지로 올바르게 복귀 */}
+        {/* NAV-M-01: Use router.back() instead of hardcoded /dashboard — correctly returns to previous page */}
+        <button onClick={() => router.back()} className="flex items-center justify-center w-8 h-8 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-secondary transition-colors">
           <ArrowLeft className="w-4 h-4" />
-        </Link>
+        </button>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
-            <h1 className="text-[16px] sm:text-[17px] md:text-[18px] font-bold text-text-primary leading-tight truncate">
+            {/* INF-L-01: truncate 요소에 title 추가 — 긴 종목명 툴팁 표시 */}
+            {/* INF-L-01: Add title to truncated element — show full asset name tooltip */}
+            <h1 className="text-[16px] sm:text-[17px] md:text-[18px] font-bold text-text-primary leading-tight truncate" title={asset?.name ?? symbol}>
               {asset?.name ?? symbol}
             </h1>
             <button
               onClick={handleToggleWatchlist}
+              aria-label={isWatchlisted ? '관심종목 제거 / Remove from watchlist' : '관심종목 추가 / Add to watchlist'}
               className="shrink-0 p-0.5 rounded transition-colors hover:bg-bg-secondary/80"
             >
               <Star
@@ -202,6 +206,7 @@ export default function AssetDetailPage({
                 if (!isAuthenticated) { setLoginModalOpen(true); return; }
                 setAlertModalOpen(true);
               }}
+              aria-label="가격 알림 설정 / Set price alert"
               className="shrink-0 p-0.5 rounded transition-colors hover:bg-bg-secondary/80 relative"
             >
               <Bell
@@ -517,7 +522,7 @@ export default function AssetDetailPage({
       />
 
       {/* 고정 매수/매도 바 — 스크롤 시 하단 고정, 푸터 직전까지만 / Sticky buy/sell bar — sticks to bottom, stops above footer */}
-      <div className="sticky bottom-0 left-0 right-0 z-40 bg-bg-primary/95 backdrop-blur-sm border-t border-border safe-bottom px-4 py-3 pb-8 lg:bottom-0 bottom-[56px] mb-2">
+      <div className="sticky left-0 right-0 z-40 bg-bg-primary/95 backdrop-blur-sm border-t border-border safe-bottom px-4 py-3 bottom-[56px] lg:bottom-0 mb-2">
         <div className="flex gap-3">
           <button
             onClick={() => handleBuySell('BUY')}
