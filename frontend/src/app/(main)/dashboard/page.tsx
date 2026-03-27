@@ -15,13 +15,14 @@
  */
 'use client';
 
-import { useState, useMemo, useCallback, useEffect, useRef, startTransition } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMarketPrices, useAssets, usePeriodChanges } from '@/hooks/useMarket';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuthStore } from '@/stores/auth';
 import { useSettingsStore } from '@/stores/settings';
+import { batchUpdatePrices } from '@/stores/livePrice';
 import { useWatchlist, useAddWatchlist, useRemoveWatchlist } from '@/hooks/useWatchlist';
 import SpotlightSearch from '@/components/market/SpotlightSearch';
 import ConfirmModal from '@/components/ui/ConfirmModal';
@@ -51,8 +52,8 @@ export default function DashboardPage() {
   const { t } = useTranslation();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
-  // 실시간 WebSocket 가격 업데이트 저장소 (500ms 배치) / Live WebSocket price update store (500ms batching)
-  const [livePrices, setLivePrices] = useState<Record<string, PriceUpdate>>({});
+  // 실시간 가격은 React 외부 스토어에 저장 — 대시보드 컴포넌트 리렌더 완전 방지
+  // Live prices in external store — completely prevents dashboard component re-render
   const pendingPricesRef = useRef<Record<string, PriceUpdate>>({});
   const flushTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   // 메인 탭 상태 (실시간, 인기, 급상승, 관심종목) / Main tab state (realtime, popular, trending, watchlist)
@@ -220,12 +221,8 @@ export default function DashboardPage() {
         const batch = pendingPricesRef.current;
         pendingPricesRef.current = {};
         flushTimerRef.current = undefined;
-        // startTransition: 가격 업데이트를 낮은 우선순위로 처리 → 입력 등 사용자 상호작용이 먼저 처리됨
-        // startTransition: process price updates at low priority → user interactions (typing, etc.) take precedence
-        startTransition(() => {
-          setLivePrices((prev) => ({ ...prev, ...batch }));
-        });
-      }, 500);
+        batchUpdatePrices(batch);
+      }, 2000);
     }
   }, []);
   useWebSocket(symbols, handlePriceUpdate);
@@ -247,40 +244,26 @@ export default function DashboardPage() {
    * WebSocket 실시간 가격 + 기간별 등락률 오버레이 + 관심종목 필터 적용
    * Overlays WebSocket live prices + period change rates + watchlist filter
    */
+  // displayAssets — REST 데이터 + 기간별 등락률만 적용 (실시간 가격은 각 AssetListItem이 스토어에서 직접 구독)
+  // displayAssets — REST data + period changes only (live prices are subscribed per-item from store)
   const displayAssets = useMemo(() => {
     const watchlistSet = activeMainTab === 'watchlist' && watchlistSymbols ? new Set(watchlistSymbols) : null;
 
     const result = assets.map((asset) => {
-      const live = livePrices[asset.symbol];
-      let display = live
-        ? {
-            ...asset,
-            currentPrice: live.price,
-            price: live.price,
-            changePercent: live.changePercent ?? asset.changePercent,
-            changeAmount: live.changeAmount ?? asset.changeAmount,
-            volume: live.volume || asset.volume,
-            high24h: live.high24h || asset.high24h,
-            low24h: live.low24h || asset.low24h,
-          }
-        : asset;
-
       if (period !== 'realtime') {
         const pc = periodChangeMap[asset.symbol];
         if (pc) {
-          display = { ...display, changePercent: pc.changePercent, changeAmount: pc.changeAmount };
+          return { ...asset, changePercent: pc.changePercent, changeAmount: pc.changeAmount };
         }
       }
-
-      return display;
+      return asset;
     });
 
-    // 관심종목 탭일 때 워치리스트 필터 적용 / Apply watchlist filter when on watchlist tab
     if (watchlistSet) {
       return result.filter((a) => watchlistSet.has(a.symbol));
     }
     return result;
-  }, [assets, livePrices, period, periodChangeMap, activeMainTab, watchlistSymbols]);
+  }, [assets, period, periodChangeMap, activeMainTab, watchlistSymbols]);
 
   // PF-M-03: filteredDisplayAssets를 displayAssets로 통합 — 하위 호환을 위한 별칭
   // PF-M-03: Merged into displayAssets — alias for backward compatibility
