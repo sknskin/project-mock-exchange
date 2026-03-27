@@ -151,6 +151,7 @@ export class AuthProxyController {
   /** 토큰 갱신 요청을 user-auth로 프록시
    * Proxy token refresh request to user-auth */
   @Post('refresh')
+  @Throttle({ default: { ttl: 60000, limit: 30 } })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '토큰 갱신', description: 'Refresh token으로 새 access token을 발급합니다' })
   @ApiResponse({ status: 200, description: '토큰 갱신 성공' })
