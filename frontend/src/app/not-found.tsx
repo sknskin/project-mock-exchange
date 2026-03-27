@@ -28,12 +28,22 @@ export default function NotFoundPage() {
         {t('error.notFoundDesc')}
       </p>
 
-      <Link
-        href="/"
-        className="h-10 px-6 text-[14px] font-bold text-white bg-accent rounded-xl hover:bg-accent/85 transition-colors flex items-center"
-      >
-        {t('error.goHome')}
-      </Link>
+      {/* 404-L-01: 대시보드 및 도움말 링크 추가 — 사용자가 쉽게 복귀할 수 있도록 */}
+      {/* 404-L-01: Add dashboard and help links — help users navigate back easily */}
+      <div className="flex flex-col sm:flex-row items-center gap-3">
+        <Link
+          href="/dashboard"
+          className="h-10 px-6 text-[14px] font-bold text-white bg-accent rounded-xl hover:bg-accent/85 transition-colors flex items-center"
+        >
+          {t('error.goHome')}
+        </Link>
+        <Link
+          href="/help"
+          className="h-10 px-6 text-[14px] font-bold text-text-secondary border border-border rounded-xl hover:bg-bg-secondary transition-colors flex items-center"
+        >
+          {t('nav.help')}
+        </Link>
+      </div>
     </div>
   );
 }
