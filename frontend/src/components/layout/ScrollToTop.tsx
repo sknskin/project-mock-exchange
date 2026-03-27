@@ -15,7 +15,7 @@ export default function ScrollToTop() {
 
   // 라우트 변경 시 스크롤 위치 초기화 / Reset scroll position on route change
   useEffect(() => {
-    window.scrollTo(0, 0);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [pathname]);
 
   return null;

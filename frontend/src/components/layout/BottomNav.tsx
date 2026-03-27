@@ -26,13 +26,14 @@ export default function BottomNav() {
         <Link
           href="/dashboard"
           aria-label={t('nav.dashboard')}
+          aria-current={pathname.startsWith('/dashboard') ? 'page' : undefined}
           className={cn(
             'flex flex-col items-center justify-center gap-0.5 py-1.5 px-4 min-h-[44px] min-w-[44px] transition-all duration-100 active:scale-95',
             pathname.startsWith('/dashboard') ? 'text-text-primary' : 'text-text-quaternary',
           )}
         >
           <LayoutDashboard className="w-[22px] h-[22px]" strokeWidth={pathname.startsWith('/dashboard') ? 2.2 : 1.6} />
-          <span className="text-[11px] font-semibold">{t('nav.dashboard')}</span>
+          <span className="text-[12px] font-semibold">{t('nav.dashboard')}</span>
         </Link>
 
         {/* 인증 시 표시 / Auth-only tabs */}
@@ -40,35 +41,38 @@ export default function BottomNav() {
           <Link
             href="/portfolio"
             aria-label={t('nav.portfolio')}
+            aria-current={pathname.startsWith('/portfolio') ? 'page' : undefined}
             className={cn(
               'flex flex-col items-center justify-center gap-0.5 py-1.5 px-4 min-h-[44px] min-w-[44px] transition-all duration-100 active:scale-95',
               pathname.startsWith('/portfolio') ? 'text-text-primary' : 'text-text-quaternary',
             )}
           >
             <Briefcase className="w-[22px] h-[22px]" strokeWidth={pathname.startsWith('/portfolio') ? 2.2 : 1.6} />
-            <span className="text-[11px] font-semibold">{t('nav.portfolio')}</span>
+            <span className="text-[12px] font-semibold">{t('nav.portfolio')}</span>
           </Link>
           <Link
             href="/orders"
             aria-label={t('nav.orders')}
+            aria-current={pathname.startsWith('/orders') ? 'page' : undefined}
             className={cn(
               'flex flex-col items-center justify-center gap-0.5 py-1.5 px-4 min-h-[44px] min-w-[44px] transition-all duration-100 active:scale-95',
               pathname.startsWith('/orders') ? 'text-text-primary' : 'text-text-quaternary',
             )}
           >
             <ClipboardList className="w-[22px] h-[22px]" strokeWidth={pathname.startsWith('/orders') ? 2.2 : 1.6} />
-            <span className="text-[11px] font-semibold">{t('nav.orders')}</span>
+            <span className="text-[12px] font-semibold">{t('nav.orders')}</span>
           </Link>
           <Link
             href="/leaderboard"
             aria-label={t('nav.leaderboard')}
+            aria-current={pathname.startsWith('/leaderboard') ? 'page' : undefined}
             className={cn(
               'flex flex-col items-center justify-center gap-0.5 py-1.5 px-4 min-h-[44px] min-w-[44px] transition-all duration-100 active:scale-95',
               pathname.startsWith('/leaderboard') ? 'text-text-primary' : 'text-text-quaternary',
             )}
           >
             <Star className="w-[22px] h-[22px]" strokeWidth={pathname.startsWith('/leaderboard') ? 2.2 : 1.6} />
-            <span className="text-[11px] font-semibold">{t('nav.leaderboard')}</span>
+            <span className="text-[12px] font-semibold">{t('nav.leaderboard')}</span>
           </Link>
         </div>
 
@@ -77,35 +81,38 @@ export default function BottomNav() {
           <Link
             href="/news"
             aria-label={t('nav.news')}
+            aria-current={pathname.startsWith('/news') ? 'page' : undefined}
             className={cn(
               'flex flex-col items-center justify-center gap-0.5 py-1.5 px-4 min-h-[44px] min-w-[44px] transition-all duration-100 active:scale-95',
               pathname.startsWith('/news') ? 'text-text-primary' : 'text-text-quaternary',
             )}
           >
             <Newspaper className="w-[22px] h-[22px]" strokeWidth={pathname.startsWith('/news') ? 2.2 : 1.6} />
-            <span className="text-[11px] font-semibold">{t('nav.news')}</span>
+            <span className="text-[12px] font-semibold">{t('nav.news')}</span>
           </Link>
           <Link
             href="/community"
             aria-label={t('nav.community')}
+            aria-current={pathname.startsWith('/community') ? 'page' : undefined}
             className={cn(
               'flex flex-col items-center justify-center gap-0.5 py-1.5 px-4 min-h-[44px] min-w-[44px] transition-all duration-100 active:scale-95',
               pathname.startsWith('/community') ? 'text-text-primary' : 'text-text-quaternary',
             )}
           >
             <Users className="w-[22px] h-[22px]" strokeWidth={pathname.startsWith('/community') ? 2.2 : 1.6} />
-            <span className="text-[11px] font-semibold">{t('nav.community')}</span>
+            <span className="text-[12px] font-semibold">{t('nav.community')}</span>
           </Link>
           <Link
             href="/login"
             aria-label={t('nav.login')}
+            aria-current={pathname.startsWith('/login') ? 'page' : undefined}
             className={cn(
               'flex flex-col items-center justify-center gap-0.5 py-1.5 px-4 min-h-[44px] min-w-[44px] transition-all duration-100 active:scale-95',
               pathname.startsWith('/login') ? 'text-text-primary' : 'text-text-quaternary',
             )}
           >
             <LogIn className="w-[22px] h-[22px]" strokeWidth={pathname.startsWith('/login') ? 2.2 : 1.6} />
-            <span className="text-[11px] font-semibold">{t('nav.login')}</span>
+            <span className="text-[12px] font-semibold">{t('nav.login')}</span>
           </Link>
         </div>
       </div>
