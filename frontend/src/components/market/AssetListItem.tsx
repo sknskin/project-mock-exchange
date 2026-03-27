@@ -124,10 +124,12 @@ function AssetListItem({ asset, rank, isWatchlisted, onToggleWatchlist }: AssetL
           {asset.symbol.slice(0, 2)}
         </div>
         <div className="min-w-0">
-          <div className="font-medium text-text-primary text-[13px] sm:text-[14px] truncate leading-tight">
+          {/* TYP-L-04: truncate 요소에 title 추가 — 말줄임 시 전체 텍스트 툴팁 표시 */}
+          {/* TYP-L-04: Add title to truncated elements — shows full text tooltip on overflow */}
+          <div className="font-medium text-text-primary text-[13px] sm:text-[14px] truncate leading-tight" title={asset.name}>
             {asset.name}
           </div>
-          <div className="text-[10px] sm:text-[11px] text-text-quaternary mt-0.5 truncate">
+          <div className="text-[10px] sm:text-[11px] text-text-quaternary mt-0.5 truncate" title={asset.symbol}>
             {asset.symbol}
           </div>
         </div>
@@ -139,7 +141,7 @@ function AssetListItem({ asset, rank, isWatchlisted, onToggleWatchlist }: AssetL
       {/* 현재가 / Price */}
       {/* 현재가 — 단순 텍스트 렌더 (AnimatedNumber 제거로 성능 대폭 개선)
            Price — plain text render (removed AnimatedNumber for major perf improvement) */}
-      <span className={cn('w-[72px] sm:w-[100px] lg:w-[120px] text-right text-[11px] sm:text-[13px] md:text-[14px] font-semibold text-text-primary tabular-nums shrink-0 truncate', flashClass)}>
+      <span className={cn('w-[72px] sm:w-[100px] lg:w-[120px] text-right text-[11px] sm:text-[13px] md:text-[14px] font-semibold text-text-primary tabular-nums shrink-0 truncate', flashClass)} title={formatPriceDisplay(displayAsset.currentPrice, displayAsset.symbol, display, rate)}>
         {formatPriceDisplay(displayAsset.currentPrice, displayAsset.symbol, display, rate)}
       </span>
 
@@ -151,6 +153,7 @@ function AssetListItem({ asset, rank, isWatchlisted, onToggleWatchlist }: AssetL
           isFall && 'text-fall',
           !isRise && !isFall && 'text-text-quaternary',
         )}
+        title={formatAmountDisplay(displayAsset.changeAmount ?? 0, displayAsset.symbol, display, rate)}
       >
         {formatAmountDisplay(displayAsset.changeAmount ?? 0, displayAsset.symbol, display, rate)}
       </span>
@@ -165,6 +168,7 @@ function AssetListItem({ asset, rank, isWatchlisted, onToggleWatchlist }: AssetL
             !isExtreme && isFall && 'text-fall',
             !isRise && !isFall && 'text-text-quaternary',
           )}
+          title={formatPercent(displayAsset.changePercent)}
         >
           {formatPercent(displayAsset.changePercent)}
         </span>
