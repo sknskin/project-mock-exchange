@@ -159,6 +159,9 @@ export default function AssetList({ assets, period, onPeriodChange, mainTab = 'r
   useEffect(() => {
     const prev = prevOrderRef.current;
     if (prev.size > 0) {
+      // ETC-L-01: 개별 offsetHeight 대신 requestAnimationFrame으로 배치 FLIP 처리
+      // ETC-L-01: Use requestAnimationFrame for batched FLIP instead of individual offsetHeight calls
+      const movedEls: { el: HTMLElement; delta: number }[] = [];
       paged.forEach((asset, i) => {
         const prevIndex = prev.get(asset.symbol);
         if (prevIndex !== undefined && prevIndex !== i) {
@@ -168,13 +171,18 @@ export default function AssetList({ assets, period, onPeriodChange, mainTab = 'r
           el.style.transition = 'none';
           el.style.transform = `translateY(${delta}px)`;
           el.style.zIndex = '1';
-          // 리플로우 강제 / force reflow
-          void el.offsetHeight;
-          el.style.transition = 'transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-          el.style.transform = 'translateY(0)';
-          el.style.zIndex = '';
+          movedEls.push({ el, delta });
         }
       });
+      if (movedEls.length > 0) {
+        requestAnimationFrame(() => {
+          movedEls.forEach(({ el }) => {
+            el.style.transition = 'transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+            el.style.transform = 'translateY(0)';
+            el.style.zIndex = '';
+          });
+        });
+      }
     }
     const next = new Map<string, number>();
     paged.forEach((asset, i) => next.set(asset.symbol, i));
