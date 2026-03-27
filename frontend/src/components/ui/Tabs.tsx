@@ -53,7 +53,8 @@ function Tabs({
             aria-selected={activeTab === tab.key}
             onClick={() => onChange(tab.key)}
             className={cn(
-              'h-9 px-4 text-[13px] font-semibold rounded-full border transition-colors',
+              // MOB-M-02: 최소 터치 타겟 44px 보장 (WCAG) / Ensure 44px min touch target (WCAG)
+              'h-9 min-h-[44px] px-4 text-[13px] font-semibold rounded-full border transition-colors',
               activeTab === tab.key
                 ? 'border-accent text-accent bg-accent/[0.08]'
                 : 'border-border text-text-quaternary hover:text-text-tertiary hover:border-text-quaternary',
@@ -76,7 +77,8 @@ function Tabs({
           aria-selected={activeTab === tab.key}
           onClick={() => onChange(tab.key)}
           className={cn(
-            'flex-1 py-3.5 text-[14px] font-bold transition-colors relative',
+            // MOB-M-02: 최소 터치 타겟 44px 보장 (WCAG) / Ensure 44px min touch target (WCAG)
+            'flex-1 py-3.5 min-h-[44px] text-[14px] font-bold transition-colors relative',
             activeTab === tab.key
               ? 'text-text-primary'
               : 'text-text-quaternary hover:text-text-tertiary',

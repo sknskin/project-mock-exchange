@@ -187,7 +187,8 @@ function CommunityPage() {
               key={item.key}
               onClick={() => handleTabClick(item.key)}
               className={cn(
-                'relative px-4 py-2.5 text-[14px] font-semibold transition-colors',
+                // MOB-M-02: 최소 터치 타겟 44px 보장 / Ensure 44px min touch target
+                'relative px-4 py-2.5 min-h-[44px] text-[14px] font-semibold transition-colors',
                 tab === item.key
                   ? 'text-accent'
                   : 'text-text-tertiary hover:text-text-primary',

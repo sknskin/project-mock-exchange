@@ -76,9 +76,10 @@ export default function BottomSheet({
         {title && (
           <div className="px-6 py-3 sm:pt-5 flex items-center justify-between">
             <h3 id="bottomsheet-title" className="text-[18px] font-bold text-text-primary">{title}</h3>
+            {/* MOB-L-03: 닫기 버튼 최소 터치 타겟 44px 보장 / Ensure 44px min touch target for close button */}
             <button
               onClick={onClose}
-              className="p-1.5 rounded-lg text-text-quaternary hover:text-text-primary hover:bg-bg-tertiary transition-colors"
+              className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-text-quaternary hover:text-text-primary hover:bg-bg-tertiary transition-colors"
               aria-label="Close"
             >
               <X className="w-5 h-5" />

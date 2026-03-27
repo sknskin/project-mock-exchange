@@ -105,9 +105,10 @@ export default function DiscussionsTab({ onPostClick, onWriteClick }: Discussion
             </button>
           ))}
         </div>
+        {/* MOB-M-04: 글쓰기 버튼 최소 터치 타겟 44px 보장 / Ensure 44px min touch target for write button */}
         <button
           onClick={onWriteClick}
-          className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-accent text-white text-[13px] font-semibold hover:bg-accent/90 transition-colors shrink-0"
+          className="flex items-center gap-1.5 px-3.5 py-2 min-h-[44px] rounded-xl bg-accent text-white text-[13px] font-semibold hover:bg-accent/90 transition-colors shrink-0"
         >
           <PenSquare className="w-3.5 h-3.5" />
           {t('community.writePost')}

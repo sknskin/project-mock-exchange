@@ -78,16 +78,17 @@ export default function OrderSheet({
         className="absolute inset-0 bg-black/50 animate-modal-backdrop"
         onClick={onClose}
       />
-      <div className="relative bg-bg-elevated rounded-2xl w-full max-w-[400px] mx-4 max-h-[85vh] overflow-y-auto animate-modal-content">
+      <div className="relative bg-bg-elevated rounded-2xl w-full max-w-[400px] mx-4 max-h-[85dvh] overflow-y-auto animate-modal-content">
         {/* 헤더 / Header */}
         <div className="flex items-center justify-between px-6 pt-5 pb-3">
           <h3 id="order-sheet-title" className="text-[18px] font-bold text-text-primary">
             {symbol} {t('order.title')}
           </h3>
+          {/* MOB-L-03: 닫기 버튼 최소 터치 타겟 44px 보장 / Ensure 44px min touch target for close button */}
           <button
             onClick={onClose}
             aria-label="Close"
-            className="p-3 text-text-quaternary hover:text-text-tertiary transition-colors rounded-lg"
+            className="p-3 min-w-[44px] min-h-[44px] flex items-center justify-center text-text-quaternary hover:text-text-tertiary transition-colors rounded-lg"
           >
             <X className="w-5 h-5" />
           </button>

@@ -326,7 +326,8 @@ export default function OrderForm({
                 }
                 setQuantityError('');
               }}
-              className="flex-1 py-2 sm:py-1.5 text-[12px] sm:text-[11px] font-medium text-text-tertiary bg-bg-secondary rounded-md hover:bg-bg-tertiary hover:text-text-primary transition-colors"
+              // MOB-M-03: 최소 터치 타겟 44px 보장 / Ensure 44px min touch target
+              className="flex-1 py-2 sm:py-1.5 min-h-[44px] sm:min-h-0 text-[12px] sm:text-[11px] font-medium text-text-tertiary bg-bg-secondary rounded-md hover:bg-bg-tertiary hover:text-text-primary transition-colors"
             >
               {pct}%
             </button>
