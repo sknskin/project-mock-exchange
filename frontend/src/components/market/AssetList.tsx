@@ -7,7 +7,7 @@
  */
 'use client';
 
-import { useState, useMemo, useRef, useEffect, useCallback, type MutableRefObject } from 'react';
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { ChevronDown } from 'lucide-react';
 import AssetListItem from './AssetListItem';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -44,16 +44,16 @@ interface AssetListProps {
   aiButton?: React.ReactNode;
 }
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 20;
 
-type SortKey = 'volume' | 'change_desc' | 'change_asc';
+type SortKey = 'turnover' | 'volume' | 'change_desc' | 'change_asc';
 
 /** 자산 목록 — 카테고리/정렬/기간 필터가 적용된 종목 리스트
  * Asset list — filterable by category, sort, and period */
 export default function AssetList({ assets, period, onPeriodChange, mainTab = 'realtime', watchlistSymbols, onToggleWatchlist, aiButton }: AssetListProps) {
   const { t } = useTranslation();
   const [category, setCategory] = useState('all');
-  const [sort, setSort] = useState<SortKey>('volume');
+  const [sort, setSort] = useState<SortKey>('turnover');
   const [page, setPage] = useState(1);
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
 
@@ -65,6 +65,7 @@ export default function AssetList({ assets, period, onPeriodChange, mainTab = 'r
   ];
 
   const sortOptions: { key: SortKey; label: string }[] = [
+    { key: 'turnover', label: '거래대금' },
     { key: 'volume', label: t('filter.volume') },
     { key: 'change_desc', label: t('filter.riseTop') },
     { key: 'change_asc', label: t('filter.fallTop') },
@@ -80,96 +81,67 @@ export default function AssetList({ assets, period, onPeriodChange, mainTab = 'r
     { key: '1y', label: t('filter.1y') },
   ];
 
-  // 쓰로틀 정렬: 실시간 틱 시 최대 3초마다 재정렬, 필터 변경 시 즉시 정렬
-  // FLIP 애니메이션으로 순위 전환을 부드럽게 처리
-  // Throttled sort: re-sort at most every 3s on live ticks, immediate on filter change.
-  // FLIP animation handles smooth rank transitions.
+  // 정렬 순서(심볼 배열)와 최신 데이터 매핑을 분리하여 성능 최적화
+  // Separate sort order (symbol array) from data mapping for performance
+
+  // 정렬 키 — 필터/정렬/탭 변경 시에만 재정렬 (가격 업데이트 시에는 안 함)
+  // Sort key — only re-sort on filter/sort/tab change (not on price updates)
+  const sortKey = `${category}:${sort}:${mainTab}`;
   const sortedOrderRef = useRef<string[]>([]);
-  const lastSortKeyRef = useRef({ category: 'all', sort: 'volume' as SortKey, period: 'realtime', mainTab: 'realtime' });
-  const lastSortTimeRef = useRef(0);
-  const SORT_THROTTLE_MS = 3000;
+  const lastSortKeyRef = useRef('');
 
-  // FR-H-01: assets 배열의 참조가 WebSocket 틱마다 변경되므로 ref로 안정적 참조 유지
-  // FR-H-01: assets array reference changes on every WS tick, use ref for stable reference
-  const assetsRef = useRef(assets) as MutableRefObject<Asset[]>;
-  assetsRef.current = assets;
-  const assetsLenRef = useRef(assets.length);
-  const assetsSymbolsRef = useRef('');
-  const currentSymbols = useMemo(() => assets.map((a) => a.symbol).join(','), [assets]);
-  // 심볼 구성이 변경될 때만 새 값으로 업데이트 (길이 + 심볼 문자열 비교)
-  // Only update when symbol composition changes (length + symbol string comparison)
-  const assetsVersion = useMemo(() => {
-    if (assets.length !== assetsLenRef.current || currentSymbols !== assetsSymbolsRef.current) {
-      assetsLenRef.current = assets.length;
-      assetsSymbolsRef.current = currentSymbols;
-      return currentSymbols;
-    }
-    return assetsSymbolsRef.current;
-  }, [assets.length, currentSymbols]);
+  const sortedAssets = useMemo(() => {
+    const assetMap = new Map(assets.map((a) => [a.symbol, a]));
 
-  const filtered = useMemo(() => {
-    const currentAssets = assetsRef.current;
-    const assetMap = new Map(currentAssets.map((a) => [a.symbol, a]));
-    const now = Date.now();
-
-    const filterChanged =
-      lastSortKeyRef.current.category !== category ||
-      lastSortKeyRef.current.sort !== sort ||
-      lastSortKeyRef.current.period !== period ||
-      lastSortKeyRef.current.mainTab !== mainTab;
-
-    const needsResort =
-      sortedOrderRef.current.length === 0 ||
-      filterChanged ||
-      now - lastSortTimeRef.current >= SORT_THROTTLE_MS;
-
-    if (needsResort) {
-      let result: Asset[];
+    // 필터/정렬 변경 시 또는 최초 로딩 시에만 정렬 수행
+    // Only perform sort on filter/sort change or initial load
+    if (sortKey !== lastSortKeyRef.current || sortedOrderRef.current.length === 0) {
+      let filtered: Asset[];
       if (category === 'all') {
-        result = [...currentAssets];
+        filtered = [...assets];
       } else if (category === 'STOCK_KR') {
-        result = currentAssets.filter((a) => a.type === 'STOCK' && a.symbol.endsWith('.KS'));
+        filtered = assets.filter((a) => a.type === 'STOCK' && a.symbol.endsWith('.KS'));
       } else if (category === 'STOCK_US') {
-        result = currentAssets.filter((a) => a.type === 'STOCK' && !a.symbol.endsWith('.KS'));
+        filtered = assets.filter((a) => a.type === 'STOCK' && !a.symbol.endsWith('.KS'));
       } else {
-        result = currentAssets.filter((a) => a.type === category);
+        filtered = assets.filter((a) => a.type === category);
       }
 
       const tiebreak = (a: Asset, b: Asset) => a.symbol.localeCompare(b.symbol);
-
-      // 탭별 고유 정렬 적용 / Tab-specific sorting
-      // 거래대금 = price × volume (한국 거래소 관행에 맞게 거래량순을 거래대금 기준으로 통합)
-      // Turnover = price × volume (unified as per Korean exchange convention)
-      const byTurnover = (a: Asset, b: Asset) =>
-        ((b.currentPrice * (b.volume ?? 0)) - (a.currentPrice * (a.volume ?? 0))) || tiebreak(a, b);
+      const KRW_TO_USD = 1 / 1400;
+      const toUsdTurnover = (a: Asset) => {
+        const raw = a.currentPrice * (a.volume ?? 0);
+        return a.symbol.endsWith('.KS') ? raw * KRW_TO_USD : raw;
+      };
+      const byTurnover = (a: Asset, b: Asset) => (toUsdTurnover(b) - toUsdTurnover(a)) || tiebreak(a, b);
+      const byVolume = (a: Asset, b: Asset) => ((b.volume ?? 0) - (a.volume ?? 0)) || tiebreak(a, b);
 
       if (mainTab === 'popular') {
-        // 인기 종목: 거래대금순 고정
-        result.sort(byTurnover);
+        filtered.sort(byTurnover);
       } else if (mainTab === 'trending') {
-        // 투자자 동향: 절대 등락률순 (큰 변동 우선)
-        result.sort((a, b) => (Math.abs(b.changePercent) - Math.abs(a.changePercent)) || tiebreak(a, b));
+        filtered.sort((a, b) => (Math.abs(b.changePercent) - Math.abs(a.changePercent)) || tiebreak(a, b));
       } else {
-        // 실시간 차트: 사용자 선택 정렬
         switch (sort) {
-          case 'volume': result.sort(byTurnover); break;
-          case 'change_desc': result.sort((a, b) => (b.changePercent - a.changePercent) || tiebreak(a, b)); break;
-          case 'change_asc': result.sort((a, b) => (a.changePercent - b.changePercent) || tiebreak(a, b)); break;
+          case 'turnover': filtered.sort(byTurnover); break;
+          case 'volume': filtered.sort(byVolume); break;
+          case 'change_desc': filtered.sort((a, b) => (b.changePercent - a.changePercent) || tiebreak(a, b)); break;
+          case 'change_asc': filtered.sort((a, b) => (a.changePercent - b.changePercent) || tiebreak(a, b)); break;
         }
       }
 
-      sortedOrderRef.current = result.map((a) => a.symbol);
-      lastSortKeyRef.current = { category, sort, period, mainTab };
-      lastSortTimeRef.current = now;
+      sortedOrderRef.current = filtered.map((a) => a.symbol);
+      lastSortKeyRef.current = sortKey;
     }
 
+    // 정렬 순서는 유지하되 최신 데이터를 매핑 — 정렬 비용 없이 데이터만 교체
+    // Keep sort order but map to latest data — swap data without sort cost
     return sortedOrderRef.current
       .map((sym) => assetMap.get(sym))
       .filter((a): a is Asset => a != null);
-  }, [assetsVersion, category, sort, period, mainTab]);
+  }, [assets, sortKey, category, sort, mainTab]);
 
-  const paged = useMemo(() => filtered.slice(0, page * PAGE_SIZE), [filtered, page]);
-  const hasMore = paged.length < filtered.length;
+  const paged = useMemo(() => sortedAssets.slice(0, page * PAGE_SIZE), [sortedAssets, page]);
+  const hasMore = paged.length < sortedAssets.length;
 
   // 순위 변동 FLIP 애니메이션 / FLIP animation for rank changes
   const prevOrderRef = useRef<Map<string, number>>(new Map());
@@ -344,19 +316,19 @@ export default function AssetList({ assets, period, onPeriodChange, mainTab = 'r
         </div>
 
         {/* 테이블 헤더 (기간에 따라 라벨 변경) / Table header (labels change by period) */}
-        <div className="flex items-center pt-3 pb-2.5 text-[11px] md:text-[12px] text-text-quaternary font-medium -mx-3 px-3 border-b border-border/60">
+        <div className="flex items-center pt-3 pb-2.5 text-[10px] sm:text-[11px] md:text-[12px] text-text-quaternary font-medium -mx-3 px-3 border-b border-border/60">
         <span className="w-6 sm:w-8 text-center shrink-0 mr-2 sm:mr-3">{t('table.rank')}</span>
         {/* 별표(관심종목) 아이콘 너비만큼 오프셋 — 종목명이 아이콘이 아닌 이름 위에 정렬되도록 */}
         {/* Offset by watchlist star icon width — aligns header above the name, not the star */}
-        <span className="w-[120px] sm:w-[160px] md:w-[180px] lg:w-[200px] shrink-0 truncate ml-7 sm:ml-8">
+        <span className="w-[100px] sm:w-[160px] md:w-[180px] lg:w-[200px] shrink-0 truncate ml-7 sm:ml-8">
           {t('table.name')} · <span className="text-text-quaternary/70">{timeStr}</span>
         </span>
         <div className="flex-1 min-w-2" />
-        <span className="w-[80px] sm:w-[100px] lg:w-[120px] text-right shrink-0">{t('table.price')}</span>
+        <span className="w-[72px] sm:w-[100px] lg:w-[120px] text-right shrink-0 truncate">{t('table.price')}</span>
         <span className="w-[80px] md:w-[90px] lg:w-[100px] text-right shrink-0 hidden sm:block truncate">
           {changeLabel}
         </span>
-        <span className="w-[60px] sm:w-[72px] lg:w-[84px] text-right shrink-0">{t('table.changeRate')}</span>
+        <span className="w-[52px] sm:w-[72px] lg:w-[84px] text-right shrink-0 truncate">{t('table.changeRate')}</span>
         <span className="w-[90px] text-right hidden xl:block shrink-0">
           {period === 'realtime' ? t('table.highRealtime') : t('table.highPeriod')}
         </span>
@@ -379,7 +351,7 @@ export default function AssetList({ assets, period, onPeriodChange, mainTab = 'r
             />
           </div>
         ))}
-        {filtered.length === 0 && (
+        {sortedAssets.length === 0 && (
           <div className="py-24 text-center text-text-quaternary text-[14px] whitespace-pre-line">
             {mainTab === 'watchlist' ? (
               <div className="flex flex-col items-center gap-3">
@@ -400,7 +372,7 @@ export default function AssetList({ assets, period, onPeriodChange, mainTab = 'r
             onClick={() => setPage((p) => p + 1)}
             className="h-10 px-8 text-[13px] font-semibold text-accent bg-accent/10 rounded-lg hover:bg-accent/20 transition-colors"
           >
-            {t('table.loadMore')} ({paged.length}/{filtered.length})
+            {t('table.loadMore')} ({paged.length}/{sortedAssets.length})
           </button>
         </div>
       )}
