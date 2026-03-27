@@ -137,21 +137,27 @@ export default function PortfolioHistoryChart({ totalValue }: PortfolioHistoryCh
   const paddingY = 16;
   const chartBottom = height - 24; // X축 라벨 공간
 
-  const values = data.map((d) => d.value);
-  const minVal = Math.min(...values);
-  const maxVal = Math.max(...values);
-  const range = maxVal - minVal || 1;
+  // PF-M-03: 포인트 계산을 useMemo로 감싸 불필요한 재계산 방지 (totalValue 변경 시에만 재계산)
+  // PF-M-03: Wrap points calculation in useMemo to avoid unnecessary recalculations (recalculates only on data change)
+  const { points, linePath, areaPath, minVal, maxVal } = useMemo(() => {
+    const values = data.map((d) => d.value);
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const range = max - min || 1;
 
-  const points = data.map((d, i) => {
-    const x = paddingLeft + (i / (data.length - 1)) * (width - paddingLeft - paddingRight);
-    const y = paddingY + (1 - (d.value - minVal) / range) * (chartBottom - paddingY);
-    return { x, y, ...d };
-  });
+    const pts = data.map((d, i) => {
+      const x = paddingLeft + (i / (data.length - 1)) * (width - paddingLeft - paddingRight);
+      const y = paddingY + (1 - (d.value - min) / range) * (chartBottom - paddingY);
+      return { x, y, ...d };
+    });
 
-  const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
-  const areaPath = points.length > 0
-    ? `${linePath} L ${points[points.length - 1].x} ${chartBottom} L ${points[0].x} ${chartBottom} Z`
-    : '';
+    const line = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+    const area = pts.length > 0
+      ? `${line} L ${pts[pts.length - 1].x} ${chartBottom} L ${pts[0].x} ${chartBottom} Z`
+      : '';
+
+    return { points: pts, linePath: line, areaPath: area, minVal: min, maxVal: max };
+  }, [data, paddingLeft, paddingRight, paddingY, chartBottom, width]);
 
   // X축 날짜 라벨 (최대 5개) / X-axis date labels (max 5)
   const xLabels = useMemo(() => {
@@ -287,8 +293,9 @@ export default function PortfolioHistoryChart({ totalValue }: PortfolioHistoryCh
               )}
 
               {/* Y축 금액 라벨 / Y-axis value labels */}
+              {/* MOB-M-06: 축 라벨 크기 8→11px — 모바일 가독성 개선 / Axis label size 8→11px — improve mobile readability */}
               {yLabels.map((l, i) => (
-                <text key={`y-${i}`} x={paddingLeft - 6} y={l.y + 3} textAnchor="end" fill={isLight ? '#4E5968' : '#808A98'} fontSize="8" fontFamily="inherit">
+                <text key={`y-${i}`} x={paddingLeft - 6} y={l.y + 3} textAnchor="end" fill={isLight ? '#4E5968' : '#808A98'} fontSize="11" fontFamily="inherit">
                   {l.label}
                 </text>
               ))}
@@ -299,8 +306,9 @@ export default function PortfolioHistoryChart({ totalValue }: PortfolioHistoryCh
               ))}
 
               {/* X축 날짜 라벨 / X-axis date labels */}
+              {/* MOB-M-06: 축 라벨 크기 8→11px — 모바일 가독성 개선 / Axis label size 8→11px — improve mobile readability */}
               {xLabels.map((l, i) => (
-                <text key={`x-${i}`} x={l.x} y={chartBottom + 14} textAnchor="middle" fill={isLight ? '#4E5968' : '#808A98'} fontSize="8" fontFamily="inherit">
+                <text key={`x-${i}`} x={l.x} y={chartBottom + 14} textAnchor="middle" fill={isLight ? '#4E5968' : '#808A98'} fontSize="11" fontFamily="inherit">
                   {l.label}
                 </text>
               ))}
