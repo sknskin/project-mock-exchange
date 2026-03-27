@@ -22,7 +22,7 @@ import { Server, Socket } from 'socket.io';
 /** 인증되지 않은 클라이언트당 최대 구독 채널 수 (Max subscriptions per unauthenticated client) */
 const MAX_ANON_SUBSCRIPTIONS = 5;
 /** 인증된 클라이언트당 최대 구독 채널 수 (Max subscriptions per authenticated client) */
-const MAX_AUTH_SUBSCRIPTIONS = 100;
+const MAX_AUTH_SUBSCRIPTIONS = 300;
 /** IP당 최대 익명 연결 수 (Max anonymous connections per IP) */
 const MAX_ANON_CONNECTIONS_PER_IP = 10;
 
@@ -134,6 +134,8 @@ export class PriceGateway implements OnGatewayConnection, OnGatewayDisconnect, O
         this.clientSubscriptions.set(client.id, (this.clientSubscriptions.get(client.id) || 0) + 1);
         subscribed.push(channel);
       }
+      this.logger.log(`Client ${client.id} subscribed to ${subscribed.length} symbols`);
+      this.broadcastCount = 20; // BC-POST 로그 트리거
       return { event: 'subscribed', data: { channels: subscribed } };
     }
   }
@@ -164,12 +166,24 @@ export class PriceGateway implements OnGatewayConnection, OnGatewayDisconnect, O
   }
 
   broadcastPrice(symbol: string, priceData: unknown) {
-    this.server.to(`prices:${symbol}`).emit('price:update', {
-      channel: `prices:${symbol}`,
+    const room = `prices:${symbol}`;
+    const sockets = this.server.in(room).fetchSockets();
+    // 디버그: 첫 5번만 로그 — Room에 실제로 소켓이 있는지 확인
+    // Debug: log first 5 times — verify sockets are in the room
+    // subscribe 이후에만 로그 (broadcastCount >= 20이면 subscribe 이후)
+    if (this.broadcastCount >= 20 && this.broadcastCount < 25) {
+      sockets.then((s) => this.logger.log(`[BC-POST] ${symbol} → ${room}: ${s.length} clients`));
+      this.broadcastCount++;
+    } else if (this.broadcastCount < 20) {
+      this.broadcastCount++;
+    }
+    this.server.to(room).emit('price:update', {
+      channel: room,
       data: priceData,
       timestamp: Date.now(),
     });
   }
+  private broadcastCount = 0;
 
   /**
    * G-H-01: 여러 심볼의 가격 업데이트를 단일 이벤트로 일괄 전송합니다.
