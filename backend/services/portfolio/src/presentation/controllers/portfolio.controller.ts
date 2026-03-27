@@ -21,6 +21,10 @@ import { DepositDto } from '../dto/deposit.dto';
 import { WithdrawDto } from '../dto/withdraw.dto';
 import { InternalAuthGuard } from '../../common/guards/internal-auth.guard';
 
+// DB-L-01: 거래 내역 조회 최대 건수 상수 — 매직 넘버 방지
+// DB-L-01: Maximum transaction query limit constant — avoids magic number
+const TRANSACTIONS_MAX_LIMIT = 200;
+
 @UseGuards(InternalAuthGuard)
 @Controller('portfolio')
 export class PortfolioController {
@@ -155,8 +159,8 @@ export class PortfolioController {
     const parsedLimit = limit ? parseInt(limit, 10) : 50;
     const parsedOffset = offset ? parseInt(offset, 10) : 0;
 
-    if (isNaN(parsedLimit) || parsedLimit < 1 || parsedLimit > 200) {
-      throw new BadRequestException('limit must be between 1 and 200');
+    if (isNaN(parsedLimit) || parsedLimit < 1 || parsedLimit > TRANSACTIONS_MAX_LIMIT) {
+      throw new BadRequestException(`limit must be between 1 and ${TRANSACTIONS_MAX_LIMIT}`);
     }
 
     if (isNaN(parsedOffset) || parsedOffset < 0) {
