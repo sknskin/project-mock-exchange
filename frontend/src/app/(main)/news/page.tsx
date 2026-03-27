@@ -177,7 +177,7 @@ export default function NewsPage() {
     } finally {
       setAiLoading(false);
     }
-  }, [activeTab, aiLoading, locale, queryClient]);
+  }, [activeTab, aiLoading, locale]);
 
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr);
