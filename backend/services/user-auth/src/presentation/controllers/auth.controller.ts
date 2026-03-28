@@ -17,6 +17,7 @@ import {
   Get,
   Query,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { Response, Request } from 'express';
 import { AuthService } from '../../application/services/auth.service';
@@ -74,6 +75,9 @@ const ACCESS_COOKIE_OPTIONS = {
 @UseGuards(InternalAuthGuard)
 @Controller('auth')
 export class AuthController {
+  // AUD-M-01: 감사 로그용 Logger 인스턴스 / Logger instance for audit logging
+  private readonly logger = new Logger('AuthAudit');
+
   constructor(
     private readonly authService: AuthService,
     private readonly smsVerificationService: SmsVerificationService,
@@ -272,8 +276,12 @@ export class AuthController {
   async forgotPasswordVerifySms(@Body() dto: ForgotPasswordVerifySmsDto) {
     const result = await this.authService.verifyPasswordResetSms(dto.sessionId, dto.code);
     if (!result.success) {
+      // AUD-M-01: 비밀번호 재설정 SMS 인증 실패 로그 / Password reset SMS verification failure audit log
+      this.logger.warn(`[AUDIT] PASSWORD_RESET_SMS_VERIFY_FAILURE sessionId=${dto.sessionId} attemptsLeft=${result.attemptsLeft}`);
       return { success: false, data: { attemptsLeft: result.attemptsLeft }, message: result.message };
     }
+    // AUD-M-01: 비밀번호 재설정 SMS 인증 성공 로그 / Password reset SMS verification success audit log
+    this.logger.warn(`[AUDIT] PASSWORD_RESET_SMS_VERIFY_SUCCESS sessionId=${dto.sessionId}`);
     return { success: true };
   }
 
@@ -282,8 +290,16 @@ export class AuthController {
   @Post('forgot-password/reset')
   @HttpCode(HttpStatus.OK)
   async resetPassword(@Body() dto: ResetPasswordDto) {
-    await this.authService.resetPassword(dto.sessionId, dto.newPassword, dto.confirmPassword);
-    return { success: true, message: 'Password has been reset' };
+    try {
+      await this.authService.resetPassword(dto.sessionId, dto.newPassword, dto.confirmPassword);
+      // AUD-M-01: 비밀번호 재설정 성공 감사 로그 / Password reset success audit log
+      this.logger.warn(`[AUDIT] PASSWORD_RESET_SUCCESS sessionId=${dto.sessionId}`);
+      return { success: true, message: 'Password has been reset' };
+    } catch (error) {
+      // AUD-M-01: 비밀번호 재설정 실패 감사 로그 / Password reset failure audit log
+      this.logger.warn(`[AUDIT] PASSWORD_RESET_FAILURE sessionId=${dto.sessionId} error=${error instanceof Error ? error.message : 'Unknown'}`);
+      throw error;
+    }
   }
 
   /** 이메일/아이디/전화번호 중복 확인
