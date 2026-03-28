@@ -170,7 +170,9 @@ function AssetListItem({ asset, rank, isWatchlisted, onToggleWatchlist }: AssetL
           )}
           title={formatPercent(displayAsset.changePercent)}
         >
-          {formatPercent(displayAsset.changePercent)}
+          {/* CB-M-01: 색맹 접근성 — 상승/하락 화살표 추가로 색상 외 시각적 구분 제공
+              CB-M-01: Color-blind accessibility — add rise/fall arrows for non-color visual cue */}
+          {isRise && '\u25B2 '}{isFall && '\u25BC '}{formatPercent(displayAsset.changePercent)}
         </span>
       </div>
 

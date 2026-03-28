@@ -535,8 +535,18 @@ export default function CandlestickChart({
       </div>
 
       {/* ANI-L-02: 차트 로딩 완료 시 페이드인 효과 — 부드러운 차트 전환 / Fade-in on chart load — smooth chart transition */}
+      {/* CHART-M-01: 스크린 리더 접근성 — role="img" + aria-label로 가격 정보 제공 / Screen reader a11y — provide price info via role="img" + aria-label */}
       {/* 메인 차트 (Main Chart) */}
-      <div ref={chartContainerRef} className="w-full overflow-hidden animate-fade-in" />
+      <div
+        ref={chartContainerRef}
+        className="w-full overflow-hidden animate-fade-in"
+        role="img"
+        aria-label={
+          data.length > 0
+            ? `${t('chart.ind.sma5').split(' ')[0] || 'Price'} chart — ${chartType === 'candle' ? 'Candlestick' : 'Line'}, ${data.length} data points, latest close: ${data[data.length - 1]?.close?.toLocaleString() ?? '-'}`
+            : t('common.noData') || 'No chart data'
+        }
+      />
 
       {/* RSI 차트 (RSI Chart) */}
       {toggles.rsi && (

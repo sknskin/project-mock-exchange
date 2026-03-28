@@ -53,21 +53,24 @@ export default function DashboardAssetSection({
   onToggleWatchlist,
   aiButton,
 }: DashboardAssetSectionProps) {
-  // 종목 목록 — 로딩 시 스켈레톤, 완료 시 AssetList / Asset list — skeleton on loading, AssetList when ready
+  // ANI-M-03: 스켈레톤→콘텐츠 크로스페이드 — 로딩 완료 시 부드럽게 전환
+  // ANI-M-03: Skeleton-to-content crossfade — smooth transition when loading completes
   if (pricesLoading) {
     return <AssetListSkeleton />;
   }
 
   return (
-    <AssetList
-      assets={assets}
-      period={period}
-      onPeriodChange={onPeriodChange}
-      mainTab={mainTab}
-      onLoginRequired={onLoginRequired}
-      watchlistSymbols={watchlistSymbols}
-      onToggleWatchlist={onToggleWatchlist}
-      aiButton={aiButton}
-    />
+    <div className="animate-content-fade">
+      <AssetList
+        assets={assets}
+        period={period}
+        onPeriodChange={onPeriodChange}
+        mainTab={mainTab}
+        onLoginRequired={onLoginRequired}
+        watchlistSymbols={watchlistSymbols}
+        onToggleWatchlist={onToggleWatchlist}
+        aiButton={aiButton}
+      />
+    </div>
   );
 }

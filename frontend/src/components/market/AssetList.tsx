@@ -350,7 +350,14 @@ export default function AssetList({ assets, period, onPeriodChange, mainTab = 'r
       {/* 자산 행 목록 / Asset rows */}
       <div>
         {paged.map((asset, index) => (
-          <div key={asset.symbol} ref={(el) => setRowRef(asset.symbol, el)}>
+          <div
+            key={asset.symbol}
+            ref={(el) => setRowRef(asset.symbol, el)}
+            // ANI-M-02: 리스트 항목 스태거 애니메이션 — 순차적 페이드인 효과
+            // ANI-M-02: List item stagger animation — sequential fade-in effect
+            className="animate-list-stagger"
+            style={{ animationDelay: `${Math.min(index * 30, 600)}ms` }}
+          >
             <AssetListItem
               asset={asset}
               rank={index + 1}
@@ -363,7 +370,8 @@ export default function AssetList({ assets, period, onPeriodChange, mainTab = 'r
           <div className="py-24 text-center text-text-quaternary text-[14px] whitespace-pre-line">
             {mainTab === 'watchlist' ? (
               <div className="flex flex-col items-center gap-3">
-                <svg className="w-10 h-10 text-text-quaternary/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                {/* A11Y-L-01: 장식용 SVG에 aria-hidden 추가 / Add aria-hidden to decorative SVG */}
+                <svg className="w-10 h-10 text-text-quaternary/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.562.562 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.562.562 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
                 </svg>
                 <span>{t('watchlist.empty')}</span>
