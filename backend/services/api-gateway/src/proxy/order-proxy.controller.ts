@@ -159,21 +159,26 @@ export class OrderProxyController {
       params: { page, limit, symbol: symbol || undefined, side: side || undefined, search: search || undefined },
     });
 
+    // ERR-M-02: any 타입을 구체적 인터페이스로 대체 / Replace any with typed interfaces
     // 사용자 이름 enrichment / Enrich with user names
+    interface AuditTrade { userId?: string; username?: string; [key: string]: unknown }
+    interface UserInfo { id: string; username?: string; name?: string }
     try {
-      const data = result.data as Record<string, any>;
-      const trades = data?.data?.trades ?? [];
+      const data = result.data as Record<string, unknown>;
+      const inner = data?.data as Record<string, unknown> | undefined;
+      const trades = (inner?.trades ?? []) as AuditTrade[];
       if (Array.isArray(trades) && trades.length > 0) {
-        const userIds = [...new Set(trades.map((t: any) => t.userId).filter(Boolean))];
+        const userIds = [...new Set(trades.map((t: AuditTrade) => t.userId).filter(Boolean))] as string[];
         if (userIds.length > 0) {
           const usersResult = await this.proxyService.forward('user-auth', {
             method: 'POST',
             url: '/users/by-ids',
             data: { ids: userIds },
           });
-          const users = (usersResult.data as Record<string, any>)?.data ?? [];
-          const userMap = new Map(Array.isArray(users) ? users.map((u: any) => [u.id, u.username ?? u.name ?? '-']) : []);
-          trades.forEach((t: any) => { t.username = userMap.get(t.userId) ?? t.userId?.slice(0, 8); });
+          const usersData = (usersResult.data as Record<string, unknown>)?.data ?? [];
+          const users = usersData as UserInfo[];
+          const userMap = new Map(Array.isArray(users) ? users.map((u: UserInfo) => [u.id, u.username ?? u.name ?? '-']) : []);
+          trades.forEach((t: AuditTrade) => { t.username = userMap.get(t.userId ?? '') ?? t.userId?.slice(0, 8); });
         }
       }
     } catch { /* enrichment 실패 시 userId만 표시 */ }
