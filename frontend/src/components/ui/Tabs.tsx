@@ -34,6 +34,9 @@ interface TabsProps {
   /** 스타일 변형: default(밑줄) 또는 pill(둥근 버튼)
    * Style variant: default(underline) or pill(rounded button) */
   variant?: 'default' | 'pill';
+  /** A11Y-M-01: 탭 그룹 ID — aria-controls/id 링크에 사용
+   * A11Y-M-01: Tab group ID — used for aria-controls/id linking */
+  id?: string;
 }
 
 function Tabs({
@@ -41,7 +44,12 @@ function Tabs({
   activeTab,
   onChange,
   variant = 'default',
+  id,
 }: TabsProps) {
+  // A11Y-M-01: 탭 패널 ID 생성 — aria-controls와 id 링크에 사용
+  // A11Y-M-01: Generate tab panel ID — used for aria-controls and id linking
+  const panelId = id ? `${id}-tabpanel` : undefined;
+
   // pill 변형: 둥근 테두리 버튼 스타일 / Pill variant: rounded border button style
   if (variant === 'pill') {
     return (
@@ -50,7 +58,9 @@ function Tabs({
           <button
             key={tab.key}
             role="tab"
+            id={id ? `${id}-tab-${tab.key}` : undefined}
             aria-selected={activeTab === tab.key}
+            aria-controls={activeTab === tab.key ? panelId : undefined}
             onClick={() => onChange(tab.key)}
             className={cn(
               // MOB-M-02: 최소 터치 타겟 44px 보장 (WCAG) / Ensure 44px min touch target (WCAG)
@@ -74,7 +84,9 @@ function Tabs({
         <button
           key={tab.key}
           role="tab"
+          id={id ? `${id}-tab-${tab.key}` : undefined}
           aria-selected={activeTab === tab.key}
+          aria-controls={activeTab === tab.key ? panelId : undefined}
           onClick={() => onChange(tab.key)}
           className={cn(
             // MOB-M-02: 최소 터치 타겟 44px 보장 (WCAG) / Ensure 44px min touch target (WCAG)
@@ -85,9 +97,16 @@ function Tabs({
           )}
         >
           {tab.label}
-          {activeTab === tab.key && (
-            <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[calc(100%-24px)] h-[2px] bg-accent rounded-full" />
-          )}
+          {/* ANI-M-01: 밑줄 인디케이터에 CSS 트랜지션 추가 — 탭 전환 시 부드러운 애니메이션
+              ANI-M-01: Add CSS transition to underline indicator — smooth animation on tab switch */}
+          <span
+            className={cn(
+              'absolute bottom-0 left-1/2 h-[2px] bg-accent rounded-full transition-all duration-300 ease-out',
+              activeTab === tab.key
+                ? '-translate-x-1/2 w-[calc(100%-24px)] opacity-100'
+                : '-translate-x-1/2 w-0 opacity-0',
+            )}
+          />
         </button>
       ))}
     </div>
@@ -95,3 +114,25 @@ function Tabs({
 }
 
 export default memo(Tabs);
+
+/** A11Y-M-01: 탭 패널 래퍼 — role="tabpanel"과 id/aria-labelledby 자동 연결
+ * A11Y-M-01: Tab panel wrapper — auto-links role="tabpanel" with id/aria-labelledby */
+export function TabPanel({
+  id,
+  activeTab,
+  children,
+}: {
+  id: string;
+  activeTab: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      role="tabpanel"
+      id={`${id}-tabpanel`}
+      aria-labelledby={`${id}-tab-${activeTab}`}
+    >
+      {children}
+    </div>
+  );
+}
