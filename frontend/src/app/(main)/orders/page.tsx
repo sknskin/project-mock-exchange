@@ -183,11 +183,24 @@ function AnalysisTab({ trades, userId, isLoading, error, refetch, t, currencyMod
     }
     const maxHourCount = Math.max(...hourCounts, 1);
 
+    // PF-M-02: Map 기반 O(N) 룩업으로 변환 — 기존 trades.filter() O(N*M) 중첩 제거
+    // PF-M-02: Convert to Map-based O(N) lookup — eliminates nested trades.filter() O(N*M)
+    const symbolBuyCounts = new Map<string, number>();
+    const symbolSellCounts = new Map<string, number>();
+    for (const tr of trades) {
+      if (tr.buyerId === userId) {
+        symbolBuyCounts.set(tr.symbol, (symbolBuyCounts.get(tr.symbol) ?? 0) + 1);
+      }
+      if (tr.sellerId === userId) {
+        symbolSellCounts.set(tr.symbol, (symbolSellCounts.get(tr.symbol) ?? 0) + 1);
+      }
+    }
+
     // 종목별 매수/매도 횟수, 총수량, 평균가, 거래대금 집계 / Per-symbol breakdown: buy/sell counts, qty, avg price, volume
     const breakdown = Object.entries(symbolMap).map(([symbol, s]) => ({
       symbol,
-      buyCount: trades.filter((tr) => tr.symbol === symbol && tr.buyerId === userId).length,
-      sellCount: trades.filter((tr) => tr.symbol === symbol && tr.sellerId === userId).length,
+      buyCount: symbolBuyCounts.get(symbol) ?? 0,
+      sellCount: symbolSellCounts.get(symbol) ?? 0,
       totalQty: s.buyQty + s.sellQty,
       avgPrice: (s.buyTotal + s.sellTotal) / (s.buyQty + s.sellQty),
       volume: s.buyTotal + s.sellTotal,

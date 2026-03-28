@@ -185,17 +185,48 @@ export function useModifyOrder() {
 
 // ===== 체결 내역 조회 (Trade History Query) =====
 
+// ETC-M-02: 기본 폴링 간격 (ms) / Default polling interval (ms)
+const DEFAULT_TRADE_POLL_INTERVAL = 10000;
+
+/** 체결 내역 조회 옵션 / Trade history query options */
+interface UseTradeHistoryOptions {
+  /** 폴링 간격 (ms) — false로 전달 시 폴링 비활성화
+   * Polling interval (ms) — pass false to disable polling */
+  pollingInterval?: number | false;
+  /** 서버 페이지네이션: 조회 개수 (기본값 없음 = 전체)
+   * Server pagination: limit (default undefined = all) */
+  limit?: number;
+  /** 서버 페이지네이션: 오프셋 (기본 0)
+   * Server pagination: offset (default 0) */
+  offset?: number;
+}
+
 /**
  * 현재 사용자의 체결 내역을 조회하는 훅
  * Hook that fetches the current user's trade execution history
  *
+ * ETC-M-02: 폴링 간격 설정/비활성화 옵션 추가
+ * ETC-M-02: Added polling interval configuration/disable option
+ *
+ * API-M-01: 서버 페이지네이션을 위한 offset/limit 파라미터 추가
+ * API-M-01: Added offset/limit params for server-side pagination
+ *
+ * @param options - 폴링 간격, limit, offset 옵션 / Polling interval, limit, offset options
  * @returns TanStack Query 결과 (TradeHistory[]) / TanStack Query result (TradeHistory[])
  */
-export function useTradeHistory() {
+export function useTradeHistory(options?: UseTradeHistoryOptions) {
+  const pollingInterval = options?.pollingInterval ?? DEFAULT_TRADE_POLL_INTERVAL;
+  const limit = options?.limit;
+  const offset = options?.offset ?? 0;
+
   return useQuery<TradeHistory[]>({
-    queryKey: ['trades', 'history'],
+    queryKey: ['trades', 'history', limit, offset],
     queryFn: async () => {
-      const { data } = await api.get('/api/orders/trades/history');
+      // API-M-01: 서버 페이지네이션 파라미터 전달 / Forward server pagination params
+      const params: Record<string, string> = {};
+      if (limit !== undefined) params.limit = String(limit);
+      if (offset > 0) params.offset = String(offset);
+      const { data } = await api.get('/api/orders/trades/history', { params });
       const raw: Record<string, unknown>[] = data.data ?? data;
       return raw.map((t) => ({
         tradeId: t.tradeId as string,
@@ -210,8 +241,8 @@ export function useTradeHistory() {
         executedAt: String(t.executedAt ?? ''),
       }));
     },
-    // 10초마다 리페치하여 새 체결 반영 / Refetch every 10s to reflect new trades
-    refetchInterval: 10000,
+    // ETC-M-02: 폴링 간격 설정 가능 — false 시 비활성화 / Configurable polling — false to disable
+    refetchInterval: pollingInterval === false ? false : pollingInterval,
     // FC-M-02: 폴링 주기 내 중복 리페치 방지 (8초간 fresh 유지)
     // FC-M-02: Avoid redundant refetches within the polling cycle (stay fresh for 8s)
     staleTime: 8000,
