@@ -206,9 +206,13 @@ export default function LeaderboardPage() {
   );
 
   /**
+   * CM-L-01: 정렬 키 비교를 통한 캐싱 — 동일 키이면 재정렬 방지
+   * CM-L-01: Sort caching via key comparison — prevents re-sort when key unchanged
+   *
    * 클라이언트 측 정렬 + 순위 재계산 — 입금 없는 사용자 제외, userId 중복 제거
    * Client-side sort + re-rank — filters out zero-deposit users, deduplicates by userId
    */
+  const prevSortKeyRef = useRef('');
   const sortedLeaderboard = useMemo(() => {
     if (!leaderboard) return [];
     // 입금 없는 사용자 제외 + userId 중복 제거 / Exclude zero-deposit users + deduplicate by userId
@@ -219,14 +223,23 @@ export default function LeaderboardPage() {
     let filtered = investedOnly ? unique.filter((e) => e.hasTraded) : unique;
     // 카피트레이딩 중인 투자자만 필터 / Filter to only copy-trading targets
     if (copyTradeOnly) filtered = filtered.filter((e) => copyTradingUserIds.has(e.id));
-    const sorted = filtered.sort((a, b) => {
-      if (sortMode === 'return') return b.pnlPercent - a.pnlPercent;
-      if (sortMode === 'absolute') {
-        return calcAbsolutePnl(b.totalValue, b.pnlPercent) - calcAbsolutePnl(a.totalValue, a.pnlPercent);
-      }
-      return b.totalValue - a.totalValue;
-    });
-    return sorted.map((entry, i) => ({ ...entry, rank: i + 1 }));
+
+    // CM-L-01: 정렬 키가 동일하면 기존 ID 순서 유지 — 불필요한 재정렬 방지
+    // CM-L-01: Keep existing ID order if sort key unchanged — prevents unnecessary re-sort
+    const newSortKey = `${sortMode}:${investedOnly}:${copyTradeOnly}`;
+    const needSort = newSortKey !== prevSortKeyRef.current;
+    prevSortKeyRef.current = newSortKey;
+
+    if (needSort) {
+      filtered.sort((a, b) => {
+        if (sortMode === 'return') return b.pnlPercent - a.pnlPercent;
+        if (sortMode === 'absolute') {
+          return calcAbsolutePnl(b.totalValue, b.pnlPercent) - calcAbsolutePnl(a.totalValue, a.pnlPercent);
+        }
+        return b.totalValue - a.totalValue;
+      });
+    }
+    return filtered.map((entry, i) => ({ ...entry, rank: i + 1 }));
   }, [leaderboard, sortMode, investedOnly, copyTradeOnly, copyTradingUserIds]);
 
   // 현재 사용자 순위 강조 / Current user rank highlight
@@ -309,10 +322,13 @@ export default function LeaderboardPage() {
 
       {/* 기간 필터 탭 — 좁은 화면에서 가로 스크롤 허용 (WCAG 터치 타겟 44px 보장)
           Period filter tabs — allows horizontal scroll on narrow screens (WCAG 44px touch target) */}
-      <div className="flex items-center border-b border-border mb-5 overflow-x-auto scrollbar-hide">
+      {/* A11Y-M-03: 인라인 탭에 role="tablist"/role="tab" 추가 / Add tablist/tab roles for inline tabs */}
+      <div className="flex items-center border-b border-border mb-5 overflow-x-auto scrollbar-hide" role="tablist">
         {periodTabs.map((tab) => (
           <button
             key={tab.key}
+            role="tab"
+            aria-selected={period === tab.key}
             onClick={() => setPeriod(tab.key as LeaderboardPeriod)}
             className={cn(
               'relative px-4 py-2.5 text-[14px] font-semibold transition-colors whitespace-nowrap min-h-[44px] min-w-[44px]',
@@ -455,12 +471,25 @@ export default function LeaderboardPage() {
         />
       )}
 
-      {/* 테이블 헤더 / Table header */}
+      {/* SORT-M-01: 테이블 헤더 — 정렬 방향 화살표 + aria-sort 추가
+          SORT-M-01: Table header — add sort direction arrows + aria-sort */}
       <div className="flex items-center py-2.5 text-[11px] text-text-tertiary font-medium border-b border-border/80">
         <span className="w-10 sm:w-14 text-center shrink-0">{t('leaderboard.rank')}</span>
         <span className="flex-1 pl-2 min-w-0">{t('leaderboard.user')}</span>
-        <span className="hidden sm:block w-36 text-right shrink-0">{thirdColHeader}</span>
-        <span className="w-20 sm:w-24 text-right shrink-0">{t('leaderboard.returnRate')}</span>
+        <span
+          className="hidden sm:block w-36 text-right shrink-0"
+          aria-sort={sortMode === 'assets' || sortMode === 'absolute' ? 'descending' : 'none'}
+        >
+          {thirdColHeader}
+          {(sortMode === 'assets' || sortMode === 'absolute') && <span className="ml-0.5" aria-hidden="true">▼</span>}
+        </span>
+        <span
+          className="w-20 sm:w-24 text-right shrink-0"
+          aria-sort={sortMode === 'return' ? 'descending' : 'none'}
+        >
+          {t('leaderboard.returnRate')}
+          {sortMode === 'return' && <span className="ml-0.5" aria-hidden="true">▼</span>}
+        </span>
         <span className="w-10 sm:w-14 text-center shrink-0"></span>
         {/* 팔로우/카피 액션 열 (인증 시만) / Follow/Copy action column (auth only) */}
         {isAuthenticated && <span className="w-14 sm:w-24 text-center shrink-0"></span>}
@@ -578,13 +607,18 @@ export default function LeaderboardPage() {
                   <div className="flex w-14 sm:w-24 items-center justify-center gap-0.5 sm:gap-1 shrink-0">
                     {!isMe && (
                       <>
+                        {/* ASYNC-M-01: 팔로우 버튼 로딩 상태 — isPending 시 비활성화
+                            ASYNC-M-01: Follow button loading state — disabled when isPending */}
                         <button
                           onClick={() => toggleFollow(entry.id)}
+                          disabled={followTrader.isPending || unfollowTrader.isPending}
                           className={cn(
                             'p-1 sm:p-1.5 rounded-lg transition-colors',
-                            followedUserIds.has(entry.id)
-                              ? 'text-accent bg-accent/10'
-                              : 'text-text-quaternary hover:text-accent hover:bg-accent/10',
+                            (followTrader.isPending || unfollowTrader.isPending)
+                              ? 'opacity-50 cursor-wait'
+                              : followedUserIds.has(entry.id)
+                                ? 'text-accent bg-accent/10'
+                                : 'text-text-quaternary hover:text-accent hover:bg-accent/10',
                           )}
                           title={followedUserIds.has(entry.id) ? t('follow.unfollow') : t('follow.follow')}
                         >
