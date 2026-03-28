@@ -16,7 +16,8 @@
 'use client';
 
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 import { useMarketPrices, useAssets, usePeriodChanges } from '@/hooks/useMarket';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -38,13 +39,29 @@ import { Sparkles, Loader2 } from 'lucide-react';
 import api from '@/lib/api';
 import type { Asset, AssetInfo, PriceUpdate } from '@/types';
 
+// UX-M-02: 마지막 업데이트 시간 표시 함수 / Format last updated timestamp
+function formatLastUpdated(date: Date): string {
+  return date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
 // AI 분석 시 최근 뉴스 조회 한도 / AI analysis news fetch limit
 const AI_ANALYSIS_FETCH_LIMIT = 50;
 
 /** 마켓 대시보드 페이지 컴포넌트 — 하위 컴포넌트를 조합하는 오케스트레이터
  * Market dashboard page component — thin orchestrator composing sub-components */
-export default function DashboardPage() {
+/** NAV-M-02: Suspense 래퍼 — useSearchParams 사용을 위해 필요
+ * NAV-M-02: Suspense wrapper — required for useSearchParams in Next.js 15 */
+export default function DashboardPageWrapper() {
+  return (
+    <Suspense fallback={<div className="py-24 text-center text-text-quaternary animate-pulse">Loading...</div>}>
+      <DashboardPageInner />
+    </Suspense>
+  );
+}
+
+function DashboardPageInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   // 시세 데이터 및 종목 정보 조회 / Fetch market prices and asset info
   const { data: rawPrices, isLoading: pricesLoading, error: pricesError, refetch } = useMarketPrices();
@@ -56,10 +73,24 @@ export default function DashboardPage() {
   // Live prices in external store — completely prevents dashboard component re-render
   const pendingPricesRef = useRef<Record<string, PriceUpdate>>({});
   const flushTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  // UX-M-02: 마지막 데이터 갱신 시각 / Last data refresh timestamp
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  // NAV-M-02: URL 파라미터에서 초기 탭/기간 결정 — 딥링크 지원
+  // NAV-M-02: Determine initial tab/period from URL params — deep link support
+  const validTabs = ['realtime', 'popular', 'trending', 'watchlist'];
+  const validPeriods = ['realtime', '1d', '1w', '1m', '3m', '6m', '1y'];
+  const initialTab = (() => {
+    const p = searchParams.get('tab');
+    return p && validTabs.includes(p) ? p : 'realtime';
+  })();
+  const initialPeriod = (() => {
+    const p = searchParams.get('period');
+    return p && validPeriods.includes(p) ? p : 'realtime';
+  })();
   // 메인 탭 상태 (실시간, 인기, 급상승, 관심종목) / Main tab state (realtime, popular, trending, watchlist)
-  const [activeMainTab, setActiveMainTab] = useState('realtime');
+  const [activeMainTab, setActiveMainTab] = useState(initialTab);
   // 기간 필터 (실시간, 1일, 1주 등) / Period filter (realtime, 1d, 1w, etc.)
-  const [period, setPeriod] = useState('realtime');
+  const [period, setPeriod] = useState(initialPeriod);
   // 스포트라이트 검색 모달 상태 / Spotlight search modal state
   const [spotlightOpen, setSpotlightOpen] = useState(false);
   // 로그인 필요 모달 상태 / Login required modal state
@@ -142,8 +173,13 @@ export default function DashboardPage() {
       return;
     }
     setActiveMainTab(key);
+    // NAV-M-02: URL 파라미터 동기화 — 탭 변경 시 / Sync URL params on tab change
+    const url = new URL(window.location.href);
+    if (key === 'realtime') url.searchParams.delete('tab');
+    else url.searchParams.set('tab', key);
+    router.replace(url.pathname + url.search, { scroll: false });
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [isAuthenticated]);
+  }, [isAuthenticated, router]);
 
   /** AI 시장 분석 핸들러 / AI market analysis handler */
   const handleAiAnalysis = useCallback(async () => {
@@ -222,6 +258,8 @@ export default function DashboardPage() {
         pendingPricesRef.current = {};
         flushTimerRef.current = undefined;
         batchUpdatePrices(batch);
+        // UX-M-02: 마지막 업데이트 시각 갱신 / Update last refreshed timestamp
+        setLastUpdated(new Date());
       }, 2000);
     }
   }, []);
@@ -296,6 +334,15 @@ export default function DashboardPage() {
 
   return (
     <div>
+      {/* UX-M-02: 마지막 데이터 갱신 시각 표시 / Last data refresh indicator */}
+      {lastUpdated && (
+        <div className="flex justify-end pt-2 pb-1">
+          <span className="text-[11px] text-text-quaternary tabular-nums">
+            {t('dashboard.lastUpdated') ?? 'Last updated'}: {formatLastUpdated(lastUpdated)}
+          </span>
+        </div>
+      )}
+
       {/* 모바일 검색 바 / Mobile search bar */}
       <DashboardMobileSearch onOpen={() => setSpotlightOpen(true)} />
 

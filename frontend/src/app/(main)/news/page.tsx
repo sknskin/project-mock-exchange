@@ -12,6 +12,7 @@ import { ExternalLink, Newspaper, Search, Sparkles, X, Loader2 } from 'lucide-re
 import { useNews } from '@/hooks/useNews';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useScrollLock } from '@/hooks/useScrollLock';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSettingsStore } from '@/stores/settings';
 import Pagination from '@/components/ui/Pagination';
@@ -75,6 +76,11 @@ export default function NewsPage() {
   const [aiModalOpen, setAiModalOpen] = useState(false);
 
   useScrollLock(aiModalOpen);
+
+  // MOD-M-01: AI 분석 모달 포커스 트랩 — 접근성 향상
+  // MOD-M-01: News AI modal focus trap — accessibility improvement
+  const aiModalRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(aiModalRef, aiModalOpen);
 
   // ESC 닫기 / ESC close when modal is open
   useEffect(() => {
@@ -205,11 +211,14 @@ export default function NewsPage() {
       </div>
 
       {/* Tab bar */}
+      {/* A11Y-M-03: 인라인 탭에 role="tablist"/role="tab" 추가 — 접근성 / Add tablist/tab roles for inline tabs — a11y */}
       <div className="flex items-center border-b border-border mb-5">
-        <div className="flex flex-1">
+        <div className="flex flex-1" role="tablist">
           {tabs.map((tab) => (
             <button
               key={tab.key}
+              role="tab"
+              aria-selected={activeTab === tab.key}
               onClick={() => handleTabChange(tab.key)}
               className={cn(
                 'relative px-4 py-2.5 text-[13px] sm:text-[14px] font-semibold transition-colors',
@@ -353,8 +362,9 @@ export default function NewsPage() {
       )}
 
       {/* AI 분석 모달 / AI Analysis Modal */}
+      {/* MOD-M-01: ref 연결로 포커스 트랩 적용 / Connect ref for focus trap */}
       {aiModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="ai-analysis-title">
+        <div ref={aiModalRef} className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="ai-analysis-title">
           {/* 배경 오버레이 / Background overlay */}
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-modal-backdrop" onClick={() => !aiLoading && setAiModalOpen(false)} />
           {/* 모달 본문 / Modal body */}
