@@ -15,6 +15,7 @@ import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useScrollLock } from '@/hooks/useScrollLock';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 import type { Asset } from '@/types';
 
 interface SpotlightSearchProps {
@@ -35,6 +36,10 @@ export default function SpotlightSearch({ isOpen, onClose, assets }: SpotlightSe
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  // MOD-M-02: 포커스 트랩 — 모달 내부에 탭 포커스를 가둠
+  // MOD-M-02: Focus trap — traps tab focus within the modal
+  const modalRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(modalRef, isOpen);
 
   // 거래대금 Top 5 / Top 5 by turnover
   const top5 = useMemo(() =>
@@ -102,8 +107,9 @@ export default function SpotlightSearch({ isOpen, onClose, assets }: SpotlightSe
       {/* 오버레이 / Overlay */}
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-modal-backdrop" onClick={onClose} />
 
+      {/* MOD-M-02: ref 연결로 포커스 트랩 적용 / Connect ref for focus trap */}
       {/* 모달 / Modal */}
-      <div className="relative w-[90vw] max-w-[560px] bg-bg-primary border border-border rounded-2xl shadow-2xl overflow-hidden animate-modal-content" role="dialog" aria-modal="true">
+      <div ref={modalRef} className="relative w-[90vw] max-w-[560px] bg-bg-primary border border-border rounded-2xl shadow-2xl overflow-hidden animate-modal-content" role="dialog" aria-modal="true">
         {/* 검색 입력란 / Search input */}
         <div className="flex items-center gap-3 px-5 py-4 border-b border-border">
           <Search className="w-5 h-5 text-text-quaternary shrink-0" />

@@ -19,8 +19,10 @@ export default function BottomNav() {
   const pathname = usePathname();
   const { t } = useTranslation();
 
+  // TYP-M-02: nav 브레이크포인트(1120px)로 통일 — 1024~1120px 갭에서 BottomNav 누락 방지
+  // TYP-M-02: Unify to nav breakpoint (1120px) — prevents BottomNav disappearing in 1024-1120px gap
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-bg-primary/95 backdrop-blur-md border-t border-border lg:hidden safe-bottom landscape-hide-sm" role="navigation" aria-label="Bottom navigation">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-bg-primary/95 backdrop-blur-md border-t border-border nav:hidden safe-bottom landscape-hide-sm" role="navigation" aria-label="Bottom navigation">
       <div className="flex items-center justify-around h-[56px] md:h-[60px]">
         {/* 항상 표시 / Always visible */}
         <Link

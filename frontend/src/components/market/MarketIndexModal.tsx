@@ -12,6 +12,7 @@ import { X, TrendingUp, TrendingDown, Minus, RefreshCw } from 'lucide-react';
 import { cn, formatPercent } from '@/lib/format';
 import { useSettingsStore } from '@/stores/settings';
 import { useScrollLock } from '@/hooks/useScrollLock';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 
 interface IndexData {
   symbol: string;
@@ -145,6 +146,11 @@ export default function MarketIndexModal({ isOpen, onClose, indices, updatedAt, 
   const locale = useSettingsStore((s) => s.locale);
   useScrollLock(isOpen);
 
+  // A11Y-L-02 / MOD-M-03: 포커스 트랩 — 모달 내부에 탭 포커스를 가둠
+  // A11Y-L-02 / MOD-M-03: Focus trap — traps tab focus within the modal
+  const modalRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(modalRef, isOpen);
+
   // ESC 닫기 / ESC close
   useEffect(() => {
     if (!isOpen) return;
@@ -171,6 +177,7 @@ export default function MarketIndexModal({ isOpen, onClose, indices, updatedAt, 
 
       {/* 모달 — 바깥 클릭 시 닫힘 / Modal — closes on outside click */}
       <div
+        ref={modalRef}
         className="fixed inset-0 z-[71] flex items-center justify-center p-4 sm:p-6"
         role="dialog"
         aria-modal="true"
