@@ -12,6 +12,18 @@ import { Request, Response } from 'express';
 import { ProxyService } from './proxy.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ChatGateway } from '../gateway/chat.gateway';
+// VAL-L-01: 타입 안전한 DTO — unknown 대신 구조화된 body 검증
+// VAL-L-01: Type-safe DTOs — structured body validation instead of unknown
+import {
+  LoginDto,
+  RegisterDto,
+  VerifySmsDto,
+  SendSmsDto,
+  ResendSmsDto,
+  ForgotPasswordDto,
+  ResetPasswordDto,
+  TotpCodeDto,
+} from './dto/auth.dto';
 
 // 인증 관련 모든 엔드포인트를 처리하는 프록시 컨트롤러
 // Proxy controller handling all authentication-related endpoints
@@ -66,7 +78,7 @@ export class AuthProxyController {
   @ApiResponse({ status: 201, description: '회원가입 성공' })
   @ApiResponse({ status: 400, description: '유효성 검사 실패' })
   @ApiResponse({ status: 409, description: '중복된 이메일 또는 아이디' })
-  async register(@Body() body: unknown, @Res() res: Response) {
+  async register(@Body() body: RegisterDto, @Res() res: Response) {
     const result = await this.proxyService.forward('user-auth', {
       method: 'POST',
       url: '/auth/register',
@@ -77,8 +89,8 @@ export class AuthProxyController {
       const data = result.data as { username?: string; name?: string };
       this.chatGateway.server.emit('notification:registration-request', {
         type: 'registration-request',
-        username: data.username || (body as { username?: string })?.username || '',
-        name: data.name || (body as { name?: string })?.name || '',
+        username: data.username || body.username || '',
+        name: data.name || body.name || '',
         timestamp: new Date().toISOString(),
       });
     }
@@ -94,7 +106,7 @@ export class AuthProxyController {
   @ApiOperation({ summary: '로그인', description: '이메일/아이디와 비밀번호로 로그인합니다 (SMS 인증 필요)' })
   @ApiResponse({ status: 200, description: 'SMS 인증 요청 (sessionId + maskedPhone)' })
   @ApiResponse({ status: 401, description: '인증 실패' })
-  async login(@Body() body: unknown, @Res() res: Response) {
+  async login(@Body() body: LoginDto, @Res() res: Response) {
     const result = await this.proxyService.forward('user-auth', {
       method: 'POST',
       url: '/auth/login',
@@ -113,7 +125,7 @@ export class AuthProxyController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '로그인 SMS 재전송', description: '로그인 SMS 인증번호를 재전송합니다' })
   @ApiResponse({ status: 200, description: 'SMS 재전송 성공' })
-  async resendLoginSms(@Body() body: unknown, @Res() res: Response) {
+  async resendLoginSms(@Body() body: ResendSmsDto, @Res() res: Response) {
     const result = await this.proxyService.forward('user-auth', {
       method: 'POST',
       url: '/auth/login/resend-sms',
@@ -130,7 +142,7 @@ export class AuthProxyController {
   @ApiOperation({ summary: '로그인 SMS 인증', description: '로그인 2단계 SMS 인증번호를 검증합니다' })
   @ApiResponse({ status: 200, description: '인증 성공 (access token + refresh cookie)' })
   @ApiResponse({ status: 401, description: '인증 실패 또는 세션 만료' })
-  async verifyLoginSms(@Body() body: unknown, @Req() req: Request, @Res() res: Response) {
+  async verifyLoginSms(@Body() body: VerifySmsDto, @Req() req: Request, @Res() res: Response) {
     // 쿠키 전달 — user-auth에서 리프레시 토큰 검증에 사용 / Forward cookies — used by user-auth for refresh token validation
     const result = await this.proxyService.forward('user-auth', {
       method: 'POST',
@@ -219,7 +231,7 @@ export class AuthProxyController {
   @ApiOperation({ summary: 'SMS 인증번호 발송', description: '입력한 전화번호로 인증번호를 발송합니다' })
   @ApiResponse({ status: 200, description: '인증번호 발송 성공' })
   @ApiResponse({ status: 400, description: '잘못된 전화번호 형식' })
-  async sendSmsCode(@Body() body: unknown, @Res() res: Response) {
+  async sendSmsCode(@Body() body: SendSmsDto, @Res() res: Response) {
     const result = await this.proxyService.forward('user-auth', {
       method: 'POST',
       url: '/auth/sms/send',
@@ -235,7 +247,7 @@ export class AuthProxyController {
   @ApiOperation({ summary: 'SMS 인증번호 확인', description: '발송된 인증번호를 검증합니다' })
   @ApiResponse({ status: 200, description: '인증 성공' })
   @ApiResponse({ status: 400, description: '잘못된 인증번호' })
-  async verifySmsCode(@Body() body: unknown, @Res() res: Response) {
+  async verifySmsCode(@Body() body: VerifySmsDto, @Res() res: Response) {
     const result = await this.proxyService.forward('user-auth', {
       method: 'POST',
       url: '/auth/sms/verify',
@@ -251,7 +263,7 @@ export class AuthProxyController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '비밀번호 찾기', description: '이메일/아이디로 비밀번호 재설정 SMS를 발송합니다' })
   @ApiResponse({ status: 200, description: 'SMS 발송 성공 (sessionId + maskedPhone)' })
-  async forgotPassword(@Body() body: unknown, @Res() res: Response) {
+  async forgotPassword(@Body() body: ForgotPasswordDto, @Res() res: Response) {
     const result = await this.proxyService.forward('user-auth', {
       method: 'POST',
       url: '/auth/forgot-password',
@@ -269,7 +281,7 @@ export class AuthProxyController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '비밀번호 찾기 SMS 재전송', description: '비밀번호 재설정 SMS 인증번호를 재전송합니다' })
   @ApiResponse({ status: 200, description: 'SMS 재전송 성공' })
-  async resendPasswordResetSms(@Body() body: unknown, @Res() res: Response) {
+  async resendPasswordResetSms(@Body() body: ResendSmsDto, @Res() res: Response) {
     const result = await this.proxyService.forward('user-auth', {
       method: 'POST',
       url: '/auth/forgot-password/resend-sms',
@@ -285,7 +297,7 @@ export class AuthProxyController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '비밀번호 찾기 SMS 인증', description: '비밀번호 재설정 SMS 인증번호를 검증합니다' })
   @ApiResponse({ status: 200, description: '인증 성공' })
-  async forgotPasswordVerifySms(@Body() body: unknown, @Res() res: Response) {
+  async forgotPasswordVerifySms(@Body() body: VerifySmsDto, @Res() res: Response) {
     const result = await this.proxyService.forward('user-auth', {
       method: 'POST',
       url: '/auth/forgot-password/verify-sms',
@@ -301,7 +313,7 @@ export class AuthProxyController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '비밀번호 재설정', description: 'SMS 인증 후 새 비밀번호를 설정합니다' })
   @ApiResponse({ status: 200, description: '비밀번호 재설정 성공' })
-  async resetPassword(@Body() body: unknown, @Res() res: Response) {
+  async resetPassword(@Body() body: ResetPasswordDto, @Res() res: Response) {
     const result = await this.proxyService.forward('user-auth', {
       method: 'POST',
       url: '/auth/forgot-password/reset',
@@ -358,7 +370,7 @@ export class AuthProxyController {
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'TOTP 활성화', description: 'TOTP 코드 검증 후 2FA를 활성화합니다' })
-  async totpEnable(@Body() body: unknown, @Req() req: Request, @Res() res: Response) {
+  async totpEnable(@Body() body: TotpCodeDto, @Req() req: Request, @Res() res: Response) {
     const result = await this.proxyService.forward('user-auth', {
       method: 'POST',
       url: '/auth/totp/enable',
@@ -376,7 +388,7 @@ export class AuthProxyController {
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'TOTP 비활성화', description: 'TOTP 코드 검증 후 2FA를 비활성화합니다' })
-  async totpDisable(@Body() body: unknown, @Req() req: Request, @Res() res: Response) {
+  async totpDisable(@Body() body: TotpCodeDto, @Req() req: Request, @Res() res: Response) {
     const result = await this.proxyService.forward('user-auth', {
       method: 'POST',
       url: '/auth/totp/disable',
@@ -394,7 +406,7 @@ export class AuthProxyController {
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'TOTP 검증', description: 'TOTP 코드를 검증합니다' })
-  async totpVerify(@Body() body: unknown, @Req() req: Request, @Res() res: Response) {
+  async totpVerify(@Body() body: TotpCodeDto, @Req() req: Request, @Res() res: Response) {
     const result = await this.proxyService.forward('user-auth', {
       method: 'POST',
       url: '/auth/totp/verify',

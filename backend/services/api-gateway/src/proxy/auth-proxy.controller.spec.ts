@@ -51,7 +51,7 @@ describe('AuthProxyController', () => {
       });
 
       const res = mockRes();
-      await controller.register(body, res as Response);
+      await controller.register(body as any, res as Response);
 
       expect(mockServer.emit).toHaveBeenCalledWith(
         'notification:registration-request',
@@ -72,7 +72,7 @@ describe('AuthProxyController', () => {
       });
 
       const res = mockRes();
-      await controller.register(body, res as Response);
+      await controller.register(body as any, res as Response);
 
       const payload = mockServer.emit.mock.calls[0][1];
       expect(payload.username).toBe('fromBody');
@@ -86,7 +86,7 @@ describe('AuthProxyController', () => {
       });
 
       const res = mockRes();
-      await controller.register({ username: 'test' }, res as Response);
+      await controller.register({ username: 'test' } as any, res as Response);
 
       const payload = mockServer.emit.mock.calls[0][1];
       expect(payload.timestamp).toBeDefined();
@@ -100,7 +100,7 @@ describe('AuthProxyController', () => {
       });
 
       const res = mockRes();
-      await controller.register({ username: 'bad' }, res as Response);
+      await controller.register({ username: 'bad' } as any, res as Response);
 
       expect(mockServer.emit).not.toHaveBeenCalled();
       expect(res.status).toHaveBeenCalledWith(400);
@@ -113,7 +113,7 @@ describe('AuthProxyController', () => {
       });
 
       const res = mockRes();
-      await controller.register({ username: 'dup' }, res as Response);
+      await controller.register({ username: 'dup' } as any, res as Response);
 
       expect(mockServer.emit).not.toHaveBeenCalled();
     });
