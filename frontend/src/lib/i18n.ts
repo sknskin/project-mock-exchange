@@ -120,6 +120,8 @@ const translations = {
     'error.goDashboard': '대시보드로',
     'error.authFailed': '인증 오류',
     'error.authDesc': '로그인 처리 중 문제가 발생했습니다.\n다시 시도해주세요.',
+    'error.serverError': '서버 오류',
+    'error.serverDesc': '서버에서 요청을 처리하는 중 오류가 발생했습니다.\n잠시 후 다시 시도해주세요.',
     'error.goLogin': '로그인으로',
 
     // Exchange Rate
@@ -1195,6 +1197,9 @@ const translations = {
     'news.aiAnalysis.error': '분석 중 오류가 발생했습니다',
     'news.aiAnalysis.close': '닫기',
 
+    // Dashboard
+    'dashboard.lastUpdated': '마지막 업데이트',
+
     // Dashboard AI
     'dashboard.aiAnalysis': 'AI 분석',
     'dashboard.aiAnalysis.title': 'AI 시장 분석',
@@ -1988,6 +1993,7 @@ const translations = {
     'editor.invalidImageType': 'JPG, PNG, GIF, WebP 이미지만 업로드할 수 있습니다.',
     'editor.imageTooLarge': '이미지 크기는 5MB를 초과할 수 없습니다.',
     'editor.imageResolutionTooLarge': '이미지 해상도는 4096x4096 픽셀을 초과할 수 없습니다.',
+    'editor.uploadFailed': '이미지 업로드에 실패했습니다. 다시 시도해주세요.',
 
     // 전략 공유 (Strategy Sharing)
     'strategy.title': '전략 공유',
@@ -2234,6 +2240,8 @@ const translations = {
     'error.goDashboard': 'Dashboard',
     'error.authFailed': 'Authentication Error',
     'error.authDesc': 'Something went wrong during authentication.\nPlease try again.',
+    'error.serverError': 'Server Error',
+    'error.serverDesc': 'An error occurred while processing your request on the server.\nPlease try again later.',
     'error.goLogin': 'Go to Login',
 
     // Exchange Rate
@@ -3309,6 +3317,9 @@ const translations = {
     'news.aiAnalysis.error': 'Error occurred during analysis',
     'news.aiAnalysis.close': 'Close',
 
+    // Dashboard
+    'dashboard.lastUpdated': 'Last updated',
+
     // Dashboard AI
     'dashboard.aiAnalysis': 'AI Analysis',
     'dashboard.aiAnalysis.title': 'AI Market Analysis',
@@ -4102,6 +4113,7 @@ const translations = {
     'editor.invalidImageType': 'Only JPG, PNG, GIF, WebP images are allowed.',
     'editor.imageTooLarge': 'Image size cannot exceed 5MB.',
     'editor.imageResolutionTooLarge': 'Image resolution cannot exceed 4096x4096 pixels.',
+    'editor.uploadFailed': 'Image upload failed. Please try again.',
 
     // Strategy Sharing
     'strategy.title': 'Strategy Sharing',

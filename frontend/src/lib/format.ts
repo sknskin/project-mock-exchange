@@ -35,11 +35,16 @@ export function formatPrice(price: number): string {
   });
 }
 
-// 퍼센트 포맷: 부호 포함, 소수점 3자리 / Format percent: with sign, 3 decimal places
+// INF-M-02: 퍼센트 소수점 자릿수 상수 — 전역 일관성 보장
+// INF-M-02: Percent decimal places constant — ensures global consistency
+const PERCENT_DECIMAL_PLACES = 2;
+
+// 퍼센트 포맷: 부호 포함, 소수점 2자리 (INF-M-02: 3→2자리 통일)
+// Format percent: with sign, 2 decimal places (INF-M-02: unified 3→2 places)
 export function formatPercent(percent: number): string {
   if (percent == null || !Number.isFinite(percent)) return '-';
   const sign = percent >= 0 ? '+' : '';
-  return `${sign}${percent.toFixed(3)}%`;
+  return `${sign}${percent.toFixed(PERCENT_DECIMAL_PLACES)}%`;
 }
 
 // 변동 금액 포맷: 부호 포함, 크기에 따라 소수점 자동 조절 / Format change amount: with sign, auto-adjust decimals

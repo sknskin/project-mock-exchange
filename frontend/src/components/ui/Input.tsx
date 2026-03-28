@@ -7,7 +7,7 @@
  */
 'use client';
 
-import { useState, useRef, useCallback, useEffect, forwardRef } from 'react';
+import { useState, useRef, useCallback, useEffect, forwardRef, useId } from 'react';
 import { cn } from '@/lib/format';
 import { useTranslation } from '@/hooks/useTranslation';
 
@@ -30,11 +30,19 @@ const Input = forwardRef<HTMLInputElement, InputProps>(function Input({
   englishOnly,
   className,
   onChange,
+  id: externalId,
   ...props
 }: InputProps, ref) {
   const { t } = useTranslation();
   const [koreanWarning, setKoreanWarning] = useState(false);
   const warningTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  // A11Y-M-02: 고유 ID 생성 — htmlFor와 aria-describedby 링크에 사용
+  // A11Y-M-02: Generate unique ID — used for htmlFor and aria-describedby linking
+  const autoId = useId();
+  const inputId = externalId || autoId;
+  const errorId = `${inputId}-error`;
+  const warningId = `${inputId}-warning`;
 
   useEffect(() => () => clearTimeout(warningTimer.current), []);
 
@@ -52,16 +60,27 @@ const Input = forwardRef<HTMLInputElement, InputProps>(function Input({
     onChange?.(e);
   }, [englishOnly, onChange]);
 
+  // A11Y-M-02: aria-describedby — 에러/경고 메시지 연결
+  // A11Y-M-02: aria-describedby — link error/warning messages
+  const describedBy = [
+    error ? errorId : null,
+    koreanWarning && !error ? warningId : null,
+    props['aria-describedby'],
+  ].filter(Boolean).join(' ') || undefined;
+
   return (
     <div className="w-full">
       {label && (
-        <label className="block text-[13px] text-text-secondary font-semibold mb-2">
+        // A11Y-M-02: htmlFor로 라벨과 입력 필드 연결 / Link label to input field via htmlFor
+        <label htmlFor={inputId} className="block text-[13px] text-text-secondary font-semibold mb-2">
           {label}
         </label>
       )}
       <input
         ref={ref}
+        id={inputId}
         aria-invalid={!!error}
+        aria-describedby={describedBy}
         className={cn(
           'w-full h-12 px-4 bg-bg-secondary border border-border/60 rounded-xl text-text-primary placeholder-text-quaternary',
           'focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/20 focus-visible:border-accent/40',
@@ -72,9 +91,9 @@ const Input = forwardRef<HTMLInputElement, InputProps>(function Input({
         onChange={handleChange}
         {...props}
       />
-      {error && <p className="mt-1.5 text-[13px] text-danger">{error}</p>}
+      {error && <p id={errorId} className="mt-1.5 text-[13px] text-danger">{error}</p>}
       {koreanWarning && !error && (
-        <p className="mt-1 text-[11px] text-warning font-medium">{t('validation.englishOnly')}</p>
+        <p id={warningId} className="mt-1 text-[11px] text-warning font-medium">{t('validation.englishOnly')}</p>
       )}
     </div>
   );
