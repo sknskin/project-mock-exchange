@@ -21,6 +21,27 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { formatPriceDisplay, isKRW } from '@/lib/format';
 import type { TranslationKey } from '@/lib/i18n';
 
+// VAL-M-02: 종목 유형별 최대 소수점 자릿수 / Max decimal places by asset type
+const MAX_DECIMALS_CRYPTO = 8;
+const MAX_DECIMALS_STOCK_US = 2;
+const MAX_DECIMALS_STOCK_KR = 0;
+
+/** 심볼 기반 최대 소수점 자릿수 반환
+ * Return max decimal places based on symbol type */
+function getMaxDecimals(symbol: string): number {
+  if (symbol.endsWith('.KS')) return MAX_DECIMALS_STOCK_KR;
+  if (symbol.includes('-') || symbol.endsWith('USDT')) return MAX_DECIMALS_CRYPTO;
+  return MAX_DECIMALS_STOCK_US;
+}
+
+/** 소수점 자릿수 초과 여부 검사
+ * Check if value exceeds max decimal places */
+function exceedsDecimals(value: string, maxDecimals: number): boolean {
+  const parts = value.split('.');
+  if (parts.length < 2) return false;
+  return parts[1].length > maxDecimals;
+}
+
 // 주문 폼 Props / Order Form Props
 interface OrderFormProps {
   /** 종목 심볼
@@ -151,7 +172,6 @@ export default function OrderForm({
   const noHoldings = !isBuy && holdingQty <= 0;
 
   // 예상 금액 — USD 기준으로 계산, fp()가 통화 변환 담당 (Calculate in USD, let fp() handle display conversion)
-  const displayCurrentPrice = toDisplayPrice(safeCurrentPrice, symbol, currencyMode, rate);
   const estimatedTotalUsd = isConditional
     ? parsedQty * toUsdPrice(parseFloat(triggerPrice || '0'), symbol, currencyMode, rate)
     : orderType === 'MARKET'
@@ -161,6 +181,9 @@ export default function OrderForm({
   const fp = (p: number) => formatPriceDisplay(p, symbol, currencyMode, rate);
   const currencyLabel = isKRW(symbol) ? 'KRW' : currencyMode === 'krw' ? 'KRW' : 'USD';
 
+  // VAL-M-02: 현재 심볼의 최대 소수점 자릿수 / Max decimals for current symbol
+  const maxDecimals = getMaxDecimals(symbol);
+
   /** 수량 유효성 검사
    * Validate order quantity */
   const validateQuantity = () => {
@@ -168,6 +191,9 @@ export default function OrderForm({
       setQuantityError(t('order.quantityPlaceholder'));
     } else if (insufficientHoldings) {
       setQuantityError(t('order.insufficientHoldings'));
+    // VAL-M-02: 소수점 자릿수 초과 검증 / Decimal places exceeded validation
+    } else if (quantity && exceedsDecimals(quantity, maxDecimals)) {
+      setQuantityError(`Max ${maxDecimals} decimal places`);
     } else {
       setQuantityError('');
     }
@@ -178,6 +204,9 @@ export default function OrderForm({
   const validatePrice = () => {
     if (price && parseFloat(price) <= 0) {
       setPriceError(t('order.pricePlaceholder'));
+    // VAL-M-02: 가격 소수점 자릿수 검증 / Price decimal places validation
+    } else if (price && exceedsDecimals(price, maxDecimals)) {
+      setPriceError(`Max ${maxDecimals} decimal places`);
     } else {
       setPriceError('');
     }
@@ -272,7 +301,13 @@ export default function OrderForm({
             label={`${t('order.price')} (${currencyLabel})`}
             type="number"
             value={price}
-            onChange={(e) => { setPrice(e.target.value); setPriceError(''); }}
+            onChange={(e) => {
+              const val = e.target.value;
+              // VAL-M-02: 가격 소수점 자릿수 제한 / Enforce price decimal places
+              if (val && exceedsDecimals(val, maxDecimals)) return;
+              setPrice(val);
+              setPriceError('');
+            }}
             onBlur={validatePrice}
             placeholder={t('order.pricePlaceholder')}
             aria-describedby={priceError ? 'price-error' : undefined}
@@ -301,7 +336,13 @@ export default function OrderForm({
           label={t('order.quantity')}
           type="number"
           value={quantity}
-          onChange={(e) => { setQuantity(e.target.value); setQuantityError(''); }}
+          onChange={(e) => {
+            const val = e.target.value;
+            // VAL-M-02: 소수점 자릿수 제한 적용 / Enforce max decimal places
+            if (val && exceedsDecimals(val, maxDecimals)) return;
+            setQuantity(val);
+            setQuantityError('');
+          }}
           onBlur={validateQuantity}
           placeholder={t('order.quantityPlaceholder')}
           aria-describedby={
@@ -317,8 +358,10 @@ export default function OrderForm({
               key={pct}
               type="button"
               onClick={() => {
-                if (isBuy && portfolio && displayCurrentPrice > 0) {
-                  const maxQty = portfolio.cashBalance / displayCurrentPrice;
+                // FE-M-02: 서버 제공 원본 가격(safeCurrentPrice)으로 최대 수량 계산 — 환율 변환 표시가격 대신 사용하여 드리프트 방지
+                // FE-M-02: Use server-provided price (safeCurrentPrice) for max qty calc — prevents drift from display currency conversion
+                if (isBuy && portfolio && safeCurrentPrice > 0) {
+                  const maxQty = portfolio.cashBalance / safeCurrentPrice;
                   const factor = pct === 100 ? 0.99 : 1;
                   setQuantity((maxQty * pct / 100 * factor).toFixed(8).replace(/\.?0+$/, ''));
                 } else if (!isBuy && holdingQty > 0) {

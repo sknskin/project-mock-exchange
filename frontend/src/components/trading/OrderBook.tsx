@@ -314,7 +314,9 @@ export default function OrderBook({ orderBook, symbol = '' }: OrderBookProps) {
   }, []);
 
   return (
-    <div>
+    // MOB-M-01: overflow-x-auto 추가 — 320px 좁은 화면에서 가로 스크롤 허용
+    // MOB-M-01: Add overflow-x-auto — allow horizontal scroll on 320px narrow screens
+    <div className="overflow-x-auto">
       {/* 뷰 토글 / View toggle */}
       <div className="flex items-center gap-1 mb-3">
         <button
@@ -346,10 +348,11 @@ export default function OrderBook({ orderBook, symbol = '' }: OrderBookProps) {
       ) : (
         <>
           {/* 헤더 / Header */}
+          {/* INF-L-02: 모바일에서 누적 컬럼 숨김 — 데이터 밀도 최적화 / Hide cumulative column on mobile — data density optimization */}
           <div className="flex text-[11px] sm:text-[12px] text-text-quaternary py-2 font-medium">
             <span className="flex-1">{t('orderbook.price')}</span>
             <span className="flex-1 text-right">{t('orderbook.quantity')}</span>
-            <span className="w-14 sm:w-16 text-right">{t('orderbook.cumulative')}</span>
+            <span className="w-14 sm:w-16 text-right hidden sm:block">{t('orderbook.cumulative')}</span>
           </div>
 
           {/* 매도 호가 / Asks (sell orders) — 가격 높은 순 → 낮은 순 */}
@@ -372,7 +375,8 @@ export default function OrderBook({ orderBook, symbol = '' }: OrderBookProps) {
                 <span className="flex-1 text-[13px] sm:text-[14px] tabular-nums text-text-secondary text-right relative z-10">
                   {formatQuantity(ask.quantity)}
                 </span>
-                <span className="w-14 sm:w-16 text-[11px] sm:text-[12px] tabular-nums text-text-quaternary text-right relative z-10">
+                {/* INF-L-02: 모바일에서 누적 컬럼 숨김 / Hide cumulative on mobile */}
+                <span className="w-14 sm:w-16 text-[11px] sm:text-[12px] tabular-nums text-text-quaternary text-right relative z-10 hidden sm:block">
                   {formatQuantity(ask.cumTotal)}
                 </span>
               </div>
@@ -429,7 +433,8 @@ export default function OrderBook({ orderBook, symbol = '' }: OrderBookProps) {
                 <span className="flex-1 text-[13px] sm:text-[14px] tabular-nums text-text-secondary text-right relative z-10">
                   {formatQuantity(bid.quantity)}
                 </span>
-                <span className="w-14 sm:w-16 text-[11px] sm:text-[12px] tabular-nums text-text-quaternary text-right relative z-10">
+                {/* INF-L-02: 모바일에서 누적 컬럼 숨김 / Hide cumulative on mobile */}
+                <span className="w-14 sm:w-16 text-[11px] sm:text-[12px] tabular-nums text-text-quaternary text-right relative z-10 hidden sm:block">
                   {formatQuantity(bid.cumTotal)}
                 </span>
               </div>

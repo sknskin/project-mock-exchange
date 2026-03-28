@@ -138,13 +138,13 @@ export default function RichEditor({ content, onChange, placeholder }: RichEdito
             if (imageUrl) {
               editor.chain().focus().setImage({ src: imageUrl }).run();
             } else {
-              // 업로드 응답에 URL이 없으면 data URL 폴백
-              editor.chain().focus().setImage({ src: dataUrl }).run();
+              // FE-M-01: 응답에 URL 없을 시 에러 토스트 표시 / Show error toast when response has no URL
+              addToast(t('editor.uploadFailed'), 'error');
             }
           } catch {
-            // 서버 업로드 실패 시 data URL 폴백
-            // Fall back to data URL if server upload fails
-            editor.chain().focus().setImage({ src: dataUrl }).run();
+            // FE-M-01: 업로드 실패 시 Base64 폴백 대신 에러 토스트 표시
+            // FE-M-01: Show error toast instead of silently falling back to Base64 on upload failure
+            addToast(t('editor.uploadFailed'), 'error');
           } finally {
             setUploading(false);
           }

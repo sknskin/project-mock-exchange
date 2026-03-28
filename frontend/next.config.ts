@@ -15,6 +15,11 @@ const connectSrc = isDev
   : "'self' ws: wss: https://api.exchangerate.fun https://api.frankfurter.app";
 
 const nextConfig: NextConfig = {
+  // UX-L-01: 뒤로가기 시 스크롤 위치 복원 — Next.js 실험적 기능
+  // UX-L-01: Restore scroll position on back navigation — Next.js experimental feature
+  experimental: {
+    scrollRestoration: true,
+  },
   images: {
     remotePatterns: [
       {
