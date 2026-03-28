@@ -1,5 +1,12 @@
 [
   {
+    "name": "perf-audit-12.pdf",
+    "path": "/docs/report/perf-audit-12.pdf",
+    "label": "VirtuEx 성능 개선 감사 보고서 (12차)",
+    "date": "2026-03-28",
+    "type": "performance"
+  },
+  {
     "name": "perf-audit-11.pdf",
     "path": "/docs/report/perf-audit-11.pdf",
     "label": "VirtuEx 성능 개선 감사 보고서 (11차)",
@@ -75,6 +82,13 @@
     "label": "VirtuEx 성능 개선 감사 보고서 (1차)",
     "date": "2026-03-13",
     "type": "performance"
+  },
+  {
+    "name": "audit-report-24.pdf",
+    "path": "/docs/report/audit-report-24.pdf",
+    "label": "VirtuEx 시스템 감사 보고서 (24차)",
+    "date": "2026-03-28",
+    "type": "general"
   },
   {
     "name": "audit-report-23.pdf",
