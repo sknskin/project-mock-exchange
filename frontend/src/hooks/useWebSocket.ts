@@ -78,17 +78,22 @@ export function useWebSocket(
     };
     // symbols를 의존성에서 제외 — ref로 참조하므로 토큰 변경 시에만 재연결
     // Exclude symbols from deps — accessed via ref, so only reconnect on token change
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accessToken, isAuthenticated]);
 
-  // symbols가 변경되면 이미 연결된 소켓에 구독 업데이트
-  // When symbols change, update subscriptions on existing connected socket
+  // WS-M-01: symbols 변경 시 diff만 전송 — 전체 심볼 재전송 방지
+  // WS-M-01: On symbols change, compute diff and send only new symbols — prevents full re-send
+  const prevSymbolsRef = useRef<Set<string>>(new Set());
   useEffect(() => {
     const socket = socketRef.current;
-    if (!socket) return;
+    if (!socket || !socket.connected) return;
 
-    if (socket.connected && symbols.length > 0) {
-      socket.emit('subscribe', { symbols });
+    const prevSet = prevSymbolsRef.current;
+    const currentSet = new Set(symbols);
+    // 새로 추가된 심볼만 구독 요청 / Only subscribe to newly added symbols
+    const newSymbols = symbols.filter((s) => !prevSet.has(s));
+    if (newSymbols.length > 0) {
+      socket.emit('subscribe', { symbols: newSymbols });
     }
+    prevSymbolsRef.current = currentSet;
   }, [symbols]);
 }
