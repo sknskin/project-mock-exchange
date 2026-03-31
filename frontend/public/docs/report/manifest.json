@@ -84,6 +84,13 @@
     "type": "performance"
   },
   {
+    "name": "audit-report-25.pdf",
+    "path": "/docs/report/audit-report-25.pdf",
+    "label": "VirtuEx 시스템 감사 보고서 (25차)",
+    "date": "2026-03-31",
+    "type": "general"
+  },
+  {
     "name": "audit-report-24.pdf",
     "path": "/docs/report/audit-report-24.pdf",
     "label": "VirtuEx 시스템 감사 보고서 (24차)",
