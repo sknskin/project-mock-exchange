@@ -25,6 +25,9 @@ import { Request, Response } from 'express';
 import * as path from 'path';
 import { ProxyService } from './proxy.service';
 import { JwtAuthGuard, Public, OptionalAuth } from '../auth/jwt-auth.guard';
+// MISC-L-01: 관리자 전용 엔드포인트에 AdminRolesGuard 적용
+// MISC-L-01: Apply AdminRolesGuard to admin-only endpoints
+import { AdminRolesGuard } from '../auth/admin-roles.guard';
 import { ChatGateway } from '../gateway/chat.gateway';
 
 @ApiTags('Announcements')
@@ -128,6 +131,8 @@ export class AnnouncementProxyController {
   /** 공지사항 생성을 user-auth로 프록시하고 WebSocket 알림 전송
    * Proxy announcement creation to user-auth and broadcast via WebSocket */
   @Post()
+  // MISC-L-01: 공지사항 생성은 관리자만 가능 / Only admins can create announcements
+  @UseGuards(AdminRolesGuard)
   @ApiOperation({ summary: '공지사항 생성', description: '새 공지사항을 생성합니다. 관리자 권한이 필요합니다' })
   @ApiResponse({ status: 201, description: '공지사항 생성 성공' })
   @ApiResponse({ status: 400, description: '유효성 검사 실패' })
@@ -159,6 +164,8 @@ export class AnnouncementProxyController {
   /** 공지사항 수정을 user-auth로 프록시하고 WebSocket 알림 전송
    * Proxy announcement update to user-auth and broadcast via WebSocket */
   @Put(':id')
+  // MISC-L-01: 공지사항 수정은 관리자만 가능 / Only admins can update announcements
+  @UseGuards(AdminRolesGuard)
   @ApiOperation({ summary: '공지사항 수정', description: '기존 공지사항을 수정합니다. 관리자 권한이 필요합니다' })
   @ApiParam({ name: 'id', description: '공지사항 ID' })
   @ApiResponse({ status: 200, description: '공지사항 수정 성공' })
@@ -196,6 +203,8 @@ export class AnnouncementProxyController {
   /** 공지사항 삭제를 user-auth로 프록시
    * Proxy announcement deletion to user-auth */
   @Delete(':id')
+  // MISC-L-01: 공지사항 삭제는 관리자만 가능 / Only admins can delete announcements
+  @UseGuards(AdminRolesGuard)
   @ApiOperation({ summary: '공지사항 삭제', description: '공지사항을 삭제합니다. 관리자 권한이 필요합니다' })
   @ApiParam({ name: 'id', description: '공지사항 ID' })
   @ApiResponse({ status: 200, description: '공지사항 삭제 성공' })
@@ -220,6 +229,8 @@ export class AnnouncementProxyController {
    * Proxy announcement pin toggle to user-auth */
   // 고정 토글 (Pin toggle)
   @Post(':id/pin')
+  // MISC-L-01: 공지사항 고정 토글은 관리자만 가능 / Only admins can toggle announcement pin
+  @UseGuards(AdminRolesGuard)
   @ApiOperation({ summary: '공지사항 고정 토글', description: '공지사항의 상단 고정 여부를 토글합니다. 관리자 권한이 필요합니다' })
   @ApiParam({ name: 'id', description: '공지사항 ID' })
   @ApiResponse({ status: 200, description: '고정 상태 변경 성공' })
@@ -316,6 +327,8 @@ export class AnnouncementProxyController {
    * Proxy attachment upload to user-auth */
   // 첨부파일 (base64 JSON 본문) (Attachments (base64 JSON body))
   @Post(':id/attachments')
+  // MISC-L-01: 첨부파일 업로드는 관리자만 가능 / Only admins can upload attachments
+  @UseGuards(AdminRolesGuard)
   @ApiOperation({ summary: '첨부파일 업로드', description: '공지사항에 첨부파일을 업로드합니다. base64 인코딩된 JSON 본문으로 전송합니다' })
   @ApiParam({ name: 'id', description: '공지사항 ID' })
   @ApiResponse({ status: 201, description: '첨부파일 업로드 성공' })
@@ -356,6 +369,8 @@ export class AnnouncementProxyController {
   /** 첨부파일 삭제를 user-auth로 프록시
    * Proxy attachment deletion to user-auth */
   @Delete('attachments/:attachmentId')
+  // MISC-L-01: 첨부파일 삭제는 관리자만 가능 / Only admins can delete attachments
+  @UseGuards(AdminRolesGuard)
   @ApiOperation({ summary: '첨부파일 삭제', description: '공지사항의 특정 첨부파일을 삭제합니다' })
   @ApiParam({ name: 'attachmentId', description: '첨부파일 ID' })
   @ApiResponse({ status: 200, description: '첨부파일 삭제 성공' })
