@@ -22,6 +22,9 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiParam }
 import { Request, Response } from 'express';
 import { ProxyService } from './proxy.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+// ERR-M-02: any 타입 대신 타입 안전한 인터페이스 사용
+// ERR-M-02: Use type-safe interface instead of any type casts
+import { AuthenticatedRequest } from './interfaces/authenticated-request.interface';
 
 // 모든 엔드포인트에 JWT 인증 필수 — 포트폴리오는 개인 자산 데이터
 // All endpoints require JWT auth — portfolio contains personal asset data
@@ -43,7 +46,7 @@ export class PortfolioProxyController {
   @ApiResponse({ status: 400, description: '유효성 검사 실패' })
   async deposit(@Body() body: unknown, @Req() req: Request, @Res() res: Response) {
     // JWT에서 추출된 userId를 x-user-id 헤더로 전달 — 서비스 간 인증 / Pass JWT-extracted userId via x-user-id header for inter-service auth
-    const userId = (req as Record<string, any>).user?.id;
+    const userId = (req as AuthenticatedRequest).user?.id;
     const result = await this.proxyService.forward('portfolio', {
       method: 'POST',
       url: '/portfolio/deposit',
@@ -59,7 +62,7 @@ export class PortfolioProxyController {
   @ApiOperation({ summary: '계정 초기화', description: '보유 자산, 거래 내역 삭제 및 잔고를 초기 상태로 리셋합니다' })
   @ApiResponse({ status: 201, description: '초기화 성공' })
   async resetAccount(@Req() req: Request, @Res() res: Response) {
-    const userId = (req as Record<string, any>).user?.id;
+    const userId = (req as AuthenticatedRequest).user?.id;
     const result = await this.proxyService.forward('portfolio', {
       method: 'POST',
       url: '/portfolio/reset',
@@ -75,7 +78,7 @@ export class PortfolioProxyController {
   @ApiResponse({ status: 201, description: '출금 성공' })
   @ApiResponse({ status: 400, description: '잔고 부족 또는 유효성 검사 실패' })
   async withdraw(@Body() body: unknown, @Req() req: Request, @Res() res: Response) {
-    const userId = (req as Record<string, any>).user?.id;
+    const userId = (req as AuthenticatedRequest).user?.id;
     const result = await this.proxyService.forward('portfolio', {
       method: 'POST',
       url: '/portfolio/withdraw',
@@ -91,7 +94,7 @@ export class PortfolioProxyController {
   @ApiOperation({ summary: '잔고 조회', description: '현재 사용자의 잔고를 반환합니다' })
   @ApiResponse({ status: 200, description: '잔고 정보 반환' })
   async getBalance(@Req() req: Request, @Res() res: Response) {
-    const userId = (req as Record<string, any>).user?.id;
+    const userId = (req as AuthenticatedRequest).user?.id;
     const result = await this.proxyService.forward('portfolio', {
       method: 'GET',
       url: '/portfolio/balance',
@@ -106,7 +109,7 @@ export class PortfolioProxyController {
   @ApiOperation({ summary: '보유 자산 조회', description: '현재 사용자의 보유 자산 목록을 반환합니다' })
   @ApiResponse({ status: 200, description: '보유 자산 목록 반환' })
   async getHoldings(@Req() req: Request, @Res() res: Response) {
-    const userId = (req as Record<string, any>).user?.id;
+    const userId = (req as AuthenticatedRequest).user?.id;
     const result = await this.proxyService.forward('portfolio', {
       method: 'GET',
       url: '/portfolio/holdings',
@@ -121,7 +124,7 @@ export class PortfolioProxyController {
   @ApiOperation({ summary: '포트폴리오 요약', description: '총 자산, 수익률 등 포트폴리오 요약 정보를 반환합니다' })
   @ApiResponse({ status: 200, description: '포트폴리오 요약 반환' })
   async getSummary(@Req() req: Request, @Res() res: Response) {
-    const userId = (req as Record<string, any>).user?.id;
+    const userId = (req as AuthenticatedRequest).user?.id;
     const result = await this.proxyService.forward('portfolio', {
       method: 'GET',
       url: '/portfolio/summary',
@@ -136,7 +139,7 @@ export class PortfolioProxyController {
   @ApiOperation({ summary: '자산 평가 조회', description: '보유 자산의 현재 평가액을 반환합니다' })
   @ApiResponse({ status: 200, description: '자산 평가 반환' })
   async getValuation(@Req() req: Request, @Res() res: Response) {
-    const userId = (req as Record<string, any>).user?.id;
+    const userId = (req as AuthenticatedRequest).user?.id;
     const result = await this.proxyService.forward('portfolio', {
       method: 'GET',
       url: '/portfolio/valuation',
@@ -156,7 +159,7 @@ export class PortfolioProxyController {
     @Req() req: Request,
     @Res() res: Response,
   ) {
-    const currentUserId = (req as Record<string, any>).user?.id;
+    const currentUserId = (req as AuthenticatedRequest).user?.id;
     const result = await this.proxyService.forward('portfolio', {
       method: 'GET',
       url: '/portfolio/leaderboard',
@@ -237,6 +240,47 @@ export class PortfolioProxyController {
       method: 'GET',
       url: `/portfolio/public/${targetUserId}`,
     });
+
+    /**
+     * AUTH-L-01: 공개 포트폴리오에서 절대 수량 마스킹 — 비율 기반 배분 + 범주로 변환
+     * AUTH-L-01: Mask absolute quantities in public portfolio — convert to percentage allocation + size category
+     */
+    try {
+      const data = result.data as Record<string, unknown>;
+      if (data?.success && Array.isArray(data?.data)) {
+        interface PublicHolding { quantity?: number; value?: number; allocation?: number; sizeCategory?: string; [key: string]: unknown }
+        const holdings = data.data as PublicHolding[];
+        // 전체 가치 합산으로 비율 계산 / Calculate percentages from total value
+        const totalValue = holdings.reduce((sum, h) => sum + (Number(h.value) || 0), 0);
+
+        // AUTH-L-01: 수량 범주 분류 기준값 (Large ≥30%, Medium ≥10%, Small <10%)
+        // AUTH-L-01: Size category thresholds (Large ≥30%, Medium ≥10%, Small <10%)
+        const LARGE_THRESHOLD = 30;
+        const MEDIUM_THRESHOLD = 10;
+
+        data.data = holdings.map((h) => {
+          const value = Number(h.value) || 0;
+          const allocation = totalValue > 0 ? Math.round((value / totalValue) * 10000) / 100 : 0;
+          let sizeCategory: string;
+          if (allocation >= LARGE_THRESHOLD) {
+            sizeCategory = 'large';
+          } else if (allocation >= MEDIUM_THRESHOLD) {
+            sizeCategory = 'medium';
+          } else {
+            sizeCategory = 'small';
+          }
+          // 절대 수량(quantity)과 원본 value를 제거하고 비율/범주로 대체
+          // Remove absolute quantity and raw value, replace with allocation/category
+          const { quantity: _qty, value: _val, ...rest } = h;
+          return { ...rest, allocation, sizeCategory };
+        });
+      }
+    } catch (error) {
+      // AUTH-L-01: 마스킹 실패 시 원본 데이터 반환하되 에러 로깅
+      // AUTH-L-01: Return original data on masking failure, but log error
+      this.logger.warn(`Public portfolio masking failed: ${error instanceof Error ? error.message : 'unknown'}`);
+    }
+
     return res.status(result.status).json(result.data);
   }
 
@@ -253,7 +297,7 @@ export class PortfolioProxyController {
     @Req() req: Request,
     @Res() res: Response,
   ) {
-    const userId = (req as Record<string, any>).user?.id;
+    const userId = (req as AuthenticatedRequest).user?.id;
     const result = await this.proxyService.forward('portfolio', {
       method: 'GET',
       url: '/portfolio/transactions',
@@ -276,7 +320,7 @@ export class PortfolioProxyController {
     @Req() req: Request,
     @Res() res: Response,
   ) {
-    const userId = (req as Record<string, any>).user?.id;
+    const userId = (req as AuthenticatedRequest).user?.id;
 
     // user-auth에서 팔로잉 목록 조회 / Get following IDs from user-auth
     let followingIds = '';
@@ -293,7 +337,9 @@ export class PortfolioProxyController {
         const inner = followingData.data as Record<string, unknown>;
         const items = inner?.items ?? inner;
         if (Array.isArray(items)) {
-          followingIds = items.map((f: any) => f.followeeId ?? f.id ?? f).filter(Boolean).join(',');
+          // ERR-M-02: any 타입을 구체적 인터페이스로 대체
+          // ERR-M-02: Replace any with typed interface
+          followingIds = items.map((f: Record<string, unknown>) => f.followeeId ?? f.id ?? f).filter(Boolean).join(',');
         }
       }
     } catch (error) {
@@ -311,24 +357,29 @@ export class PortfolioProxyController {
 
     // 활동 데이터에 사용자 이름 enrichment / Enrich activity data with user names
     try {
-      const feedData = result.data as Record<string, any>;
-      const activities = feedData?.data?.data ?? feedData?.data?.activities ?? [];
+      // ERR-M-02: any 타입을 구체적 인터페이스로 대체
+      // ERR-M-02: Replace any with typed interface
+      interface FeedActivity { userId?: string; username?: string; name?: string; [key: string]: unknown }
+      interface FeedUserInfo { id: string; username?: string; name?: string }
+      const feedData = result.data as Record<string, Record<string, unknown>>;
+      const innerData = feedData?.data as Record<string, unknown> | undefined;
+      const activities = ((innerData?.data ?? innerData?.activities) ?? []) as FeedActivity[];
       if (Array.isArray(activities) && activities.length > 0) {
-        const userIds = [...new Set(activities.map((a: any) => a.userId).filter(Boolean))];
+        const userIds = [...new Set(activities.map((a: FeedActivity) => a.userId).filter(Boolean))];
         if (userIds.length > 0) {
           const usersResult = await this.proxyService.forward('user-auth', {
             method: 'POST',
             url: '/users/by-ids',
             data: { ids: userIds },
           });
-          const usersData = usersResult.data as Record<string, any>;
-          const users = usersData?.data ?? [];
+          const usersData = usersResult.data as Record<string, unknown>;
+          const users = (usersData?.data ?? []) as FeedUserInfo[];
           const userMap = new Map<string, { username: string; name: string }>();
           if (Array.isArray(users)) {
-            users.forEach((u: any) => userMap.set(u.id, { username: u.username, name: u.name }));
+            users.forEach((u: FeedUserInfo) => userMap.set(u.id, { username: u.username ?? '', name: u.name ?? '' }));
           }
-          activities.forEach((a: any) => {
-            const user = userMap.get(a.userId);
+          activities.forEach((a: FeedActivity) => {
+            const user = userMap.get(a.userId ?? '');
             if (user) {
               a.username = user.username;
               a.name = user.name;
@@ -373,7 +424,7 @@ export class PortfolioProxyController {
   @ApiOperation({ summary: '관심종목 조회', description: '관심종목 심볼 목록을 반환합니다' })
   @ApiResponse({ status: 200, description: '관심종목 목록 반환' })
   async getWatchlist(@Req() req: Request, @Res() res: Response) {
-    const userId = (req as Record<string, any>).user?.id;
+    const userId = (req as AuthenticatedRequest).user?.id;
     const result = await this.proxyService.forward('portfolio', {
       method: 'GET',
       url: '/portfolio/watchlist',
@@ -392,7 +443,7 @@ export class PortfolioProxyController {
     @Req() req: Request,
     @Res() res: Response,
   ) {
-    const userId = (req as Record<string, any>).user?.id;
+    const userId = (req as AuthenticatedRequest).user?.id;
     const result = await this.proxyService.forward('portfolio', {
       method: 'POST',
       url: `/portfolio/watchlist/${symbol}`,
@@ -411,7 +462,7 @@ export class PortfolioProxyController {
     @Req() req: Request,
     @Res() res: Response,
   ) {
-    const userId = (req as Record<string, any>).user?.id;
+    const userId = (req as AuthenticatedRequest).user?.id;
     const result = await this.proxyService.forward('portfolio', {
       method: 'DELETE',
       url: `/portfolio/watchlist/${symbol}`,
