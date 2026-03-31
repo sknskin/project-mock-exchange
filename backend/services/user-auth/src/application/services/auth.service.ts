@@ -667,30 +667,51 @@ export class AuthService {
    * Reset password — save new password after SMS verification */
   async resetPassword(sessionId: string, newPassword: string, confirmPassword: string): Promise<void> {
     if (newPassword !== confirmPassword) {
+      // AUD-M-01: 비밀번호 재설정 실패 감사 로깅 — 비밀번호 불일치
+      // AUD-M-01: Password reset failure audit log — password mismatch
+      this.logger.warn(`Password reset failed: password mismatch (sessionId=${sessionId})`);
       throw new BadRequestException('ERR_PASSWORD_MISMATCH: Passwords do not match.');
     }
     if (newPassword.length < 8) {
+      // AUD-M-01: 비밀번호 재설정 실패 감사 로깅 — 비밀번호 길이 부족
+      // AUD-M-01: Password reset failure audit log — password too short
+      this.logger.warn(`Password reset failed: password too short (sessionId=${sessionId})`);
       throw new BadRequestException('ERR_PASSWORD_TOO_SHORT: Password must be at least 8 characters.');
     }
     if (!/[a-z]/.test(newPassword)) {
+      // AUD-M-01: 비밀번호 재설정 실패 감사 로깅 — 소문자 미포함
+      // AUD-M-01: Password reset failure audit log — no lowercase letter
+      this.logger.warn(`Password reset failed: no lowercase letter (sessionId=${sessionId})`);
       throw new BadRequestException('ERR_PASSWORD_NO_LOWERCASE: Password must contain a lowercase letter.');
     }
     if (!/[0-9]/.test(newPassword)) {
+      // AUD-M-01: 비밀번호 재설정 실패 감사 로깅 — 숫자 미포함
+      // AUD-M-01: Password reset failure audit log — no digit
+      this.logger.warn(`Password reset failed: no digit (sessionId=${sessionId})`);
       throw new BadRequestException('ERR_PASSWORD_NO_DIGIT: Password must contain a digit.');
     }
     if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(newPassword)) {
+      // AUD-M-01: 비밀번호 재설정 실패 감사 로깅 — 특수문자 미포함
+      // AUD-M-01: Password reset failure audit log — no special character
+      this.logger.warn(`Password reset failed: no special character (sessionId=${sessionId})`);
       throw new BadRequestException('ERR_PASSWORD_NO_SPECIAL: Password must contain a special character.');
     }
 
     const sessionKey = `reset:session:${sessionId}`;
     const raw = await this.redis.get(sessionKey);
     if (!raw) {
+      // AUD-M-01: 비밀번호 재설정 실패 감사 로깅 — 세션 만료
+      // AUD-M-01: Password reset failure audit log — session expired
+      this.logger.warn(`Password reset failed: session expired (sessionId=${sessionId})`);
       throw new UnauthorizedException('ERR_SESSION_EXPIRED: Session has expired.');
     }
 
     // M-07: Redis 세션 JSON 파싱 오류 방어 / Guard against corrupted Redis session JSON
     const session = this.safeParseSession<{ userId: string; phone: string; verified: boolean }>(raw, sessionKey);
     if (!session.verified) {
+      // AUD-M-01: 비밀번호 재설정 실패 감사 로깅 — SMS 미인증
+      // AUD-M-01: Password reset failure audit log — SMS not verified
+      this.logger.warn(`Password reset failed: SMS not verified (userId=${session.userId})`);
       throw new UnauthorizedException('ERR_SMS_NOT_VERIFIED: SMS verification is required.');
     }
 
