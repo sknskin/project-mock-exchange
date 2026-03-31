@@ -31,6 +31,10 @@ export function useWebSocket(
   // 소켓 연결 — 인증 상태 변경 시 재생성
   // Socket connection — recreate when authentication state changes
   useEffect(() => {
+    // Strict Mode 이중 호출 감지용 — cleanup 시 true로 설정되어 연결 시도를 조기 중단
+    // Strict Mode double-invoke guard — set to true on cleanup to abort connection attempt
+    let disposed = false;
+
     const socket: Socket = io(`${WS_URL}/prices`, {
       transports: ['websocket'],
       reconnection: true,
@@ -39,6 +43,7 @@ export function useWebSocket(
       randomizationFactor: 0.5,
       reconnectionAttempts: Infinity,
       withCredentials: true,
+      autoConnect: false,
     });
 
     socket.on('connect', () => {
@@ -69,7 +74,14 @@ export function useWebSocket(
 
     socketRef.current = socket;
 
+    // autoConnect: false이므로 수동으로 연결 시작 — disposed 체크 후
+    // autoConnect: false, so manually connect — after disposed check
+    if (!disposed) {
+      socket.connect();
+    }
+
     return () => {
+      disposed = true;
       socket.disconnect();
       socketRef.current = null;
     };

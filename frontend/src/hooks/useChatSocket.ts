@@ -407,10 +407,14 @@ function connectIfNeeded(token: string, qc: QueryClient) {
     // 재연결 시 2초 대기 (서버 부하 방지) / Wait 2s before reconnection (prevents server overload)
     reconnectionDelay: 2000,
     reconnectionAttempts: 10,
+    autoConnect: false,
   });
 
   bindListeners(s, qc);
   sharedSocket = s;
+  // 리스너 바인딩 후 수동 연결 — autoConnect:false로 Strict Mode 이중 호출 시 불필요한 연결 방지
+  // Manual connect after listeners bound — autoConnect:false prevents unnecessary connection on Strict Mode double-invoke
+  s.connect();
 }
 
 /**
