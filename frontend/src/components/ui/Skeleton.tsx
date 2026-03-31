@@ -16,12 +16,13 @@ interface SkeletonProps {
   className?: string;
 }
 
-// 기본 스켈레톤 블록 — animate-pulse로 깜빡임 효과 / Base skeleton block — flicker effect via animate-pulse
+// LD-M-03: 기본 스켈레톤 블록 — 일관된 기본 크기(h-4) + animate-pulse로 깜빡임 효과
+// LD-M-03: Base skeleton block — consistent default height (h-4) + flicker effect via animate-pulse
 export default function Skeleton({ className }: SkeletonProps) {
   return (
     <div
       className={cn(
-        'bg-bg-secondary rounded animate-pulse',
+        'bg-bg-secondary rounded animate-pulse h-4',
         className,
       )}
     />

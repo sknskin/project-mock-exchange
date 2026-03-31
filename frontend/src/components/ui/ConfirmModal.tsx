@@ -7,10 +7,15 @@
  */
 'use client';
 
-import { memo, useEffect, useRef } from 'react';
+import { memo, useEffect, useRef, useState, useCallback } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { useScrollLock } from '@/hooks/useScrollLock';
+import { cn } from '@/lib/format';
+
+// ANI-M-04: 닫기 애니메이션 지속시간 (ms)
+// ANI-M-04: Close animation duration (ms)
+const CLOSE_ANIMATION_DURATION = 200;
 
 interface ConfirmModalProps {
   isOpen: boolean;
@@ -37,20 +42,43 @@ function ConfirmModal({
 }: ConfirmModalProps) {
   const { t } = useTranslation();
   const modalRef = useRef<HTMLDivElement>(null);
-  useFocusTrap(modalRef, isOpen);
+
+  // ANI-M-04: 닫기 애니메이션 상태 / Close animation state
+  const [closing, setClosing] = useState(false);
+  const [visible, setVisible] = useState(false);
+
+  useFocusTrap(modalRef, isOpen && !closing);
   useScrollLock(isOpen);
+
+  useEffect(() => {
+    if (isOpen) {
+      setVisible(true);
+      setClosing(false);
+    }
+  }, [isOpen]);
+
+  // ANI-M-04: 닫기 애니메이션 트리거 후 onClose 호출
+  // ANI-M-04: Trigger close animation then call onClose
+  const handleClose = useCallback(() => {
+    setClosing(true);
+    setTimeout(() => {
+      setClosing(false);
+      setVisible(false);
+      onClose();
+    }, CLOSE_ANIMATION_DURATION);
+  }, [onClose]);
 
   // ESC 키로 닫기 / Close on Escape key
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') handleClose();
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => { document.removeEventListener('keydown', handleKeyDown); };
-  }, [isOpen, onClose]);
+  }, [isOpen, handleClose]);
 
-  if (!isOpen) return null;
+  if (!isOpen && !visible) return null;
 
   const confirmBg = confirmVariant === 'danger'
     ? 'bg-danger hover:bg-danger/90'
@@ -58,11 +86,11 @@ function ConfirmModal({
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center" role="dialog" aria-modal="true" aria-labelledby="confirm-modal-title" ref={modalRef}>
-      {/* 오버레이 / Overlay */}
-      <div className="absolute inset-0 bg-black/60 animate-modal-backdrop" onClick={onClose} />
+      {/* ANI-M-04: 오버레이 — 닫기 시 페이드아웃 / Overlay — fade-out on close */}
+      <div className={cn('absolute inset-0 bg-black/60', closing ? 'animate-modal-backdrop-out' : 'animate-modal-backdrop')} onClick={handleClose} />
 
-      {/* 모달 본체 / Modal body */}
-      <div className="relative bg-bg-primary border border-border rounded-2xl p-6 w-[min(320px,calc(100vw-2rem))] shadow-2xl animate-modal-content">
+      {/* ANI-M-04: 모달 본체 — 열림/닫힘 애니메이션 / Modal body — open/close animation */}
+      <div className={cn('relative bg-bg-primary border border-border rounded-2xl p-6 w-[min(320px,calc(100vw-2rem))] shadow-2xl', closing ? 'animate-modal-content-out' : 'animate-modal-content')}>
         <h3 id="confirm-modal-title" className="text-[16px] font-bold text-text-primary text-center">
           {title}
         </h3>
@@ -80,7 +108,7 @@ function ConfirmModal({
             {loading ? '...' : (confirmLabel || t('modal.confirm'))}
           </button>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             disabled={loading}
             className="flex-1 h-11 rounded-xl border border-border text-[14px] font-semibold text-text-secondary hover:bg-bg-secondary transition-colors"
           >

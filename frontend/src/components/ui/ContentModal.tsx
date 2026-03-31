@@ -7,13 +7,18 @@
  */
 'use client';
 
-import { memo, useEffect, useCallback, useRef, type ComponentPropsWithoutRef } from 'react';
+import { memo, useEffect, useCallback, useRef, useState, type ComponentPropsWithoutRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { X } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { useScrollLock } from '@/hooks/useScrollLock';
+import { cn } from '@/lib/format';
+
+// ANI-M-04: 닫기 애니메이션 지속시간 (ms)
+// ANI-M-04: Close animation duration (ms)
+const CLOSE_ANIMATION_DURATION = 200;
 
 /* 테이블을 스크롤 가능한 래퍼로 감싸기 (Wrap table in scrollable wrapper for mobile) */
 function TableWrapper(props: ComponentPropsWithoutRef<'table'>) {
@@ -35,16 +40,38 @@ interface ContentModalProps {
 function ContentModal({ isOpen, onClose, title, content, type }: ContentModalProps) {
   const { t } = useTranslation();
   const modalRef = useRef<HTMLDivElement>(null);
-  useFocusTrap(modalRef, isOpen);
+
+  // ANI-M-04: 닫기 애니메이션 상태 / Close animation state
+  const [closing, setClosing] = useState(false);
+  const [visible, setVisible] = useState(false);
+
+  useFocusTrap(modalRef, isOpen && !closing);
+  useScrollLock(isOpen);
+
+  useEffect(() => {
+    if (isOpen) {
+      setVisible(true);
+      setClosing(false);
+    }
+  }, [isOpen]);
+
+  // ANI-M-04: 닫기 애니메이션 트리거 후 onClose 호출
+  // ANI-M-04: Trigger close animation then call onClose
+  const handleClose = useCallback(() => {
+    setClosing(true);
+    setTimeout(() => {
+      setClosing(false);
+      setVisible(false);
+      onClose();
+    }, CLOSE_ANIMATION_DURATION);
+  }, [onClose]);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') handleClose();
     },
-    [onClose],
+    [handleClose],
   );
-
-  useScrollLock(isOpen);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -52,18 +79,20 @@ function ContentModal({ isOpen, onClose, title, content, type }: ContentModalPro
     return () => { document.removeEventListener('keydown', handleKeyDown); };
   }, [isOpen, handleKeyDown]);
 
-  if (!isOpen) return null;
+  if (!isOpen && !visible) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" role="dialog" aria-modal="true" aria-labelledby="content-modal-title" ref={modalRef}>
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm cursor-pointer animate-modal-backdrop" onClick={onClose} />
+      {/* ANI-M-04: 백드롭 — 닫기 시 페이드아웃 / Backdrop — fade-out on close */}
+      <div className={cn('absolute inset-0 bg-black/60 backdrop-blur-sm cursor-pointer', closing ? 'animate-modal-backdrop-out' : 'animate-modal-backdrop')} onClick={handleClose} />
 
-      <div className="relative w-full h-full md:h-auto md:max-w-[960px] md:max-h-[85vh] bg-bg-primary md:rounded-2xl border border-border flex flex-col overflow-hidden shadow-2xl max-w-[100vw] animate-modal-content">
+      {/* ANI-M-04: 모달 본체 — 열림/닫힘 애니메이션 / Modal body — open/close animation */}
+      <div className={cn('relative w-full h-full md:h-auto md:max-w-[960px] md:max-h-[85vh] bg-bg-primary md:rounded-2xl border border-border flex flex-col overflow-hidden shadow-2xl max-w-[100vw]', closing ? 'animate-modal-content-out' : 'animate-modal-content')}>
         {/* 헤더 / Header */}
         <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-border shrink-0">
           <h2 id="content-modal-title" className="text-[15px] sm:text-[17px] font-bold text-text-primary truncate mr-2">{title}</h2>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             aria-label="Close"
             className="p-2 text-text-tertiary hover:text-text-primary transition-colors rounded-lg hover:bg-bg-secondary cursor-pointer"
           >
@@ -89,7 +118,7 @@ function ContentModal({ isOpen, onClose, title, content, type }: ContentModalPro
         {/* 푸터 / Footer */}
         <div className="flex justify-center px-4 sm:px-6 py-3 sm:py-4 border-t border-border shrink-0">
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="px-6 py-2.5 text-[14px] font-bold text-white bg-danger hover:bg-danger/85 rounded-lg transition-colors cursor-pointer"
           >
             {t('modal.close')}
