@@ -52,13 +52,26 @@ export class PriceGateway implements OnGatewayConnection, OnGatewayDisconnect, O
     this.logger.log('Price WebSocket gateway initialized');
   }
 
+  /**
+   * 쿠키 문자열에서 특정 이름의 값을 파싱합니다.
+   * Parses a specific cookie value from a cookie header string.
+   */
+  private parseCookieToken(cookieHeader: string | undefined): string | undefined {
+    if (!cookieHeader) return undefined;
+    const match = cookieHeader.split(';').map((c) => c.trim()).find((c) => c.startsWith('access_token='));
+    return match ? match.split('=')[1] : undefined;
+  }
+
   async handleConnection(client: Socket) {
     const clientIp = client.handshake.address || 'unknown';
 
     try {
+      // SEC-H-03: httpOnly 쿠키에서도 토큰 추출 — 프론트엔드에서 토큰을 JS로 전달하지 않아도 인증 가능
+      // SEC-H-03: Extract token from httpOnly cookie — enables auth without passing token via JS
       const token =
         (client.handshake.auth?.token as string) ||
-        (client.handshake.headers?.authorization as string)?.replace('Bearer ', '');
+        (client.handshake.headers?.authorization as string)?.replace('Bearer ', '') ||
+        this.parseCookieToken(client.handshake.headers?.cookie as string);
 
       if (token) {
         const payload = await this.jwtService.verifyAsync(token);
