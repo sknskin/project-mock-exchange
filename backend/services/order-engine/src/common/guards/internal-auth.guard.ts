@@ -12,6 +12,15 @@
 import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from '@nestjs/common';
 import { timingSafeEqual } from 'crypto';
 
+/**
+ * SVC-L-01: INTERNAL_SERVICE_SECRET 순환 정책
+ * - 최소 90일마다 비밀키를 교체합니다.
+ * - 교체 시 모든 마이크로서비스(.env)를 동시에 업데이트한 후 롤링 재시작합니다.
+ *
+ * SVC-L-01: INTERNAL_SERVICE_SECRET rotation policy
+ * - Rotate the secret at least every 90 days.
+ * - Update all microservice .env files simultaneously, then perform a rolling restart.
+ */
 @Injectable()
 export class InternalAuthGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
