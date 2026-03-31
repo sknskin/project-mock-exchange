@@ -140,10 +140,18 @@ export class OrderProxyController {
             link: `/orders`,
           },
           headers: { Authorization: req.headers.authorization || '' },
-        }).catch((e) => new Logger('OrderProxy').warn('Notification persist failed', e.message));
+        }).catch((e) => {
+          // ERR-M-01: 내부적으로만 에러 상세 로깅 — 클라이언트에 원본 메시지 노출 방지
+          // ERR-M-01: Log error details internally only — prevent raw message exposure to client
+          new Logger('OrderProxy').warn(
+            `Notification persist failed: ${e instanceof Error ? e.message : 'unknown'}`,
+          );
+        });
       }
     } catch (error) {
       // ERR-L-02: 최선의 노력 알림 — 실패 시에도 에러 로깅 (Best-effort notification — log errors on failure)
+      // ERR-M-01: 내부 로깅만 수행 — 에러 메시지를 클라이언트 응답에 포함하지 않음
+      // ERR-M-01: Internal logging only — do not include error message in client response
       new Logger('OrderProxy').warn(
         `sendTradeNotification error: ${error instanceof Error ? error.message : 'unknown'}`,
       );
