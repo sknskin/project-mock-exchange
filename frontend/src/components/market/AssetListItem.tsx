@@ -49,12 +49,29 @@ function AssetListItem({ asset, rank, isWatchlisted, onToggleWatchlist }: AssetL
   const live = useLivePrice(asset.symbol);
   const displayAsset = useMemo(() => {
     if (!live) return asset;
+
+    // 기준가 역산 (전일 종가 등) — 실시간 가격에서 변동률 직접 계산용
+    // Reverse-calculate base price (prev close) — for computing changePercent from live price
+    const basePrice = asset.currentPrice - (asset.changeAmount ?? 0);
+
+    // WebSocket이 changePercent를 0으로 보내거나 누락하면 직접 계산
+    // If WebSocket sends changePercent=0 or omits it, compute from live price
+    const computedChangeAmount = live.price - basePrice;
+    const computedChangePercent = basePrice !== 0
+      ? (computedChangeAmount / basePrice) * 100
+      : 0;
+
+    // live 값이 유효하면(0이 아닌) 사용, 아니면 직접 계산값 사용
+    // Use live value if valid (non-zero), otherwise use computed value
+    const finalChangePercent = live.changePercent !== 0 ? live.changePercent : computedChangePercent;
+    const finalChangeAmount = live.changeAmount !== 0 ? live.changeAmount : computedChangeAmount;
+
     return {
       ...asset,
       currentPrice: live.price,
       price: live.price,
-      changePercent: live.changePercent ?? asset.changePercent,
-      changeAmount: live.changeAmount ?? asset.changeAmount,
+      changePercent: finalChangePercent,
+      changeAmount: finalChangeAmount,
       volume: live.volume || asset.volume,
       high24h: live.high24h || asset.high24h,
       low24h: live.low24h || asset.low24h,
@@ -63,7 +80,6 @@ function AssetListItem({ asset, rank, isWatchlisted, onToggleWatchlist }: AssetL
 
   const isRise = displayAsset.changePercent > 0;
   const isFall = displayAsset.changePercent < 0;
-  const isExtreme = Math.abs(displayAsset.changePercent) >= 5;
 
   const { display } = useCurrencyDisplay();
   const { query: { data: rateData } } = useExchangeRate();
@@ -72,15 +88,22 @@ function AssetListItem({ asset, rank, isWatchlisted, onToggleWatchlist }: AssetL
   const prevPriceRef = useRef(displayAsset.currentPrice);
   const [flashClass, setFlashClass] = useState('');
 
+
+  // 현재가가 실제로 변동된 경우에만 배경 플래시 (동일 금액 → 플래시 안 함)
+  // Only flash when price actually changes (same price → no flash)
   useEffect(() => {
-    if (prevPriceRef.current !== displayAsset.currentPrice) {
-      const cls = displayAsset.currentPrice > prevPriceRef.current ? 'tick-flash-rise' : 'tick-flash-fall';
+    const prev = prevPriceRef.current;
+    const curr = displayAsset.currentPrice;
+    if (prev !== curr && prev !== 0) {
+      const cls = curr > prev ? 'tick-flash-rise' : 'tick-flash-fall';
       setFlashClass(cls);
-      prevPriceRef.current = displayAsset.currentPrice;
       const timer = setTimeout(() => setFlashClass(''), 1000);
+      prevPriceRef.current = curr;
       return () => clearTimeout(timer);
     }
+    prevPriceRef.current = curr;
   }, [displayAsset.currentPrice]);
+
 
   return (
     <Link
@@ -113,7 +136,7 @@ function AssetListItem({ asset, rank, isWatchlisted, onToggleWatchlist }: AssetL
       )}
 
       {/* 아이콘 + 이름 + 심볼 / Icon + Name + Symbol */}
-      <div className="flex items-center gap-2 sm:gap-3 min-w-0 w-[90px] sm:w-[120px] md:w-[130px] lg:w-[160px] shrink-0">
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0 w-[150px] sm:w-[160px] md:w-[180px] lg:w-[220px] shrink-0">
         <div
           className={cn(
             'w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-[10px] sm:text-[11px] font-bold text-white shrink-0',
@@ -136,19 +159,20 @@ function AssetListItem({ asset, rank, isWatchlisted, onToggleWatchlist }: AssetL
       </div>
 
       {/* 여백 / Spacer */}
-      <div className="flex-1 min-w-4" />
+      {/* 종목명-현재가 간 간격 / Gap between name and price */}
+      <div className="flex-1" />
 
       {/* 현재가 / Price */}
       {/* 현재가 — 단순 텍스트 렌더 (AnimatedNumber 제거로 성능 대폭 개선)
            Price — plain text render (removed AnimatedNumber for major perf improvement) */}
-      <span className={cn('w-[80px] sm:w-[110px] lg:w-[130px] text-right text-[11px] sm:text-[13px] md:text-[14px] font-semibold text-text-primary tabular-nums shrink-0 truncate', flashClass)} title={formatPriceDisplay(displayAsset.currentPrice, displayAsset.symbol, display, rate)}>
+      <span className={cn('sm:w-[110px] lg:w-[130px] text-right text-[11px] sm:text-[13px] md:text-[14px] font-semibold text-text-primary tabular-nums shrink-0', flashClass)}>
         {formatPriceDisplay(displayAsset.currentPrice, displayAsset.symbol, display, rate)}
       </span>
 
       {/* 변동 금액 / Change amount */}
       <span
         className={cn(
-          'w-[85px] md:w-[100px] lg:w-[110px] text-right text-[12px] md:text-[13px] font-medium tabular-nums hidden sm:block shrink-0 truncate',
+          'w-[85px] md:w-[100px] lg:w-[110px] text-right text-[12px] md:text-[13px] font-medium tabular-nums hidden sm:block shrink-0',
           isRise && 'text-rise',
           isFall && 'text-fall',
           !isRise && !isFall && 'text-text-quaternary',
@@ -159,13 +183,12 @@ function AssetListItem({ asset, rank, isWatchlisted, onToggleWatchlist }: AssetL
       </span>
 
       {/* 변동률 / Change percent */}
-      <div className="w-[58px] sm:w-[78px] lg:w-[90px] flex justify-end shrink-0">
+      <div className="sm:w-[78px] lg:w-[90px] flex justify-end shrink-0 ml-1.5 sm:ml-0">
         <span
           className={cn(
-            'text-[11px] sm:text-[13px] font-medium tabular-nums truncate',
-            isExtreme && (isRise ? 'font-semibold bg-rise/10 text-rise px-1.5 sm:px-2 py-0.5 rounded' : 'font-semibold bg-fall/10 text-fall px-1.5 sm:px-2 py-0.5 rounded'),
-            !isExtreme && isRise && 'text-rise',
-            !isExtreme && isFall && 'text-fall',
+            'text-[11px] sm:text-[13px] font-medium tabular-nums whitespace-nowrap',
+            isRise && 'text-rise',
+            isFall && 'text-fall',
             !isRise && !isFall && 'text-text-quaternary',
           )}
           title={formatPercent(displayAsset.changePercent)}

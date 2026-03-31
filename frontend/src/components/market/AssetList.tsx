@@ -328,15 +328,15 @@ export default function AssetList({ assets, period, onPeriodChange, mainTab = 'r
         <span className="w-6 sm:w-8 text-center shrink-0 mr-2 sm:mr-3">{t('table.rank')}</span>
         {/* 별표(관심종목) 아이콘 너비만큼 오프셋 — 종목명이 아이콘이 아닌 이름 위에 정렬되도록 */}
         {/* Offset by watchlist star icon width — aligns header above the name, not the star */}
-        <span className="w-[90px] sm:w-[120px] md:w-[130px] lg:w-[160px] shrink-0 truncate ml-7 sm:ml-8">
+        <span className="w-[150px] sm:w-[160px] md:w-[180px] lg:w-[220px] shrink-0 truncate ml-7 sm:ml-8">
           {t('table.name')} · <span className="text-text-quaternary/70">{timeStr}</span>
         </span>
-        <div className="flex-1 min-w-4" />
-        <span className="w-[80px] sm:w-[110px] lg:w-[130px] text-right shrink-0 truncate">{t('table.price')}</span>
-        <span className="w-[85px] md:w-[100px] lg:w-[110px] text-right shrink-0 hidden sm:block truncate">
+        <div className="flex-1" />
+        <span className="sm:w-[110px] lg:w-[130px] text-right shrink-0">{t('table.price')}</span>
+        <span className="w-[85px] md:w-[100px] lg:w-[110px] text-right shrink-0 hidden sm:block">
           {changeLabel}
         </span>
-        <span className="w-[58px] sm:w-[78px] lg:w-[90px] text-right shrink-0 truncate">{t('table.changeRate')}</span>
+        <span className="sm:w-[78px] lg:w-[90px] text-right shrink-0 ml-1.5 sm:ml-0">{t('table.changeRate')}</span>
         <span className="w-[95px] text-right hidden xl:block shrink-0">
           {period === 'realtime' ? t('table.highRealtime') : t('table.highPeriod')}
         </span>
