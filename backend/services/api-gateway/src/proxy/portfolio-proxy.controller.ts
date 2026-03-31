@@ -16,6 +16,7 @@ import {
   Req,
   Res,
   UseGuards,
+  Logger,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiParam } from '@nestjs/swagger';
 import { Request, Response } from 'express';
@@ -29,6 +30,9 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 @Controller('api/portfolio')
 @UseGuards(JwtAuthGuard)
 export class PortfolioProxyController {
+  // ERR-L-02: 에러 로깅용 Logger 인스턴스 / Logger instance for error logging
+  private readonly logger = new Logger('PortfolioProxy');
+
   constructor(private readonly proxyService: ProxyService) {}
 
   /** 가상 자금 입금 요청을 portfolio 서비스로 프록시
@@ -203,8 +207,10 @@ export class PortfolioProxyController {
               };
             });
           }
-        } catch {
-          // Fallback: strip userId even without names
+        } catch (error) {
+          // ERR-L-02: Fallback: strip userId even without names — 에러 로깅 추가
+          // ERR-L-02: Fallback: strip userId even without names — added error logging
+          this.logger.warn(`Leaderboard enrichment failed: ${error instanceof Error ? error.message : 'unknown'}`);
           data.data = entries.map((entry, idx) => {
             const isMe = currentUserId && entry.userId === currentUserId;
             const { userId: _uid, ...rest } = entry;
@@ -290,8 +296,10 @@ export class PortfolioProxyController {
           followingIds = items.map((f: any) => f.followeeId ?? f.id ?? f).filter(Boolean).join(',');
         }
       }
-    } catch {
-      // 팔로잉 목록 조회 실패 시 빈 피드 반환 / Return empty feed on following list failure
+    } catch (error) {
+      // ERR-L-02: 팔로잉 목록 조회 실패 시 빈 피드 반환 — 에러 로깅 추가
+      // ERR-L-02: Return empty feed on following list failure — added error logging
+      this.logger.warn(`Following list fetch failed: ${error instanceof Error ? error.message : 'unknown'}`);
     }
 
     const result = await this.proxyService.forward('portfolio', {
@@ -328,8 +336,10 @@ export class PortfolioProxyController {
           });
         }
       }
-    } catch {
-      // enrichment 실패 시 이름 없이 반환 / Return without names if enrichment fails
+    } catch (error) {
+      // ERR-L-02: enrichment 실패 시 이름 없이 반환 — 에러 로깅 추가
+      // ERR-L-02: Return without names if enrichment fails — added error logging
+      this.logger.warn(`Feed enrichment failed: ${error instanceof Error ? error.message : 'unknown'}`);
     }
 
     return res.status(result.status).json(result.data);

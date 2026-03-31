@@ -17,6 +17,7 @@ import {
   Res,
   UseGuards,
   Logger,
+  BadRequestException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
@@ -328,6 +329,21 @@ export class AnnouncementProxyController {
     @Req() req: Request,
     @Res() res: Response,
   ) {
+    // VAL-L-02: 게이트웨이에서 첨부파일 크기 사전 검증 — 불필요한 프록시 전달 방지
+    // VAL-L-02: Pre-validate attachment size at gateway — prevents unnecessary proxy forwarding
+    const MAX_ATTACHMENT_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
+    const payload = body as { data?: string; size?: number } | undefined;
+    if (payload?.data && typeof payload.data === 'string') {
+      // base64 데이터의 실제 바이트 크기 추정 (Estimate real byte size from base64 data)
+      const estimatedBytes = Math.ceil((payload.data.length * 3) / 4);
+      if (estimatedBytes > MAX_ATTACHMENT_SIZE_BYTES) {
+        throw new BadRequestException('File size exceeds 10MB limit');
+      }
+    }
+    if (payload?.size && payload.size > MAX_ATTACHMENT_SIZE_BYTES) {
+      throw new BadRequestException('File size exceeds 10MB limit');
+    }
+
     const result = await this.proxyService.forward('user-auth', {
       method: 'POST',
       url: `/announcements/${id}/attachments`,

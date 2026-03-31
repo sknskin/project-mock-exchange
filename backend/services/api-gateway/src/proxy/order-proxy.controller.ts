@@ -30,9 +30,23 @@ import { ChatGateway } from '../gateway/chat.gateway';
 import { PlaceOrderDto } from './dto/place-order.dto';
 import { ModifyOrderDto } from './dto/modify-order.dto';
 
+/** DB-M-01: 사용자 정보 인메모리 캐시 — 반복적인 user-auth 서비스 호출 방지
+ * DB-M-01: In-memory user info cache — prevents repeated user-auth service calls */
+interface CachedUserMap {
+  data: Map<string, string>;
+  expiry: number;
+}
+
+/** DB-M-01: 캐시 유효 시간 (60초) / Cache TTL (60 seconds) */
+const USER_CACHE_TTL_MS = 60_000;
+
 @ApiTags('Orders')
 @Controller('api/orders')
 export class OrderProxyController {
+  /** DB-M-01: 사용자 이름 캐시 — admin audit trades에서 N+1 조회 방지
+   * DB-M-01: User name cache — prevents N+1 lookups in admin audit trades */
+  private userInfoCache: CachedUserMap | null = null;
+
   constructor(
     private readonly proxyService: ProxyService,
     private readonly chatGateway: ChatGateway,
@@ -128,8 +142,11 @@ export class OrderProxyController {
           headers: { Authorization: req.headers.authorization || '' },
         }).catch((e) => new Logger('OrderProxy').warn('Notification persist failed', e.message));
       }
-    } catch {
-      // 최선의 노력 알림 (Best-effort notification)
+    } catch (error) {
+      // ERR-L-02: 최선의 노력 알림 — 실패 시에도 에러 로깅 (Best-effort notification — log errors on failure)
+      new Logger('OrderProxy').warn(
+        `sendTradeNotification error: ${error instanceof Error ? error.message : 'unknown'}`,
+      );
     }
   }
 
@@ -160,7 +177,8 @@ export class OrderProxyController {
     });
 
     // ERR-M-02: any 타입을 구체적 인터페이스로 대체 / Replace any with typed interfaces
-    // 사용자 이름 enrichment / Enrich with user names
+    // DB-M-01: 인메모리 캐시를 활용한 사용자 이름 enrichment — N+1 호출 방지
+    // DB-M-01: User name enrichment with in-memory cache — prevents N+1 calls
     interface AuditTrade { userId?: string; username?: string; [key: string]: unknown }
     interface UserInfo { id: string; username?: string; name?: string }
     try {
@@ -170,18 +188,55 @@ export class OrderProxyController {
       if (Array.isArray(trades) && trades.length > 0) {
         const userIds = [...new Set(trades.map((t: AuditTrade) => t.userId).filter(Boolean))] as string[];
         if (userIds.length > 0) {
-          const usersResult = await this.proxyService.forward('user-auth', {
-            method: 'POST',
-            url: '/users/by-ids',
-            data: { ids: userIds },
-          });
-          const usersData = (usersResult.data as Record<string, unknown>)?.data ?? [];
-          const users = usersData as UserInfo[];
-          const userMap = new Map(Array.isArray(users) ? users.map((u: UserInfo) => [u.id, u.username ?? u.name ?? '-']) : []);
+          // DB-M-01: 캐시가 유효하면 재사용, 만료되었거나 누락된 ID가 있으면 새로 조회
+          // DB-M-01: Reuse cache if valid; fetch fresh if expired or missing IDs
+          const now = Date.now();
+          let userMap: Map<string, string>;
+
+          if (this.userInfoCache && this.userInfoCache.expiry > now) {
+            // 캐시 유효 — 누락된 ID만 확인 / Cache valid — check for missing IDs
+            const missingIds = userIds.filter((id) => !this.userInfoCache!.data.has(id));
+            if (missingIds.length === 0) {
+              userMap = this.userInfoCache.data;
+            } else {
+              // 누락된 ID만 추가 조회 / Fetch only missing IDs
+              const usersResult = await this.proxyService.forward('user-auth', {
+                method: 'POST',
+                url: '/users/by-ids',
+                data: { ids: missingIds },
+              });
+              const usersData = (usersResult.data as Record<string, unknown>)?.data ?? [];
+              const users = usersData as UserInfo[];
+              if (Array.isArray(users)) {
+                users.forEach((u: UserInfo) => {
+                  this.userInfoCache!.data.set(u.id, u.username ?? u.name ?? '-');
+                });
+              }
+              userMap = this.userInfoCache.data;
+            }
+          } else {
+            // 캐시 없거나 만료 — 전체 조회 후 새 캐시 생성
+            // No cache or expired — fetch all and create new cache
+            const usersResult = await this.proxyService.forward('user-auth', {
+              method: 'POST',
+              url: '/users/by-ids',
+              data: { ids: userIds },
+            });
+            const usersData = (usersResult.data as Record<string, unknown>)?.data ?? [];
+            const users = usersData as UserInfo[];
+            userMap = new Map(Array.isArray(users) ? users.map((u: UserInfo) => [u.id, u.username ?? u.name ?? '-']) : []);
+            this.userInfoCache = { data: userMap, expiry: now + USER_CACHE_TTL_MS };
+          }
+
           trades.forEach((t: AuditTrade) => { t.username = userMap.get(t.userId ?? '') ?? t.userId?.slice(0, 8); });
         }
       }
-    } catch { /* enrichment 실패 시 userId만 표시 */ }
+    } catch (error) {
+      // ERR-L-02: enrichment 실패 시 userId만 표시하되 에러 로깅 / Show only userId on enrichment failure, but log error
+      new Logger('OrderProxy').warn(
+        `adminAuditTrades enrichment failed: ${error instanceof Error ? error.message : 'unknown'}`,
+      );
+    }
 
     return res.status(result.status).json(result.data);
   }
