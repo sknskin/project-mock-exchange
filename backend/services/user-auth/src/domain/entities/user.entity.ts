@@ -7,11 +7,21 @@
  */
 import { UserRole } from '@virtuex/common';
 
+/**
+ * MISC-L-01: 내부 필드 노출 방지 정책
+ * passwordHash, encryptedRrn 등 민감 필드는 절대 API 응답에 포함해서는 안 됩니다.
+ * 외부 반환 시 반드시 toUserDto() 또는 Prisma select 절을 사용하여 민감 필드를 제외하세요.
+ *
+ * MISC-L-01: Internal field exposure prevention policy
+ * Sensitive fields (passwordHash, encryptedRrn, etc.) must NEVER be included in API responses.
+ * Always use toUserDto() or Prisma select clauses to exclude sensitive fields when returning data.
+ */
 export class UserEntity {
   constructor(
     public readonly id: string,
     public readonly email: string,
     public readonly username: string,
+    /** @internal 절대 API 응답에 포함하지 말 것 / NEVER include in API responses */
     public readonly passwordHash: string,
     public readonly name: string,
     public readonly role: UserRole,

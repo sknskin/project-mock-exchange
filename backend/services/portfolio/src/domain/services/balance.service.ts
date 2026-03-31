@@ -849,13 +849,18 @@ export class BalanceService {
    * Get public portfolio: returns a user's holdings with current-price-based valuation.
    * Used in the leaderboard profile modal to view another user's holdings.
    */
+  /**
+   * AUTH-L-01: 공개 포트폴리오에서 절대 수량 대신 비율 기반 표시
+   * 다른 사용자의 정확한 보유 수량을 노출하지 않고 배분 비율만 제공
+   *
+   * AUTH-L-01: Show percentage-based allocation instead of absolute quantities in public view
+   * Prevents exposing exact holding quantities; only provides allocation percentages
+   */
   async getPublicPortfolio(userId: string): Promise<{
     holdings: {
       symbol: string;
-      quantity: string;
-      avgPrice: string;
+      allocationPercent: string;
       currentPrice: string;
-      currentValue: string;
       pnlPercent: string;
     }[];
     totalValue: string;
@@ -873,7 +878,8 @@ export class BalanceService {
 
     let totalValue = new Decimal(0);
 
-    const publicHoldings = holdings.map((h) => {
+    // 먼저 전체 가치 계산 / First compute total value
+    const holdingDetails = holdings.map((h) => {
       const qty = new Decimal(h.quantity);
       const avgCost = new Decimal(h.avgCostBasis);
       const rawPrice = priceMap.get(h.symbol) || avgCost;
@@ -888,13 +894,21 @@ export class BalanceService {
 
       totalValue = totalValue.plus(currentValue);
 
+      return { symbol: h.symbol, currentPrice, currentValue, pnlPercent };
+    });
+
+    // AUTH-L-01: 절대 수량/가격 제거, 비율만 반환
+    // AUTH-L-01: Remove absolute quantities/values, return percentages only
+    const publicHoldings = holdingDetails.map((h) => {
+      const allocationPercent = totalValue.gt(0)
+        ? h.currentValue.div(totalValue).mul(100)
+        : new Decimal(0);
+
       return {
         symbol: h.symbol,
-        quantity: qty.toFixed(8),
-        avgPrice: avgCost.toFixed(8),
-        currentPrice: currentPrice.toFixed(8),
-        currentValue: currentValue.toFixed(8),
-        pnlPercent: pnlPercent.toFixed(3),
+        allocationPercent: allocationPercent.toFixed(2),
+        currentPrice: h.currentPrice.toFixed(8),
+        pnlPercent: h.pnlPercent.toFixed(3),
       };
     });
 
