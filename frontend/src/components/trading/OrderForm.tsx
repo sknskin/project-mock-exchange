@@ -361,9 +361,11 @@ export default function OrderForm({
                 // FE-M-02: 서버 제공 원본 가격(safeCurrentPrice)으로 최대 수량 계산 — 환율 변환 표시가격 대신 사용하여 드리프트 방지
                 // FE-M-02: Use server-provided price (safeCurrentPrice) for max qty calc — prevents drift from display currency conversion
                 if (isBuy && portfolio && safeCurrentPrice > 0) {
-                  const maxQty = portfolio.cashBalance / safeCurrentPrice;
+                  // FE-M-02: 환율 오차 버퍼 0.5% 적용 — 환율 변동으로 인한 초과 주문 방지
+                  // FE-M-02: Apply 0.5% exchange rate safety buffer — prevents over-ordering due to rate fluctuations
+                  const safeMaxQty = Math.floor((portfolio.cashBalance / safeCurrentPrice) * 0.995 * 100) / 100;
                   const factor = pct === 100 ? 0.99 : 1;
-                  setQuantity((maxQty * pct / 100 * factor).toFixed(8).replace(/\.?0+$/, ''));
+                  setQuantity((safeMaxQty * pct / 100 * factor).toFixed(8).replace(/\.?0+$/, ''));
                 } else if (!isBuy && holdingQty > 0) {
                   setQuantity((holdingQty * pct / 100).toFixed(8).replace(/\.?0+$/, ''));
                 }
