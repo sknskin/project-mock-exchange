@@ -113,7 +113,7 @@ function AssetListItem({ asset, rank, isWatchlisted, onToggleWatchlist }: AssetL
       )}
 
       {/* 아이콘 + 이름 + 심볼 / Icon + Name + Symbol */}
-      <div className="flex items-center gap-2 sm:gap-3 min-w-0 w-[100px] sm:w-[160px] md:w-[180px] lg:w-[200px] shrink-0">
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0 w-[90px] sm:w-[120px] md:w-[130px] lg:w-[160px] shrink-0">
         <div
           className={cn(
             'w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-[10px] sm:text-[11px] font-bold text-white shrink-0',
@@ -136,19 +136,19 @@ function AssetListItem({ asset, rank, isWatchlisted, onToggleWatchlist }: AssetL
       </div>
 
       {/* 여백 / Spacer */}
-      <div className="flex-1 min-w-2" />
+      <div className="flex-1 min-w-4" />
 
       {/* 현재가 / Price */}
       {/* 현재가 — 단순 텍스트 렌더 (AnimatedNumber 제거로 성능 대폭 개선)
            Price — plain text render (removed AnimatedNumber for major perf improvement) */}
-      <span className={cn('w-[72px] sm:w-[100px] lg:w-[120px] text-right text-[11px] sm:text-[13px] md:text-[14px] font-semibold text-text-primary tabular-nums shrink-0 truncate', flashClass)} title={formatPriceDisplay(displayAsset.currentPrice, displayAsset.symbol, display, rate)}>
+      <span className={cn('w-[80px] sm:w-[110px] lg:w-[130px] text-right text-[11px] sm:text-[13px] md:text-[14px] font-semibold text-text-primary tabular-nums shrink-0 truncate', flashClass)} title={formatPriceDisplay(displayAsset.currentPrice, displayAsset.symbol, display, rate)}>
         {formatPriceDisplay(displayAsset.currentPrice, displayAsset.symbol, display, rate)}
       </span>
 
       {/* 변동 금액 / Change amount */}
       <span
         className={cn(
-          'w-[80px] md:w-[90px] lg:w-[100px] text-right text-[12px] md:text-[13px] font-medium tabular-nums hidden sm:block shrink-0 truncate',
+          'w-[85px] md:w-[100px] lg:w-[110px] text-right text-[12px] md:text-[13px] font-medium tabular-nums hidden sm:block shrink-0 truncate',
           isRise && 'text-rise',
           isFall && 'text-fall',
           !isRise && !isFall && 'text-text-quaternary',
@@ -159,7 +159,7 @@ function AssetListItem({ asset, rank, isWatchlisted, onToggleWatchlist }: AssetL
       </span>
 
       {/* 변동률 / Change percent */}
-      <div className="w-[52px] sm:w-[72px] lg:w-[84px] flex justify-end shrink-0">
+      <div className="w-[58px] sm:w-[78px] lg:w-[90px] flex justify-end shrink-0">
         <span
           className={cn(
             'text-[11px] sm:text-[13px] font-medium tabular-nums truncate',
@@ -177,17 +177,17 @@ function AssetListItem({ asset, rank, isWatchlisted, onToggleWatchlist }: AssetL
       </div>
 
       {/* 24시간 최고가 / 24h High */}
-      <span className="w-[90px] text-right text-[13px] text-text-secondary tabular-nums hidden xl:block shrink-0">
+      <span className="w-[95px] text-right text-[13px] text-text-secondary tabular-nums hidden xl:block shrink-0">
         {formatPriceDisplay(displayAsset.high24h ?? 0, displayAsset.symbol, display, rate)}
       </span>
 
       {/* 24시간 최저가 / 24h Low */}
-      <span className="w-[90px] text-right text-[13px] text-text-secondary tabular-nums hidden xl:block shrink-0">
+      <span className="w-[95px] text-right text-[13px] text-text-secondary tabular-nums hidden xl:block shrink-0">
         {formatPriceDisplay(displayAsset.low24h ?? 0, displayAsset.symbol, display, rate)}
       </span>
 
       {/* 거래대금 / Volume */}
-      <span className="w-[80px] lg:w-[90px] text-right text-[13px] text-text-tertiary tabular-nums hidden md:block shrink-0">
+      <span className="w-[85px] lg:w-[100px] text-right text-[13px] text-text-tertiary tabular-nums hidden md:block shrink-0">
         {formatVolumeDisplay((displayAsset.currentPrice * (displayAsset.volume ?? 0)), displayAsset.symbol, display, rate)}
       </span>
     </Link>
