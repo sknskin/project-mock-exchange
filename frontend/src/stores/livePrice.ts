@@ -38,7 +38,11 @@ function flushNotifications() {
  */
 export function batchUpdatePrices(batch: Record<string, PriceUpdate>): void {
   for (const [symbol, update] of Object.entries(batch)) {
-    priceMap.set(symbol, update);
+    // 항상 새 객체 참조로 저장 — useSyncExternalStore가 Object.is()로 비교하므로
+    // 동일 참조면 리렌더를 건너뜀 (등락률 배경색 등 업데이트 누락 원인)
+    // Always store as new object reference — useSyncExternalStore uses Object.is(),
+    // so same reference skips re-render (causes stale bg color on change rate)
+    priceMap.set(symbol, { ...update });
     pendingNotify.add(symbol);
   }
 
