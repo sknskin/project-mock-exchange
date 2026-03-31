@@ -147,6 +147,7 @@ export default function DiscussionsTab({ onPostClick, onWriteClick }: Discussion
         </div>
       ) : (postsData?.data && postsData.data.length > 0) ? (
         <div className="space-y-3">
+          {/* ANI-L-03: 리스트 항목 페이드인 애니메이션 / List item fade-in animation */}
           {postsData.data.map((post) => (
             <div
               key={post.id}
@@ -154,7 +155,7 @@ export default function DiscussionsTab({ onPostClick, onWriteClick }: Discussion
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPostClick(post.id, post.visibility); } }}
               role="button"
               tabIndex={0}
-              className="bg-bg-secondary/60 border border-border/60 rounded-xl p-4 hover:border-accent/30 transition-all cursor-pointer"
+              className="bg-bg-secondary/60 border border-border/60 rounded-xl p-4 hover:border-accent/30 transition-all cursor-pointer animate-fade-in touch-feedback"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">

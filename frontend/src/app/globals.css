@@ -65,6 +65,8 @@ nextjs-portal,
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     letter-spacing: -0.02em;
+    /* TYP-M-03 / TYP-L-05~06: 한국어 텍스트 가독성을 위한 기본 줄 높이 — 모든 하위 요소에 상속
+       TYP-M-03 / TYP-L-05~06: Base line-height for Korean text readability — inherited by all descendants */
     line-height: 1.6;
     transition: background-color 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s;
   }
@@ -462,6 +464,23 @@ nextjs-portal,
     will-change: transform, opacity;
   }
 
+  /* ANI-M-04: 모달 닫기 애니메이션 — opacity + scale + translateY 퇴장 효과
+     ANI-M-04: Modal close animation — opacity + scale + translateY exit effect */
+  @keyframes modal-backdrop-out {
+    from { opacity: 1; }
+    to   { opacity: 0; }
+  }
+  @keyframes modal-content-out {
+    from { opacity: 1; transform: scale(1) translateY(0); }
+    to   { opacity: 0; transform: scale(0.97) translateY(8px); }
+  }
+  .animate-modal-backdrop-out {
+    animation: modal-backdrop-out 0.2s ease-in both;
+  }
+  .animate-modal-content-out {
+    animation: modal-content-out 0.2s ease-in both;
+  }
+
   /* ─── ANI-M-02: 리스트 항목 스태거 애니메이션 / List item stagger animation ─── */
   @keyframes list-stagger-in {
     from { opacity: 0; transform: translateY(8px); }
@@ -488,7 +507,9 @@ nextjs-portal,
       animation: none !important;
     }
     .animate-modal-backdrop,
-    .animate-modal-content {
+    .animate-modal-content,
+    .animate-modal-backdrop-out,
+    .animate-modal-content-out {
       animation: none !important;
     }
     .animate-toast-fade,
@@ -502,7 +523,8 @@ nextjs-portal,
       animation: none !important;
     }
     .animate-list-stagger,
-    .animate-content-fade {
+    .animate-content-fade,
+    .animate-fade-in {
       animation: none !important;
     }
   }
@@ -608,6 +630,15 @@ nextjs-portal,
   }
   .animate-shake {
     animation: shake 0.3s ease-in-out;
+  }
+
+  /* MOB-L-05~08: 모바일 터치 피드백 — 터치 시 살짝 어두워지는 효과
+     MOB-L-05~08: Mobile touch feedback — slightly darken on touch */
+  @media (hover: none) and (pointer: coarse) {
+    .touch-feedback:active {
+      opacity: 0.75;
+      transition: opacity 0.1s ease-out;
+    }
   }
 
   /* ANI-L-02: 차트 로딩 완료 페이드인 애니메이션 / Chart loading fade-in animation */

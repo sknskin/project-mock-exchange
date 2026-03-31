@@ -2127,6 +2127,31 @@ const translations = {
     'connection.description': '서버와의 연결이 끊어졌습니다. 잠시 후 다시 시도해주세요.',
     'connection.retry': '다시 시도',
     'connection.retrying': '연결 중...',
+
+    // Onboarding (UX-M-01)
+    'onboarding.step1.title': '대시보드',
+    'onboarding.step1.desc': '실시간 시세와 시장 현황을 한눈에 확인하세요. 관심 종목을 등록하고 AI 분석도 받아보세요.',
+    'onboarding.step2.title': '매매하기',
+    'onboarding.step2.desc': '실시간 차트와 호가창을 보며 모의 매매를 진행하세요. 실제 시장과 동일한 환경입니다.',
+    'onboarding.step3.title': '포트폴리오',
+    'onboarding.step3.desc': '보유 자산, 수익률, 거래 내역을 확인하고 투자 전략을 점검하세요.',
+    'onboarding.step4.title': '실시간 채팅',
+    'onboarding.step4.desc': '다른 투자자들과 실시간으로 의견을 나누고 시장 정보를 공유하세요.',
+    'onboarding.prev': '이전',
+    'onboarding.next': '다음',
+    'onboarding.skip': '건너뛰기',
+    'onboarding.start': '시작하기',
+
+    // Keyboard Shortcuts (UX-M-03)
+    'shortcuts.title': '키보드 단축키',
+    'shortcuts.openHelp': '단축키 도움말 열기',
+    'shortcuts.closeModal': '모달 / 팝업 닫기',
+    'shortcuts.focusSearch': '검색창 포커스',
+    'shortcuts.gotoDashboard': '대시보드로 이동',
+    'shortcuts.gotoPortfolio': '포트폴리오로 이동',
+    'shortcuts.gotoTrading': '매매 페이지로 이동',
+    'shortcuts.gotoChat': '채팅 열기',
+    'shortcuts.hint': '? 키를 눌러 이 도움말을 열 수 있습니다',
   },
   en: {
     // Common
@@ -4247,6 +4272,31 @@ const translations = {
     'connection.description': 'The connection to the server has been lost. Please try again in a moment.',
     'connection.retry': 'Retry',
     'connection.retrying': 'Connecting...',
+
+    // Onboarding (UX-M-01)
+    'onboarding.step1.title': 'Dashboard',
+    'onboarding.step1.desc': 'View real-time prices and market overview at a glance. Add watchlist items and get AI analysis.',
+    'onboarding.step2.title': 'Trading',
+    'onboarding.step2.desc': 'Practice trading with real-time charts and order books. Same environment as a real market.',
+    'onboarding.step3.title': 'Portfolio',
+    'onboarding.step3.desc': 'Check your holdings, returns, and trade history to review your investment strategy.',
+    'onboarding.step4.title': 'Live Chat',
+    'onboarding.step4.desc': 'Share opinions and market insights with other investors in real time.',
+    'onboarding.prev': 'Previous',
+    'onboarding.next': 'Next',
+    'onboarding.skip': 'Skip',
+    'onboarding.start': 'Get Started',
+
+    // Keyboard Shortcuts (UX-M-03)
+    'shortcuts.title': 'Keyboard Shortcuts',
+    'shortcuts.openHelp': 'Open shortcuts help',
+    'shortcuts.closeModal': 'Close modal / popup',
+    'shortcuts.focusSearch': 'Focus search bar',
+    'shortcuts.gotoDashboard': 'Go to Dashboard',
+    'shortcuts.gotoPortfolio': 'Go to Portfolio',
+    'shortcuts.gotoTrading': 'Go to Trading',
+    'shortcuts.gotoChat': 'Open Chat',
+    'shortcuts.hint': 'Press ? to open this help',
   },
 } as const;
 

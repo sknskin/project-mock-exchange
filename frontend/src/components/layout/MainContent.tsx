@@ -10,6 +10,9 @@
 import { useChatStore } from '@/stores/chat';
 import { cn } from '@/lib/format';
 import PinnedChatPanel from '@/components/chat/PinnedChatPanel';
+// ANI-H-01: 페이지 전환 페이드 애니메이션 래퍼
+// ANI-H-01: Page transition fade animation wrapper
+import PageTransition from '@/components/layout/PageTransition';
 
 export default function MainContent({ children }: { children: React.ReactNode }) {
   const isPinned = useChatStore((s) => s.isPinned);
@@ -22,7 +25,10 @@ export default function MainContent({ children }: { children: React.ReactNode })
       {/* 메인 콘텐츠 영역: 사이드바 고정 시 오른쪽 여백으로 겹침 방지 / Main content area: right margin prevents overlap when sidebar is pinned */}
       <div className={cn('transition-[margin] duration-300 ease-in-out', showPinned ? 'lg:mr-[320px] xl:mr-[380px] overflow-x-clip' : '')}>
         <main id="main-content" className="pb-20 lg:pb-0 max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
-          {children}
+          {/* ANI-H-01: 페이지 전환 페이드 효과 / Page transition fade effect */}
+          <PageTransition>
+            {children}
+          </PageTransition>
         </main>
       </div>
       {/* 고정 채팅 패널: fixed로 스크롤과 무관하게 항상 표시 / Pinned chat panel: fixed so always visible regardless of scroll */}

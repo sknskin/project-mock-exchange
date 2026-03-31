@@ -249,7 +249,8 @@ export default function PortfolioHistoryChart({ totalValue }: PortfolioHistoryCh
             </span>
           </div>
 
-          <div className="w-full overflow-hidden rounded-xl bg-bg-secondary p-3">
+          {/* MOB-M-11: touch-action: manipulation — 모바일 핀치줌 허용 / Allow mobile pinch-zoom */}
+          <div className="w-full overflow-hidden rounded-xl bg-bg-secondary p-3" style={{ touchAction: 'manipulation' }}>
             <svg
               viewBox={`0 0 ${width} ${height}`}
               className="w-full h-auto"

@@ -8,7 +8,6 @@
 'use client';
 
 import { cn, formatPrice, formatPercent } from '@/lib/format';
-import AnimatedNumber from '@/components/ui/AnimatedNumber';
 
 // 가격 표시 Props / Price Display Props
 interface PriceDisplayProps {
@@ -49,6 +48,8 @@ export default function PriceDisplay({
 
   return (
     <div className="text-right">
+      {/* ETC-L-02: AnimatedNumber를 단순 텍스트로 대체 — 성능 개선
+          ETC-L-02: Replace AnimatedNumber with plain text — performance improvement */}
       <div
         className={cn(
           'font-bold tabular-nums',
@@ -56,7 +57,7 @@ export default function PriceDisplay({
           'text-text-primary',
         )}
       >
-        <AnimatedNumber value={formatPrice(price)} />
+        {formatPrice(price)}
       </div>
       <div
         className={cn(
@@ -67,7 +68,7 @@ export default function PriceDisplay({
           !isRise && !isFall && 'text-text-quaternary',
         )}
       >
-        <AnimatedNumber value={formatPercent(changePercent)} />
+        {formatPercent(changePercent)}
       </div>
     </div>
   );

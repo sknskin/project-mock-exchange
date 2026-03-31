@@ -334,8 +334,9 @@ export default function RegisterPage() {
             />
           </div>
 
+          {/* FRM-M-04: 인라인 에러 메시지 — shake 애니메이션으로 주의 환기 / Inline error message — shake animation for attention */}
           {error && (
-            <p className="text-[13px] text-danger text-center py-1">{error}</p>
+            <p className="text-[13px] text-danger text-center py-1 animate-shake">{error}</p>
           )}
 
           <div className="pt-3">

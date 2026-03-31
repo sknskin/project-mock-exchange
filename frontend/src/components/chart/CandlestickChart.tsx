@@ -315,29 +315,21 @@ export default function CandlestickChart({
     };
   }, [toggles.rsi, closesData, isLight]);
 
-  /* ========== 이펙트 3: 시리즈 타입 변경 (Effect 3: Series type change) ========== */
+  /* ========== 이펙트 3: 시리즈 초기 생성 + 차트타입 변경 시 메인 시리즈만 교체
+   * Effect 3: Initial series creation + swap only main series on chart type change
+   * CM-M-01: 보조 지표 시리즈(볼륨, SMA, BB)는 재생성하지 않고 기존 참조 유지
+   * CM-M-01: Keep indicator series (volume, SMA, BB) refs stable — only recreate main series */
   useEffect(() => {
     const chart = chartRef.current;
     if (!chart) return;
 
-    // 기존 시리즈 모두 제거 (Remove all existing series)
+    // 메인 시리즈만 교체 — 캔들/라인 타입이 다르므로 교체 필수
+    // Swap main series only — required because candle/line are different series types
     if (mainSeriesRef.current) {
       chart.removeSeries(mainSeriesRef.current);
       mainSeriesRef.current = null;
     }
-    if (volumeSeriesRef.current) {
-      chart.removeSeries(volumeSeriesRef.current);
-      volumeSeriesRef.current = null;
-    }
-    for (const [, series] of smaSeriesRefs.current) {
-      chart.removeSeries(series);
-    }
-    smaSeriesRefs.current.clear();
-    if (bbUpperRef.current) { chart.removeSeries(bbUpperRef.current); bbUpperRef.current = null; }
-    if (bbMiddleRef.current) { chart.removeSeries(bbMiddleRef.current); bbMiddleRef.current = null; }
-    if (bbLowerRef.current) { chart.removeSeries(bbLowerRef.current); bbLowerRef.current = null; }
 
-    // 메인 시리즈 생성 (Create main series)
     if (chartType === 'candle') {
       mainSeriesRef.current = chart.addCandlestickSeries({
         upColor: '#F04452',
@@ -354,50 +346,59 @@ export default function CandlestickChart({
       });
     }
 
-    // 볼륨 시리즈 생성 (Create volume series)
-    volumeSeriesRef.current = chart.addHistogramSeries({
-      priceFormat: { type: 'volume' },
-      priceScaleId: 'volume',
-    });
-    chart.priceScale('volume').applyOptions({
-      scaleMargins: { top: 0.8, bottom: 0 },
-    });
+    // 보조 지표 시리즈는 이미 존재하면 재생성하지 않음 — setData()로 업데이트만 수행
+    // Skip indicator series creation if they already exist — only update via setData()
+    if (!volumeSeriesRef.current) {
+      volumeSeriesRef.current = chart.addHistogramSeries({
+        priceFormat: { type: 'volume' },
+        priceScaleId: 'volume',
+      });
+      chart.priceScale('volume').applyOptions({
+        scaleMargins: { top: 0.8, bottom: 0 },
+      });
+    }
 
-    // SMA 시리즈 생성 (Create SMA series)
-    for (const sma of SMA_INDICATORS) {
-      const series = chart.addLineSeries({
-        color: sma.color,
+    if (smaSeriesRefs.current.size === 0) {
+      for (const sma of SMA_INDICATORS) {
+        const series = chart.addLineSeries({
+          color: sma.color,
+          lineWidth: 1,
+          crosshairMarkerVisible: false,
+          lastValueVisible: false,
+          priceLineVisible: false,
+        });
+        smaSeriesRefs.current.set(sma.key, series);
+      }
+    }
+
+    if (!bbUpperRef.current) {
+      bbUpperRef.current = chart.addLineSeries({
+        color: 'rgba(20,184,166,0.5)',
         lineWidth: 1,
         crosshairMarkerVisible: false,
         lastValueVisible: false,
         priceLineVisible: false,
       });
-      smaSeriesRefs.current.set(sma.key, series);
     }
-
-    // 볼린저 밴드 시리즈 생성 (Create Bollinger Bands series)
-    bbUpperRef.current = chart.addLineSeries({
-      color: 'rgba(20,184,166,0.5)',
-      lineWidth: 1,
-      crosshairMarkerVisible: false,
-      lastValueVisible: false,
-      priceLineVisible: false,
-    });
-    bbMiddleRef.current = chart.addLineSeries({
-      color: 'rgba(20,184,166,0.8)',
-      lineWidth: 1,
-      lineStyle: 2, // Dashed
-      crosshairMarkerVisible: false,
-      lastValueVisible: false,
-      priceLineVisible: false,
-    });
-    bbLowerRef.current = chart.addLineSeries({
-      color: 'rgba(20,184,166,0.5)',
-      lineWidth: 1,
-      crosshairMarkerVisible: false,
-      lastValueVisible: false,
-      priceLineVisible: false,
-    });
+    if (!bbMiddleRef.current) {
+      bbMiddleRef.current = chart.addLineSeries({
+        color: 'rgba(20,184,166,0.8)',
+        lineWidth: 1,
+        lineStyle: 2, // Dashed
+        crosshairMarkerVisible: false,
+        lastValueVisible: false,
+        priceLineVisible: false,
+      });
+    }
+    if (!bbLowerRef.current) {
+      bbLowerRef.current = chart.addLineSeries({
+        color: 'rgba(20,184,166,0.5)',
+        lineWidth: 1,
+        crosshairMarkerVisible: false,
+        lastValueVisible: false,
+        priceLineVisible: false,
+      });
+    }
 
     currentTypeRef.current = chartType;
     isFirstRenderRef.current = true;
@@ -537,9 +538,11 @@ export default function CandlestickChart({
       {/* ANI-L-02: 차트 로딩 완료 시 페이드인 효과 — 부드러운 차트 전환 / Fade-in on chart load — smooth chart transition */}
       {/* CHART-M-01: 스크린 리더 접근성 — role="img" + aria-label로 가격 정보 제공 / Screen reader a11y — provide price info via role="img" + aria-label */}
       {/* 메인 차트 (Main Chart) */}
+      {/* MOB-M-11: touch-action: manipulation — 모바일 핀치줌 허용 / Allow mobile pinch-zoom */}
       <div
         ref={chartContainerRef}
         className="w-full overflow-hidden animate-fade-in"
+        style={{ touchAction: 'manipulation' }}
         role="img"
         aria-label={
           data.length > 0

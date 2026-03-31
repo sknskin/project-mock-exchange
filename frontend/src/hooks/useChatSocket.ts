@@ -378,6 +378,13 @@ function bindListeners(socket: Socket, qc: QueryClient) {
  * @param token - JWT 액세스 토큰 / JWT access token
  * @param qc - TanStack QueryClient 인스턴스 / TanStack QueryClient instance
  */
+/**
+ * SEC-H-03 + WS-M-01: 쿠키 기반 인증으로 전환
+ * withCredentials: true로 httpOnly 쿠키를 자동 전송하여 auth.token 불필요
+ *
+ * SEC-H-03 + WS-M-01: Switch to cookie-based auth
+ * httpOnly cookie sent automatically via withCredentials, no need for auth.token
+ */
 function connectIfNeeded(token: string, qc: QueryClient) {
   // 토큰이 같고 소켓이 이미 연결되어 있으면 재사용 / Reuse if token matches and socket is connected
   if (sharedSocket && activeToken === token && sharedSocket.connected) return;
@@ -391,11 +398,11 @@ function connectIfNeeded(token: string, qc: QueryClient) {
 
   activeToken = token;
 
-  // /chat 네임스페이스로 WebSocket 전용 연결
-  // Connect to /chat namespace with WebSocket-only transport
+  // /chat 네임스페이스로 WebSocket 전용 연결 — 쿠키 기반 인증
+  // Connect to /chat namespace with WebSocket-only transport — cookie-based auth
   const s = io(`${WS_URL}/chat`, {
     transports: ['websocket'],
-    auth: { token },
+    withCredentials: true,
     reconnection: true,
     // 재연결 시 2초 대기 (서버 부하 방지) / Wait 2s before reconnection (prevents server overload)
     reconnectionDelay: 2000,

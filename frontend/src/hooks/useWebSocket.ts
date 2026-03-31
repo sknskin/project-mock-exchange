@@ -24,16 +24,13 @@ export function useWebSocket(
   symbolsRef.current = symbols;
 
   const socketRef = useRef<Socket | null>(null);
-  const accessToken = useAuthStore((s) => s.accessToken);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
-  // 소켓 연결 — accessToken이 바뀔 때만 재생성
-  // Socket connection — only recreate when accessToken changes
+  // SEC-H-03 + WS-M-01: 쿠키 기반 인증으로 전환 — withCredentials로 httpOnly 쿠키 자동 전송
+  // SEC-H-03 + WS-M-01: Switch to cookie-based auth — httpOnly cookie sent automatically via withCredentials
+  // 소켓 연결 — 인증 상태 변경 시 재생성
+  // Socket connection — recreate when authentication state changes
   useEffect(() => {
-    // 인증된 사용자인데 토큰이 아직 없으면 대기
-    // Wait if authenticated but token not yet recovered
-    if (isAuthenticated && !accessToken) return;
-
     const socket: Socket = io(`${WS_URL}/prices`, {
       transports: ['websocket'],
       reconnection: true,
@@ -41,7 +38,7 @@ export function useWebSocket(
       reconnectionDelayMax: 10000,
       randomizationFactor: 0.5,
       reconnectionAttempts: Infinity,
-      auth: accessToken ? { token: accessToken } : undefined,
+      withCredentials: true,
     });
 
     socket.on('connect', () => {
@@ -76,9 +73,9 @@ export function useWebSocket(
       socket.disconnect();
       socketRef.current = null;
     };
-    // symbols를 의존성에서 제외 — ref로 참조하므로 토큰 변경 시에만 재연결
-    // Exclude symbols from deps — accessed via ref, so only reconnect on token change
-  }, [accessToken, isAuthenticated]);
+    // SEC-H-03: 토큰 대신 인증 상태만 의존 — 쿠키는 자동 전송되므로 토큰 변경 추적 불필요
+    // SEC-H-03: Depend only on auth state — cookie is sent automatically, no need to track token changes
+  }, [isAuthenticated]);
 
   // WS-M-01: symbols 변경 시 diff만 전송 — 전체 심볼 재전송 방지
   // WS-M-01: On symbols change, compute diff and send only new symbols — prevents full re-send

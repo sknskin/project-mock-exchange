@@ -18,6 +18,8 @@ import { useLeaderboard } from '@/hooks/useLeaderboard';
 import { useAuthStore } from '@/stores/auth';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/format';
+// MOB-M-12: 모바일 스와이프 제스처 / Mobile swipe gestures
+import { useSwipeTabs } from '@/hooks/useSwipeTabs';
 import { Users } from 'lucide-react';
 
 /* ───────── 동적 임포트 — 탭별 코드 스플리팅 / Dynamic imports — per-tab code splitting ───────── */
@@ -137,6 +139,13 @@ function CommunityPage() {
     // Like is handled inside StrategiesTab via useLikeStrategy — this is a guard only
   }, [isAuthenticated, showLoginModal, t]);
 
+  // MOB-M-12: 탭 컨테이너 스와이프 제스처 / Tab container swipe gestures
+  const { handleTouchStart, handleTouchEnd } = useSwipeTabs({
+    activeTab: tab,
+    tabs: ['discussions', 'strategies', 'traders', 'feed'] as const as ('discussions' | 'strategies' | 'traders' | 'feed')[],
+    onTabChange: handleTabClick,
+  });
+
   /** 글쓰기 버튼 클릭 핸들러 — 비로그인 시 로그인 모달 표시
    * Write button click handler — shows login modal for non-authenticated users */
   const handleWriteClick = useCallback(() => {
@@ -169,7 +178,8 @@ function CommunityPage() {
 
         {/* 헤더 / Header */}
         <div className="py-6 flex items-center gap-2.5 h-[88px]">
-          <Users className="w-5 h-5 text-accent" />
+          {/* A11Y-L-03: 장식용 아이콘 aria-hidden / Decorative icon aria-hidden */}
+          <Users className="w-5 h-5 text-accent" aria-hidden="true" />
           <h1 className="text-[20px] font-extrabold text-text-primary">
             {t('community.title')}
           </h1>
@@ -202,6 +212,8 @@ function CommunityPage() {
           ))}
         </div>
 
+        {/* MOB-M-12: 탭 콘텐츠 스와이프 영역 / Tab content swipe area */}
+        <div onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
         {/* 자유게시판 탭 / Discussions Tab */}
         {tab === 'discussions' && (
           <DiscussionsTab
@@ -230,6 +242,7 @@ function CommunityPage() {
         {tab === 'feed' && (
           <ActivityFeed />
         )}
+        </div>
       </div>
   );
 }

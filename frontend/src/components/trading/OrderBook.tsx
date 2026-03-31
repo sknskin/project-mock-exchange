@@ -180,10 +180,13 @@ function DepthChart({ asks, bids, fp }: DepthChartProps) {
         </span>
       </div>
 
+      {/* A11Y-L-05: 깊이 차트 SVG에 role="img" + aria-label — 스크린 리더 접근성 / Depth chart SVG role="img" + aria-label for screen reader */}
       <svg
         viewBox={`0 0 ${W} ${H}`}
         preserveAspectRatio="none"
         className="w-full h-[180px] sm:h-[200px] md:h-[220px]"
+        role="img"
+        aria-label={t('orderbook.depthChart')}
       >
         {/* 매수 영역 / Bid fill */}
         {bidPath && (
@@ -316,7 +319,9 @@ export default function OrderBook({ orderBook, symbol = '' }: OrderBookProps) {
   return (
     // MOB-M-01: overflow-x-auto 추가 — 320px 좁은 화면에서 가로 스크롤 허용
     // MOB-M-01: Add overflow-x-auto — allow horizontal scroll on 320px narrow screens
-    <div className="overflow-x-auto">
+    // RD-M-04: min-w-0 추가 — flex 자식 내에서 오버플로우 올바르게 처리
+    // RD-M-04: Add min-w-0 — handle overflow correctly within flex children
+    <div className="overflow-x-auto min-w-0">
       {/* 뷰 토글 / View toggle */}
       <div className="flex items-center gap-1 mb-3">
         <button
@@ -347,9 +352,9 @@ export default function OrderBook({ orderBook, symbol = '' }: OrderBookProps) {
         <DepthChart asks={asksCum} bids={bidsCum} fp={fp} />
       ) : (
         <>
-          {/* 헤더 / Header */}
+          {/* INF-L-04: 헤더 라벨에 aria-label 추가 — 접근성 향상 / Add aria-label to header labels — a11y improvement */}
           {/* INF-L-02: 모바일에서 누적 컬럼 숨김 — 데이터 밀도 최적화 / Hide cumulative column on mobile — data density optimization */}
-          <div className="flex text-[11px] sm:text-[12px] text-text-quaternary py-2 font-medium">
+          <div className="flex text-[11px] sm:text-[12px] text-text-quaternary py-2 font-medium" role="row" aria-label="Order book header">
             <span className="flex-1">{t('orderbook.price')}</span>
             <span className="flex-1 text-right">{t('orderbook.quantity')}</span>
             <span className="w-14 sm:w-16 text-right hidden sm:block">{t('orderbook.cumulative')}</span>

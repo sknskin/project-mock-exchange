@@ -28,6 +28,8 @@ import type { CommunityComment, CommunityAttachment } from '@/hooks/useCommunity
 import { cn, formatRelativeTime } from '@/lib/format';
 import { useToastStore } from '@/stores/toast';
 import LoginRequiredModal from '@/components/ui/LoginRequiredModal';
+// NAV-L-02: 브레드크럼 네비게이션 / Breadcrumb navigation
+import Breadcrumb from '@/components/ui/Breadcrumb';
 import {
   ArrowLeft,
   Heart,
@@ -317,6 +319,11 @@ export default function CommunityPostDetailPage() {
 
   return (
       <div className="pb-16">
+        {/* NAV-L-02: 브레드크럼 / Breadcrumb */}
+        <Breadcrumb items={[
+          { label: t('community.title'), href: '/community' },
+          { label: post?.title ?? t('community.discussions') },
+        ]} />
         {/* Back button + title */}
         <div className="py-6 flex items-center gap-3 h-[88px]">
           <Link href="/community" className="flex items-center justify-center w-8 h-8 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-secondary transition-colors">
@@ -360,11 +367,25 @@ export default function CommunityPostDetailPage() {
                     {t('community.post.update')}
                   </Link>
                 )}
+                {/* ASYNC-M-02: 삭제 진행 중 로딩 표시 / Show loading state during delete */}
                 <button
                   onClick={() => setShowDeleteModal(true)}
-                  className="px-3 py-1.5 rounded-lg text-[12px] font-semibold text-danger border border-danger/30 hover:bg-danger/10 transition-colors"
+                  disabled={deletePost.isPending}
+                  className={cn(
+                    'px-3 py-1.5 rounded-lg text-[12px] font-semibold border transition-colors',
+                    deletePost.isPending
+                      ? 'text-text-quaternary border-border cursor-not-allowed opacity-60'
+                      : 'text-danger border-danger/30 hover:bg-danger/10',
+                  )}
                 >
-                  {t('common.delete')}
+                  {deletePost.isPending ? (
+                    <span className="flex items-center gap-1">
+                      <span className="w-3 h-3 border-2 border-danger/30 border-t-danger rounded-full animate-spin" />
+                      {t('common.delete')}
+                    </span>
+                  ) : (
+                    t('common.delete')
+                  )}
                 </button>
               </div>
             )}

@@ -38,6 +38,10 @@ import {
 
 /* ───────── 상수 / Constants ───────── */
 
+// LV-M-02: 한 번에 렌더링할 최대 리더보드 항목 수 — 가상화 대신 페이지네이션으로 성능 개선
+// LV-M-02: Max leaderboard items to render at once — pagination instead of virtualization for performance
+const LEADERBOARD_PAGE_SIZE = 20;
+
 const medalColors: Record<number, string> = {
   1: 'text-yellow-400',
   2: 'text-gray-400',
@@ -134,6 +138,8 @@ export default function LeaderboardPage() {
 
   const [investedOnly, setInvestedOnly] = useState(true);
   const [copyTradeOnly, setCopyTradeOnly] = useState(false);
+  // LV-M-02: 표시할 리더보드 항목 수 / Visible leaderboard item count
+  const [leaderboardVisibleCount, setLeaderboardVisibleCount] = useState(LEADERBOARD_PAGE_SIZE);
   const { data: leaderboard, isLoading, refetch } = useLeaderboard({ period, sortBy: sortMode });
 
   // 팔로우 상태 훅 / Follow state hooks
@@ -253,6 +259,8 @@ export default function LeaderboardPage() {
   // Reset previous rank map on filter/sort change — prevents incorrect rank change animation
   useEffect(() => {
     prevRankMap.current = new Map();
+    // LV-M-02: 필터/정렬 변경 시 표시 항목 수 초기화 / Reset visible count on filter/sort change
+    setLeaderboardVisibleCount(LEADERBOARD_PAGE_SIZE);
   }, [period, sortMode, investedOnly, copyTradeOnly]);
 
   const handleRefresh = useCallback(async () => {
@@ -303,6 +311,10 @@ export default function LeaderboardPage() {
     sortedLeaderboard.forEach((entry) => next.set(entry.id, entry.rank));
     prevRankMap.current = next;
   }, [sortedLeaderboard]);
+
+  // LV-M-02: 현재까지 표시할 리더보드 항목만 슬라이스 / Slice leaderboard items up to current visible count
+  const displayedLeaderboard = useMemo(() => sortedLeaderboard.slice(0, leaderboardVisibleCount), [sortedLeaderboard, leaderboardVisibleCount]);
+  const hasMoreLeaderboard = leaderboardVisibleCount < sortedLeaderboard.length;
 
   // 현재 정렬 기준의 3번째 컬럼 헤더 / Third column header based on sort mode
   const thirdColHeader = sortMode === 'absolute' ? t('leaderboard.absolutePnl') : t('leaderboard.totalAssets');
@@ -503,7 +515,7 @@ export default function LeaderboardPage() {
         </div>
       ) : (
         <div className="divide-y divide-border/40">
-          {sortedLeaderboard.map((entry) => {
+          {displayedLeaderboard.map((entry) => {
             const isTop3 = entry.rank <= 3;
             const isPositive = entry.pnlPercent >= 0;
             const isMe = entry.isMe;
@@ -658,6 +670,18 @@ export default function LeaderboardPage() {
           {sortedLeaderboard.length === 0 && (
             <div className="py-24 text-center text-text-quaternary text-[14px]">
               {t('leaderboard.empty')}
+            </div>
+          )}
+          {/* LV-M-02: 더 보기 버튼 — 항목이 남아 있을 때 표시
+              LV-M-02: Load more button — shown when more items remain */}
+          {hasMoreLeaderboard && (
+            <div className="flex justify-center pt-4 pb-2">
+              <button
+                onClick={() => setLeaderboardVisibleCount((prev) => prev + LEADERBOARD_PAGE_SIZE)}
+                className="px-6 py-2.5 text-[13px] font-semibold text-accent border border-accent/30 rounded-xl hover:bg-accent/10 transition-colors"
+              >
+                {t('table.loadMore')} ({sortedLeaderboard.length - leaderboardVisibleCount})
+              </button>
             </div>
           )}
         </div>

@@ -9,7 +9,6 @@
 
 import { useMemo } from 'react';
 import { cn, formatPriceDisplay, formatPercent } from '@/lib/format';
-import AnimatedNumber from '@/components/ui/AnimatedNumber';
 import { useCurrencyDisplay } from '@/hooks/useCurrencyDisplay';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -59,8 +58,10 @@ export default function MarketTicker({ assets }: MarketTickerProps) {
                   {asset.name ?? asset.symbol}
                 </div>
                 <div className="flex items-baseline gap-1.5 md:gap-2">
+                  {/* ETC-L-02: AnimatedNumber를 단순 텍스트로 대체 — 성능 개선
+                      ETC-L-02: Replace AnimatedNumber with plain text — performance improvement */}
                   <span className="text-[13px] md:text-[14px] font-bold text-text-primary tabular-nums truncate">
-                    <AnimatedNumber value={formatPriceDisplay(asset.currentPrice, asset.symbol, display, rate)} />
+                    {formatPriceDisplay(asset.currentPrice, asset.symbol, display, rate)}
                   </span>
                   <span
                     className={cn(
@@ -70,7 +71,7 @@ export default function MarketTicker({ assets }: MarketTickerProps) {
                       !isRise && !isFall && 'text-text-quaternary',
                     )}
                   >
-                    <AnimatedNumber value={formatPercent(asset.changePercent)} />
+                    {formatPercent(asset.changePercent)}
                   </span>
                 </div>
               </div>

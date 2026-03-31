@@ -29,6 +29,8 @@ import { ArrowLeft, Star, Bell } from 'lucide-react';
 import { useWatchlist, useAddWatchlist, useRemoveWatchlist } from '@/hooks/useWatchlist';
 import { usePriceAlerts } from '@/hooks/usePriceAlert';
 import PriceAlertModal from '@/components/alerts/PriceAlertModal';
+// NAV-L-02: 브레드크럼 네비게이션 / Breadcrumb navigation
+import Breadcrumb from '@/components/ui/Breadcrumb';
 import type { PriceUpdate } from '@/types';
 import type { TranslationKey } from '@/lib/i18n';
 
@@ -175,6 +177,11 @@ export default function AssetDetailPage({
 
   return (
     <div className="pb-4">
+      {/* NAV-L-02: 브레드크럼 / Breadcrumb */}
+      <Breadcrumb items={[
+        { label: t('nav.dashboard'), href: '/dashboard' },
+        { label: asset?.name ?? symbol },
+      ]} />
       {/* 헤더 / Header */}
       <div className="flex items-center gap-3 py-6 h-[88px]">
         {/* NAV-M-01: 하드코딩된 /dashboard 대신 router.back() 사용 — 이전 페이지로 올바르게 복귀 */}
@@ -359,9 +366,11 @@ export default function AssetDetailPage({
         )}
       </div>
 
-      {/* 주요 지표 그리드 / Key Metrics Grid */}
+      {/* INF-L-03: 주요 지표 그리드 — 섹션 라벨 추가 / Key Metrics Grid — section label added */}
       {asset && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-x-4 md:gap-x-6 gap-y-3 mt-5 mb-5 px-1">
+        <div className="mt-5 mb-5 px-1">
+        <h3 className="sr-only">{t('detail.assetInfo')}</h3>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-x-4 md:gap-x-6 gap-y-3">
           <div className="flex flex-col gap-0.5">
             <span className="text-[11px] text-text-quaternary">{t('detail.open')}</span>
             <span className="text-[13px] font-semibold tabular-nums text-text-primary">
@@ -404,6 +413,7 @@ export default function AssetDetailPage({
               {formatPercent(changePercent)}
             </span>
           </div>
+        </div>
         </div>
       )}
 

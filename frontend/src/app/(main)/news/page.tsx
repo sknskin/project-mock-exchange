@@ -7,46 +7,64 @@
  */
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ExternalLink, Newspaper, Search, Sparkles, X, Loader2 } from 'lucide-react';
 import { useNews } from '@/hooks/useNews';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useScrollLock } from '@/hooks/useScrollLock';
-import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSettingsStore } from '@/stores/settings';
 import Pagination from '@/components/ui/Pagination';
 import RefreshControl from '@/components/ui/RefreshControl';
+// BD-M-05: 인라인 AI 모달을 공용 컴포넌트로 대체 / Replace inline AI modal with shared component
+import AiAnalysisModal from '@/components/ui/AiAnalysisModal';
 import api from '@/lib/api';
 import { cn } from '@/lib/format';
 
 type NewsTab = 'CRYPTO' | 'DOMESTIC_STOCK' | 'FOREIGN_STOCK';
 
-const SENTIMENT_COLOR: Record<string, string> = {
-  BULLISH: 'text-green-500 bg-green-500/10',
-  BEARISH: 'text-red-500 bg-red-500/10',
-  NEUTRAL: 'text-text-tertiary bg-bg-secondary',
-  MIXED: 'text-yellow-500 bg-yellow-500/10',
-};
-
-const SENTIMENT_KEY: Record<string, string> = {
-  BULLISH: 'news.aiAnalysis.sentiment.BULLISH',
-  BEARISH: 'news.aiAnalysis.sentiment.BEARISH',
-  NEUTRAL: 'news.aiAnalysis.sentiment.NEUTRAL',
-  MIXED: 'news.aiAnalysis.sentiment.MIXED',
-};
-
 // AI 분석 시 최근 뉴스 조회 한도 (실제 사용량: 최대 50건) / AI analysis fetch limit (actual usage: max 50 items)
 const AI_ANALYSIS_FETCH_LIMIT = 50;
 
-export default function NewsPage() {
+/** NAV-M-03: Suspense 래퍼 — useSearchParams 사용을 위해 필요
+ * NAV-M-03: Suspense wrapper — required for useSearchParams usage in Next.js 15 */
+export default function NewsPageWrapper() {
+  return (
+    <Suspense fallback={<div className="py-24 text-center text-text-quaternary animate-pulse">Loading...</div>}>
+      <NewsPage />
+    </Suspense>
+  );
+}
+
+function NewsPage() {
   const { t } = useTranslation();
   const locale = useSettingsStore((s) => s.locale);
   const dateLocale = locale === 'ko' ? 'ko-KR' : 'en-US';
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // NAV-M-03: URL 파라미터에서 초기 탭 결정 / Determine initial tab from URL param
+  const initialTab = (() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam === 'DOMESTIC_STOCK' || tabParam === 'FOREIGN_STOCK') return tabParam;
+    return 'CRYPTO' as const;
+  })();
 
   // 카테고리 탭 상태 (암호화폐, 국내주식, 해외주식) / Category tab state (crypto, domestic, foreign)
-  const [activeTab, setActiveTabRaw] = useState<NewsTab>('CRYPTO');
-  const setActiveTab = useCallback((v: NewsTab) => { setActiveTabRaw(v); window.scrollTo({ top: 0, behavior: 'smooth' }); }, []);
+  const [activeTab, setActiveTabRaw] = useState<NewsTab>(initialTab);
+  // NAV-M-03: 탭 변경 시 URL 파라미터 동기화 — 딥링크 지원
+  // NAV-M-03: Sync URL param on tab change — deep link support
+  const setActiveTab = useCallback((v: NewsTab) => {
+    setActiveTabRaw(v);
+    const url = new URL(window.location.href);
+    if (v === 'CRYPTO') {
+      url.searchParams.delete('tab');
+    } else {
+      url.searchParams.set('tab', v);
+    }
+    router.replace(url.pathname + url.search, { scroll: false });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [router]);
 
   // 페이지네이션 상태 / Pagination state
   const [page, setPage] = useState(1);
@@ -74,21 +92,6 @@ export default function NewsPage() {
   const [aiResult, setAiResult] = useState<{ summary: string; highlights: string[]; sentiment: string; sectionAnalysis?: { title: string; content: string }[]; marketOutlook?: string; riskFactors?: string[] } | null>(null);
   const [aiError, setAiError] = useState(false);
   const [aiModalOpen, setAiModalOpen] = useState(false);
-
-  useScrollLock(aiModalOpen);
-
-  // MOD-M-01: AI 분석 모달 포커스 트랩 — 접근성 향상
-  // MOD-M-01: News AI modal focus trap — accessibility improvement
-  const aiModalRef = useRef<HTMLDivElement>(null);
-  useFocusTrap(aiModalRef, aiModalOpen);
-
-  // ESC 닫기 / ESC close when modal is open
-  useEffect(() => {
-    if (!aiModalOpen) return;
-    const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !aiLoading) setAiModalOpen(false); };
-    document.addEventListener('keydown', handleKey);
-    return () => { document.removeEventListener('keydown', handleKey); };
-  }, [aiModalOpen, aiLoading]);
 
   /**
    * 서버 사이드 필터링으로 검색어와 날짜 필터를 전달하여 필요한 데이터만 조회
@@ -202,7 +205,8 @@ export default function NewsPage() {
       {/* Header */}
       <div className="py-6 flex items-center justify-between h-[88px]">
         <div className="flex items-center gap-2.5">
-          <Newspaper className="w-5 h-5 text-accent" />
+          {/* A11Y-L-04: 장식용 아이콘 aria-hidden / Decorative icon aria-hidden */}
+          <Newspaper className="w-5 h-5 text-accent" aria-hidden="true" />
           <h1 className="text-[20px] font-extrabold text-text-primary">
             {t('news.title')}
           </h1>
@@ -317,7 +321,8 @@ export default function NewsPage() {
               className={cn(
                 'block p-4 rounded-xl border border-border',
                 'bg-bg-secondary hover:bg-bg-tertiary hover:border-accent/40',
-                'transition-colors cursor-pointer group',
+                // ANI-L-05: 뉴스 항목 페이드인 / News item fade-in
+                'transition-colors cursor-pointer group animate-fade-in',
               )}
             >
               <div className="flex items-start justify-between gap-3 mb-2">
@@ -361,137 +366,16 @@ export default function NewsPage() {
         />
       )}
 
-      {/* AI 분석 모달 / AI Analysis Modal */}
-      {/* MOD-M-01: ref 연결로 포커스 트랩 적용 / Connect ref for focus trap */}
-      {aiModalOpen && (
-        <div ref={aiModalRef} className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="ai-analysis-title">
-          {/* 배경 오버레이 / Background overlay */}
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-modal-backdrop" onClick={() => !aiLoading && setAiModalOpen(false)} />
-          {/* 모달 본문 / Modal body */}
-          <div className="relative w-full max-w-3xl bg-bg-primary border border-border rounded-2xl shadow-xl max-h-[90vh] flex flex-col overflow-hidden animate-modal-content">
-            {/* 모달 헤더 / Modal header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-accent" />
-                <h2 id="ai-analysis-title" className="text-[16px] font-bold text-text-primary">
-                  {t('news.aiAnalysis.title')}
-                </h2>
-                <span className="text-[12px] text-text-quaternary">
-                  {tabs.find((tab) => tab.key === activeTab)?.label}
-                </span>
-              </div>
-              <button onClick={() => !aiLoading && setAiModalOpen(false)} aria-label="Close" className="p-1.5 rounded-lg hover:bg-bg-secondary transition-colors">
-                <X className="w-4.5 h-4.5 text-text-quaternary" />
-              </button>
-            </div>
-
-            {/* 모달 콘텐츠 / Modal content */}
-            <div className="flex-1 overflow-y-auto overscroll-contain p-5 sm:p-6">
-              {aiLoading ? (
-                <div className="flex flex-col items-center gap-4 py-16">
-                  <Loader2 className="w-8 h-8 text-accent animate-spin" />
-                  <p className="text-[14px] text-text-tertiary">{t('news.aiAnalysis.loading')}</p>
-                  <p className="text-[12px] text-text-quaternary">{locale === 'ko' ? '심층 분석 중입니다. 잠시만 기다려주세요...' : 'Performing deep analysis. Please wait...'}</p>
-                </div>
-              ) : aiError ? (
-                <div className="text-center py-12">
-                  <p className="text-[14px] text-red-500">{t('news.aiAnalysis.error')}</p>
-                </div>
-              ) : !aiResult ? (
-                <div className="text-center py-12">
-                  <p className="text-[14px] text-text-quaternary">{t('news.aiAnalysis.noData')}</p>
-                </div>
-              ) : (
-                <div className="space-y-6">
-                  {/* 시장 심리 / Market Sentiment */}
-                  <div className="flex items-center gap-3">
-                    <span className="text-[13px] font-medium text-text-tertiary">{t('news.aiAnalysis.sentiment')}</span>
-                    <span className={cn('px-3 py-1 rounded-full text-[12px] font-bold', SENTIMENT_COLOR[aiResult.sentiment] ?? SENTIMENT_COLOR.NEUTRAL)}>
-                      {t((SENTIMENT_KEY[aiResult.sentiment] ?? SENTIMENT_KEY.NEUTRAL) as never)}
-                    </span>
-                  </div>
-
-                  {/* 시장 요약 / Market Summary */}
-                  <div className="p-4 rounded-xl bg-bg-secondary/50 border border-border/50">
-                    <h3 className="text-[13px] font-bold text-accent mb-2.5">{t('news.aiAnalysis.summary')}</h3>
-                    <p className="text-[14px] text-text-primary leading-[1.8] whitespace-pre-line">{aiResult.summary}</p>
-                  </div>
-
-                  {/* 핵심 포인트 / Key Highlights */}
-                  {aiResult.highlights.length > 0 && (
-                    <div>
-                      <h3 className="text-[13px] font-bold text-text-secondary mb-3">{t('news.aiAnalysis.highlights')}</h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {aiResult.highlights.map((h, i) => (
-                          <div key={i} className="flex items-start gap-2.5 p-3 rounded-lg bg-bg-secondary/30 border border-border/30">
-                            <span className="text-accent font-bold text-[13px] mt-0.5 shrink-0">{i + 1}</span>
-                            <span className="text-[13px] text-text-primary leading-relaxed">{h}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* 섹션별 분석 / Section Analysis */}
-                  {aiResult.sectionAnalysis && aiResult.sectionAnalysis.length > 0 && (
-                    <div className="space-y-4">
-                      {aiResult.sectionAnalysis.map((section, i) => (
-                        <div key={i} className="border border-border/50 rounded-xl overflow-hidden">
-                          <div className="px-4 py-2.5 bg-bg-secondary/50 border-b border-border/50">
-                            <h3 className="text-[13px] font-bold text-text-primary">{section.title}</h3>
-                          </div>
-                          <div className="px-4 py-3">
-                            <p className="text-[13px] text-text-secondary leading-[1.9] whitespace-pre-line">{section.content}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* 시장 전망 / Market Outlook */}
-                  {aiResult.marketOutlook && (
-                    <div className="p-4 rounded-xl bg-accent/5 border border-accent/20">
-                      <h3 className="text-[13px] font-bold text-accent mb-2.5">
-                        {locale === 'ko' ? '시장 전망' : 'Market Outlook'}
-                      </h3>
-                      <p className="text-[13px] text-text-primary leading-[1.9] whitespace-pre-line">{aiResult.marketOutlook}</p>
-                    </div>
-                  )}
-
-                  {/* 리스크 요인 / Risk Factors */}
-                  {aiResult.riskFactors && aiResult.riskFactors.length > 0 && (
-                    <div>
-                      <h3 className="text-[13px] font-bold text-red-500/80 mb-3">
-                        {locale === 'ko' ? '리스크 요인' : 'Risk Factors'}
-                      </h3>
-                      <ul className="space-y-2">
-                        {aiResult.riskFactors.map((r, i) => (
-                          <li key={i} className="flex items-start gap-2.5 text-[13px] text-text-secondary">
-                            <span className="text-red-500/60 mt-0.5 shrink-0">⚠</span>
-                            <span className="leading-relaxed">{r}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* 모달 푸터 / Modal footer */}
-            {!aiLoading && (
-              <div className="flex justify-end px-5 py-3 border-t border-border shrink-0">
-                <button
-                  onClick={() => setAiModalOpen(false)}
-                  className="px-4 py-2 rounded-lg text-[13px] font-semibold bg-bg-secondary text-text-primary hover:bg-bg-tertiary transition-colors"
-                >
-                  {t('news.aiAnalysis.close')}
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      {/* BD-M-05: 인라인 AI 모달을 공용 AiAnalysisModal 컴포넌트로 대체
+          BD-M-05: Replace inline AI modal with shared AiAnalysisModal component */}
+      <AiAnalysisModal
+        isOpen={aiModalOpen}
+        onClose={() => setAiModalOpen(false)}
+        loading={aiLoading}
+        error={aiError}
+        result={aiResult}
+        categoryLabel={tabs.find((tab) => tab.key === activeTab)?.label}
+      />
     </div>
   );
 }
