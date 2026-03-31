@@ -143,16 +143,20 @@ export default function PortfolioPage() {
       <div>
         <div className="py-6 flex items-center justify-between h-[88px]">
           <div className="flex items-center gap-2.5">
-            <Briefcase className="w-5 h-5 text-accent" />
+            {/* A11Y-L-03: 장식용 아이콘 aria-hidden / Decorative icon aria-hidden */}
+            <Briefcase className="w-5 h-5 text-accent" aria-hidden="true" />
             <h1 className="text-[20px] font-extrabold text-text-primary">{t('nav.portfolio')}</h1>
           </div>
           <RefreshControl intervalSeconds={10} onRefresh={handleRefresh} />
         </div>
-        {/* 탭 네비게이션 / Tab Navigation */}
-        <div className="flex gap-1 border-b border-border/60 mb-2">
+        {/* A11Y-M-06: 탭 네비게이션에 role="tablist"/role="tab" 추가 — 접근성 / Add tablist/tab roles — a11y */}
+        <div className="flex gap-1 border-b border-border/60 mb-2" role="tablist">
           {(['overview', 'analytics'] as const).map((tab) => (
             <button
               key={tab}
+              role="tab"
+              aria-selected={activeTab === tab}
+              aria-controls={activeTab === tab ? 'portfolio-tabpanel' : undefined}
               onClick={() => setActiveTab(tab)}
               className={cn(
                 'px-4 py-2.5 text-[14px] font-semibold transition-colors relative',
@@ -328,6 +332,7 @@ export default function PortfolioPage() {
 
                   {portfolio.holdings.length > 0 ? (
                     <div className="divide-y divide-border/40">
+                      {/* ANI-L-04: 보유 종목 항목 페이드인 / Holdings item fade-in */}
                       {portfolio.holdings.map((holding) => (
                         <HoldingCard key={holding.symbol} holding={holding} />
                       ))}
