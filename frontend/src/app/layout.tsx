@@ -6,7 +6,7 @@
  * @description Global layout including Header, Footer, BottomNav, and theme
  */
 import type { Metadata } from 'next';
-import Script from 'next/script';
+import { headers } from 'next/headers';
 import './globals.css';
 import QueryProvider from '@/components/layout/QueryProvider';
 import Header from '@/components/layout/Header';
@@ -21,17 +21,22 @@ import ConnectionGuard from '@/components/layout/ConnectionGuard';
 import AuthenticatedChatPanel from '@/components/chat/AuthenticatedChatPanel';
 import AuthTokenRecovery from '@/components/layout/AuthTokenRecovery';
 import MainContent from '@/components/layout/MainContent';
+import OnboardingGuide from '@/components/ui/OnboardingGuide';
+import KeyboardShortcutsHelp from '@/components/ui/KeyboardShortcutsHelp';
 
 export const metadata: Metadata = {
   title: 'VirtuEx - Mock Trading Platform',
   description: 'Real-time mock stock & crypto trading platform',
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // CSP nonce를 미들웨어에서 받아 인라인 스크립트에 전달
+  // Read CSP nonce from middleware to pass to inline scripts
+  const nonce = (await headers()).get('x-nonce') ?? undefined;
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -52,10 +57,21 @@ export default function RootLayout({
           and sets CSS data attributes. auth-show/auth-hide CSS classes work immediately.
           Security: this is a build-time fixed string that only reads sessionStorage + sets dataset.
         */}
-        <Script
+        {/* HYDRATION-FIX: raw <script> + suppressHydrationWarning 사용
+            브라우저는 보안상 DOM에서 nonce 속성값을 제거하므로 next/script의 <Script>로는
+            서버(nonce="abc") vs 클라이언트(nonce="") hydration mismatch가 불가피합니다.
+            raw <script> + dangerouslySetInnerHTML + suppressHydrationWarning 조합으로 해결합니다.
+
+            HYDRATION-FIX: Use raw <script> + suppressHydrationWarning.
+            Browsers strip nonce attribute values from the DOM for security, causing an unavoidable
+            server(nonce="abc") vs client(nonce="") hydration mismatch with next/script <Script>.
+            Resolved by using raw <script> + dangerouslySetInnerHTML + suppressHydrationWarning. */}
+        <script
           id="auth-prehydrate"
-          strategy="beforeInteractive"
-        >{`
+          nonce={nonce}
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{
+            __html: `
           try {
             var d = JSON.parse(sessionStorage.getItem('virtuex-auth') || '{}');
             if (d.state && d.state.isAuthenticated) {
@@ -71,7 +87,9 @@ export default function RootLayout({
             }
           } catch (e) {}
           if (!document.documentElement.lang || document.documentElement.lang === 'en') document.documentElement.lang = 'ko';
-        `}</Script>
+        `,
+          }}
+        />
       </head>
       <body className="bg-bg-primary text-text-primary min-h-screen">
         {/* 키보드/스크린 리더 사용자를 위한 본문 건너뛰기 링크 (WCAG 2.4.1)
@@ -98,6 +116,10 @@ export default function RootLayout({
             <ToastContainer />
             <LiveToastContainer />
             <AuthenticatedChatPanel />
+            {/* UX-M-01: 첫 방문 온보딩 가이드 / First-visit onboarding guide */}
+            <OnboardingGuide />
+            {/* UX-M-03: 키보드 단축키 도움말 (? 키) / Keyboard shortcuts help (? key) */}
+            <KeyboardShortcutsHelp />
           </ConnectionGuard>
         </QueryProvider>
       </body>
