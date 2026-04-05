@@ -5,6 +5,8 @@
  * @file Leaderboard Page
  * @description Page showing top user rankings by return rate
  */
+// TODO: FLIP 애니메이션을 useFlipAnimation 훅, 카피트레이드를 useCopyTrade 훅으로 분리 검토 (PERF-13-04)
+// TODO: Consider extracting FLIP animation to useFlipAnimation hook and copy trade to useCopyTrade hook (PERF-13-04)
 'use client';
 
 import { useRef, useEffect, useCallback, useState, useMemo } from 'react';
@@ -324,7 +326,7 @@ export default function LeaderboardPage() {
       {/* 헤더 / Header */}
       <div className="py-6 flex items-center justify-between h-[88px]">
         <div className="flex items-center gap-2.5">
-          <Trophy className="w-5 h-5 text-accent" />
+          <Trophy className="w-5 h-5 text-accent" aria-hidden="true" />
           <h1 className="text-[20px] font-extrabold text-text-primary">{t('leaderboard.title')}</h1>
         </div>
         <RefreshControl intervalSeconds={10} onRefresh={handleRefresh} />
@@ -573,7 +575,7 @@ export default function LeaderboardPage() {
                       )}
                     >
                       {displayName}
-                      {isMe && <span className="text-[11px] text-accent/70 ml-1.5">(me)</span>}
+                      {isMe && <span className="text-[11px] text-accent/70 ml-1.5">{t('chat.me')}</span>}
                     </span>
                     {/* 모바일: 자산 표시 / Mobile: show assets */}
                     <span className="block sm:hidden text-[11px] text-text-tertiary mt-0.5 tabular-nums">
@@ -669,7 +671,8 @@ export default function LeaderboardPage() {
 
           {sortedLeaderboard.length === 0 && (
             <div className="py-24 text-center text-text-quaternary text-[14px]">
-              {t('leaderboard.empty')}
+              {/* UX-9-15: 필터 활성 시 다른 빈 상태 메시지 표시 / Show different empty message when filter is active */}
+              {investedOnly || copyTradeOnly ? t('leaderboard.emptyFiltered') : t('leaderboard.empty')}
             </div>
           )}
           {/* LV-M-02: 더 보기 버튼 — 항목이 남아 있을 때 표시

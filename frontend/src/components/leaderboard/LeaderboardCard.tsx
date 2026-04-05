@@ -130,7 +130,7 @@ const LeaderboardCard = forwardRef<HTMLDivElement, LeaderboardCardProps>(
           <div className="min-w-0">
             <span className={cn('font-semibold text-[14px] truncate block', entry.isMe ? 'text-accent' : 'text-text-primary')}>
               {displayName}
-              {entry.isMe && <span className="text-[11px] text-accent/70 ml-1.5">(me)</span>}
+              {entry.isMe && <span className="text-[11px] text-accent/70 ml-1.5">{t('chat.me')}</span>}
             </span>
             <span className="block sm:hidden text-[11px] text-text-tertiary mt-0.5 tabular-nums">
               {sortMode === 'absolute' ? (

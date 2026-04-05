@@ -164,7 +164,7 @@ export default function UserProfileModal({
                 #{user.rank}
               </span>
               {user.isMe && (
-                <span className="text-[11px] text-accent font-medium bg-accent/10 px-1.5 py-0.5 rounded">(me)</span>
+                <span className="text-[11px] text-accent font-medium bg-accent/10 px-1.5 py-0.5 rounded">{t('chat.me')}</span>
               )}
             </div>
           </div>

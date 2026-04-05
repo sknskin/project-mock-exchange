@@ -44,6 +44,8 @@ interface OrderTableProps {
   orderPage: number;
   ordersPerPage: number;
   onPageChange: (page: number) => void;
+  // UX-9-28: 수정 성공 후 하이라이트할 주문 ID / Order ID to highlight after modify success
+  highlightedOrderId?: string | null;
   t: (key: TranslationKey) => string;
 }
 
@@ -74,6 +76,7 @@ export default function OrderTable({
   orderPage,
   ordersPerPage,
   onPageChange,
+  highlightedOrderId,
   t,
 }: OrderTableProps) {
   return (
@@ -106,7 +109,7 @@ export default function OrderTable({
         ) : statusFilter === 'PENDING' ? (
           <div className="divide-y divide-border/40">
             {filteredOrders?.map((order) => (
-              <div key={order.id} className="py-3.5">
+              <div key={order.id} className={cn('py-3.5', highlightedOrderId === order.id && 'tick-flash-rise')}>
                 {editingOrderId === order.id ? (
                   <OrderEditModal
                     order={order}

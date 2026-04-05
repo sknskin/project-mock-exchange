@@ -82,10 +82,12 @@ export default function PortfolioPage() {
     if (!amount || amount <= 0) return;
 
     if (depositExceedsMax) {
+      // UX-9-18: 하드코딩된 한도 메시지를 i18n으로 교체 / Replace hardcoded limit message with i18n
+      const formattedAmount = currencyMode === 'original'
+        ? `$${Math.floor(maxDepositInCurrentUnit).toLocaleString('en-US')}`
+        : `${(MAX_DEPOSIT_KRW / 100000000).toFixed(0)}억원`;
       useToastStore.getState().addToast(
-        currencyMode === 'original'
-          ? `Maximum deposit is $${Math.floor(maxDepositInCurrentUnit).toLocaleString('en-US')}`
-          : `최대 입금 한도는 ${(MAX_DEPOSIT_KRW / 100000000).toFixed(0)}억원입니다`,
+        t('portfolio.maxDeposit').replace('{amount}', formattedAmount),
         'error',
       );
       return;
@@ -310,15 +312,16 @@ export default function PortfolioPage() {
                               pnlPercent: h.pnlPercent?.toFixed(2) + '%',
                             })),
                             `holdings-${new Date().toISOString().slice(0, 10)}`,
+                            // UX-9-30: 하드코딩된 CSV 컬럼 헤더를 i18n으로 교체 / Replace hardcoded CSV column headers with i18n
                             [
-                              { key: 'symbol', label: 'Symbol' },
-                              { key: 'name', label: 'Name' },
-                              { key: 'quantity', label: 'Quantity' },
-                              { key: 'avgPrice', label: 'Avg Price' },
-                              { key: 'currentPrice', label: 'Current Price' },
-                              { key: 'value', label: 'Value' },
-                              { key: 'pnl', label: 'P&L' },
-                              { key: 'pnlPercent', label: 'P&L %' },
+                              { key: 'symbol', label: t('export.column.symbol') },
+                              { key: 'name', label: t('export.column.name') },
+                              { key: 'quantity', label: t('export.column.quantity') },
+                              { key: 'avgPrice', label: t('export.column.avgPrice') },
+                              { key: 'currentPrice', label: t('export.column.currentPrice') },
+                              { key: 'value', label: t('export.column.value') },
+                              { key: 'pnl', label: t('export.column.pnl') },
+                              { key: 'pnlPercent', label: t('export.column.pnlPercent') },
                             ],
                           );
                         }}
@@ -407,9 +410,10 @@ export default function PortfolioPage() {
 
             {depositExceedsMax && (
               <p className="text-[12px] text-danger font-medium">
-                {currencyMode === 'original'
-                  ? `Maximum deposit: $${Math.floor(maxDepositInCurrentUnit).toLocaleString('en-US')}`
-                  : `최대 입금 한도: ${(MAX_DEPOSIT_KRW / 100000000).toFixed(0)}억원`}
+                {/* UX-9-18: 하드코딩된 한도 메시지를 i18n으로 교체 / Replace hardcoded limit message with i18n */}
+                {t('portfolio.maxDeposit').replace('{amount}', currencyMode === 'original'
+                  ? `$${Math.floor(maxDepositInCurrentUnit).toLocaleString('en-US')}`
+                  : `${(MAX_DEPOSIT_KRW / 100000000).toFixed(0)}억원`)}
               </p>
             )}
 

@@ -35,13 +35,56 @@ import DashboardAssetSection from '@/components/dashboard/DashboardAssetSection'
 import DashboardAiModal from '@/components/dashboard/DashboardAiModal';
 import type { AiAnalysisResult } from '@/components/dashboard/DashboardAiModal';
 import { cn } from '@/lib/format';
-import { Sparkles, Loader2 } from 'lucide-react';
+import { Sparkles, Loader2, LayoutDashboard } from 'lucide-react';
 import api from '@/lib/api';
 import type { Asset, AssetInfo, PriceUpdate } from '@/types';
 
 // UX-M-02: 마지막 업데이트 시간 표시 함수 / Format last updated timestamp
 function formatLastUpdated(date: Date): string {
   return date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
+// PERF-13-07: 마지막 업데이트 시각을 별도 컴포넌트로 분리 — 대시보드 전체 리렌더 방지
+// PERF-13-07: Separate last-updated display into its own component — prevents full dashboard re-render
+function LastUpdatedDisplay({ lastUpdatedRef }: { lastUpdatedRef: React.RefObject<Date | null> }) {
+  const { t } = useTranslation();
+  const [, forceUpdate] = useState(0);
+  const displayRef = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    let rafId: number;
+    const tick = () => {
+      if (displayRef.current && lastUpdatedRef.current) {
+        displayRef.current.textContent =
+          `${t('dashboard.lastUpdated') ?? 'Last updated'}: ${formatLastUpdated(lastUpdatedRef.current)}`;
+      }
+      rafId = requestAnimationFrame(tick);
+    };
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
+  }, [lastUpdatedRef, t]);
+
+  // 초기 표시를 위해 ref 값이 생기면 한 번 forceUpdate
+  // Force one update when ref value first appears for initial display
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (lastUpdatedRef.current) {
+        forceUpdate((c) => c + 1);
+        clearInterval(timer);
+      }
+    }, 500);
+    return () => clearInterval(timer);
+  }, [lastUpdatedRef]);
+
+  if (!lastUpdatedRef.current) return null;
+
+  return (
+    <div className="flex justify-end pt-2 pb-1">
+      <span ref={displayRef} className="text-[11px] text-text-quaternary tabular-nums">
+        {t('dashboard.lastUpdated') ?? 'Last updated'}: {formatLastUpdated(lastUpdatedRef.current)}
+      </span>
+    </div>
+  );
 }
 
 // AI 분석 시 최근 뉴스 조회 한도 / AI analysis news fetch limit
@@ -73,8 +116,9 @@ function DashboardPageInner() {
   // Live prices in external store — completely prevents dashboard component re-render
   const pendingPricesRef = useRef<Record<string, PriceUpdate>>({});
   const flushTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
-  // UX-M-02: 마지막 데이터 갱신 시각 / Last data refresh timestamp
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  // PERF-13-07: useRef로 변경 — 대시보드 전체 리렌더 방지
+  // PERF-13-07: Changed to useRef — prevents full dashboard re-render
+  const lastUpdatedRef = useRef<Date | null>(null);
   // NAV-M-02: URL 파라미터에서 초기 탭/기간 결정 — 딥링크 지원
   // NAV-M-02: Determine initial tab/period from URL params — deep link support
   const validTabs = ['realtime', 'popular', 'trending', 'watchlist'];
@@ -259,7 +303,7 @@ function DashboardPageInner() {
         flushTimerRef.current = undefined;
         batchUpdatePrices(batch);
         // UX-M-02: 마지막 업데이트 시각 갱신 / Update last refreshed timestamp
-        setLastUpdated(new Date());
+        lastUpdatedRef.current = new Date();
       }, 2000);
     }
   }, []);
@@ -334,14 +378,17 @@ function DashboardPageInner() {
 
   return (
     <div>
-      {/* UX-M-02: 마지막 데이터 갱신 시각 표시 / Last data refresh indicator */}
-      {lastUpdated && (
-        <div className="flex justify-end pt-2 pb-1">
-          <span className="text-[11px] text-text-quaternary tabular-nums">
-            {t('dashboard.lastUpdated') ?? 'Last updated'}: {formatLastUpdated(lastUpdated)}
-          </span>
+      {/* UX-9-32: 다른 페이지와 일관된 헤더 영역 추가 / Add consistent header area matching other pages */}
+      <div className="py-6 flex items-center justify-between h-[88px]">
+        <div className="flex items-center gap-2.5">
+          <LayoutDashboard className="w-5 h-5 text-accent" aria-hidden="true" />
+          <h1 className="text-[20px] font-extrabold text-text-primary">{t('nav.dashboard')}</h1>
         </div>
-      )}
+      </div>
+
+      {/* UX-M-02: 마지막 데이터 갱신 시각 표시 / Last data refresh indicator */}
+      {/* PERF-13-07: 별도 컴포넌트로 분리하여 대시보드 리렌더 방지 / Separated to prevent dashboard re-render */}
+      <LastUpdatedDisplay lastUpdatedRef={lastUpdatedRef} />
 
       {/* 모바일 검색 바 / Mobile search bar */}
       <DashboardMobileSearch onOpen={() => setSpotlightOpen(true)} />

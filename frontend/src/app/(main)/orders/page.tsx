@@ -78,6 +78,8 @@ export default function OrdersPage() {
   const [editPrice, setEditPrice] = useState('');
   const [editQuantity, setEditQuantity] = useState('');
   const [cancelTargetId, setCancelTargetId] = useState<string | null>(null);
+  // UX-9-28: 수정 성공 시 시각적 하이라이트 상태 / Visual highlight state after modify success
+  const [highlightedOrderId, setHighlightedOrderId] = useState<string | null>(null);
 
   const startEditing = (order: Order) => {
     setEditingOrderId(order.id);
@@ -94,6 +96,10 @@ export default function OrdersPage() {
       await modifyOrder.mutateAsync({ orderId, price, quantity });
       setEditingOrderId(null);
       useToastStore.getState().addToast(t('orders.modifySuccess'), 'success');
+      // UX-9-28: 수정된 주문 행에 시각적 하이라이트 적용 (2초 후 해제)
+      // UX-9-28: Apply visual highlight to modified order row (clear after 2s)
+      setHighlightedOrderId(orderId);
+      setTimeout(() => setHighlightedOrderId(null), 2000);
     } catch {
       // handled by query client
     }
@@ -210,6 +216,7 @@ export default function OrdersPage() {
               orderPage={orderPage}
               ordersPerPage={ORDERS_PER_PAGE}
               onPageChange={setOrderPage}
+              highlightedOrderId={highlightedOrderId}
               t={t}
             />
           </div>
