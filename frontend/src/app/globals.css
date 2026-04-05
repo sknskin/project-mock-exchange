@@ -6,10 +6,9 @@
  * @description Theme variables, base styles, utility classes, and animations
  */
 @import 'tailwindcss';
-@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css');
 
-/* CDN 폰트 FOIT 방지: preconnect hint를 layout.tsx <head>에서 처리 */
-/* CDN font FOIT prevention: preconnect hint handled in layout.tsx <head> */
+/* CDN 폰트: layout.tsx <head>의 <link preload> + <link stylesheet>로 로드 — @import 중복 제거 */
+/* CDN font: loaded via <link preload> + <link stylesheet> in layout.tsx <head> — @import removed to avoid CSS parse waterfall */
 
 @font-face {
   font-family: 'Pretendard Variable';
@@ -68,7 +67,6 @@ nextjs-portal,
     /* TYP-M-03 / TYP-L-05~06: 한국어 텍스트 가독성을 위한 기본 줄 높이 — 모든 하위 요소에 상속
        TYP-M-03 / TYP-L-05~06: Base line-height for Korean text readability — inherited by all descendants */
     line-height: 1.6;
-    transition: background-color 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s;
   }
 
   /* 라이트 테마 오버라이드 / Light theme overrides */
@@ -85,17 +83,18 @@ nextjs-portal,
     --color-border: rgba(0, 0, 0, 0.08);
   }
 
-  /* 테마 전환 시 주요 요소만 부드럽게 전환 / Smooth theme transitions for key elements only */
-  body,
-  header,
-  nav,
-  main,
-  footer,
-  aside,
-  .bg-bg-primary,
-  .bg-bg-secondary,
-  .bg-bg-tertiary,
-  .bg-bg-elevated {
+  /* PERF-13-15: 테마 전환 중에만 트랜지션 활성화 — 평소에는 불필요한 레이아웃 비용 제거
+     PERF-13-15: Activate transitions only during theme change — eliminates unnecessary layout cost at rest */
+  html.theme-transitioning body,
+  html.theme-transitioning header,
+  html.theme-transitioning nav,
+  html.theme-transitioning main,
+  html.theme-transitioning footer,
+  html.theme-transitioning aside,
+  html.theme-transitioning .bg-bg-primary,
+  html.theme-transitioning .bg-bg-secondary,
+  html.theme-transitioning .bg-bg-tertiary,
+  html.theme-transitioning .bg-bg-elevated {
     transition: background-color 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s;
   }
 
@@ -515,7 +514,8 @@ nextjs-portal,
     .animate-toast-fade,
     .animate-live-toast-in,
     .animate-chat-panel-in,
-    .animate-dropdown-in {
+    .animate-dropdown-in,
+    .animate-dropdown-out {
       animation: none !important;
     }
     .tick-flash-rise,
@@ -618,6 +618,15 @@ nextjs-portal,
   }
   .animate-dropdown-in {
     animation: dropdown-in 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* 드롭다운 닫기 애니메이션 / Dropdown close animation */
+  @keyframes dropdown-out {
+    0% { opacity: 1; transform: scale(1) translateY(0); }
+    100% { opacity: 0; transform: scale(0.95) translateY(-4px); }
+  }
+  .animate-dropdown-out {
+    animation: dropdown-out 0.2s ease-in both;
   }
 
   /* 에러 흔들기 애니메이션 / Error shake animation */
