@@ -5,7 +5,7 @@
  * @file Auth Proxy Controller
  * @description Proxies authentication requests from API Gateway to User Auth service
  */
-import { Controller, Post, Get, Body, Req, Res, Query, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
+import { Controller, Post, Get, Body, Req, Res, Query, HttpCode, HttpStatus, UseGuards, BadRequestException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { Request, Response } from 'express';
@@ -24,6 +24,8 @@ import {
   ResetPasswordDto,
   TotpCodeDto,
 } from './dto/auth.dto';
+import { randomBytes } from 'crypto';
+import { SkipCsrf } from '../guards/csrf.guard';
 
 // 인증 관련 모든 엔드포인트를 처리하는 프록시 컨트롤러
 // Proxy controller handling all authentication-related endpoints
@@ -36,6 +38,27 @@ export class AuthProxyController {
     // ChatGateway: WebSocket을 통한 실시간 알림 전송 / Sends real-time notifications via WebSocket
     private readonly chatGateway: ChatGateway,
   ) {}
+
+  /**
+   * SEC-26-04: CSRF 토큰 쿠키 설정 — 로그인/토큰 갱신 성공 시 호출
+   * httpOnly: false로 설정하여 프론트엔드 JavaScript에서 읽을 수 있도록 함
+   *
+   * SEC-26-04: Set CSRF token cookie — called on login/token refresh success
+   * httpOnly: false so frontend JavaScript can read it for the double-submit pattern
+   */
+  private setCsrfCookie(res: Response): void {
+    // 32바이트 랜덤 hex 문자열 생성 — 충분한 엔트로피로 예측 불가능한 토큰 보장
+    // Generate 32-byte random hex string — sufficient entropy ensures unpredictable token
+    const csrfToken = randomBytes(32).toString('hex');
+    const isProduction = process.env.NODE_ENV === 'production';
+
+    res.cookie('csrf_token', csrfToken, {
+      httpOnly: false,
+      sameSite: 'lax',
+      secure: isProduction,
+      path: '/',
+    });
+  }
 
   /**
    * Set-Cookie 헤더를 검증하여 HttpOnly, SameSite 플래그를 보장하고 전달
@@ -72,6 +95,9 @@ export class AuthProxyController {
   /** 회원가입 요청을 user-auth 서비스로 프록시
    * Proxy registration request to user-auth service */
   // 회원가입 — 하루 3회 제한으로 자동화된 대량 등록 방지 / Register — 3/day rate limit prevents automated mass registration
+  // SEC-26-04: 회원가입은 인증 전이므로 CSRF 검증 제외
+  // SEC-26-04: Registration is pre-auth, skip CSRF validation
+  @SkipCsrf()
   @Post('register')
   @Throttle({ default: { ttl: 86400000, limit: 3 } })
   @ApiOperation({ summary: '회원가입', description: '새 사용자 계정을 생성합니다' })
@@ -85,9 +111,11 @@ export class AuthProxyController {
       data: body,
     });
     // 성공 시 WebSocket으로 관리자에게 가입 요청 알림 전송 / On success, notify admins of new registration request via WebSocket
+    // SEC-26-03: 전체 브로드캐스트 대신 admin-room에만 전송 — 일반 사용자에게 가입 정보 노출 방지
+    // SEC-26-03: Emit to admin-room only instead of broadcasting — prevents exposing registration info to all users
     if (result.status < 400) {
       const data = result.data as { username?: string; name?: string };
-      this.chatGateway.server.emit('notification:registration-request', {
+      this.chatGateway.server.to('admin-room').emit('notification:registration-request', {
         type: 'registration-request',
         username: data.username || body.username || '',
         name: data.name || body.name || '',
@@ -100,6 +128,9 @@ export class AuthProxyController {
   /** 로그인 요청을 user-auth 서비스로 프록시
    * Proxy login request to user-auth service */
   // 로그인 — 1분 5회 제한으로 무차별 대입 방지 / Login — 5/min rate limit prevents brute-force attacks
+  // SEC-26-04: 로그인은 인증 전이므로 CSRF 검증 제외
+  // SEC-26-04: Login is pre-auth, skip CSRF validation
+  @SkipCsrf()
   @Post('login')
   @Throttle({ default: { ttl: 60000, limit: 5 } })
   @HttpCode(HttpStatus.OK)
@@ -120,6 +151,9 @@ export class AuthProxyController {
    * Proxy login SMS resend to user-auth */
   // 로그인 SMS 재전송 — 분당 3회 제한으로 SMS 남용 방지
   // Resend login SMS — 3/min rate limit prevents SMS abuse
+  // SEC-26-04: 로그인 SMS 재전송은 인증 전이므로 CSRF 검증 제외
+  // SEC-26-04: Login SMS resend is pre-auth, skip CSRF validation
+  @SkipCsrf()
   @Post('login/resend-sms')
   @Throttle({ default: { ttl: 60000, limit: 3 } })
   @HttpCode(HttpStatus.OK)
@@ -136,6 +170,9 @@ export class AuthProxyController {
 
   /** 로그인 SMS 인증번호 검증을 user-auth로 프록시
    * Proxy login SMS verification to user-auth */
+  // SEC-26-04: SMS 인증은 인증 전이므로 CSRF 검증 제외 (성공 시 CSRF 쿠키 설정)
+  // SEC-26-04: SMS verification is pre-auth, skip CSRF (sets CSRF cookie on success)
+  @SkipCsrf()
   @Post('login/verify-sms')
   @Throttle({ default: { ttl: 60000, limit: 5 } })
   @HttpCode(HttpStatus.OK)
@@ -157,11 +194,20 @@ export class AuthProxyController {
     // Validate and forward Set-Cookie headers — ensure Secure, HttpOnly flags
     this.sanitizeAndForwardCookies(result.headers?.['set-cookie'], res);
 
+    // SEC-26-04: 로그인 성공 시 CSRF 토큰 쿠키 설정
+    // SEC-26-04: Set CSRF token cookie on successful login
+    if (result.status < 400) {
+      this.setCsrfCookie(res);
+    }
+
     return res.status(result.status).json(result.data);
   }
 
   /** 토큰 갱신 요청을 user-auth로 프록시
    * Proxy token refresh request to user-auth */
+  // SEC-26-04: 토큰 갱신은 CSRF 쿠키가 아직 없을 수 있으므로 제외 (성공 시 CSRF 쿠키 갱신)
+  // SEC-26-04: Token refresh may not have CSRF cookie yet, skip (renews CSRF cookie on success)
+  @SkipCsrf()
   @Post('refresh')
   @Throttle({ default: { ttl: 60000, limit: 30 } })
   @HttpCode(HttpStatus.OK)
@@ -180,6 +226,12 @@ export class AuthProxyController {
     // Set-Cookie 헤더 검증 후 전달 — Secure, HttpOnly 플래그 보장
     // Validate and forward Set-Cookie headers — ensure Secure, HttpOnly flags
     this.sanitizeAndForwardCookies(result.headers?.['set-cookie'], res);
+
+    // SEC-26-04: 토큰 갱신 성공 시 CSRF 토큰도 함께 갱신
+    // SEC-26-04: Renew CSRF token along with auth tokens on successful refresh
+    if (result.status < 400) {
+      this.setCsrfCookie(res);
+    }
 
     return res.status(result.status).json(result.data);
   }
@@ -201,6 +253,9 @@ export class AuthProxyController {
     // 클라이언트 쿠키 제거 — path 일치 필수 / Clear client cookies — path must match the original cookie path
     res.clearCookie('refresh_token', { path: '/api/auth' });
     res.clearCookie('access_token', { path: '/' });
+    // SEC-26-04: CSRF 토큰 쿠키도 함께 제거
+    // SEC-26-04: Clear CSRF token cookie along with auth cookies
+    res.clearCookie('csrf_token', { path: '/' });
     return res.status(result.status).json(result.data);
   }
 
@@ -225,6 +280,9 @@ export class AuthProxyController {
 
   /** SMS 인증번호 발송을 user-auth로 프록시
    * Proxy SMS code send request to user-auth */
+  // SEC-26-04: SMS 발송은 인증 전이므로 CSRF 검증 제외
+  // SEC-26-04: SMS send is pre-auth, skip CSRF validation
+  @SkipCsrf()
   @Post('sms/send')
   @Throttle({ default: { ttl: 60000, limit: 5 } })
   @HttpCode(HttpStatus.OK)
@@ -242,6 +300,9 @@ export class AuthProxyController {
 
   /** SMS 인증번호 확인을 user-auth로 프록시
    * Proxy SMS code verification to user-auth */
+  // SEC-26-04: SMS 인증 확인은 인증 전이므로 CSRF 검증 제외
+  // SEC-26-04: SMS verification is pre-auth, skip CSRF validation
+  @SkipCsrf()
   @Post('sms/verify')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'SMS 인증번호 확인', description: '발송된 인증번호를 검증합니다' })
@@ -258,6 +319,9 @@ export class AuthProxyController {
 
   /** 비밀번호 찾기 요청을 user-auth로 프록시
    * Proxy forgot-password request to user-auth */
+  // SEC-26-04: 비밀번호 찾기는 인증 전이므로 CSRF 검증 제외
+  // SEC-26-04: Forgot password is pre-auth, skip CSRF validation
+  @SkipCsrf()
   @Post('forgot-password')
   @Throttle({ default: { ttl: 60000, limit: 5 } })
   @HttpCode(HttpStatus.OK)
@@ -276,6 +340,9 @@ export class AuthProxyController {
    * Proxy forgot-password SMS resend to user-auth */
   // 비밀번호 찾기 SMS 재전송 — 분당 3회 제한으로 SMS 남용 방지
   // Resend forgot-password SMS — 3/min rate limit prevents SMS abuse
+  // SEC-26-04: 비밀번호 찾기 SMS 재전송은 인증 전이므로 CSRF 검증 제외
+  // SEC-26-04: Forgot password SMS resend is pre-auth, skip CSRF validation
+  @SkipCsrf()
   @Post('forgot-password/resend-sms')
   @Throttle({ default: { ttl: 60000, limit: 3 } })
   @HttpCode(HttpStatus.OK)
@@ -292,6 +359,9 @@ export class AuthProxyController {
 
   /** 비밀번호 찾기 SMS 인증번호 검증을 user-auth로 프록시
    * Proxy forgot-password SMS verification to user-auth */
+  // SEC-26-04: 비밀번호 찾기 SMS 인증은 인증 전이므로 CSRF 검증 제외
+  // SEC-26-04: Forgot password SMS verify is pre-auth, skip CSRF validation
+  @SkipCsrf()
   @Post('forgot-password/verify-sms')
   @Throttle({ default: { ttl: 60000, limit: 5 } })
   @HttpCode(HttpStatus.OK)
@@ -308,6 +378,9 @@ export class AuthProxyController {
 
   /** 비밀번호 재설정 요청을 user-auth로 프록시
    * Proxy password reset request to user-auth */
+  // SEC-26-04: 비밀번호 재설정은 인증 전이므로 CSRF 검증 제외
+  // SEC-26-04: Password reset is pre-auth, skip CSRF validation
+  @SkipCsrf()
   @Post('forgot-password/reset')
   @Throttle({ default: { ttl: 60000, limit: 5 } })
   @HttpCode(HttpStatus.OK)
@@ -335,6 +408,12 @@ export class AuthProxyController {
     @Query('value') value: string,
     @Res() res: Response,
   ) {
+    // SEC-26-02: field 파라미터 검증 — email 또는 username만 허용
+    // SEC-26-02: Validate field param — only 'email' or 'username' allowed
+    if (!['email', 'username'].includes(field)) {
+      throw new BadRequestException('Invalid field');
+    }
+
     const result = await this.proxyService.forward('user-auth', {
       method: 'GET',
       url: '/auth/check-duplicate',

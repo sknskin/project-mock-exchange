@@ -17,6 +17,7 @@ import { HealthController } from './health/health.controller';
 import { GatewayModule } from './gateway/gateway.module';
 import { RedisModule } from './redis/redis.module';
 import { RequestIdMiddleware } from './middleware/request-id.middleware';
+import { CsrfGuard } from './guards/csrf.guard';
 
 @Module({
   imports: [
@@ -48,6 +49,9 @@ import { RequestIdMiddleware } from './middleware/request-id.middleware';
   controllers: [HealthController],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
+    // SEC-26-04: CSRF 보호 가드 — double-submit cookie 패턴
+    // SEC-26-04: CSRF protection guard — double-submit cookie pattern
+    { provide: APP_GUARD, useClass: CsrfGuard },
     { provide: APP_INTERCEPTOR, useClass: TtlCacheInterceptor },
   ],
 })

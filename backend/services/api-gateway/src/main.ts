@@ -40,6 +40,8 @@ async function bootstrap() {
         directives: {
           defaultSrc: ["'self'"],
           scriptSrc: ["'self'"],
+          // SEC-26-08: style-src 'unsafe-inline' 의도적 유지 — TipTap 에디터가 인라인 스타일을 사용하므로 현재 필수
+          // SEC-26-08: style-src 'unsafe-inline' intentionally kept — required by TipTap editor's inline styles
           styleSrc: ["'self'", "'unsafe-inline'"],
           imgSrc: ["'self'", 'data:', 'https://cdn.simpleicons.org'],
           connectSrc: ["'self'", 'ws:', 'wss:', 'https://api.frankfurter.app'],
@@ -106,7 +108,9 @@ async function bootstrap() {
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     // 내부 서비스 간 헤더(x-internal-token, x-user-id 등)는 외부 클라이언트가 설정할 수 없도록 제외
     // Exclude internal service-to-service headers (x-internal-token, x-user-id, etc.) from client-settable headers
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    // SEC-26-04: X-CSRF-Token 헤더 허용 — double-submit cookie CSRF 방어에 필요
+    // SEC-26-04: Allow X-CSRF-Token header — required for double-submit cookie CSRF defense
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-CSRF-Token'],
     maxAge: 86400,
   });
 

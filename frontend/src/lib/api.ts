@@ -22,6 +22,29 @@ const api = axios.create({
 // NOTE: Authorization 헤더 인터셉터 제거됨 — httpOnly 쿠키가 브라우저에 의해 자동 전송됨
 // NOTE: Authorization header interceptor removed — httpOnly cookies are sent automatically by the browser
 
+/**
+ * SEC-26-04: document.cookie에서 지정된 이름의 쿠키 값을 읽어 반환
+ * SEC-26-04: Read a cookie value by name from document.cookie
+ */
+function getCookieValue(name: string): string | null {
+  if (typeof document === 'undefined') return null;
+  const match = document.cookie.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`));
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+// SEC-26-04: 요청 인터셉터 — 상태 변경 요청(POST, PUT, PATCH, DELETE)에 CSRF 토큰 헤더 자동 첨부
+// SEC-26-04: Request interceptor — auto-attach CSRF token header on state-changing requests (POST, PUT, PATCH, DELETE)
+api.interceptors.request.use((config) => {
+  const method = config.method?.toUpperCase();
+  if (method && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+    const csrfToken = getCookieValue('csrf_token');
+    if (csrfToken) {
+      config.headers['X-CSRF-Token'] = csrfToken;
+    }
+  }
+  return config;
+});
+
 // 토큰 갱신 동시 요청 방지용 플래그 및 큐 / Flag and queue to prevent concurrent token refresh
 let isRefreshing = false;
 let failedQueue: Array<{
