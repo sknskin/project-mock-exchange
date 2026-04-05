@@ -119,7 +119,7 @@ function ContentModal({ isOpen, onClose, title, content, type }: ContentModalPro
         <div className="flex justify-center px-4 sm:px-6 py-3 sm:py-4 border-t border-border shrink-0">
           <button
             onClick={handleClose}
-            className="px-6 py-2.5 text-[14px] font-bold text-white bg-danger hover:bg-danger/85 rounded-lg transition-colors cursor-pointer"
+            className="px-6 py-2.5 text-[14px] font-bold text-white bg-accent hover:bg-accent/85 rounded-lg transition-colors cursor-pointer"
           >
             {t('modal.close')}
           </button>

@@ -12,6 +12,8 @@ import { useState, useEffect } from 'react';
 type Locale = 'ko' | 'en';
 type Theme = 'dark' | 'light';
 
+// 의도적으로 i18n.ts와 분리 — 루트 에러 시 i18n 모듈 사용 불가
+// Intentionally separate from i18n.ts — i18n module unavailable during root error
 const texts = {
   ko: {
     title: '서비스 오류',

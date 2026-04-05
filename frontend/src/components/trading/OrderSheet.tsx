@@ -88,7 +88,7 @@ export default function OrderSheet({
           <button
             onClick={onClose}
             aria-label="Close"
-            className="p-3 min-w-[44px] min-h-[44px] flex items-center justify-center text-text-quaternary hover:text-text-tertiary transition-colors rounded-lg"
+            className="p-3 min-w-[44px] min-h-[44px] flex items-center justify-center text-text-quaternary hover:text-text-primary hover:bg-bg-tertiary transition-colors rounded-lg"
           >
             <X className="w-5 h-5" />
           </button>

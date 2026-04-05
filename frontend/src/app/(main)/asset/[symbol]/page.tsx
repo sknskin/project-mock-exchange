@@ -144,6 +144,9 @@ export default function AssetDetailPage({
     }
   }, [symbol]);
 
+  // 단일 심볼이지만 useWebSocket이 배열을 요구함 / Single symbol but useWebSocket requires array
+  // PERF-13-13: 단일 심볼을 매번 새 배열로 감싸면 참조 변경 → useMemo 또는 상수 배열로 안정화 검토
+  // PERF-13-13: Wrapping single symbol in a new array each render causes ref change — consider useMemo or stable array
   useWebSocket([symbol], handlePriceUpdate);
 
   // 가격 폴백 체인: WebSocket → REST price → REST currentPrice → 0
@@ -186,7 +189,9 @@ export default function AssetDetailPage({
       <div className="flex items-center gap-3 py-6 h-[88px]">
         {/* NAV-M-01: 하드코딩된 /dashboard 대신 router.back() 사용 — 이전 페이지로 올바르게 복귀 */}
         {/* NAV-M-01: Use router.back() instead of hardcoded /dashboard — correctly returns to previous page */}
-        <button onClick={() => router.back()} className="flex items-center justify-center w-8 h-8 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-secondary transition-colors">
+        {/* UX-9-16: 히스토리가 없으면 대시보드로 이동 / Navigate to dashboard if no history */}
+        {/* UX-9-12: WCAG 최소 터치 타겟 44px 보장 / Ensure WCAG 44px minimum touch target */}
+        <button onClick={() => window.history.length > 1 ? router.back() : router.push('/dashboard')} className="flex items-center justify-center min-w-[44px] min-h-[44px] w-8 h-8 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-secondary transition-colors">
           <ArrowLeft className="w-4 h-4" />
         </button>
         <div className="flex-1 min-w-0">

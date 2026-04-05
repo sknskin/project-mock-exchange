@@ -9,13 +9,14 @@
  */
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth';
 import { useSettingsStore } from '@/stores/settings';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useScrollLock } from '@/hooks/useScrollLock';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { cn } from '@/lib/format';
 import { LogOut, Search, Menu, X, Megaphone, Newspaper, Users, BarChart3, LayoutDashboard, Briefcase, ClipboardList, Trophy, ChevronDown, User, Sun, Moon, Globe, HelpCircle, Settings, Activity, FileText } from 'lucide-react';
 import dynamic from 'next/dynamic';
@@ -32,7 +33,13 @@ export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [logoutModalOpen, setLogoutModalOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  // UX-9-21: 드롭다운 닫기 애니메이션 상태
+  // UX-9-21: Dropdown close animation state
+  const [userMenuClosing, setUserMenuClosing] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
+  // UX-9-22: 모바일 메뉴 포커스 트랩용 ref
+  // UX-9-22: Ref for mobile menu focus trap
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
   const { theme, toggleTheme, locale, toggleLocale } = useSettingsStore();
 
   // Zustand 상태 변경 시 html data 속성 동기화 (로그인/로그아웃 시 CSS 즉시 반영)
@@ -79,15 +86,29 @@ export default function Header() {
 
   useEffect(() => { setMobileMenuOpen(false); setUserMenuOpen(false); }, [pathname]);
 
+  // UX-9-21: 드롭다운 닫기 애니메이션 트리거 후 상태 변경
+  // UX-9-21: Trigger dropdown close animation then update state
+  const DROPDOWN_CLOSE_DURATION = 200;
+  const handleUserMenuClose = useCallback(() => {
+    setUserMenuClosing(true);
+    setTimeout(() => {
+      setUserMenuClosing(false);
+      setUserMenuOpen(false);
+    }, DROPDOWN_CLOSE_DURATION);
+  }, []);
+
   useEffect(() => {
     if (!userMenuOpen) return;
     const handler = (e: MouseEvent) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) setUserMenuOpen(false);
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) handleUserMenuClose();
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
-  }, [userMenuOpen]);
+  }, [userMenuOpen, handleUserMenuClose]);
   useScrollLock(mobileMenuOpen);
+  // UX-9-22: 모바일 메뉴 내 포커스 트랩
+  // UX-9-22: Focus trap within mobile menu
+  useFocusTrap(mobileMenuRef, mobileMenuOpen);
 
   // 각 페이지에서 커스텀 이벤트로 모바일 메뉴를 열 수 있도록 리스너 등록
   // Allow pages to open mobile menu via custom event
@@ -244,7 +265,7 @@ export default function Header() {
                 <ChatButton />
                 <div className="relative" ref={userMenuRef}>
                   <button
-                    onClick={() => setUserMenuOpen(!userMenuOpen)}
+                    onClick={() => userMenuOpen ? handleUserMenuClose() : setUserMenuOpen(true)}
                     className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[13px] text-text-secondary font-medium hover:text-text-primary hover:bg-bg-secondary transition-colors min-w-[80px] justify-center"
                     suppressHydrationWarning
                   >
@@ -253,7 +274,7 @@ export default function Header() {
                   </button>
 
                   {userMenuOpen && (
-                    <div className="absolute right-0 top-full mt-2 z-50 w-[200px] bg-bg-secondary border border-border rounded-xl shadow-2xl overflow-hidden">
+                    <div className={cn('absolute right-0 top-full mt-2 z-50 w-[200px] bg-bg-secondary border border-border rounded-xl shadow-2xl overflow-hidden', userMenuClosing ? 'animate-dropdown-out' : 'animate-dropdown-in')}>
                       {/* 관리자 전용 메뉴 / Admin-only menu items */}
                       {isAdmin && (
                         <>
@@ -335,7 +356,7 @@ export default function Header() {
                       </button>
                       <div className="border-t border-border" />
                       <button
-                        onClick={() => { setUserMenuOpen(false); setLogoutModalOpen(true); }}
+                        onClick={() => { handleUserMenuClose(); setLogoutModalOpen(true); }}
                         className="flex items-center gap-3 w-full px-4 py-3 text-[13px] font-medium text-danger hover:bg-bg-tertiary transition-colors"
                       >
                         <LogOut className="w-4 h-4" />
@@ -377,7 +398,7 @@ export default function Header() {
       {/* 모바일 사이드 메뉴 (열릴 때만 렌더, hydration 이후이므로 조건부 OK) */}
       {/* Mobile side menu: flex column layout to prevent scrolling */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-50 nav:hidden">
+        <div className="fixed inset-0 z-50 nav:hidden" ref={mobileMenuRef}>
           <div className="absolute inset-0 bg-black/60 animate-modal-backdrop" onClick={() => setMobileMenuOpen(false)} />
           <div className="absolute top-0 right-0 w-[280px] md:w-[340px] h-full max-h-[100dvh] bg-bg-primary border-l border-border animate-slide-in-right flex flex-col">
             {/* 헤더 / Header */}
