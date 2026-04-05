@@ -189,8 +189,20 @@ export default function AssetList({ assets, period, onPeriodChange, mainTab = 'r
     prevOrderRef.current = next;
   }, [paged]);
 
-  const now = new Date();
-  const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+  // PERF-13-05: 렌더마다 new Date() 호출 방지 — 1분 간격으로 갱신
+  // PERF-13-05: Prevent new Date() on every render — update every 1 minute
+  const [timeStr, setTimeStr] = useState(() => {
+    const now = new Date();
+    return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+  });
+  useEffect(() => {
+    const MINUTE_MS = 60_000;
+    const timer = setInterval(() => {
+      const now = new Date();
+      setTimeStr(`${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`);
+    }, MINUTE_MS);
+    return () => clearInterval(timer);
+  }, []);
 
   // 기간에 따른 변동 라벨 매핑 / Period-dependent change label mapping
   const changeLabel = useMemo(() => {
@@ -214,6 +226,17 @@ export default function AssetList({ assets, period, onPeriodChange, mainTab = 'r
   const handleSortChange = useCallback((key: SortKey) => {
     setSort(key);
     setPage(1);
+  }, []);
+
+  // PERF-13-06: watchlistSymbols를 Set으로 변환하여 O(1) 조회
+  // PERF-13-06: Convert watchlistSymbols to Set for O(1) lookup
+  const watchlistSet = useMemo(() => new Set(watchlistSymbols), [watchlistSymbols]);
+
+  // PERF-13-17: 초기 로딩 시에만 스태거 애니메이션 적용
+  // PERF-13-17: Only apply stagger animation on initial load
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  useEffect(() => {
+    setIsInitialLoad(false);
   }, []);
 
   const pillActive = 'bg-accent/15 text-accent font-bold';
@@ -356,12 +379,12 @@ export default function AssetList({ assets, period, onPeriodChange, mainTab = 'r
             // ANI-M-02: 리스트 항목 스태거 애니메이션 — 순차적 페이드인 효과
             // ANI-M-02: List item stagger animation — sequential fade-in effect
             className="animate-list-stagger"
-            style={{ animationDelay: `${Math.min(index * 30, 600)}ms` }}
+            style={{ animationDelay: isInitialLoad ? `${Math.min(index * 30, 600)}ms` : '0ms' }}
           >
             <AssetListItem
               asset={asset}
               rank={index + 1}
-              isWatchlisted={watchlistSymbols?.includes(asset.symbol)}
+              isWatchlisted={watchlistSet.has(asset.symbol)}
               onToggleWatchlist={onToggleWatchlist}
             />
           </div>

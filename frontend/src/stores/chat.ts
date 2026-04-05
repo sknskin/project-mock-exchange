@@ -135,6 +135,8 @@ export const useChatStore = create<ChatState>()((set, get) => ({
 }));
 
 // 모바일 뷰포트(lg 미만, 1024px)에서 자동으로 사이드바 고정 해제
+// PERF-13-20: HMR 누수 방지를 위한 lazy 초기화 및 정리 가드
+// PERF-13-20: Lazy initialization and cleanup guard to prevent HMR leak
 if (typeof window !== 'undefined') {
   const mql = window.matchMedia('(min-width: 1024px)');
   const handler = (e: MediaQueryListEvent) => {
@@ -143,4 +145,13 @@ if (typeof window !== 'undefined') {
     }
   };
   mql.addEventListener('change', handler);
+
+  // HMR 정리: import.meta.hot이 사용 가능하면 리스너를 제거
+  // HMR cleanup: remove listener if import.meta.hot is available
+  const meta = import.meta as unknown as { hot?: { dispose: (cb: () => void) => void } };
+  if (meta.hot) {
+    meta.hot.dispose(() => {
+      mql.removeEventListener('change', handler);
+    });
+  }
 }

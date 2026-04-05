@@ -91,7 +91,8 @@ export default function LeaderboardTable({
       movedEls.push(el);
     });
     if (movedEls.length > 0) {
-      void movedEls[0].offsetHeight;
+      // PERF-13-16: 동기 reflow(offsetHeight) 대신 requestAnimationFrame 배치 FLIP 처리
+      // PERF-13-16: Use requestAnimationFrame batch FLIP instead of synchronous reflow (offsetHeight)
       requestAnimationFrame(() => {
         movedEls.forEach((el) => {
           el.style.transition = 'transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
@@ -126,6 +127,8 @@ export default function LeaderboardTable({
         </div>
       ) : (
         <div className="divide-y divide-border/40">
+          {/* TODO: PERF-13-22 — 100건 이상 렌더링 시 react-virtuoso 등 가상화 라이브러리 적용 검토 */}
+          {/* TODO: PERF-13-22 — Consider virtualization library (react-virtuoso) for rendering 100+ entries */}
           {entries.map((entry) => {
             const prevRank = prevRankMap.current.get(entry.id);
             const rankChange = prevRank !== undefined ? prevRank - entry.rank : 0;

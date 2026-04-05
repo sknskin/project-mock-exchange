@@ -9,6 +9,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { useAuthStore } from '@/stores/auth';
 import type { LeaderboardEntry } from '@/types';
 
 // 리더보드 기간 필터 타입 / Leaderboard period filter type
@@ -38,6 +39,9 @@ export function useLeaderboard(options?: UseLeaderboardOptions) {
   // 기본값 설정: 전체 기간, 수익률 정렬 / Defaults: all periods, sort by return
   const period = options?.period ?? 'all';
   const sortBy = options?.sortBy ?? 'return';
+  // 비로그인 시 API 호출 방지 — 401 반복 에러 제거
+  // Prevent API calls when not logged in — eliminates repeated 401 errors
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   return useQuery<LeaderboardEntry[]>({
     // period, sortBy를 queryKey에 포함하여 옵션 변경 시 자동 리페치
@@ -65,8 +69,11 @@ export function useLeaderboard(options?: UseLeaderboardOptions) {
         hasTraded: !!e.hasTraded,
       }));
     },
+    // 비로그인 시 쿼리 비활성화 — 401 방지
+    // Disable query when not authenticated — prevents 401
+    enabled: isAuthenticated,
     // 10초마다 자동 리페치하여 순위 변동을 실시간에 가깝게 반영
     // Auto-refetch every 10s to reflect near-real-time ranking changes
-    refetchInterval: 10000,
+    refetchInterval: isAuthenticated ? 10000 : false,
   });
 }

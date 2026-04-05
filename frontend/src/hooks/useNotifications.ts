@@ -73,8 +73,9 @@ export function useUnreadCount() {
     },
     // 미인증 상태에서는 쿼리 비활성화 / Disable query when unauthenticated
     enabled: isAuthenticated,
-    // 30초마다 자동 리페치 / Auto-refetch every 30s
-    refetchInterval: 30000,
+    // PERF-13-11: 60초로 증가 — WebSocket 연결 시 폴링 부하 감소
+    // PERF-13-11: Increased to 60s — reduces polling overhead when WebSocket is connected
+    refetchInterval: 60000,
   });
 }
 

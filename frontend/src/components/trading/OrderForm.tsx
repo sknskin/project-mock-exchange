@@ -122,23 +122,39 @@ export default function OrderForm({
   const { data: portfolio } = usePortfolio();
   const [confirmOpen, setConfirmOpen] = useState(false);
 
+  // PERF-13-08: 사용자가 가격 입력 중일 때 WebSocket 가격 동기화 방지
+  // PERF-13-08: Prevent WebSocket price sync while user is manually editing price
+  const isUserEditingRef = useRef(false);
+
   // PF-M-02: price + triggerPrice 업데이트를 단일 useEffect로 병합하여 캐스케이딩 렌더 방지
   // PF-M-02: Merge price + triggerPrice updates into a single useEffect to avoid cascading re-renders
   const prevCurrencyModeRef = useRef(currencyMode);
   const prevRateRef = useRef(rate);
+  const prevSymbolRef = useRef(symbol);
   useEffect(() => {
     const prevMode = prevCurrencyModeRef.current;
     const prevR = prevRateRef.current;
+    const symbolChanged = prevSymbolRef.current !== symbol;
+
+    // PERF-13-08: 심볼 변경 시 편집 상태 초기화
+    // PERF-13-08: Reset editing state on symbol change
+    if (symbolChanged) {
+      isUserEditingRef.current = false;
+    }
+
+    // PERF-13-08: 사용자 편집 중이면 가격 동기화 건너뛰기 (통화 모드 변경은 예외)
+    // PERF-13-08: Skip price sync while user is editing (except on currency mode change)
+    const currencyChanged = prevMode !== currencyMode || prevR !== rate;
 
     // 지정가 갱신 (Sync limit price with currentPrice/currency)
     const safePrice = Number.isFinite(currentPrice) ? currentPrice : 0;
-    if (safePrice > 0) {
+    if (safePrice > 0 && (!isUserEditingRef.current || currencyChanged || symbolChanged)) {
       const displayPrice = toDisplayPrice(safePrice, symbol, currencyMode, rate);
       setPrice(displayPrice.toString());
     }
 
     // 통화 모드 변경 시 트리거 가격도 동기화 (Sync triggerPrice when currency mode changes)
-    if (triggerPrice && (prevMode !== currencyMode || prevR !== rate)) {
+    if (triggerPrice && currencyChanged) {
       const parsedTrigger = parseFloat(triggerPrice);
       if (parsedTrigger > 0 && Number.isFinite(parsedTrigger)) {
         const usdValue = toUsdPrice(parsedTrigger, symbol, prevMode, prevR);
@@ -149,6 +165,7 @@ export default function OrderForm({
 
     prevCurrencyModeRef.current = currencyMode;
     prevRateRef.current = rate;
+    prevSymbolRef.current = symbol;
   }, [currentPrice, symbol, currencyMode, rate]);
 
   const typeTabs = useMemo(
@@ -301,14 +318,18 @@ export default function OrderForm({
             label={`${t('order.price')} (${currencyLabel})`}
             type="number"
             value={price}
+            onFocus={() => { isUserEditingRef.current = true; }}
             onChange={(e) => {
               const val = e.target.value;
+              // PERF-13-08: 사용자 입력 시 편집 플래그 활성화
+              // PERF-13-08: Set editing flag on user input
+              isUserEditingRef.current = true;
               // VAL-M-02: 가격 소수점 자릿수 제한 / Enforce price decimal places
               if (val && exceedsDecimals(val, maxDecimals)) return;
               setPrice(val);
               setPriceError('');
             }}
-            onBlur={validatePrice}
+            onBlur={() => { isUserEditingRef.current = false; validatePrice(); }}
             placeholder={t('order.pricePlaceholder')}
             aria-describedby={priceError ? 'price-error' : undefined}
           />

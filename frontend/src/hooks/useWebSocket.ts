@@ -31,6 +31,10 @@ export function useWebSocket(
   // 소켓 연결 — 인증 상태 변경 시 재생성
   // Socket connection — recreate when authentication state changes
   useEffect(() => {
+    // 비로그인 시 WebSocket 연결 안 함 — 서버가 쿠키 없으면 거부
+    // Don't connect WebSocket when not authenticated — server rejects without cookie
+    if (!isAuthenticated) return;
+
     // Strict Mode 이중 호출 감지용 — cleanup 시 true로 설정되어 연결 시도를 조기 중단
     // Strict Mode double-invoke guard — set to true on cleanup to abort connection attempt
     let disposed = false;
@@ -102,6 +106,12 @@ export function useWebSocket(
     const newSymbols = symbols.filter((s) => !prevSet.has(s));
     if (newSymbols.length > 0) {
       socket.emit('subscribe', { symbols: newSymbols });
+    }
+    // PERF-13-12: 제거된 심볼 구독 해제 — 불필요한 데이터 수신 방지
+    // PERF-13-12: Unsubscribe removed symbols — prevents receiving unnecessary data
+    const removedSymbols = [...prevSet].filter((s) => !currentSet.has(s));
+    if (removedSymbols.length > 0) {
+      socket.emit('unsubscribe', { symbols: removedSymbols });
     }
     prevSymbolsRef.current = currentSet;
   }, [symbols]);

@@ -7,7 +7,7 @@
  */
 'use client';
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, TrendingUp } from 'lucide-react';
 import { cn, formatPriceDisplay, formatPercent } from '@/lib/format';
@@ -60,6 +60,13 @@ export default function SpotlightSearch({ isOpen, onClose, assets }: SpotlightSe
 
   const displayList = query.trim() ? searchResults : top5;
 
+  // PERF-13-09: displayList와 selectedIndex를 ref로 유지하여 이벤트 리스너 재등록 방지
+  // PERF-13-09: Keep displayList and selectedIndex in refs to avoid re-registering event listener
+  const displayListRef = useRef(displayList);
+  displayListRef.current = displayList;
+  const selectedIndexRef = useRef(selectedIndex);
+  selectedIndexRef.current = selectedIndex;
+
   useScrollLock(isOpen);
 
   // 모달 열릴 때 포커스 / Focus on open
@@ -71,34 +78,37 @@ export default function SpotlightSearch({ isOpen, onClose, assets }: SpotlightSe
     }
   }, [isOpen]);
 
+  // PERF-13-09: handleSelect을 useCallback으로 안정화 — ref 기반 키보드 핸들러에서 사용
+  // PERF-13-09: Stabilize handleSelect with useCallback — used by ref-based keyboard handler
+  const handleSelect = useCallback((asset: Asset) => {
+    onClose();
+    router.push(`/asset/${asset.symbol}`);
+  }, [onClose, router]);
+
   // ESC 키 닫기 + 키보드 네비게이션 / ESC close + keyboard navigation
+  // PERF-13-09: ref 기반으로 변경하여 displayList/selectedIndex 변경 시 리스너 재등록 방지
+  // PERF-13-09: Changed to ref-based to prevent listener re-registration on displayList/selectedIndex change
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
+      const list = displayListRef.current;
+      const idx = selectedIndexRef.current;
       if (e.key === 'Escape') {
         onClose();
       } else if (e.key === 'ArrowDown') {
         e.preventDefault();
-        setSelectedIndex((prev) => Math.min(prev + 1, displayList.length - 1));
+        setSelectedIndex((prev) => Math.min(prev + 1, list.length - 1));
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
         setSelectedIndex((prev) => Math.max(prev - 1, 0));
-      } else if (e.key === 'Enter' && displayList[selectedIndex]) {
+      } else if (e.key === 'Enter' && list[idx]) {
         e.preventDefault();
-        handleSelect(displayList[selectedIndex]);
+        handleSelect(list[idx]);
       }
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, displayList, selectedIndex, onClose]);
-
-  // 선택 시 상세 이동 / Navigate to detail on select
-  /** 종목 선택 시 상세 페이지로 이동
-   * Navigate to asset detail on selection */
-  const handleSelect = (asset: Asset) => {
-    onClose();
-    router.push(`/asset/${asset.symbol}`);
-  };
+  }, [isOpen, onClose, handleSelect]);
 
   if (!isOpen) return null;
 

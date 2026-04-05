@@ -61,9 +61,39 @@ export default function ConnectionGuard({ children }: { children: React.ReactNod
 
   useEffect(() => {
     checkHealth();
-    intervalRef.current = setInterval(checkHealth, CHECK_INTERVAL);
-    return () => {
+
+    // PERF-13-19: 탭이 백그라운드일 때 헬스체크 일시정지
+    // PERF-13-19: Pause health check when tab is in background
+    const startPolling = () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
+      intervalRef.current = setInterval(checkHealth, CHECK_INTERVAL);
+    };
+    const stopPolling = () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        // 탭 복귀 시 즉시 체크 후 폴링 재개
+        // Check immediately on tab return, then resume polling
+        checkHealth();
+        startPolling();
+      } else {
+        stopPolling();
+      }
+    };
+
+    if (document.visibilityState === 'visible') {
+      startPolling();
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      stopPolling();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [checkHealth]);
 

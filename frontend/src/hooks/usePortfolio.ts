@@ -120,13 +120,16 @@ export function usePortfolio() {
  * 포트폴리오 시가 평가 데이터를 조회하는 훅 (현재가 기반)
  * Hook that fetches portfolio valuation data (based on current market prices)
  *
+ * PERF-13-10: usePortfolio와 동일한 queryKey 사용으로 캐시 공유 — 동일 데이터 중복 폴링 방지
+ * PERF-13-10: Shares queryKey with usePortfolio for cache sharing — prevents duplicate polling of same data
+ *
  * @returns TanStack Query 결과 (Portfolio) / TanStack Query result (Portfolio)
  */
 export function usePortfolioValuation() {
   return useQuery<Portfolio>({
-    queryKey: ['portfolio', 'valuation'],
+    queryKey: ['portfolio'],
     queryFn: async () => {
-      const { data } = await api.get('/api/portfolio/valuation');
+      const { data } = await api.get('/api/portfolio/summary');
       const raw = unwrapResponse<Record<string, unknown>>(data);
       return mapSummaryToPortfolio(raw);
     },
