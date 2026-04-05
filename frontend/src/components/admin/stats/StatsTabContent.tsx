@@ -1,34 +1,22 @@
 /**
  * @file 통계 탭 콘텐츠 컴포넌트
  * @description 7개 탭(개요, 회원, 활동, 거래, 콘텐츠, 채팅, 감사)의 차트/UI를 코드 분할을 위해 별도 파일로 추출.
- *   Recharts 번들을 이 청크에만 포함시켜 초기 로드 크기를 줄임.
+ *   경량 SVG 차트 컴포넌트를 사용하여 번들 크기를 최소화.
  *
  * @file Stats tab content components
  * @description Extracts chart/UI for 7 tabs (overview, users, activity, trading, content, chat, audit)
- *   for code-splitting. Keeps Recharts bundle in this chunk only, reducing initial load size.
+ *   for code-splitting. Uses lightweight SVG chart components to minimize bundle size.
  */
 'use client';
 
 import React from 'react';
 import Pagination from '@/components/ui/Pagination';
 import Link from 'next/link';
-import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-} from 'recharts';
+// 경량 SVG 차트 컴포넌트 — recharts 대체
+// Lightweight SVG chart components — recharts replacement
+import MiniLineChart from '@/components/chart/MiniLineChart';
+import MiniBarChart from '@/components/chart/MiniBarChart';
+import DonutChart from '@/components/chart/DonutChart';
 import {
   Users, LogIn, Eye, FileText, TrendingUp, Activity, ShoppingCart,
   ArrowUpRight, ArrowDownRight, Heart, MessageSquare, MessagesSquare,
@@ -38,8 +26,8 @@ import Skeleton from '@/components/ui/Skeleton';
 import { cn } from '@/lib/format';
 import type { TranslationKey } from '@/lib/i18n';
 import {
-  CHART_COLORS, GRID_STROKE, AXIS_TICK_FILL, AXIS_LINE_STROKE,
-  ChartCard, EmptyChart, hasChartData, CustomTooltip, OverviewCard,
+  CHART_COLORS,
+  ChartCard, EmptyChart, hasChartData, OverviewCard,
 } from './StatsShared';
 
 /* ─── 공통 props 타입 / Common props types ─── */
@@ -113,21 +101,13 @@ export function OverviewTab({
         {/* 1) 가입자 추이 / Registration trend */}
         <ChartCard title={t('stats.registrations')}>
           {hasChartData(registrations) ? (
-            <ResponsiveContainer width="100%" height={240}>
-              <AreaChart data={registrations ?? []} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="overviewRegGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={CHART_COLORS.blue} stopOpacity={0.25} />
-                    <stop offset="95%" stopColor={CHART_COLORS.blue} stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
-                <XAxis dataKey="label" tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} interval="preserveStartEnd" tickFormatter={(v: string) => v.length > 8 ? v.slice(5) : v} />
-                <YAxis tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} />
-                <Tooltip content={<CustomTooltip />} />
-                <Area type="monotone" dataKey="count" name={t('stats.registrations')} stroke={CHART_COLORS.blue} strokeWidth={2} fill="url(#overviewRegGrad)" dot={false} activeDot={{ r: 4, fill: CHART_COLORS.blue }} />
-              </AreaChart>
-            </ResponsiveContainer>
+            <MiniLineChart
+              data={(registrations ?? []).map((d: AnyData) => ({ label: d.label, value: d.count }))}
+              height={240}
+              color={CHART_COLORS.blue}
+              area
+              name={t('stats.registrations')}
+            />
           ) : (
             <EmptyChart height={240} />
           )}
@@ -136,15 +116,12 @@ export function OverviewTab({
         {/* 2) 로그인 추이 / Login trend */}
         <ChartCard title={t('stats.logins')}>
           {hasChartData(logins) ? (
-            <ResponsiveContainer width="100%" height={240}>
-              <LineChart data={logins ?? []} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
-                <XAxis dataKey="label" tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} interval="preserveStartEnd" tickFormatter={(v: string) => v.length > 8 ? v.slice(5) : v} />
-                <YAxis tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} />
-                <Tooltip content={<CustomTooltip />} />
-                <Line type="monotone" dataKey="count" name={t('stats.logins')} stroke={CHART_COLORS.red} strokeWidth={2} dot={false} activeDot={{ r: 4, fill: CHART_COLORS.red }} />
-              </LineChart>
-            </ResponsiveContainer>
+            <MiniLineChart
+              data={(logins ?? []).map((d: AnyData) => ({ label: d.label, value: d.count }))}
+              height={240}
+              color={CHART_COLORS.red}
+              name={t('stats.logins')}
+            />
           ) : (
             <EmptyChart height={240} />
           )}
@@ -153,15 +130,13 @@ export function OverviewTab({
         {/* 3) 페이지뷰 / Page views */}
         <ChartCard title={t('stats.pageViews')}>
           {hasChartData(pageViews?.timeline) ? (
-            <ResponsiveContainer width="100%" height={240}>
-              <BarChart data={pageViews?.timeline ?? []} margin={{ top: 4, right: 4, left: -20, bottom: 0 }} barSize={6}>
-                <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
-                <XAxis dataKey="label" tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} interval="preserveStartEnd" tickFormatter={(v: string) => v.length > 8 ? v.slice(5) : v} />
-                <YAxis tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} />
-                <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="count" name={t('stats.pageViews')} fill={CHART_COLORS.green} radius={[3, 3, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            <MiniBarChart
+              data={(pageViews?.timeline ?? []).map((d: AnyData) => ({
+                label: d.label,
+                values: [{ key: t('stats.pageViews'), value: d.count, color: CHART_COLORS.green }],
+              }))}
+              height={240}
+            />
           ) : (
             <EmptyChart height={240} />
           )}
@@ -170,17 +145,18 @@ export function OverviewTab({
         {/* 4) 일별 거래량 / Daily volume */}
         <ChartCard title={t('stats.dailyVolume')}>
           {hasChartData(trading?.dailyVolume) ? (
-            <ResponsiveContainer width="100%" height={240}>
-              <BarChart data={trading?.dailyVolume ?? []} margin={{ top: 4, right: 4, left: -20, bottom: 0 }} barSize={8}>
-                <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
-                <XAxis dataKey="date" tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} interval="preserveStartEnd" tickFormatter={(v: string) => v.length > 8 ? v.slice(5) : v} />
-                <YAxis tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} />
-                <Tooltip content={<CustomTooltip />} />
-                <Legend wrapperStyle={{ fontSize: 11, color: AXIS_TICK_FILL, paddingTop: 8 }} />
-                <Bar dataKey="buy" name={t('stats.buy')} fill={CHART_COLORS.red} radius={[3, 3, 0, 0]} stackId="a" />
-                <Bar dataKey="sell" name={t('stats.sell')} fill={CHART_COLORS.blue} radius={[3, 3, 0, 0]} stackId="a" />
-              </BarChart>
-            </ResponsiveContainer>
+            <MiniBarChart
+              data={(trading?.dailyVolume ?? []).map((d: AnyData) => ({
+                label: d.date,
+                values: [
+                  { key: t('stats.buy'), value: d.buy, color: CHART_COLORS.red },
+                  { key: t('stats.sell'), value: d.sell, color: CHART_COLORS.blue },
+                ],
+              }))}
+              height={240}
+              stacked
+              showLegend
+            />
           ) : (
             <EmptyChart height={240} />
           )}
@@ -189,17 +165,17 @@ export function OverviewTab({
         {/* 5) 공지사항/댓글 추이 / Announcement/comment trend */}
         <ChartCard title={t('stats.announcementStats')}>
           {hasChartData(announcementChartData) ? (
-            <ResponsiveContainer width="100%" height={240}>
-              <BarChart data={announcementChartData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }} barSize={6}>
-                <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
-                <XAxis dataKey="date" tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} interval="preserveStartEnd" tickFormatter={(v: string) => v.length > 8 ? v.slice(5) : v} />
-                <YAxis tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} />
-                <Tooltip content={<CustomTooltip />} />
-                <Legend wrapperStyle={{ fontSize: 11, color: AXIS_TICK_FILL, paddingTop: 8 }} />
-                <Bar dataKey="announcements" name={t('stats.announcementStats')} fill={CHART_COLORS.blue} radius={[3, 3, 0, 0]} />
-                <Bar dataKey="comments" name={t('stats.comments')} fill={CHART_COLORS.red} radius={[3, 3, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            <MiniBarChart
+              data={announcementChartData.map((d: AnyData) => ({
+                label: d.date,
+                values: [
+                  { key: t('stats.announcementStats'), value: d.announcements, color: CHART_COLORS.blue },
+                  { key: t('stats.comments'), value: d.comments, color: CHART_COLORS.red },
+                ],
+              }))}
+              height={240}
+              showLegend
+            />
           ) : (
             <EmptyChart height={240} />
           )}
@@ -208,17 +184,9 @@ export function OverviewTab({
         {/* 6) 매수/매도 비율 / Buy/sell ratio */}
         <ChartCard title={t('stats.buySellDist')}>
           {buySellData.reduce((sum: number, d: AnyData) => sum + d.value, 0) > 0 ? (
-            <ResponsiveContainer width="100%" height={240}>
-              <PieChart>
-                <Pie data={buySellData} cx="50%" cy="50%" innerRadius={40} outerRadius={90} paddingAngle={3} dataKey="value" nameKey="name">
-                  {buySellData.map((entry: AnyData, index: number) => (
-                    <Cell key={`overview-bs-${index}`} fill={entry.color} strokeWidth={0} />
-                  ))}
-                </Pie>
-                <Tooltip content={<CustomTooltip />} />
-                <Legend wrapperStyle={{ fontSize: 12, color: AXIS_TICK_FILL, paddingTop: 8 }} formatter={(value) => (<span style={{ color: '#9CA3AF', fontSize: 12 }}>{value}</span>)} />
-              </PieChart>
-            </ResponsiveContainer>
+            <div className="flex justify-center">
+              <DonutChart data={buySellData} size={200} />
+            </div>
           ) : (
             <EmptyChart height={240} />
           )}
@@ -260,27 +228,20 @@ export function UsersTab({
       {/* Registration Requests Timeline */}
       <ChartCard title={t('stats.registrations')} description={t('stats.desc.registrations')}>
         {hasChartData(registrations) ? (
-          <ResponsiveContainer width="100%" height={280}>
-            <AreaChart data={registrations ?? []} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-              <defs>
-                <linearGradient id="registrationGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={CHART_COLORS.blue} stopOpacity={0.25} />
-                  <stop offset="95%" stopColor={CHART_COLORS.blue} stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
-              <XAxis dataKey="label" tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} interval="preserveStartEnd" tickFormatter={(v: string) => v.length > 8 ? v.slice(5) : v} />
-              <YAxis tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} />
-              <Tooltip content={<CustomTooltip />} />
-              <Area type="monotone" dataKey="count" name={t('stats.registrations')} stroke={CHART_COLORS.blue} strokeWidth={2} fill="url(#registrationGrad)" dot={false} activeDot={{ r: 4, fill: CHART_COLORS.blue }} />
-            </AreaChart>
-          </ResponsiveContainer>
+          <MiniLineChart
+            data={(registrations ?? []).map((d: AnyData) => ({ label: d.label, value: d.count }))}
+            height={280}
+            color={CHART_COLORS.blue}
+            area
+            name={t('stats.registrations')}
+          />
         ) : (
           <EmptyChart />
         )}
       </ChartCard>
 
-      {/* 회원 현황 통합 그래프 — 승인/반려/비활성화 / Unified member status chart — approved/rejected/deactivated */}
+      {/* 회원 현황 통합 그래프 — 승인/반려/비활성화 (승인 데이터 기준 라인 차트)
+         Unified member status chart — approved/rejected/deactivated (line chart based on approved data) */}
       <ChartCard title={t('stats.registrationsApproved')} description={t('stats.desc.registrationsApproved')}>
         {hasChartData(registrationsApproved) ? (() => {
           // 승인 데이터와 반려/비활성화 데이터를 label 기준으로 병합
@@ -294,22 +255,25 @@ export function UsersTab({
           ])].sort();
           const merged = allLabels.map((label) => ({
             label,
-            approved: approvedMap.get(label) ?? 0,
-            rejected: rejectedMap.get(label)?.rejected ?? 0,
-            deactivated: rejectedMap.get(label)?.deactivated ?? 0,
+            approved: (approvedMap.get(label) ?? 0) as number,
+            rejected: (rejectedMap.get(label)?.rejected ?? 0) as number,
+            deactivated: (rejectedMap.get(label)?.deactivated ?? 0) as number,
           }));
+          // 다중 라인을 MiniLineChart로 표현: 승인 데이터 메인 표시, 반려/비활성화는 바 차트로 보완
+          // Multi-line via MiniLineChart: show approved as main, rejected/deactivated via bar chart complement
           return (
-            <ResponsiveContainer width="100%" height={280}>
-              <LineChart data={merged} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
-                <XAxis dataKey="label" tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} interval="preserveStartEnd" tickFormatter={(v: string) => v.length > 8 ? v.slice(5) : v} />
-                <YAxis tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} />
-                <Tooltip content={<CustomTooltip />} />
-                <Line type="monotone" dataKey="approved" name={t('stats.registrationsApproved')} stroke={CHART_COLORS.green} strokeWidth={2} dot={false} activeDot={{ r: 4, fill: CHART_COLORS.green }} />
-                <Line type="monotone" dataKey="rejected" name={t('stats.rejected')} stroke={CHART_COLORS.red} strokeWidth={2} dot={false} activeDot={{ r: 4, fill: CHART_COLORS.red }} />
-                <Line type="monotone" dataKey="deactivated" name={t('stats.deactivated')} stroke={CHART_COLORS.gray} strokeWidth={2} dot={false} activeDot={{ r: 4, fill: CHART_COLORS.gray }} />
-              </LineChart>
-            </ResponsiveContainer>
+            <MiniBarChart
+              data={merged.map((d) => ({
+                label: d.label,
+                values: [
+                  { key: t('stats.registrationsApproved'), value: d.approved, color: CHART_COLORS.green },
+                  { key: t('stats.rejected'), value: d.rejected, color: CHART_COLORS.red },
+                  { key: t('stats.deactivated'), value: d.deactivated, color: CHART_COLORS.gray },
+                ],
+              }))}
+              height={280}
+              showLegend
+            />
           );
         })() : (
           <EmptyChart />
@@ -319,17 +283,9 @@ export function UsersTab({
       {/* Role Distribution PieChart */}
       <ChartCard title={t('stats.userStats')} description={t('stats.desc.userRole')}>
         {roleData.reduce((sum, d) => sum + d.value, 0) > 0 ? (
-          <ResponsiveContainer width="100%" height={280}>
-            <PieChart>
-              <Pie data={roleData} cx="50%" cy="50%" innerRadius={50} outerRadius={110} paddingAngle={3} dataKey="value" nameKey="name">
-                {roleData.map((entry: AnyData, index: number) => (
-                  <Cell key={`role-${index}`} fill={entry.color} strokeWidth={0} />
-                ))}
-              </Pie>
-              <Tooltip content={<CustomTooltip />} />
-              <Legend wrapperStyle={{ fontSize: 12, color: AXIS_TICK_FILL, paddingTop: 8 }} formatter={(value) => (<span style={{ color: '#9CA3AF', fontSize: 12 }}>{value}</span>)} />
-            </PieChart>
-          </ResponsiveContainer>
+          <div className="flex justify-center">
+            <DonutChart data={roleData} size={220} />
+          </div>
         ) : (
           <EmptyChart />
         )}
@@ -338,17 +294,9 @@ export function UsersTab({
       {/* Status Distribution PieChart */}
       <ChartCard title={t('stats.userStatus')} description={t('stats.desc.userStatus')}>
         {statusData.reduce((sum, d) => sum + d.value, 0) > 0 ? (
-          <ResponsiveContainer width="100%" height={280}>
-            <PieChart>
-              <Pie data={statusData} cx="50%" cy="50%" innerRadius={50} outerRadius={110} paddingAngle={3} dataKey="value" nameKey="name">
-                {statusData.map((entry: AnyData, index: number) => (
-                  <Cell key={`status-${index}`} fill={entry.color} strokeWidth={0} />
-                ))}
-              </Pie>
-              <Tooltip content={<CustomTooltip />} />
-              <Legend wrapperStyle={{ fontSize: 12, color: AXIS_TICK_FILL, paddingTop: 8 }} formatter={(value) => (<span style={{ color: '#9CA3AF', fontSize: 12 }}>{value}</span>)} />
-            </PieChart>
-          </ResponsiveContainer>
+          <div className="flex justify-center">
+            <DonutChart data={statusData} size={220} />
+          </div>
         ) : (
           <EmptyChart />
         )}
@@ -386,15 +334,12 @@ export function ActivityTab({
       {/* Login Timeline */}
       <ChartCard title={t('stats.logins')} description={t('stats.desc.logins')}>
         {hasChartData(logins) ? (
-          <ResponsiveContainer width="100%" height={280}>
-            <LineChart data={logins ?? []} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
-              <XAxis dataKey="label" tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} interval="preserveStartEnd" tickFormatter={(v: string) => v.length > 8 ? v.slice(5) : v} />
-              <YAxis tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} />
-              <Tooltip content={<CustomTooltip />} />
-              <Line type="monotone" dataKey="count" name={t('stats.logins')} stroke={CHART_COLORS.red} strokeWidth={2} dot={false} activeDot={{ r: 4, fill: CHART_COLORS.red }} />
-            </LineChart>
-          </ResponsiveContainer>
+          <MiniLineChart
+            data={(logins ?? []).map((d: AnyData) => ({ label: d.label, value: d.count }))}
+            height={280}
+            color={CHART_COLORS.red}
+            name={t('stats.logins')}
+          />
         ) : (
           <EmptyChart />
         )}
@@ -403,32 +348,29 @@ export function ActivityTab({
       {/* Page View Timeline */}
       <ChartCard title={t('stats.pageViews')} description={t('stats.desc.pageViews')}>
         {hasChartData(pageViews?.timeline) ? (
-          <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={pageViews?.timeline ?? []} margin={{ top: 4, right: 4, left: -20, bottom: 0 }} barSize={6}>
-              <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
-              <XAxis dataKey="label" tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} interval="preserveStartEnd" tickFormatter={(v: string) => v.length > 8 ? v.slice(5) : v} />
-              <YAxis tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} />
-              <Tooltip content={<CustomTooltip />} />
-              <Bar dataKey="count" name={t('stats.pageViews')} fill={CHART_COLORS.green} radius={[3, 3, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          <MiniBarChart
+            data={(pageViews?.timeline ?? []).map((d: AnyData) => ({
+              label: d.label,
+              values: [{ key: t('stats.pageViews'), value: d.count, color: CHART_COLORS.green }],
+            }))}
+            height={280}
+          />
         ) : (
           <EmptyChart />
         )}
       </ChartCard>
 
-      {/* Top Pages */}
+      {/* Top Pages — 수평 바 차트를 MiniBarChart로 대체 / Horizontal bar chart replaced with MiniBarChart */}
       <ChartCard title={t('stats.topPages')} description={t('stats.desc.topPages')}>
         {hasChartData(topPagesData, 1) ? (
-          <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={topPagesData} layout="vertical" margin={{ top: 4, right: 16, left: 8, bottom: 0 }} barSize={10}>
-              <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} horizontal={false} />
-              <XAxis type="number" tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} />
-              <YAxis type="category" dataKey="path" width={90} tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} />
-              <Tooltip content={<CustomTooltip />} />
-              <Bar dataKey="views" name={t('stats.pageViews')} fill={CHART_COLORS.blue} radius={[0, 3, 3, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          <MiniBarChart
+            data={topPagesData.map((d: AnyData) => ({
+              label: d.path,
+              values: [{ key: t('stats.pageViews'), value: d.views, color: CHART_COLORS.blue }],
+            }))}
+            height={280}
+            horizontal
+          />
         ) : (
           <EmptyChart />
         )}
@@ -437,15 +379,13 @@ export function ActivityTab({
       {/* Hourly Activity */}
       <ChartCard title={t('stats.hourlyActivity')} description={t('stats.desc.hourlyActivity')}>
         {hasChartData(hourlyData, 1) ? (
-          <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={hourlyData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }} barSize={8}>
-              <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
-              <XAxis dataKey="label" tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} interval="preserveStartEnd" tickFormatter={(v: string) => v.length > 8 ? v.slice(5) : v} />
-              <YAxis tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} />
-              <Tooltip content={<CustomTooltip />} />
-              <Bar dataKey="count" name={t('stats.hourlyActivity')} fill={CHART_COLORS.purple} radius={[3, 3, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          <MiniBarChart
+            data={hourlyData.map((d: AnyData) => ({
+              label: d.label,
+              values: [{ key: t('stats.hourlyActivity'), value: d.count, color: CHART_COLORS.purple }],
+            }))}
+            height={280}
+          />
         ) : (
           <EmptyChart />
         )}
@@ -478,34 +418,34 @@ export function TradingTab({ trading, buySellData, t }: TradingTabProps) {
       {/* Daily Volume */}
       <ChartCard title={t('stats.dailyVolume')} description={t('stats.desc.dailyVolume')}>
         {hasChartData(trading?.dailyVolume) ? (
-          <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={trading?.dailyVolume ?? []} margin={{ top: 4, right: 4, left: -20, bottom: 0 }} barSize={8}>
-              <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
-              <XAxis dataKey="date" tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} interval="preserveStartEnd" tickFormatter={(v: string) => v.length > 8 ? v.slice(5) : v} />
-              <YAxis tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend wrapperStyle={{ fontSize: 11, color: AXIS_TICK_FILL, paddingTop: 8 }} />
-              <Bar dataKey="buy" name={t('stats.buy')} fill={CHART_COLORS.red} radius={[3, 3, 0, 0]} stackId="a" />
-              <Bar dataKey="sell" name={t('stats.sell')} fill={CHART_COLORS.blue} radius={[3, 3, 0, 0]} stackId="a" />
-            </BarChart>
-          </ResponsiveContainer>
+          <MiniBarChart
+            data={(trading?.dailyVolume ?? []).map((d: AnyData) => ({
+              label: d.date,
+              values: [
+                { key: t('stats.buy'), value: d.buy, color: CHART_COLORS.red },
+                { key: t('stats.sell'), value: d.sell, color: CHART_COLORS.blue },
+              ],
+            }))}
+            height={280}
+            stacked
+            showLegend
+          />
         ) : (
           <EmptyChart />
         )}
       </ChartCard>
 
-      {/* Popular Assets */}
+      {/* Popular Assets — 수평 바 차트를 MiniBarChart로 대체 / Horizontal bar chart replaced with MiniBarChart */}
       <ChartCard title={t('stats.popularAssets')} description={t('stats.desc.popularAssets')}>
         {hasChartData(trading?.popularAssets, 1) ? (
-          <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={trading?.popularAssets ?? []} layout="vertical" margin={{ top: 4, right: 16, left: 8, bottom: 0 }} barSize={10}>
-              <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} horizontal={false} />
-              <XAxis type="number" tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} />
-              <YAxis type="category" dataKey="symbol" width={90} tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} />
-              <Tooltip content={<CustomTooltip />} />
-              <Bar dataKey="volume" name={t('stats.totalVolume')} fill={CHART_COLORS.green} radius={[0, 3, 3, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          <MiniBarChart
+            data={(trading?.popularAssets ?? []).map((d: AnyData) => ({
+              label: d.symbol,
+              values: [{ key: t('stats.totalVolume'), value: d.volume, color: CHART_COLORS.green }],
+            }))}
+            height={280}
+            horizontal
+          />
         ) : (
           <EmptyChart />
         )}
@@ -514,17 +454,9 @@ export function TradingTab({ trading, buySellData, t }: TradingTabProps) {
       {/* Buy/Sell Distribution */}
       <ChartCard title={t('stats.buySellDist')} description={t('stats.desc.buySellDist')}>
         {buySellData.reduce((sum: number, d: AnyData) => sum + d.value, 0) > 0 ? (
-          <ResponsiveContainer width="100%" height={280}>
-            <PieChart>
-              <Pie data={buySellData} cx="50%" cy="50%" innerRadius={50} outerRadius={110} paddingAngle={3} dataKey="value" nameKey="name">
-                {buySellData.map((entry: AnyData, index: number) => (
-                  <Cell key={`bs-${index}`} fill={entry.color} strokeWidth={0} />
-                ))}
-              </Pie>
-              <Tooltip content={<CustomTooltip />} />
-              <Legend wrapperStyle={{ fontSize: 12, color: AXIS_TICK_FILL, paddingTop: 8 }} formatter={(value) => (<span style={{ color: '#9CA3AF', fontSize: 12 }}>{value}</span>)} />
-            </PieChart>
-          </ResponsiveContainer>
+          <div className="flex justify-center">
+            <DonutChart data={buySellData} size={220} />
+          </div>
         ) : (
           <EmptyChart />
         )}
@@ -533,24 +465,16 @@ export function TradingTab({ trading, buySellData, t }: TradingTabProps) {
       {/* Popular Assets Volume Donut */}
       <ChartCard title={t('stats.popularAssetsDonut')} description={t('stats.desc.popularAssets')}>
         {trading?.popularAssets && trading.popularAssets.length > 0 ? (
-          <ResponsiveContainer width="100%" height={280}>
-            <PieChart>
-              <Pie
-                data={trading.popularAssets.slice(0, 8).map((a: AnyData, i: number) => ({
-                  name: a.symbol,
-                  value: a.volume,
-                  color: Object.values(CHART_COLORS)[i % Object.values(CHART_COLORS).length],
-                }))}
-                cx="50%" cy="50%" innerRadius={50} outerRadius={110} paddingAngle={2} dataKey="value" nameKey="name"
-                label={({ name, percent }: { name?: string; percent?: number }) => `${name ?? ''} ${((percent ?? 0) * 100).toFixed(0)}%`}
-              >
-                {trading.popularAssets.slice(0, 8).map((_: AnyData, i: number) => (
-                  <Cell key={`pa-${i}`} fill={Object.values(CHART_COLORS)[i % Object.values(CHART_COLORS).length]} strokeWidth={0} />
-                ))}
-              </Pie>
-              <Tooltip content={<CustomTooltip />} />
-            </PieChart>
-          </ResponsiveContainer>
+          <div className="flex justify-center">
+            <DonutChart
+              data={trading.popularAssets.slice(0, 8).map((a: AnyData, i: number) => ({
+                name: a.symbol,
+                value: a.volume,
+                color: Object.values(CHART_COLORS)[i % Object.values(CHART_COLORS).length] as string,
+              }))}
+              size={220}
+            />
+          </div>
         ) : (
           <EmptyChart />
         )}
@@ -590,17 +514,17 @@ export function ContentTab({
       {/* 공지사항 + 댓글 추이 / Announcement + comment trend */}
       <ChartCard title={t('stats.announcementStats')} description={t('stats.desc.announcementStats')}>
         {hasChartData(announcementChartData) ? (
-          <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={announcementChartData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }} barSize={6}>
-              <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
-              <XAxis dataKey="date" tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} interval="preserveStartEnd" tickFormatter={(v: string) => v.length > 8 ? v.slice(5) : v} />
-              <YAxis tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend wrapperStyle={{ fontSize: 11, color: AXIS_TICK_FILL, paddingTop: 8 }} />
-              <Bar dataKey="announcements" name={t('stats.announcementStats')} fill={CHART_COLORS.blue} radius={[3, 3, 0, 0]} />
-              <Bar dataKey="comments" name={t('stats.comments')} fill={CHART_COLORS.red} radius={[3, 3, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          <MiniBarChart
+            data={announcementChartData.map((d: AnyData) => ({
+              label: d.date,
+              values: [
+                { key: t('stats.announcementStats'), value: d.announcements, color: CHART_COLORS.blue },
+                { key: t('stats.comments'), value: d.comments, color: CHART_COLORS.red },
+              ],
+            }))}
+            height={280}
+            showLegend
+          />
         ) : (
           <EmptyChart />
         )}
@@ -609,17 +533,17 @@ export function ContentTab({
       {/* 좋아요 추이 / Like trend */}
       <ChartCard title={t('stats.likeStats')} description={t('stats.desc.likeStats')}>
         {hasChartData(likeChartData) ? (
-          <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={likeChartData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }} barSize={6}>
-              <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
-              <XAxis dataKey="date" tick={{ fill: AXIS_TICK_FILL, fontSize: 10 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} interval="preserveStartEnd" tickFormatter={(v: string) => v.length > 8 ? v.slice(5) : v} />
-              <YAxis tick={{ fill: AXIS_TICK_FILL, fontSize: 11 }} axisLine={{ stroke: AXIS_LINE_STROKE }} tickLine={false} />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend wrapperStyle={{ fontSize: 11, color: AXIS_TICK_FILL, paddingTop: 8 }} />
-              <Bar dataKey="announcementLikes" name={t('stats.announcementLikes')} fill={CHART_COLORS.purple} radius={[3, 3, 0, 0]} />
-              <Bar dataKey="commentLikes" name={t('stats.commentLikes')} fill={CHART_COLORS.yellow} radius={[3, 3, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          <MiniBarChart
+            data={likeChartData.map((d: AnyData) => ({
+              label: d.date,
+              values: [
+                { key: t('stats.announcementLikes'), value: d.announcementLikes, color: CHART_COLORS.purple },
+                { key: t('stats.commentLikes'), value: d.commentLikes, color: CHART_COLORS.yellow },
+              ],
+            }))}
+            height={280}
+            showLegend
+          />
         ) : (
           <EmptyChart />
         )}
@@ -738,15 +662,13 @@ export function ChatTab({ chatStats, t }: ChatTabProps) {
         {/* 일별 메시지 수 / Daily messages */}
         <ChartCard title={t('stats.dailyMessages')}>
           {chatStats?.dailyMessages?.length ? (
-            <ResponsiveContainer width="100%" height={240}>
-              <AreaChart data={chatStats.dailyMessages}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                <XAxis dataKey="label" tick={{ fill: 'var(--text-quaternary)', fontSize: 10 }} tickFormatter={(v: string) => v.slice(5)} interval="preserveStartEnd" />
-                <YAxis tick={{ fill: 'var(--text-quaternary)', fontSize: 11 }} />
-                <Tooltip contentStyle={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 12, fontSize: 12 }} />
-                <Area type="monotone" dataKey="count" stroke={CHART_COLORS.blue} fill={CHART_COLORS.blue} fillOpacity={0.15} name={t('stats.messages')} />
-              </AreaChart>
-            </ResponsiveContainer>
+            <MiniLineChart
+              data={chatStats.dailyMessages.map((d: AnyData) => ({ label: d.label, value: d.count }))}
+              height={240}
+              color={CHART_COLORS.blue}
+              area
+              name={t('stats.messages')}
+            />
           ) : (
             <EmptyChart height={240} />
           )}
@@ -755,22 +677,15 @@ export function ChatTab({ chatStats, t }: ChatTabProps) {
         {/* 채팅방 유형 분포 / Room type distribution */}
         <ChartCard title={t('stats.roomDistribution')}>
           {chatStats && chatStats.totalRooms > 0 ? (
-            <ResponsiveContainer width="100%" height={240}>
-              <PieChart>
-                <Pie
-                  data={[
-                    { name: t('stats.dm'), value: chatStats.dmCount },
-                    { name: t('stats.group'), value: chatStats.groupCount },
-                  ]}
-                  cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={4} dataKey="value"
-                  label={({ name, percent }: { name?: string; percent?: number }) => `${name ?? ''} ${((percent ?? 0) * 100).toFixed(0)}%`}
-                >
-                  <Cell fill={CHART_COLORS.blue} />
-                  <Cell fill={CHART_COLORS.green} />
-                </Pie>
-                <Tooltip contentStyle={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 12, fontSize: 12 }} />
-              </PieChart>
-            </ResponsiveContainer>
+            <div className="flex justify-center">
+              <DonutChart
+                data={[
+                  { name: t('stats.dm'), value: chatStats.dmCount, color: CHART_COLORS.blue },
+                  { name: t('stats.group'), value: chatStats.groupCount, color: CHART_COLORS.green },
+                ]}
+                size={200}
+              />
+            </div>
           ) : (
             <EmptyChart height={240} />
           )}

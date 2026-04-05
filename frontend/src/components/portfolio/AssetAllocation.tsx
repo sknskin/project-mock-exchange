@@ -8,24 +8,10 @@
 'use client';
 
 import { useMemo } from 'react';
-import {
-  PieChart,
-  Pie,
-  Cell,
-  Tooltip,
-  ResponsiveContainer,
-} from 'recharts';
 import { PieChart as PieChartIcon } from 'lucide-react';
+import DonutChart from '@/components/chart/DonutChart';
 import type { TranslationKey } from '@/lib/i18n';
 import type { Portfolio } from '@/types';
-
-const TOOLTIP_CONTENT_STYLE: React.CSSProperties = {
-  backgroundColor: '#1E1E24',
-  border: '1px solid rgba(255,255,255,0.08)',
-  borderRadius: '8px',
-  fontSize: '12px',
-  color: '#ECECEC',
-};
 
 const CHART_COLORS = [
   '#3182F6', '#F04452', '#00BFA5', '#FF8A00', '#8B5CF6',
@@ -83,31 +69,15 @@ export default function AssetAllocation({ portfolio, fmt, t }: AssetAllocationPr
       </p>
 
       <div className="flex flex-col sm:flex-row items-center gap-4 lg:gap-6">
-        {/* Pie Chart */}
+        {/* 도넛 차트 / Donut Chart */}
         {/* INF-M-03: SVG 차트에 role="img" aria-label 추가 — 접근성 / Add role="img" aria-label to SVG chart — a11y */}
-        <div className="w-[180px] h-[180px] lg:w-[260px] lg:h-[260px] shrink-0" role="img" aria-label={t('portfolio.analytics.assetAllocation')}>
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={allocationData}
-                cx="50%"
-                cy="50%"
-                innerRadius="38%"
-                outerRadius="62%"
-                dataKey="value"
-                stroke="none"
-                isAnimationActive={false}
-              >
-                {allocationData.map((entry, index) => (
-                  <Cell key={index} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip
-                contentStyle={TOOLTIP_CONTENT_STYLE}
-                formatter={(value?: number) => [fmt(value ?? 0), '']}
-              />
-            </PieChart>
-          </ResponsiveContainer>
+        <div className="w-[180px] h-[180px] lg:w-[260px] lg:h-[260px] shrink-0 [&>div]:!w-full [&>div]:!h-full" role="img" aria-label={t('portfolio.analytics.assetAllocation')}>
+          <DonutChart
+            data={allocationData}
+            size={260}
+            thickness={0.24}
+            formatValue={fmt}
+          />
         </div>
 
         {/* Legend */}

@@ -8,14 +8,6 @@
 'use client';
 
 import { useMemo } from 'react';
-import {
-  BarChart,
-  Bar,
-  Tooltip,
-  XAxis,
-  YAxis,
-  ResponsiveContainer,
-} from 'recharts';
 import { cn, formatPercent } from '@/lib/format';
 import {
   Wallet,
@@ -26,16 +18,6 @@ import {
 import type { TranslationKey } from '@/lib/i18n';
 import type { Portfolio } from '@/types';
 import type { Order } from '@/types';
-
-/** Recharts 인라인 스타일 상수 — 렌더링마다 새 객체 생성 방지
- * Recharts inline style constants — prevent new object creation on every render */
-const TOOLTIP_CONTENT_STYLE: React.CSSProperties = {
-  backgroundColor: '#1E1E24',
-  border: '1px solid rgba(255,255,255,0.08)',
-  borderRadius: '8px',
-  fontSize: '12px',
-  color: '#ECECEC',
-};
 
 const CHART_COLORS = [
   '#3182F6', '#F04452', '#00BFA5', '#FF8A00', '#8B5CF6',
@@ -115,14 +97,6 @@ export default function AnalyticsOverview({ portfolio, filledOrders, fmt, t }: A
 
     return items;
   }, [portfolio, t]);
-
-  const compositionBarData = useMemo(() => {
-    const entry: Record<string, number> = {};
-    compositionData.forEach((item) => {
-      entry[item.name] = item.percent;
-    });
-    return [entry];
-  }, [compositionData]);
 
   return (
     <>
@@ -257,20 +231,20 @@ export default function AnalyticsOverview({ portfolio, filledOrders, fmt, t }: A
           </div>
           <p className="text-[12px] text-text-quaternary mb-4">{t('portfolio.analytics.valueCompositionDesc')}</p>
 
-          <div className="w-full h-[48px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={compositionBarData} layout="vertical" margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
-                <XAxis type="number" hide domain={[0, 100]} />
-                <YAxis type="category" hide />
-                <Tooltip
-                  contentStyle={TOOLTIP_CONTENT_STYLE}
-                  formatter={(value?: number, name?: string) => [`${(value ?? 0).toFixed(1)}%`, name ?? '']}
-                />
-                {compositionData.map((item) => (
-                  <Bar key={item.name} dataKey={item.name} stackId="composition" fill={item.color} isAnimationActive={false} />
-                ))}
-              </BarChart>
-            </ResponsiveContainer>
+          {/* 순수 CSS 수평 스택 바 / Pure CSS horizontal stacked bar */}
+          <div className="flex h-[48px] rounded-xl overflow-hidden">
+            {compositionData.map((item) => (
+              <div
+                key={item.name}
+                className="h-full transition-all relative group"
+                style={{ width: `${item.percent}%`, backgroundColor: item.color }}
+              >
+                {/* 호버 시 툴팁 / Tooltip on hover */}
+                <div className="absolute -top-8 left-1/2 -translate-x-1/2 hidden group-hover:block bg-[#1E1E24] border border-white/[0.08] rounded-lg px-2 py-1 text-[11px] text-[#ECECEC] whitespace-nowrap z-10">
+                  {item.name}: {item.percent.toFixed(1)}%
+                </div>
+              </div>
+            ))}
           </div>
 
           <div className="flex flex-wrap gap-3 mt-3">

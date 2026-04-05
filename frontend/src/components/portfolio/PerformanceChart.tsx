@@ -8,34 +8,11 @@
 'use client';
 
 import { useMemo } from 'react';
-import {
-  LineChart,
-  Line,
-  Tooltip,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  ReferenceLine,
-  ResponsiveContainer,
-} from 'recharts';
 import { cn, formatPercent } from '@/lib/format';
 import { BarChart3, Activity } from 'lucide-react';
+import MiniLineChart from '@/components/chart/MiniLineChart';
 import type { TranslationKey } from '@/lib/i18n';
 import type { Portfolio, Order } from '@/types';
-
-const TOOLTIP_CONTENT_STYLE: React.CSSProperties = {
-  backgroundColor: '#1E1E24',
-  border: '1px solid rgba(255,255,255,0.08)',
-  borderRadius: '8px',
-  fontSize: '12px',
-  color: '#ECECEC',
-};
-
-const CHART_GRID_STROKE = 'rgba(255,255,255,0.05)';
-const CHART_AXIS_TICK = { fontSize: 11, fill: '#6B7683' };
-const CHART_AXIS_LINE = { stroke: 'rgba(255,255,255,0.08)' };
-const CHART_REFERENCE_LINE_STROKE = 'rgba(255,255,255,0.15)';
-const CHART_LINE_ACTIVE_DOT = { r: 4, fill: '#3182F6', stroke: '#1E1E24', strokeWidth: 2 };
 
 interface PerformanceChartProps {
   portfolio: Portfolio;
@@ -49,8 +26,6 @@ interface PerformanceChartProps {
  * Performance chart — per-asset performance + daily cumulative P&L
  */
 export default function PerformanceChart({ portfolio, filledOrders, fmt, t }: PerformanceChartProps) {
-  const yAxisTickFmt = (v: number) => fmt(v);
-
   // --- Daily P&L from filled orders ---
   const dailyPnlData = useMemo(() => {
     if (!filledOrders || filledOrders.length === 0) return [];
@@ -161,29 +136,15 @@ export default function PerformanceChart({ portfolio, filledOrders, fmt, t }: Pe
           </p>
 
           {/* INF-M-03: SVG 차트에 role="img" aria-label 추가 — 접근성 / Add role="img" aria-label to SVG chart — a11y */}
-          <div className="w-full h-[200px]" role="img" aria-label={t('portfolio.analytics.dailyPnl')}>
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={dailyPnlData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID_STROKE} />
-                <XAxis dataKey="date" tick={CHART_AXIS_TICK} axisLine={CHART_AXIS_LINE} tickLine={false} />
-                <YAxis tick={CHART_AXIS_TICK} axisLine={false} tickLine={false} tickFormatter={yAxisTickFmt} />
-                <ReferenceLine y={0} stroke={CHART_REFERENCE_LINE_STROKE} strokeDasharray="3 3" />
-                <Tooltip
-                  contentStyle={TOOLTIP_CONTENT_STYLE}
-                  formatter={(value?: number) => [fmt(value ?? 0), t('portfolio.analytics.totalPnl')]}
-                  labelFormatter={(label) => label}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="cumPnl"
-                  stroke="#3182F6"
-                  strokeWidth={2}
-                  dot={false}
-                  activeDot={CHART_LINE_ACTIVE_DOT}
-                  isAnimationActive={false}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+          <div className="w-full" role="img" aria-label={t('portfolio.analytics.dailyPnl')}>
+            <MiniLineChart
+              data={dailyPnlData.map((d) => ({ label: d.date, value: d.cumPnl }))}
+              height={200}
+              color="#3182F6"
+              area
+              formatValue={fmt}
+              name={t('portfolio.analytics.totalPnl')}
+            />
           </div>
         </section>
       )}

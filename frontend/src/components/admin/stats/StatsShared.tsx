@@ -12,7 +12,7 @@ import { BarChart2, ArrowUpRight, ArrowDownRight, Minus } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { LucideIcon } from 'lucide-react';
 
-// ===== 차트 테마 상수 — Recharts 차트에서 사용하는 색상 팔레트 / Chart theme constants — color palette used by Recharts =====
+// ===== 차트 테마 상수 — SVG 차트에서 사용하는 색상 팔레트 / Chart theme constants — color palette used by SVG charts =====
 export const CHART_COLORS = {
   blue: '#3182F6',
   red: '#F04452',
