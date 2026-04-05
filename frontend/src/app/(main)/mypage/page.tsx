@@ -44,7 +44,7 @@ export default function MyPage() {
       {/* Page header */}
       <div className="py-6 flex items-center justify-between h-[88px]">
         <div className="flex items-center gap-2.5">
-          <User className="w-5 h-5 text-accent" />
+          <User className="w-5 h-5 text-accent" aria-hidden="true" />
           <h1 className="text-[20px] font-extrabold text-text-primary">
             {t('mypage.title')}
           </h1>
@@ -58,9 +58,31 @@ export default function MyPage() {
         </Link>
       </div>
 
+      {/* 로딩 스켈레톤 — 프로필 카드 레이아웃을 모방합니다 */}
+      {/* Loading skeleton — mimics profile card layout */}
       {isLoading && (
-        <div className="py-20 text-center text-text-quaternary text-[14px]">
-          {t('common.loading')}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="bg-bg-secondary rounded-2xl px-5 py-4">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-14 h-14 rounded-full animate-pulse bg-bg-tertiary" />
+              <div className="flex-1 space-y-2">
+                <div className="h-4 w-32 animate-pulse bg-bg-tertiary rounded" />
+                <div className="h-3 w-48 animate-pulse bg-bg-tertiary rounded" />
+              </div>
+            </div>
+            <div className="space-y-3">
+              <div className="h-3 w-full animate-pulse bg-bg-tertiary rounded" />
+              <div className="h-3 w-3/4 animate-pulse bg-bg-tertiary rounded" />
+              <div className="h-3 w-1/2 animate-pulse bg-bg-tertiary rounded" />
+            </div>
+          </div>
+          <div className="bg-bg-secondary rounded-2xl px-5 py-4">
+            <div className="space-y-3">
+              <div className="h-4 w-24 animate-pulse bg-bg-tertiary rounded" />
+              <div className="h-3 w-full animate-pulse bg-bg-tertiary rounded" />
+              <div className="h-3 w-2/3 animate-pulse bg-bg-tertiary rounded" />
+            </div>
+          </div>
         </div>
       )}
 

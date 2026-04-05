@@ -75,10 +75,23 @@ export default function MyPageEditPage() {
 
   if (!isAuthenticated) return null;
 
+  // 로딩 스켈레톤 — 폼 필드 레이아웃을 모방합니다
+  // Loading skeleton — mimics form field layout
   if (isLoading) {
     return (
-      <div className="py-20 text-center text-text-quaternary text-[14px]">
-        {t('common.loading')}
+      <div className="pb-24">
+        <div className="flex items-center gap-3 py-6 h-[88px]">
+          <div className="w-8 h-8 animate-pulse bg-bg-secondary rounded-lg" />
+          <div className="h-5 w-32 animate-pulse bg-bg-secondary rounded" />
+        </div>
+        <div className="space-y-5">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="space-y-1.5">
+              <div className="h-3 w-16 animate-pulse bg-bg-secondary rounded" />
+              <div className="h-11 w-full animate-pulse bg-bg-secondary rounded-xl" />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -89,7 +102,7 @@ export default function MyPageEditPage() {
       <div className="flex items-center gap-3 py-6 h-[88px]">
         <Link
           href="/mypage"
-          className="flex items-center justify-center w-8 h-8 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-secondary transition-colors"
+          className="flex items-center justify-center min-w-[44px] min-h-[44px] w-8 h-8 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-secondary transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
         </Link>
@@ -166,10 +179,10 @@ export default function MyPageEditPage() {
             {updateProfile.isPending ? (
               <span className="flex items-center gap-2">
                 <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                {t('mypage.save')}
+                {t('common.saving')}
               </span>
             ) : (
-              t('mypage.save')
+              t('common.save')
             )}
           </button>
         </div>

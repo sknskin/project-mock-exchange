@@ -243,7 +243,7 @@ function NewsPage() {
           onClick={handleAiAnalysis}
           disabled={aiLoading}
           className={cn(
-            'flex items-center justify-center gap-2 h-10 min-w-[120px] px-4 rounded-xl text-[13px] font-semibold transition-all duration-150 border shrink-0 ml-auto mb-1',
+            'flex items-center justify-center gap-2 h-10 sm:min-w-[120px] px-4 rounded-xl text-[13px] font-semibold transition-all duration-150 border shrink-0 ml-auto mb-1',
             aiLoading
               ? 'border-border text-text-quaternary cursor-not-allowed'
               : 'border-accent/30 text-accent hover:bg-accent/10',
@@ -267,10 +267,11 @@ function NewsPage() {
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             placeholder={t('news.search')}
+            aria-label={t('news.search')}
             className="w-full bg-bg-secondary border border-border rounded-xl pl-9 pr-9 py-2.5 text-[14px] text-text-primary placeholder:text-text-quaternary focus:outline-none focus:border-accent/60 transition-colors"
           />
           {searchInput && (
-            <button onClick={() => { setSearchInput(''); setSearchQuery(''); }} className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 text-text-quaternary hover:text-text-primary transition-colors" aria-label="Clear search">
+            <button onClick={() => { setSearchInput(''); setSearchQuery(''); }} className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 text-text-quaternary hover:text-text-primary transition-colors" aria-label={t('common.clearSearch')}>
               <X className="w-4 h-4" />
             </button>
           )}

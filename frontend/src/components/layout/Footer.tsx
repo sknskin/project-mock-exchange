@@ -152,7 +152,7 @@ function Footer() {
         </div>
 
         {/* 기술 스택 마키 / Tech Stack Marquee */}
-        <div className="relative overflow-hidden py-6 pb-28 md:pb-10 -mx-5 sm:-mx-8 lg:-mx-10">
+        <div className="relative overflow-hidden py-6 pb-20 md:pb-10 -mx-5 sm:-mx-8 lg:-mx-10">
           <div className="absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-bg-primary to-transparent z-10 pointer-events-none" />
           <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-bg-primary to-transparent z-10 pointer-events-none" />
 
@@ -166,6 +166,8 @@ function Footer() {
                   <img
                     src={tech.icon}
                     alt={tech.name}
+                    width={20}
+                    height={20}
                     className={cn('w-5 h-5 object-contain', tech.invertInLight && 'icon-invert-light')}
                     loading="eager"
                   />

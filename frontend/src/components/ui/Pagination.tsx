@@ -112,8 +112,8 @@ function Pagination({
   // Layout: absolute positions for total/per-page on left/right, page numbers centered via justify-center
   return (
     <div className="relative flex items-center justify-center py-3">
-      {/* 총 건수 — 좌측 고정 / Total count — fixed left */}
-      <div className="absolute left-0">{totalLabel}</div>
+      {/* 총 건수 — 좌측 고정 (모바일에서 숨김) / Total count — fixed left (hidden on mobile) */}
+      <div className="absolute left-0 hidden sm:block">{totalLabel}</div>
       {/* 페이지 번호 — 가운데 정렬 (-ml-8로 시각적 중심 미세 조정) / Page numbers — centered (-ml-8 for visual center fine-tuning) */}
       <div className="flex items-center gap-0.5 -ml-8">
         <button
@@ -166,8 +166,8 @@ function Pagination({
         </button>
       </div>
 
-      {/* 건씩 보기 — 우측 고정 / Per-page selector — fixed right */}
-      <div className="absolute right-0">{perPageEl}</div>
+      {/* 건씩 보기 — 우측 고정 (모바일에서 숨김) / Per-page selector — fixed right (hidden on mobile) */}
+      <div className="absolute right-0 hidden sm:block">{perPageEl}</div>
     </div>
   );
 }
