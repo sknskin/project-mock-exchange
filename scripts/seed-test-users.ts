@@ -27,8 +27,9 @@ const prisma = new PrismaClient({
 const DATE_FROM = new Date('2026-02-01T00:00:00Z');
 const DATE_TO   = new Date('2026-02-27T23:59:59Z');
 
-/** 공통 비밀번호 (Common password for all test users) */
-const PASSWORD = 'ehgml5516!';
+/** 공통 비밀번호 — 환경변수 우선, 미설정 시 랜덤 생성
+ * Common password — env var first, random fallback if unset */
+const PASSWORD = process.env.SEED_TEST_PASSWORD || require('crypto').randomBytes(16).toString('hex') + '!A1';
 const SALT_ROUNDS = 12;
 
 // ─── 주소 풀 (Address pool) ─────────────────────────────────────────

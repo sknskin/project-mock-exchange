@@ -96,7 +96,9 @@ const SEED_USERS: SeedUser[] = [
   {
     email: 'admin1@virtuex.com',
     username: 'admin1',
-    password: 'admin1234!',
+    // 환경변수에서 비밀번호를 읽고, 미설정 시 랜덤 생성 (프로덕션 보안)
+    // Read password from env var, generate random if unset (production security)
+    password: process.env.SEED_ADMIN_PASSWORD || randomBytes(16).toString('hex') + '!A1',
     name: '관리자1',
     role: 'ADMIN',           // 관리자 역할: 회원관리, 공지사항 관리 가능
     phone: '01012345678',
@@ -107,7 +109,9 @@ const SEED_USERS: SeedUser[] = [
   {
     email: 'admin2@virtuex.com',
     username: 'admin2',
-    password: 'admin1234!',
+    // 환경변수에서 비밀번호를 읽고, 미설정 시 랜덤 생성 (프로덕션 보안)
+    // Read password from env var, generate random if unset (production security)
+    password: process.env.SEED_ADMIN_PASSWORD || randomBytes(16).toString('hex') + '!A1',
     name: '관리자2',
     role: 'ADMIN',
     phone: '01098765432',
