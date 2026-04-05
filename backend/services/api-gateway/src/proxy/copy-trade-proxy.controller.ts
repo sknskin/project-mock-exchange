@@ -21,6 +21,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery }
 import { Request, Response } from 'express';
 import { ProxyService } from './proxy.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { AuthenticatedRequest } from './interfaces/authenticated-request.interface';
 
 // 모든 엔드포인트에 JWT 인증 필수 — 카피 트레이딩은 개인 투자 데이터
 // All endpoints require JWT auth — copy trading contains personal investment data
@@ -38,7 +39,7 @@ export class CopyTradeProxyController {
   @ApiResponse({ status: 201, description: '카피 트레이딩 시작 성공' })
   @ApiResponse({ status: 400, description: '유효성 검사 실패' })
   async startCopyTrading(@Body() body: unknown, @Req() req: Request, @Res() res: Response) {
-    const userId = (req as Record<string, any>).user?.id;
+    const userId = (req as AuthenticatedRequest).user?.id;
     const result = await this.proxyService.forward('portfolio', {
       method: 'POST',
       url: '/portfolio/copy-trade/start',
@@ -60,7 +61,7 @@ export class CopyTradeProxyController {
     @Req() req: Request,
     @Res() res: Response,
   ) {
-    const userId = (req as Record<string, any>).user?.id;
+    const userId = (req as AuthenticatedRequest).user?.id;
     const result = await this.proxyService.forward('portfolio', {
       method: 'PUT',
       url: `/portfolio/copy-trade/config/${traderId}`,
@@ -81,7 +82,7 @@ export class CopyTradeProxyController {
     @Req() req: Request,
     @Res() res: Response,
   ) {
-    const userId = (req as Record<string, any>).user?.id;
+    const userId = (req as AuthenticatedRequest).user?.id;
     const result = await this.proxyService.forward('portfolio', {
       method: 'POST',
       url: `/portfolio/copy-trade/stop/${traderId}`,
@@ -96,7 +97,7 @@ export class CopyTradeProxyController {
   @ApiOperation({ summary: '카피 트레이딩 설정 목록', description: '모든 카피 트레이딩 설정을 반환합니다' })
   @ApiResponse({ status: 200, description: '설정 목록 반환' })
   async getMyConfigs(@Req() req: Request, @Res() res: Response) {
-    const userId = (req as Record<string, any>).user?.id;
+    const userId = (req as AuthenticatedRequest).user?.id;
     const result = await this.proxyService.forward('portfolio', {
       method: 'GET',
       url: '/portfolio/copy-trade/status',
@@ -116,7 +117,7 @@ export class CopyTradeProxyController {
     @Req() req: Request,
     @Res() res: Response,
   ) {
-    const userId = (req as Record<string, any>).user?.id;
+    const userId = (req as AuthenticatedRequest).user?.id;
     const result = await this.proxyService.forward('portfolio', {
       method: 'GET',
       url: `/portfolio/copy-trade/status/${traderId}`,
@@ -138,7 +139,7 @@ export class CopyTradeProxyController {
     @Req() req: Request,
     @Res() res: Response,
   ) {
-    const userId = (req as Record<string, any>).user?.id;
+    const userId = (req as AuthenticatedRequest).user?.id;
     const result = await this.proxyService.forward('portfolio', {
       method: 'GET',
       url: '/portfolio/copy-trade/history',

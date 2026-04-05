@@ -77,6 +77,9 @@ export class PriceGateway implements OnGatewayConnection, OnGatewayDisconnect, O
         const payload = await this.jwtService.verifyAsync(token);
         client.data.userId = payload.sub;
         client.data.authenticated = true;
+        // SEC-26-09: 인증된 클라이언트만 price-subscribers 룸에 참가 — 익명 클라이언트에 배치 브로드캐스트 차단
+        // SEC-26-09: Only authenticated clients join price-subscribers room — blocks batch broadcast to anonymous clients
+        client.join('price-subscribers');
         this.logger.log(`Authenticated client connected: ${client.id} (user: ${payload.sub})`);
       } else {
         // IP별 익명 연결 수 제한 — 리소스 소진 방지 / Limit anonymous connections per IP
@@ -209,7 +212,9 @@ export class PriceGateway implements OnGatewayConnection, OnGatewayDisconnect, O
    */
   broadcastPriceBatch(updates: { symbol: string; data: unknown }[]) {
     if (updates.length === 0) return;
-    this.server.emit('price:batch', {
+    // SEC-26-09: price-subscribers 룸에만 배치 전송 — 익명 클라이언트 제외
+    // SEC-26-09: Emit batch only to price-subscribers room — excludes anonymous clients
+    this.server.to('price-subscribers').emit('price:batch', {
       updates: updates.map((u) => ({
         channel: `prices:${u.symbol}`,
         data: u.data,

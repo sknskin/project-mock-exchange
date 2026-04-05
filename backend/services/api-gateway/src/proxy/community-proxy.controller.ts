@@ -314,6 +314,27 @@ export class CommunityProxyController {
     @Req() req: Request,
     @Res() res: Response,
   ) {
+    // SEC-26-11: 게이트웨이 레벨에서 이미지 파일 타입/크기 사전 검증 — 허용되지 않는 파일이 다운스트림으로 전달되는 것을 방지
+    // SEC-26-11: Pre-validate image file type/size at gateway level — prevents disallowed files from reaching downstream
+    const ALLOWED_IMAGE_MIMES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
+    const imagePayload = body as { data?: string; mimeType?: string; type?: string; size?: number } | undefined;
+    if (imagePayload?.mimeType && !ALLOWED_IMAGE_MIMES.includes(imagePayload.mimeType)) {
+      return res.status(400).json({ message: 'Only image files (JPEG, PNG, GIF, WebP) are allowed' });
+    }
+    if (imagePayload?.type && !ALLOWED_IMAGE_MIMES.includes(imagePayload.type)) {
+      return res.status(400).json({ message: 'Only image files (JPEG, PNG, GIF, WebP) are allowed' });
+    }
+    if (imagePayload?.data && typeof imagePayload.data === 'string') {
+      const estimatedBytes = Math.ceil((imagePayload.data.length * 3) / 4);
+      if (estimatedBytes > MAX_IMAGE_SIZE_BYTES) {
+        return res.status(400).json({ message: 'Image size exceeds 10MB limit' });
+      }
+    }
+    if (imagePayload?.size && imagePayload.size > MAX_IMAGE_SIZE_BYTES) {
+      return res.status(400).json({ message: 'Image size exceeds 10MB limit' });
+    }
+
     const user = req.user as { id: string; role?: string; name?: string };
     const result = await this.proxyService.forward('user-auth', {
       method: 'POST',
@@ -342,6 +363,33 @@ export class CommunityProxyController {
     @Req() req: Request,
     @Res() res: Response,
   ) {
+    // SEC-26-11: 게이트웨이 레벨에서 첨부파일 타입/크기 사전 검증 — 불필요한 프록시 전달 방지
+    // SEC-26-11: Pre-validate attachment file type/size at gateway level — prevents unnecessary proxy forwarding
+    const ALLOWED_ATTACHMENT_MIMES = [
+      'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+      'application/pdf',
+      'text/plain',
+      'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    ];
+    const MAX_ATTACHMENT_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
+    const attachPayload = body as { data?: string; mimeType?: string; type?: string; size?: number } | undefined;
+    if (attachPayload?.mimeType && !ALLOWED_ATTACHMENT_MIMES.includes(attachPayload.mimeType)) {
+      return res.status(400).json({ message: 'File type not allowed' });
+    }
+    if (attachPayload?.type && !ALLOWED_ATTACHMENT_MIMES.includes(attachPayload.type)) {
+      return res.status(400).json({ message: 'File type not allowed' });
+    }
+    if (attachPayload?.data && typeof attachPayload.data === 'string') {
+      const estimatedBytes = Math.ceil((attachPayload.data.length * 3) / 4);
+      if (estimatedBytes > MAX_ATTACHMENT_SIZE_BYTES) {
+        return res.status(400).json({ message: 'File size exceeds 10MB limit' });
+      }
+    }
+    if (attachPayload?.size && attachPayload.size > MAX_ATTACHMENT_SIZE_BYTES) {
+      return res.status(400).json({ message: 'File size exceeds 10MB limit' });
+    }
+
     const user = req.user as { id: string; role?: string; name?: string };
     const result = await this.proxyService.forward('user-auth', {
       method: 'POST',

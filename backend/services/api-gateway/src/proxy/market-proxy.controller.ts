@@ -28,7 +28,7 @@ export class MarketProxyController {
       url: '/market/assets',
     });
     res.status(result.status);
-    if (result.status >= 400) throw new HttpException(result.data as Record<string, any>, result.status);
+    if (result.status >= 400) throw new HttpException(result.data as Record<string, unknown>, result.status);
     return result.data;
   }
 
@@ -59,7 +59,7 @@ export class MarketProxyController {
       params: { period },
     });
     res.status(result.status);
-    if (result.status >= 400) throw new HttpException(result.data as Record<string, any>, result.status);
+    if (result.status >= 400) throw new HttpException(result.data as Record<string, unknown>, result.status);
     return result.data;
   }
 

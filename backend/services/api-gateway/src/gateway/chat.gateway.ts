@@ -123,7 +123,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect, On
       // 사용자-소켓 매핑 저장 (Store mapping)
       client.data.userId = userId;
       client.data.username = payload.username;
+      client.data.role = payload.role;
       this.socketUser.set(client.id, userId);
+
+      // SEC-26-03: 관리자/시스템 사용자는 admin-room에 자동 참가 — 관리자 전용 알림 수신
+      // SEC-26-03: Auto-join admin-room for ADMIN/SYSTEM users — receive admin-only notifications
+      if (payload.role === 'ADMIN' || payload.role === 'SYSTEM') {
+        client.join('admin-room');
+      }
 
       if (!this.userSockets.has(userId)) {
         this.userSockets.set(userId, new Set());

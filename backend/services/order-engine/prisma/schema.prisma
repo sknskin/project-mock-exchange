@@ -29,6 +29,9 @@ model OrderRead {
   lastEventPosition BigInt   @default(0) @map("last_event_position")
 
   @@index([userId, createdAt(sort: Desc)])
+  // PERF-13-21: 주문 조회 성능 개선을 위한 복합 인덱스 — userId + status + createdAt 동시 필터링 최적화
+  // PERF-13-21: Composite index for order query performance — optimizes simultaneous userId + status + createdAt filtering
+  @@index([userId, status, createdAt(sort: Desc)])
   @@index([symbol, status])
   @@index([symbol, triggerType, triggered])
   @@map("orders_read")

@@ -28,6 +28,7 @@ import {
 import { Request, Response } from 'express';
 import { ProxyService } from './proxy.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { AdminRolesGuard } from '../auth/admin-roles.guard';
 import { ChatGateway } from '../gateway/chat.gateway';
 
 // 모든 채팅 엔드포인트에 JWT 인증 필수 / All chat endpoints require JWT authentication
@@ -240,7 +241,10 @@ export class ChatProxyController {
   /** 사용자 강퇴를 chat 서비스로 프록시 (관리자 전용)
    * Proxy user kick to chat service (admin only) */
   // 사용자 강퇴 (관리자 전용) (Kick user (admin only))
+  // SEC-26-06: 인라인 역할 검사를 AdminRolesGuard로 교체 — 일관된 관리자 권한 검증
+  // SEC-26-06: Replace inline role check with AdminRolesGuard — consistent admin authorization
   @Post('rooms/:id/kick')
+  @UseGuards(AdminRolesGuard)
   @ApiOperation({ summary: '사용자 강퇴', description: '채팅방에서 사용자를 강퇴합니다 (관리자 전용)' })
   @ApiParam({ name: 'id', description: '채팅방 ID' })
   @ApiResponse({ status: 200, description: '강퇴 성공' })
@@ -248,9 +252,6 @@ export class ChatProxyController {
   @ApiResponse({ status: 403, description: '권한 없음' })
   async kickUser(@Param('id') id: string, @Req() req: Request, @Res() res: Response) {
     const user = req.user as { id: string; username: string; role?: string };
-    if (user.role !== 'ADMIN' && user.role !== 'SYSTEM') {
-      return res.status(403).json({ success: false, message: 'Forbidden: admin only' });
-    }
     const result = await this.proxyService.forward('chat', {
       method: 'POST',
       url: `/rooms/${id}/kick`,
@@ -332,16 +333,16 @@ export class ChatProxyController {
   /** 채팅방 삭제를 chat 서비스로 프록시 (관리자 전용)
    * Proxy room deletion to chat service (admin only) */
   // 채팅방 삭제 (관리자 전용) (Delete room (admin only))
+  // SEC-26-06: 인라인 역할 검사를 AdminRolesGuard로 교체 — 일관된 관리자 권한 검증
+  // SEC-26-06: Replace inline role check with AdminRolesGuard — consistent admin authorization
   @Delete('rooms/:id')
+  @UseGuards(AdminRolesGuard)
   @ApiOperation({ summary: '채팅방 삭제', description: '채팅방을 삭제합니다 (관리자 전용)' })
   @ApiParam({ name: 'id', description: '채팅방 ID' })
   @ApiResponse({ status: 200, description: '삭제 성공' })
   @ApiResponse({ status: 403, description: '권한 없음' })
   async deleteRoom(@Param('id') id: string, @Req() req: Request, @Res() res: Response) {
     const user = req.user as { id: string; username: string; role?: string };
-    if (user.role !== 'ADMIN' && user.role !== 'SYSTEM') {
-      return res.status(403).json({ success: false, message: 'Forbidden: admin only' });
-    }
     const result = await this.proxyService.forward('chat', {
       method: 'DELETE',
       url: `/rooms/${id}`,

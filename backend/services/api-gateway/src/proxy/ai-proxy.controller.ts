@@ -11,6 +11,7 @@ import { Throttle } from '@nestjs/throttler';
 import { Request, Response } from 'express';
 import { ProxyService } from './proxy.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { AuthenticatedRequest } from './interfaces/authenticated-request.interface';
 
 // AI 분석 요청은 비용이 높으므로 인증 필수 + 1분당 10회 제한
 // AI analysis requests are costly — require authentication + limit to 10 requests per minute
@@ -45,7 +46,7 @@ export class AiProxyController {
   @ApiResponse({ status: 200, description: '분석 결과 반환' })
   @ApiResponse({ status: 401, description: '인증 필요' })
   async analyzePortfolio(@Req() req: Request, @Body() body: unknown, @Res() res: Response) {
-    const userId = (req as Record<string, any>).user?.id;
+    const userId = (req as AuthenticatedRequest).user?.id;
     const result = await this.proxyService.forward('ai-service', {
       method: 'POST',
       url: '/analysis/portfolio',

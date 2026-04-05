@@ -343,10 +343,14 @@ export class CopyTradeService {
         if (tradeData.side === 'BUY') {
           const budgetCheckResult = await this.prisma.$transaction(async (tx) => {
             // FOR UPDATE 잠금으로 최신 설정 조회 / Read latest config with FOR UPDATE lock
-            const [lockedConfig] = await tx.$queryRawUnsafe<any[]>(
-              `SELECT "total_invested" AS "totalInvested", "max_investment" AS "maxInvestment" FROM "copy_trade_configs" WHERE "id" = $1 FOR UPDATE`,
-              config.id,
-            );
+            // SEC-26-14: $queryRawUnsafe를 $queryRaw 태그 템플릿으로 교체 — SQL 인젝션 방지
+            // SEC-26-14: Replace $queryRawUnsafe with $queryRaw tagged template — prevents SQL injection
+            const [lockedConfig] = await tx.$queryRaw<{ totalInvested: number; maxInvestment: number }[]>`
+              SELECT "total_invested" AS "totalInvested", "max_investment" AS "maxInvestment"
+              FROM "copy_trade_configs"
+              WHERE "id" = ${config.id}
+              FOR UPDATE
+            `;
 
             if (!lockedConfig) {
               return { skip: true, reason: 'Config not found during transaction' };

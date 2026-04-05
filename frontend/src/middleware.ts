@@ -40,6 +40,8 @@ export function middleware(request: NextRequest) {
     `default-src 'self'`,
     `script-src 'nonce-${nonce}' 'strict-dynamic'${evalDirective} https://t1.daumcdn.net https://*.daumcdn.net`,
     `frame-src 'self' https://postcode.map.daum.net http://postcode.map.daum.net https://*.daum.net`,
+    // SEC-26-08: style-src 'unsafe-inline' 의도적 유지 — TipTap 에디터가 인라인 스타일을 사용하므로 현재 필수
+    // SEC-26-08: style-src 'unsafe-inline' intentionally kept — required by TipTap editor's inline styles
     `style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net`,
     `img-src 'self' data: blob: https://cdn.simpleicons.org`,
     `connect-src 'self' ws: wss: https://api.exchangerate.fun https://api.frankfurter.app https://cdn.jsdelivr.net${devConnect}`,
@@ -57,6 +59,26 @@ export function middleware(request: NextRequest) {
     // AUTH-M-02: Validate JWT cookie on admin routes — redirect to login if cookie missing
     const accessToken = request.cookies.get('access_token')?.value;
     if (!accessToken) {
+      const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('redirect', request.nextUrl.pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+
+    // SEC-26-05: JWT 페이로드의 role 필드를 검증 — ADMIN/SYSTEM 역할만 관리자 경로 접근 허용
+    // SEC-26-05: Validate JWT payload role field — only ADMIN/SYSTEM roles can access admin routes
+    try {
+      const payloadBase64 = accessToken.split('.')[1];
+      if (payloadBase64) {
+        const payload = JSON.parse(atob(payloadBase64));
+        if (payload.role !== 'ADMIN' && payload.role !== 'SYSTEM') {
+          const loginUrl = new URL('/login', request.url);
+          loginUrl.searchParams.set('redirect', request.nextUrl.pathname);
+          return NextResponse.redirect(loginUrl);
+        }
+      }
+    } catch {
+      // JWT 디코딩 실패 시 로그인 페이지로 리다이렉트
+      // Redirect to login on JWT decode failure
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('redirect', request.nextUrl.pathname);
       return NextResponse.redirect(loginUrl);
