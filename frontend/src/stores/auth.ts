@@ -86,6 +86,10 @@ interface AuthState {
 // sessionStorage에 저장할 상태 부분집합 (토큰 제외) / Subset of state persisted to sessionStorage (no token)
 type PersistedAuthState = Pick<AuthState, 'user' | 'isAuthenticated'>;
 
+// API 기본 URL — 세션 검증용 (인터셉터 회피 위해 fetch 직접 사용)
+// API base URL — for session validation (using fetch directly to avoid interceptor)
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+
 export const useAuthStore = create<AuthState>()(
   persist<AuthState, [], [], PersistedAuthState>(
     (set) => ({
@@ -115,6 +119,42 @@ export const useAuthStore = create<AuthState>()(
         user: state.user,
         isAuthenticated: state.isAuthenticated,
       }),
+      // hydration 시 isAuthenticated를 false로 재설정 — 세션 검증 후 복원
+      // Reset isAuthenticated to false on hydration — restore after session validation
+      merge: (persistedState, currentState) => {
+        const persisted = (persistedState || {}) as Partial<PersistedAuthState>;
+        return {
+          ...currentState,
+          ...persisted,
+          isAuthenticated: false,
+        };
+      },
+      // hydration 완료 후 세션 유효성 검증
+      // Validate session after hydration completes
+      onRehydrateStorage: () => (state) => {
+        if (!state?.user) return;
+        // 저장된 사용자 정보가 있으면 쿠키 기반 세션 검증 (인터셉터 회피 위해 fetch 사용)
+        // If stored user exists, validate cookie-based session (fetch to avoid interceptor)
+        fetch(`${API_BASE}/api/auth/refresh`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+        })
+          .then((res) => {
+            if (!res.ok) throw new Error('Session expired');
+            return res.json();
+          })
+          .then((data) => {
+            const accessToken = data.data?.accessToken ?? data.accessToken;
+            useAuthStore.setState({
+              isAuthenticated: true,
+              ...(accessToken ? { accessToken } : {}),
+            });
+          })
+          .catch(() => {
+            useAuthStore.getState().logout();
+          });
+      },
     },
   ),
 );
