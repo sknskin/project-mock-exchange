@@ -186,7 +186,8 @@ function CommunityPage() {
         </div>
 
         {/* 탭 네비게이션 / Tab navigation */}
-        <div className="flex items-center border-b border-border mb-5">
+        {/* UX-9-05: 탭에 role="tablist" 추가 — 접근성 / Add role="tablist" to tabs — a11y */}
+        <div className="flex items-center border-b border-border mb-5" role="tablist">
           {([
             { key: 'discussions' as const, label: t('community.discussions') },
             { key: 'strategies' as const, label: t('community.strategies') },
@@ -195,6 +196,8 @@ function CommunityPage() {
           ]).map((item) => (
             <button
               key={item.key}
+              role="tab"
+              aria-selected={tab === item.key}
               onClick={() => handleTabClick(item.key)}
               className={cn(
                 // MOB-M-02: 최소 터치 타겟 44px 보장 / Ensure 44px min touch target

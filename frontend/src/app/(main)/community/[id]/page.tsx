@@ -10,6 +10,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+// TODO: 클라이언트 전용 컴포넌트이므로 isomorphic-dompurify 대신 dompurify 사용 시 번들 크기 절감 가능 (PERF-13-03)
+// TODO: Since this is a client-only component, using dompurify instead of isomorphic-dompurify could reduce bundle size (PERF-13-03)
 import DOMPurify from 'isomorphic-dompurify';
 import api from '@/lib/api';
 import ConfirmModal from '@/components/ui/ConfirmModal';
@@ -246,7 +248,8 @@ export default function CommunityPostDetailPage() {
   // 좋아요/댓글 수 — Prisma _count 또는 별도 필드 대응 / Like/comment counts — handles Prisma _count or separate fields
   const likeCount = post?._count?.likes ?? post?.likeCount ?? 0;
   const commentCount = post?._count?.comments ?? post?.commentCount ?? 0;
-  const catLabel = CATEGORIES[post?.category ?? 'FREE']?.[locale] ?? post?.category;
+  // UX-9-25: i18n 키를 사용하여 카테고리 라벨 표시 / Display category label using i18n keys
+  const catLabel = t(('community.category.' + (post?.category ?? 'FREE')) as Parameters<typeof t>[0]) ?? post?.category;
 
   /** 게시글 삭제 후 커뮤니티 목록으로 이동
    * Delete post and navigate to community list */
@@ -330,7 +333,7 @@ export default function CommunityPostDetailPage() {
             <ArrowLeft className="w-4 h-4" />
           </Link>
           <h1 className="text-[20px] font-extrabold text-text-primary">
-            {t('community.discussions')} {locale === 'ko' ? '상세' : 'Detail'}
+            {t('community.discussionDetail')}
           </h1>
         </div>
 

@@ -19,7 +19,7 @@ import { cn } from '@/lib/format';
 /** 공지사항 목록 페이지 컴포넌트 — 공지사항 검색/목록/페이지네이션
  * Announcements list page component — search, list, and pagination */
 export default function AnnouncementsPage() {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const user = useAuthStore((s) => s.user);
 
   const [page, setPage] = useState(1);
@@ -72,7 +72,7 @@ export default function AnnouncementsPage() {
       {/* Header */}
       <div className="flex items-center justify-between py-6 h-[88px]">
         <div className="flex items-center gap-2.5">
-          <Megaphone className="w-5 h-5 text-accent" />
+          <Megaphone className="w-5 h-5 text-accent" aria-hidden="true" />
           <h1 className="text-[20px] font-extrabold text-text-primary">
             {t('announce.title')}
           </h1>
@@ -100,6 +100,7 @@ export default function AnnouncementsPage() {
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             placeholder={t('announce.search')}
+            aria-label={t('announce.search')}
             className={cn(
               'w-full pl-9 pr-4 py-2.5 rounded-xl text-[14px]',
               'bg-bg-secondary border border-border',
@@ -175,7 +176,7 @@ export default function AnnouncementsPage() {
                   </span>
                   <span className="text-text-quaternary text-[11px]">·</span>
                   <span className="text-[12px] text-text-quaternary">
-                    {new Date(item.createdAt).toLocaleDateString()}
+                    {new Date(item.createdAt).toLocaleDateString(locale === 'ko' ? 'ko-KR' : 'en-US', { year: 'numeric', month: '2-digit', day: '2-digit' })}
                   </span>
                 </div>
                 <div className="flex items-center gap-3 shrink-0 text-text-quaternary">

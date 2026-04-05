@@ -217,7 +217,7 @@ function CommunityNewPostContent() {
                       : 'bg-bg-tertiary text-text-quaternary hover:text-text-secondary',
                   )}
                 >
-                  {locale === 'ko' ? cat.ko : cat.en}
+                  {t(('community.category.' + cat.value) as Parameters<typeof t>[0])}
                 </button>
               ))}
             </div>

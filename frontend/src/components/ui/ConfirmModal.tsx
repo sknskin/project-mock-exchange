@@ -7,7 +7,7 @@
  */
 'use client';
 
-import { memo, useEffect, useRef, useState, useCallback } from 'react';
+import { memo, useEffect, useRef, useState, useCallback, useId } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { useScrollLock } from '@/hooks/useScrollLock';
@@ -42,6 +42,10 @@ function ConfirmModal({
 }: ConfirmModalProps) {
   const { t } = useTranslation();
   const modalRef = useRef<HTMLDivElement>(null);
+
+  // A11Y: 고유 ID 생성 — aria-labelledby 연결에 사용
+  // A11Y: Generate unique ID — used for aria-labelledby linking
+  const titleId = useId();
 
   // ANI-M-04: 닫기 애니메이션 상태 / Close animation state
   const [closing, setClosing] = useState(false);
@@ -85,13 +89,13 @@ function ConfirmModal({
     : 'bg-accent hover:bg-accent/90';
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center" role="dialog" aria-modal="true" aria-labelledby="confirm-modal-title" ref={modalRef}>
+    <div className="fixed inset-0 z-[60] flex items-center justify-center" role="dialog" aria-modal="true" aria-labelledby={titleId} ref={modalRef}>
       {/* ANI-M-04: 오버레이 — 닫기 시 페이드아웃 / Overlay — fade-out on close */}
       <div className={cn('absolute inset-0 bg-black/60', closing ? 'animate-modal-backdrop-out' : 'animate-modal-backdrop')} onClick={handleClose} />
 
       {/* ANI-M-04: 모달 본체 — 열림/닫힘 애니메이션 / Modal body — open/close animation */}
       <div className={cn('relative bg-bg-primary border border-border rounded-2xl p-6 w-[min(320px,calc(100vw-2rem))] shadow-2xl', closing ? 'animate-modal-content-out' : 'animate-modal-content')}>
-        <h3 id="confirm-modal-title" className="text-[16px] font-bold text-text-primary text-center">
+        <h3 id={titleId} className="text-[16px] font-bold text-text-primary text-center">
           {title}
         </h3>
         <p className="text-[14px] text-text-secondary text-center mt-3 whitespace-pre-line">

@@ -7,7 +7,7 @@
  */
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Button from '@/components/ui/Button';
@@ -17,6 +17,8 @@ import VirtuExLogo from '@/components/ui/VirtuExLogo';
 import api from '@/lib/api';
 import type { AxiosError } from 'axios';
 import { Eye, EyeOff } from 'lucide-react';
+import ValidationFeedback from '@/components/ui/ValidationFeedback';
+import { validatePassword } from '@/lib/validation';
 
 type Step = 'identifier' | 'sms' | 'newPassword';
 
@@ -48,6 +50,10 @@ export default function ForgotPasswordPage() {
   // 비밀번호 표시/숨기기 토글 상태 / Password show/hide toggle state
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // 비밀번호 유효성 검증 규칙 / Password validation rules
+  const passwordRules = useMemo(() => validatePassword(newPassword), [newPassword]);
+  const allPasswordRulesPassed = passwordRules.every((r) => r.passed);
 
   useEffect(() => { identifierRef.current?.focus(); }, []);
 
@@ -164,7 +170,7 @@ export default function ForgotPasswordPage() {
       setError(t('auth.forgot.passwordMismatch'));
       return;
     }
-    if (newPassword.length < 8) {
+    if (!allPasswordRulesPassed) {
       setError(t('auth.forgot.passwordTooShort'));
       return;
     }
@@ -309,12 +315,14 @@ export default function ForgotPasswordPage() {
                 type="button"
                 onClick={() => setShowNewPassword((prev) => !prev)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-text-quaternary hover:text-text-secondary transition-colors"
-                aria-label={showNewPassword ? 'Hide password' : 'Show password'}
+                aria-label={showNewPassword ? t('auth.hidePassword') : t('auth.showPassword')}
                 tabIndex={-1}
               >
                 {showNewPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
               </button>
             </div>
+            {/* 비밀번호 강도 실시간 피드백 / Real-time password strength feedback */}
+            <ValidationFeedback rules={passwordRules} show={newPassword.length > 0} />
             <div className="relative">
               <Input
                 type={showConfirmPassword ? 'text' : 'password'}
@@ -330,7 +338,7 @@ export default function ForgotPasswordPage() {
                 type="button"
                 onClick={() => setShowConfirmPassword((prev) => !prev)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-text-quaternary hover:text-text-secondary transition-colors"
-                aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                aria-label={showConfirmPassword ? t('auth.hidePassword') : t('auth.showPassword')}
                 tabIndex={-1}
               >
                 {showConfirmPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
