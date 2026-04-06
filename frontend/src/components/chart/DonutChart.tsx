@@ -38,7 +38,7 @@ export default function DonutChart({
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
 
   // 총합과 각도 계산 / Calculate total and angles
-  const { total, segments } = useMemo(() => {
+  const { total: _total, segments } = useMemo(() => {
     // 값이 0인 항목 제거 — 0° 세그먼트 방지
     // Filter out zero-value items — prevents 0° segments
     const filtered = data.filter((d) => d.value > 0);

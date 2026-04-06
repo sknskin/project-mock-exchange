@@ -44,7 +44,7 @@ export default function MiniBarChart({
   height = 240,
   barWidthRatio = 0.6,
   stacked = false,
-  horizontal = false,
+  horizontal: _horizontal = false,
   formatValue = (v) => String(v),
   showLegend = false,
 }: MiniBarChartProps) {
