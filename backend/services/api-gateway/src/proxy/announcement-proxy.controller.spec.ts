@@ -3,6 +3,7 @@ import { AnnouncementProxyController } from './announcement-proxy.controller';
 import { ProxyService } from './proxy.service';
 import { ChatGateway } from '../gateway/chat.gateway';
 import { Request, Response } from 'express';
+import { CreateAnnouncementDto, UpdateAnnouncementDto } from './dto/announcement.dto';
 
 const mockProxyService = {
   forward: jest.fn(),
@@ -76,7 +77,7 @@ describe('AnnouncementProxyController', () => {
       });
 
       const res = mockRes();
-      await controller.create({}, mockReq() as Request, res as Response);
+      await controller.create({} as CreateAnnouncementDto, mockReq() as Request, res as Response);
 
       expect(mockServer.emit).not.toHaveBeenCalled();
       expect(res.status).toHaveBeenCalledWith(400);
@@ -89,7 +90,7 @@ describe('AnnouncementProxyController', () => {
       });
 
       const res = mockRes();
-      await controller.create({ title: 'Test' }, mockReq() as Request, res as Response);
+      await controller.create({ title: 'Test' } as CreateAnnouncementDto, mockReq() as Request, res as Response);
 
       const payload = mockServer.emit.mock.calls[0][1];
       expect(payload.timestamp).toBeDefined();
@@ -127,7 +128,7 @@ describe('AnnouncementProxyController', () => {
       });
 
       const res = mockRes();
-      await controller.update('non-existent', {}, mockReq() as Request, res as Response);
+      await controller.update('non-existent', {} as UpdateAnnouncementDto, mockReq() as Request, res as Response);
 
       expect(mockServer.emit).not.toHaveBeenCalled();
     });
