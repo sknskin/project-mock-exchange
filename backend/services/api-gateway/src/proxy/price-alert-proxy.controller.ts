@@ -20,6 +20,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@ne
 import { Request, Response } from 'express';
 import { ProxyService } from './proxy.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { CreatePriceAlertDto } from './dto/price-alert.dto';
 
 @ApiTags('Price Alerts')
 @ApiBearerAuth()
@@ -34,7 +35,7 @@ export class PriceAlertProxyController {
   @ApiOperation({ summary: '가격 알림 생성', description: '새로운 가격 알림을 생성합니다.' })
   @ApiResponse({ status: 201, description: '가격 알림 생성 성공' })
   @ApiResponse({ status: 401, description: '인증 실패' })
-  async create(@Body() body: unknown, @Req() req: Request, @Res() res: Response) {
+  async create(@Body() body: CreatePriceAlertDto, @Req() req: Request, @Res() res: Response) {
     const result = await this.proxyService.forward('user-auth', {
       method: 'POST',
       url: '/price-alerts',

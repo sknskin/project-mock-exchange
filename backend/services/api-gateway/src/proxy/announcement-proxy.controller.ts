@@ -29,6 +29,7 @@ import { JwtAuthGuard, Public, OptionalAuth } from '../auth/jwt-auth.guard';
 // MISC-L-01: Apply AdminRolesGuard to admin-only endpoints
 import { AdminRolesGuard } from '../auth/admin-roles.guard';
 import { ChatGateway } from '../gateway/chat.gateway';
+import { CreateAnnouncementDto, UpdateAnnouncementDto, AnnouncementCommentDto, AnnouncementAttachmentDto } from './dto/announcement.dto';
 
 @ApiTags('Announcements')
 @ApiBearerAuth()
@@ -138,7 +139,7 @@ export class AnnouncementProxyController {
   @ApiResponse({ status: 400, description: '유효성 검사 실패' })
   @ApiResponse({ status: 401, description: '인증 필요' })
   @ApiResponse({ status: 403, description: '권한 부족' })
-  async create(@Body() body: unknown, @Req() req: Request, @Res() res: Response) {
+  async create(@Body() body: CreateAnnouncementDto, @Req() req: Request, @Res() res: Response) {
     const user = req.user as { id: string; username?: string } | undefined;
     const result = await this.proxyService.forward('user-auth', {
       method: 'POST',
@@ -175,7 +176,7 @@ export class AnnouncementProxyController {
   @ApiResponse({ status: 404, description: '공지사항을 찾을 수 없음' })
   async update(
     @Param('id') id: string,
-    @Body() body: unknown,
+    @Body() body: UpdateAnnouncementDto,
     @Req() req: Request,
     @Res() res: Response,
   ) {
@@ -338,7 +339,7 @@ export class AnnouncementProxyController {
   @ApiResponse({ status: 404, description: '공지사항을 찾을 수 없음' })
   async uploadAttachment(
     @Param('id') id: string,
-    @Body() body: unknown,
+    @Body() body: AnnouncementAttachmentDto,
     @Req() req: Request,
     @Res() res: Response,
   ) {
@@ -401,7 +402,7 @@ export class AnnouncementProxyController {
   @ApiResponse({ status: 404, description: '공지사항을 찾을 수 없음' })
   async addComment(
     @Param('id') id: string,
-    @Body() body: unknown,
+    @Body() body: AnnouncementCommentDto,
     @Req() req: Request,
     @Res() res: Response,
   ) {

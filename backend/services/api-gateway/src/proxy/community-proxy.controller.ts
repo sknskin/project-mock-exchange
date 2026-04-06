@@ -23,6 +23,7 @@ import { Request, Response } from 'express';
 import * as path from 'path';
 import { ProxyService } from './proxy.service';
 import { JwtAuthGuard, OptionalAuth } from '../auth/jwt-auth.guard';
+import { CreatePostDto, UpdatePostDto, CreateCommentDto, UploadFileDto } from './dto/community.dto';
 
 // 컨트롤러 레벨에서 JwtAuthGuard 적용 — @OptionalAuth()로 개별 엔드포인트에서 인증 선택적 해제
 // JwtAuthGuard applied at controller level — @OptionalAuth() makes auth optional per endpoint
@@ -103,7 +104,7 @@ export class CommunityProxyController {
   @ApiResponse({ status: 201, description: '게시글 작성 성공' })
   @ApiResponse({ status: 400, description: '유효성 검사 실패' })
   @ApiResponse({ status: 401, description: '인증 필요' })
-  async createPost(@Body() body: unknown, @Req() req: Request, @Res() res: Response) {
+  async createPost(@Body() body: CreatePostDto, @Req() req: Request, @Res() res: Response) {
     const user = req.user as { id: string; role?: string; name?: string };
     const result = await this.proxyService.forward('user-auth', {
       method: 'POST',
@@ -131,7 +132,7 @@ export class CommunityProxyController {
   @ApiResponse({ status: 404, description: '게시글을 찾을 수 없음' })
   async updatePost(
     @Param('id') id: string,
-    @Body() body: unknown,
+    @Body() body: UpdatePostDto,
     @Req() req: Request,
     @Res() res: Response,
   ) {
@@ -233,7 +234,7 @@ export class CommunityProxyController {
   @ApiResponse({ status: 404, description: '게시글을 찾을 수 없음' })
   async createComment(
     @Param('id') id: string,
-    @Body() body: unknown,
+    @Body() body: CreateCommentDto,
     @Req() req: Request,
     @Res() res: Response,
   ) {
@@ -310,7 +311,7 @@ export class CommunityProxyController {
   @ApiResponse({ status: 400, description: '유효성 검사 실패' })
   @ApiResponse({ status: 401, description: '인증 필요' })
   async uploadImage(
-    @Body() body: unknown,
+    @Body() body: UploadFileDto,
     @Req() req: Request,
     @Res() res: Response,
   ) {
@@ -359,7 +360,7 @@ export class CommunityProxyController {
   @ApiResponse({ status: 201, description: '첨부파일 업로드 성공' })
   async uploadAttachment(
     @Param('id') id: string,
-    @Body() body: unknown,
+    @Body() body: UploadFileDto,
     @Req() req: Request,
     @Res() res: Response,
   ) {

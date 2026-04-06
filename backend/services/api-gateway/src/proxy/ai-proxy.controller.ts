@@ -12,6 +12,7 @@ import { Request, Response } from 'express';
 import { ProxyService } from './proxy.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AuthenticatedRequest } from './interfaces/authenticated-request.interface';
+import { AnalyzePortfolioDto, SummarizeNewsDto } from './dto/ai.dto';
 
 // AI 분석 요청은 비용이 높으므로 인증 필수 + 1분당 10회 제한
 // AI analysis requests are costly — require authentication + limit to 10 requests per minute
@@ -45,7 +46,7 @@ export class AiProxyController {
   @ApiOperation({ summary: '포트폴리오 AI 분석', description: '포트폴리오 보유 현황을 AI로 분석합니다' })
   @ApiResponse({ status: 200, description: '분석 결과 반환' })
   @ApiResponse({ status: 401, description: '인증 필요' })
-  async analyzePortfolio(@Req() req: Request, @Body() body: unknown, @Res() res: Response) {
+  async analyzePortfolio(@Req() req: Request, @Body() body: AnalyzePortfolioDto, @Res() res: Response) {
     const userId = (req as AuthenticatedRequest).user?.id;
     const result = await this.proxyService.forward('ai-service', {
       method: 'POST',
@@ -63,7 +64,7 @@ export class AiProxyController {
   @ApiOperation({ summary: '뉴스 AI 요약', description: '카테고리별 24시간 뉴스를 AI로 분석합니다' })
   @ApiResponse({ status: 200, description: '뉴스 요약 반환' })
   @ApiResponse({ status: 401, description: '인증 필요' })
-  async summarizeNews(@Body() body: unknown, @Res() res: Response) {
+  async summarizeNews(@Body() body: SummarizeNewsDto, @Res() res: Response) {
     const result = await this.proxyService.forward('ai-service', {
       method: 'POST',
       url: '/analysis/news-summary',

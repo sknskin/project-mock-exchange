@@ -19,6 +19,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagg
 import { Request, Response } from 'express';
 import { ProxyService } from './proxy.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { UpdateProfileDto, ChangePasswordDto } from './dto/profile.dto';
 
 @ApiTags('Profile')
 @ApiBearerAuth()
@@ -48,7 +49,7 @@ export class ProfileProxyController {
   @ApiOperation({ summary: '프로필 수정', description: '현재 로그인한 사용자의 프로필 정보를 수정합니다.' })
   @ApiResponse({ status: 200, description: '프로필 수정 성공' })
   @ApiResponse({ status: 401, description: '인증 실패' })
-  async updateProfile(@Body() body: unknown, @Req() req: Request, @Res() res: Response) {
+  async updateProfile(@Body() body: UpdateProfileDto, @Req() req: Request, @Res() res: Response) {
     const result = await this.proxyService.forward('user-auth', {
       method: 'PUT',
       url: '/profile',
@@ -65,7 +66,7 @@ export class ProfileProxyController {
   @ApiResponse({ status: 200, description: '비밀번호 변경 성공' })
   @ApiResponse({ status: 400, description: '잘못된 요청 (현재 비밀번호 불일치 등)' })
   @ApiResponse({ status: 401, description: '인증 실패' })
-  async changePassword(@Body() body: unknown, @Req() req: Request, @Res() res: Response) {
+  async changePassword(@Body() body: ChangePasswordDto, @Req() req: Request, @Res() res: Response) {
     const result = await this.proxyService.forward('user-auth', {
       method: 'POST',
       url: '/profile/change-password',

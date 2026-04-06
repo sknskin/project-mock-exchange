@@ -21,6 +21,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery }
 import { Request, Response } from 'express';
 import { ProxyService } from './proxy.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { BatchFollowCountsDto, UpdateNotifyModeDto } from './dto/follow.dto';
 
 // 모든 엔드포인트에 JWT 인증 필수 — 팔로우는 로그인 사용자만 가능
 // All endpoints require JWT auth — follow features require authenticated users
@@ -41,7 +42,7 @@ export class FollowProxyController {
   @ApiOperation({ summary: '팔로우 수 일괄 조회', description: '여러 사용자의 팔로잉/팔로워 수를 일괄 조회합니다' })
   @ApiResponse({ status: 200, description: '팔로우 수 일괄 반환 성공' })
   async getBatchFollowCounts(
-    @Body() body: unknown,
+    @Body() body: BatchFollowCountsDto,
     @Req() req: Request,
     @Res() res: Response,
   ) {
@@ -224,7 +225,7 @@ export class FollowProxyController {
   @ApiResponse({ status: 404, description: '팔로우 관계를 찾을 수 없음' })
   async updateNotifyMode(
     @Param('userId') userId: string,
-    @Body() body: unknown,
+    @Body() body: UpdateNotifyModeDto,
     @Req() req: Request,
     @Res() res: Response,
   ) {

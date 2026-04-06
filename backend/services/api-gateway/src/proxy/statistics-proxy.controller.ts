@@ -21,6 +21,7 @@ import { Request, Response } from 'express';
 import { ProxyService } from './proxy.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AdminRolesGuard } from '../auth/admin-roles.guard';
+import { TrackPageViewDto } from './dto/statistics.dto';
 
 @ApiTags('Statistics')
 @Controller('api/statistics')
@@ -38,7 +39,7 @@ export class StatisticsProxyController {
   @Throttle({ default: { ttl: 60000, limit: 100 } })
   @ApiOperation({ summary: '페이지 뷰 기록', description: '페이지 방문을 기록합니다. 인증 불필요.' })
   @ApiResponse({ status: 201, description: '페이지 뷰 기록 성공' })
-  async trackPageView(@Body() body: unknown, @Res() res: Response) {
+  async trackPageView(@Body() body: TrackPageViewDto, @Res() res: Response) {
     const result = await this.proxyService.forward('user-auth', {
       method: 'POST',
       url: '/statistics/page-view',

@@ -22,6 +22,7 @@ import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
 import { Request, Response } from 'express';
 import { ProxyService } from './proxy.service';
 import { JwtAuthGuard, OptionalAuth } from '../auth/jwt-auth.guard';
+import { CreateStrategyDto, UpdateStrategyDto, CreateStrategyCommentDto } from './dto/strategy.dto';
 
 // 컨트롤러 레벨에서 JwtAuthGuard 적용 — @OptionalAuth()로 개별 엔드포인트에서 인증 선택적 해제
 // JwtAuthGuard applied at controller level — @OptionalAuth() makes auth optional per endpoint
@@ -102,7 +103,7 @@ export class StrategyProxyController {
   @ApiResponse({ status: 201, description: '전략 작성 성공' })
   @ApiResponse({ status: 400, description: '유효성 검사 실패' })
   @ApiResponse({ status: 401, description: '인증 필요' })
-  async createStrategy(@Body() body: unknown, @Req() req: Request, @Res() res: Response) {
+  async createStrategy(@Body() body: CreateStrategyDto, @Req() req: Request, @Res() res: Response) {
     const user = req.user as { id: string; role?: string; name?: string };
     const result = await this.proxyService.forward('user-auth', {
       method: 'POST',
@@ -130,7 +131,7 @@ export class StrategyProxyController {
   @ApiResponse({ status: 404, description: '전략을 찾을 수 없음' })
   async updateStrategy(
     @Param('id') id: string,
-    @Body() body: unknown,
+    @Body() body: UpdateStrategyDto,
     @Req() req: Request,
     @Res() res: Response,
   ) {
@@ -232,7 +233,7 @@ export class StrategyProxyController {
   @ApiResponse({ status: 404, description: '전략을 찾을 수 없음' })
   async createComment(
     @Param('id') id: string,
-    @Body() body: unknown,
+    @Body() body: CreateStrategyCommentDto,
     @Req() req: Request,
     @Res() res: Response,
   ) {

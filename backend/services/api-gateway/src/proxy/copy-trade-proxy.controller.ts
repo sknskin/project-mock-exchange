@@ -22,6 +22,7 @@ import { Request, Response } from 'express';
 import { ProxyService } from './proxy.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AuthenticatedRequest } from './interfaces/authenticated-request.interface';
+import { StartCopyTradeDto, UpdateCopyTradeDto } from './dto/copy-trade.dto';
 
 // 모든 엔드포인트에 JWT 인증 필수 — 카피 트레이딩은 개인 투자 데이터
 // All endpoints require JWT auth — copy trading contains personal investment data
@@ -38,7 +39,7 @@ export class CopyTradeProxyController {
   @ApiOperation({ summary: '카피 트레이딩 시작', description: '특정 트레이더의 거래를 복제하기 시작합니다' })
   @ApiResponse({ status: 201, description: '카피 트레이딩 시작 성공' })
   @ApiResponse({ status: 400, description: '유효성 검사 실패' })
-  async startCopyTrading(@Body() body: unknown, @Req() req: Request, @Res() res: Response) {
+  async startCopyTrading(@Body() body: StartCopyTradeDto, @Req() req: Request, @Res() res: Response) {
     const userId = (req as AuthenticatedRequest).user?.id;
     const result = await this.proxyService.forward('portfolio', {
       method: 'POST',
@@ -57,7 +58,7 @@ export class CopyTradeProxyController {
   @ApiResponse({ status: 200, description: '설정 변경 성공' })
   async updateConfig(
     @Param('traderId') traderId: string,
-    @Body() body: unknown,
+    @Body() body: UpdateCopyTradeDto,
     @Req() req: Request,
     @Res() res: Response,
   ) {

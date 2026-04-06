@@ -25,6 +25,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 // ERR-M-02: any 타입 대신 타입 안전한 인터페이스 사용
 // ERR-M-02: Use type-safe interface instead of any type casts
 import { AuthenticatedRequest } from './interfaces/authenticated-request.interface';
+import { DepositDto, WithdrawDto } from './dto/portfolio.dto';
 
 // 모든 엔드포인트에 JWT 인증 필수 — 포트폴리오는 개인 자산 데이터
 // All endpoints require JWT auth — portfolio contains personal asset data
@@ -44,7 +45,7 @@ export class PortfolioProxyController {
   @ApiOperation({ summary: '자금 입금', description: '포트폴리오에 가상 자금을 입금합니다' })
   @ApiResponse({ status: 201, description: '입금 성공' })
   @ApiResponse({ status: 400, description: '유효성 검사 실패' })
-  async deposit(@Body() body: unknown, @Req() req: Request, @Res() res: Response) {
+  async deposit(@Body() body: DepositDto, @Req() req: Request, @Res() res: Response) {
     // JWT에서 추출된 userId를 x-user-id 헤더로 전달 — 서비스 간 인증 / Pass JWT-extracted userId via x-user-id header for inter-service auth
     const userId = (req as AuthenticatedRequest).user?.id;
     const result = await this.proxyService.forward('portfolio', {
@@ -77,7 +78,7 @@ export class PortfolioProxyController {
   @ApiOperation({ summary: '자금 출금', description: '포트폴리오에서 가상 자금을 출금합니다' })
   @ApiResponse({ status: 201, description: '출금 성공' })
   @ApiResponse({ status: 400, description: '잔고 부족 또는 유효성 검사 실패' })
-  async withdraw(@Body() body: unknown, @Req() req: Request, @Res() res: Response) {
+  async withdraw(@Body() body: WithdrawDto, @Req() req: Request, @Res() res: Response) {
     const userId = (req as AuthenticatedRequest).user?.id;
     const result = await this.proxyService.forward('portfolio', {
       method: 'POST',
