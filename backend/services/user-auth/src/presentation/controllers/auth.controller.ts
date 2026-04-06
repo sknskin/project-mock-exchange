@@ -55,20 +55,29 @@ const REFRESH_COOKIE_OPTIONS = {
 };
 
 /**
- * 액세스 토큰 보안 쿠키 옵션:
- * - httpOnly: JavaScript에서 접근 불가 (XSS 방지) / Inaccessible from JavaScript (XSS protection)
- * - secure: 프로덕션에서 HTTPS만 허용 / HTTPS only in production
- * - sameSite: CSRF 방지 (lax — cross-port 요청 호환) / CSRF protection (lax — cross-port compatible)
- * - path: / 전체 경로에 전송 (API 게이트웨이에서 인증 필요) / Sent on all paths (needed for auth at API gateway)
- * - maxAge: 15분 유효기간 / 15-minute expiry
+ * 역할별 액세스 토큰 쿠키 maxAge (밀리초)
+ * Role-based access token cookie maxAge (milliseconds)
+ * - SYSTEM: 4시간 / 4 hours
+ * - ADMIN: 1시간 / 1 hour
+ * - USER: 30분 / 30 minutes
  */
-const ACCESS_COOKIE_OPTIONS = {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
-  sameSite: 'lax' as const,
-  path: '/',
-  maxAge: 15 * 60 * 1000, // 15분 / 15 minutes
+const ROLE_COOKIE_MAX_AGE: Record<string, number> = {
+  SYSTEM: 4 * 60 * 60 * 1000,
+  ADMIN: 1 * 60 * 60 * 1000,
+  USER: 30 * 60 * 1000,
 };
+
+/** 역할 기반 액세스 토큰 쿠키 옵션 생성
+ * Generate role-based access token cookie options */
+function getAccessCookieOptions(role?: string) {
+  return {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax' as const,
+    path: '/',
+    maxAge: ROLE_COOKIE_MAX_AGE[role || 'USER'] || ROLE_COOKIE_MAX_AGE.USER,
+  };
+}
 
 // InternalAuthGuard — API Gateway만 접근 가능 (x-internal-token 검증)
 // InternalAuthGuard — Only accessible from API Gateway (validates x-internal-token)
@@ -150,8 +159,9 @@ export class AuthController {
 
     // 리프레시 토큰 httpOnly 쿠키 설정 / Set refresh token as httpOnly cookie
     res.cookie(REFRESH_TOKEN_COOKIE, result.refreshToken, REFRESH_COOKIE_OPTIONS);
-    // 액세스 토큰 httpOnly 쿠키 설정 / Set access token as httpOnly cookie
-    res.cookie(ACCESS_TOKEN_COOKIE, result.tokens.accessToken, ACCESS_COOKIE_OPTIONS);
+    // 액세스 토큰 httpOnly 쿠키 설정 — 역할별 maxAge 적용
+    // Set access token as httpOnly cookie — role-based maxAge
+    res.cookie(ACCESS_TOKEN_COOKIE, result.tokens.accessToken, getAccessCookieOptions(result.user?.role));
 
     return {
       success: true,
@@ -183,12 +193,13 @@ export class AuthController {
       });
     }
 
-    const { tokens, refreshToken } = await this.authService.refreshTokens(oldToken);
+    const { tokens, refreshToken, role } = await this.authService.refreshTokens(oldToken);
 
     // 리프레시 토큰 httpOnly 쿠키 갱신 / Rotate refresh token httpOnly cookie
     res.cookie(REFRESH_TOKEN_COOKIE, refreshToken, REFRESH_COOKIE_OPTIONS);
-    // 액세스 토큰 httpOnly 쿠키 갱신 / Set new access token httpOnly cookie
-    res.cookie(ACCESS_TOKEN_COOKIE, tokens.accessToken, ACCESS_COOKIE_OPTIONS);
+    // 액세스 토큰 httpOnly 쿠키 갱신 — 역할별 maxAge 적용
+    // Set new access token httpOnly cookie — role-based maxAge
+    res.cookie(ACCESS_TOKEN_COOKIE, tokens.accessToken, getAccessCookieOptions(role));
 
     return {
       success: true,

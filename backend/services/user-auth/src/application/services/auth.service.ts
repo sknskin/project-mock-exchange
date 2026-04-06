@@ -401,7 +401,7 @@ export class AuthService {
    * Refresh access token using refresh token (with token rotation) */
   async refreshTokens(
     oldRefreshToken: string,
-  ): Promise<{ tokens: AuthTokensDto; refreshToken: string }> {
+  ): Promise<{ tokens: AuthTokensDto; refreshToken: string; role: string }> {
     const tokenHash = this.hashToken(oldRefreshToken);
 
     const stored = await this.prisma.refreshToken.findUnique({
@@ -456,7 +456,7 @@ export class AuthService {
       }),
     ]);
 
-    return { tokens, refreshToken: newToken };
+    return { tokens, refreshToken: newToken, role: user.role };
   }
 
   /** 로그아웃 — DB에서 리프레시 토큰 삭제
@@ -474,8 +474,16 @@ export class AuthService {
     return this.toUserDto(user);
   }
 
-  /** JWT 액세스 토큰 생성
-   * Generate JWT access token */
+  /** 역할별 JWT 만료 시간 매핑
+   * Role-based JWT expiry mapping */
+  private static readonly ROLE_EXPIRY_MAP: Record<string, string> = {
+    SYSTEM: '4h',
+    ADMIN: '1h',
+    USER: '30m',
+  };
+
+  /** JWT 액세스 토큰 생성 — 역할별 만료 시간 적용
+   * Generate JWT access token — role-based expiry */
   private async generateTokens(user: UserEntity): Promise<AuthTokensDto> {
     const payload: JwtPayload = {
       sub: user.id,
@@ -485,8 +493,13 @@ export class AuthService {
       role: user.role,
     };
 
-    const expiresIn = this.configService.get('JWT_ACCESS_EXPIRY', '15m');
-    const accessToken = this.jwtService.sign(payload, { expiresIn });
+    // 역할별 만료 시간 적용 (SYSTEM: 4h, ADMIN: 1h, USER: 30m)
+    // Apply role-based expiry (SYSTEM: 4h, ADMIN: 1h, USER: 30m)
+    const expiresIn = AuthService.ROLE_EXPIRY_MAP[user.role]
+      || this.configService.get('JWT_ACCESS_EXPIRY', '30m');
+    const accessToken = this.jwtService.sign(payload, {
+      expiresIn: expiresIn as `${number}${'s' | 'm' | 'h' | 'd'}`,
+    });
 
     return {
       accessToken,
