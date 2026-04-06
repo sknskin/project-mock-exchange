@@ -114,8 +114,10 @@ function Pagination({
     <div className="relative flex items-center justify-center py-3">
       {/* 총 건수 — 좌측 고정 (모바일에서 숨김) / Total count — fixed left (hidden on mobile) */}
       <div className="absolute left-0 hidden sm:block">{totalLabel}</div>
-      {/* 페이지 번호 — 가운데 정렬 (-ml-8로 시각적 중심 미세 조정) / Page numbers — centered (-ml-8 for visual center fine-tuning) */}
-      <div className="flex items-center gap-0.5 -ml-8">
+      {/* 페이지 번호 — 가운데 정렬 (데스크탑에서 좌/우 absolute 요소 보정)
+           Page numbers — centered (offset for absolute left/right elements on desktop)
+           UX-9-10: 모바일에서는 ml 오프셋 제거 — 좌측 잘림 방지 */}
+      <div className="flex items-center gap-0.5 sm:-ml-8">
         <button
           onClick={() => handlePageChange(1)}
           disabled={page === 1}
