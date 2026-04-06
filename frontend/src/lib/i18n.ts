@@ -276,6 +276,10 @@ const translations = {
 
     // Modal
     'modal.close': '닫기',
+    'session.extendTitle': '세션 만료 예정',
+    'session.extendMessage': '로그인 세션이 곧 만료됩니다.\n계속 사용하시려면 연장해주세요.',
+    'session.extend': '세션 연장',
+    'session.logout': '로그아웃',
     'modal.confirm': '확인',
     'modal.logoutTitle': '로그아웃',
     'modal.logoutMessage': '로그아웃하시겠습니까?',
@@ -2443,6 +2447,10 @@ const translations = {
 
     // Modal
     'modal.close': 'Close',
+    'session.extendTitle': 'Session Expiring Soon',
+    'session.extendMessage': 'Your login session is about to expire.\nExtend to continue using the platform.',
+    'session.extend': 'Extend Session',
+    'session.logout': 'Logout',
     'modal.confirm': 'Confirm',
     'modal.logoutTitle': 'Logout',
     'modal.logoutMessage': 'Are you sure you want to logout?',

@@ -56,6 +56,14 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { User } from '@/types';
 
+/** 역할별 세션 유지 시간 (초)
+ * Role-based session duration in seconds */
+const ROLE_SESSION_DURATION: Record<string, number> = {
+  SYSTEM: 4 * 60 * 60,
+  ADMIN: 1 * 60 * 60,
+  USER: 30 * 60,
+};
+
 // 인증 상태 인터페이스 / Auth state interface
 interface AuthState {
   /** 현재 로그인한 사용자
@@ -67,6 +75,12 @@ interface AuthState {
   /** 인증 여부
    * Whether authenticated */
   isAuthenticated: boolean;
+  /** 세션 만료 시각 (Unix ms)
+   * Session expiration timestamp (Unix ms) */
+  sessionExpiresAt: number | null;
+  /** 세션 유지 시간 (초) — 연장 시 이 값으로 리셋
+   * Session duration in seconds — reset to this value on extension */
+  sessionDuration: number | null;
   /** 사용자 정보 갱신
    * Update user info */
   setUser: (user: User) => void;
@@ -79,12 +93,15 @@ interface AuthState {
   /** 로그아웃 처리 (모든 상태 초기화)
    * Logout (resets all state) */
   logout: () => void;
+  /** 세션 타이머 설정 — 역할 기반 만료 시간 계산
+   * Set session timer — calculate role-based expiry */
+  setSession: (role: string) => void;
 }
 
 // httpOnly 쿠키로 토큰 저장 전환 완료 — accessToken은 sessionStorage에 저장하지 않음
 // Token storage migrated to httpOnly cookies — accessToken is no longer persisted to sessionStorage
 // sessionStorage에 저장할 상태 부분집합 (토큰 제외) / Subset of state persisted to sessionStorage (no token)
-type PersistedAuthState = Pick<AuthState, 'user' | 'isAuthenticated'>;
+type PersistedAuthState = Pick<AuthState, 'user' | 'isAuthenticated' | 'sessionExpiresAt' | 'sessionDuration'>;
 
 // API 기본 URL — 세션 검증용 (인터셉터 회피 위해 fetch 직접 사용)
 // API base URL — for session validation (using fetch directly to avoid interceptor)
@@ -96,12 +113,26 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       accessToken: null,
       isAuthenticated: false,
+      sessionExpiresAt: null,
+      sessionDuration: null,
       setUser: (user) => set({ user }),
       setToken: (token) => set({ accessToken: token }),
-      login: (user, token) =>
-        set({ user, accessToken: token ?? null, isAuthenticated: true }),
+      login: (user, token) => {
+        const duration = ROLE_SESSION_DURATION[user.role] || ROLE_SESSION_DURATION.USER;
+        set({
+          user,
+          accessToken: token ?? null,
+          isAuthenticated: true,
+          sessionExpiresAt: Date.now() + duration * 1000,
+          sessionDuration: duration,
+        });
+      },
       logout: () =>
-        set({ user: null, accessToken: null, isAuthenticated: false }),
+        set({ user: null, accessToken: null, isAuthenticated: false, sessionExpiresAt: null, sessionDuration: null }),
+      setSession: (role: string) => {
+        const duration = ROLE_SESSION_DURATION[role] || ROLE_SESSION_DURATION.USER;
+        set({ sessionExpiresAt: Date.now() + duration * 1000, sessionDuration: duration });
+      },
     }),
     {
       name: 'virtuex-auth',
@@ -118,6 +149,8 @@ export const useAuthStore = create<AuthState>()(
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,
+        sessionExpiresAt: state.sessionExpiresAt,
+        sessionDuration: state.sessionDuration,
       }),
       // hydration 시 isAuthenticated를 false로 재설정 — 세션 검증 후 복원
       // Reset isAuthenticated to false on hydration — restore after session validation
@@ -146,9 +179,14 @@ export const useAuthStore = create<AuthState>()(
           })
           .then((data) => {
             const accessToken = data.data?.accessToken ?? data.accessToken;
+            const store = useAuthStore.getState();
+            const role = store.user?.role || 'USER';
+            const duration = ROLE_SESSION_DURATION[role] || ROLE_SESSION_DURATION.USER;
             useAuthStore.setState({
               isAuthenticated: true,
               ...(accessToken ? { accessToken } : {}),
+              sessionExpiresAt: Date.now() + duration * 1000,
+              sessionDuration: duration,
             });
           })
           .catch(() => {

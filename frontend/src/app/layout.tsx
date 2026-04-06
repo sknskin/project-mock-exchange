@@ -23,6 +23,7 @@ import AuthTokenRecovery from '@/components/layout/AuthTokenRecovery';
 import MainContent from '@/components/layout/MainContent';
 import OnboardingGuide from '@/components/ui/OnboardingGuide';
 import KeyboardShortcutsHelp from '@/components/ui/KeyboardShortcutsHelp';
+import SessionGuard from '@/components/layout/SessionGuard';
 
 export const metadata: Metadata = {
   title: 'VirtuEx - Mock Trading Platform',
@@ -120,6 +121,8 @@ export default async function RootLayout({
             <OnboardingGuide />
             {/* UX-M-03: 키보드 단축키 도움말 (? 키) / Keyboard shortcuts help (? key) */}
             <KeyboardShortcutsHelp />
+            {/* 세션 만료 감시 + 연장 모달 / Session expiry monitor + extension modal */}
+            <SessionGuard />
           </ConnectionGuard>
         </QueryProvider>
       </body>
