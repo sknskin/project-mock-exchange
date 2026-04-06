@@ -14,8 +14,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPORT_DIR = join(__dirname, '..', 'public', 'docs', 'report');
 const MANIFEST_PATH = join(REPORT_DIR, 'manifest.json');
 
-const PDF_PATTERN = /^(audit-report|perf-audit)-(\d+)\.pdf$/;
-const MD_ONLY_PATTERN = /^(audit-report|perf-audit)-(\d+)\.md$/;
+const PDF_PATTERN = /^(audit-report|perf-audit|ux-audit)-(\d+)\.pdf$/;
+const MD_ONLY_PATTERN = /^(audit-report|perf-audit|ux-audit)-(\d+)\.md$/;
 
 function extractDateFromMd(mdPath) {
   try {
@@ -57,15 +57,21 @@ for (const file of files) {
   // MD에서 날짜와 라벨 추출, 실패 시 파일 수정일 사용
   const date = extractDateFromMd(mdPath) ||
     statSync(pdfPath).mtime.toISOString().split('T')[0];
-  const label = extractLabelFromMd(mdPath) ||
-    (prefix === 'perf-audit'
-      ? `VirtuEx 성능 개선 감사 보고서 (${num}차)`
-      : `VirtuEx 시스템 감사 보고서 (${num}차)`);
+  // 접두사별 기본 라벨 / Default label per prefix
+  const defaultLabels = {
+    'perf-audit': `VirtuEx 성능 개선 감사 보고서 (${num}차)`,
+    'ux-audit': `VirtuEx UX 개선 감사 보고서 (${num}차)`,
+    'audit-report': `VirtuEx 시스템 감사 보고서 (${num}차)`,
+  };
+  const label = extractLabelFromMd(mdPath) || defaultLabels[prefix] || defaultLabels['audit-report'];
 
-  // 성능 감사는 일반 감사 뒤에 정렬 (perf: 10000+N, audit: N)
-  const order = (prefix === 'perf-audit' ? 10000 : 0) + num;
+  // 정렬 순서: ux: 20000+N, perf: 10000+N, audit: N — 최신이 위로
+  // Sort order: ux: 20000+N, perf: 10000+N, audit: N — newest on top
+  const orderMap = { 'ux-audit': 20000, 'perf-audit': 10000, 'audit-report': 0 };
+  const order = (orderMap[prefix] ?? 0) + num;
 
-  const type = prefix === 'perf-audit' ? 'performance' : 'general';
+  const typeMap = { 'perf-audit': 'performance', 'ux-audit': 'ux', 'audit-report': 'general' };
+  const type = typeMap[prefix] || 'general';
 
   reports.push({
     name: file,
@@ -90,13 +96,17 @@ for (const file of files) {
   const mdPath = join(REPORT_DIR, file);
   const date = extractDateFromMd(mdPath) ||
     statSync(mdPath).mtime.toISOString().split('T')[0];
-  const label = extractLabelFromMd(mdPath) ||
-    (prefix === 'perf-audit'
-      ? `VirtuEx 성능 개선 감사 보고서 (${num}차)`
-      : `VirtuEx 시스템 감사 보고서 (${num}차)`);
+  const defaultLabels = {
+    'perf-audit': `VirtuEx 성능 개선 감사 보고서 (${num}차)`,
+    'ux-audit': `VirtuEx UX 개선 감사 보고서 (${num}차)`,
+    'audit-report': `VirtuEx 시스템 감사 보고서 (${num}차)`,
+  };
+  const label = extractLabelFromMd(mdPath) || defaultLabels[prefix] || defaultLabels['audit-report'];
 
-  const order = (prefix === 'perf-audit' ? 10000 : 0) + num;
-  const type = prefix === 'perf-audit' ? 'performance' : 'general';
+  const orderMap = { 'ux-audit': 20000, 'perf-audit': 10000, 'audit-report': 0 };
+  const order = (orderMap[prefix] ?? 0) + num;
+  const typeMap = { 'perf-audit': 'performance', 'ux-audit': 'ux', 'audit-report': 'general' };
+  const type = typeMap[prefix] || 'general';
 
   reports.push({
     name: file,
