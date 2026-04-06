@@ -102,6 +102,10 @@ api.interceptors.response.use(
         if (accessToken) {
           useAuthStore.getState().setToken(accessToken);
         }
+        // 세션 타이머 갱신 — 백그라운드 리프레시 후에도 프론트엔드 타이머를 리셋
+        // Reset session timer — keep frontend timer in sync after background refresh
+        const role = useAuthStore.getState().user?.role || 'USER';
+        useAuthStore.getState().setSession(role);
 
         processQueue(null);
 
