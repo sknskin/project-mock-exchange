@@ -214,10 +214,11 @@ function NewsPage() {
         <RefreshControl intervalSeconds={60} onRefresh={handleRefresh} />
       </div>
 
-      {/* Tab bar */}
+      {/* Tab bar + AI 버튼 — 모바일에서는 AI 버튼 아래 행 분리 (UX-9-09)
+           Tab bar + AI button — AI button wraps to separate row on mobile (UX-9-09) */}
       {/* A11Y-M-03: 인라인 탭에 role="tablist"/role="tab" 추가 — 접근성 / Add tablist/tab roles for inline tabs — a11y */}
-      <div className="flex items-center border-b border-border mb-5">
-        <div className="flex flex-1" role="tablist">
+      <div className="flex flex-col sm:flex-row sm:items-center border-b border-border mb-5">
+        <div className="flex flex-1 overflow-x-auto" role="tablist">
           {tabs.map((tab) => (
             <button
               key={tab.key}
@@ -225,7 +226,7 @@ function NewsPage() {
               aria-selected={activeTab === tab.key}
               onClick={() => handleTabChange(tab.key)}
               className={cn(
-                'relative px-4 py-2.5 text-[13px] sm:text-[14px] font-semibold transition-colors',
+                'relative px-4 py-2.5 text-[13px] sm:text-[14px] font-semibold transition-colors whitespace-nowrap',
                 activeTab === tab.key
                   ? 'text-accent'
                   : 'text-text-tertiary hover:text-text-primary',
@@ -238,12 +239,13 @@ function NewsPage() {
             </button>
           ))}
         </div>
-        {/* AI 분석 버튼 — 탭 섹션 최우측 / AI Analysis button — rightmost in tab section */}
+        {/* AI 분석 버튼 — 모바일: 탭 아래 행, 데스크탑: 탭 우측
+            AI Analysis button — mobile: below tabs, desktop: right of tabs */}
         <button
           onClick={handleAiAnalysis}
           disabled={aiLoading}
           className={cn(
-            'flex items-center justify-center gap-2 h-10 sm:min-w-[120px] px-4 rounded-xl text-[13px] font-semibold transition-all duration-150 border shrink-0 ml-auto mb-1',
+            'flex items-center justify-center gap-2 h-10 sm:min-w-[120px] px-4 rounded-xl text-[13px] font-semibold transition-all duration-150 border shrink-0 sm:ml-auto mb-1',
             aiLoading
               ? 'border-border text-text-quaternary cursor-not-allowed'
               : 'border-accent/30 text-accent hover:bg-accent/10',
